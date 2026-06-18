@@ -148,48 +148,4 @@ Project Management app/
     │       ├── BoardColumn.tsx     ← sortable column: grip, inline rename, delete, card list, quick-add composer
     │       ├── BoardCard.tsx       ← sortable card wrapper (useSortable)
     │       ├── CardSurface.tsx     ← presentational glass card w/ accent glow (also the DragOverlay clone)
-    │       ├── CardDetailModal.tsx ← edit title+description; placeholder section reserved for Phase 5
-    │       ├── DeleteColumnDialog.tsx ← confirm column (+ its cards) delete
-    │       ├── AddColumn.tsx       ← trailing add-column composer
-    │       └── Confetti.tsx        ← reduced-motion-aware celebration burst
-    ├── hooks/
-    │   ├── useTheme.ts         ← theme context hook
-    │   └── useAuth.ts          ← auth context hook
-    ├── lib/
-    │   ├── supabase.ts         ← typed Supabase client (reads VITE_ env, throws if missing)
-    │   ├── accents.ts          ← six accent gradients + accentVars()
-    │   ├── cn.ts               ← clsx + tailwind-merge helper
-    │   ├── motion.ts           ← spring presets + variants
-    │   └── theme.ts            ← theme storage/apply logic
-    ├── pages/                  ← StyleGuide, Placeholder
-    ├── styles/
-    │   └── index.css           ← Aurora tokens (both themes), glass/button/gradient utilities, blobs, reduced-motion
-    └── types/
-        ├── database.ts         ← Supabase DB types (`profiles`, `projects`, `project_members`, `columns`, `cards` + RLS fn signatures; hand-maintained until CLI regen) + `Profile`/`Project`/`ProjectMember`/`ProjectRole`/`Column`/`Card` aliases
-        ├── fontsource.d.ts     ← module decls for @fontsource CSS imports
-        └── view-transitions.d.ts ← optional startViewTransition typing
-```
-
----
-
-## ⚠️ Open items / known issues
-
-- **Visual eyeball still pending.** The build/typecheck/lint pass and routes serve 200, but the design was not viewed in a browser this session (no GUI here). Run `npm run dev` and open `/style-guide` to confirm both themes, the 3D buttons, card tilt, and flowing gradients look right before building features on top (per `prompt.md` Phase 1 verification).
-- **Connect Cloudflare Pages** (SETUP.md §3) — build command `npm run build`, output `dist`, plus the two `VITE_` env vars. Then do the Phase 1 live-deploy checkpoint (open the `*.pages.dev` URL on desktop + phone).
-- **Supabase keys:** local `.env` still holds placeholders — set real values (Settings → API) before auth can talk to the project.
-- **Apply the Phase 2 migration & configure Auth (one-time, dashboard).** Run `supabase/migrations/20260618093000_profiles.sql` (SQL Editor or `supabase db push`), then enable **Email** + **Google** providers and add **redirect URLs** (localhost + `*.pages.dev`) — steps in [supabase/README.md](./supabase/README.md). Until done, the auth screens render but sign-in calls will fail.
-- **Phase 2 live verification still pending** (needs real keys + a browser): sign-up auto-creates a `profiles` row, login persists across refresh, Google OAuth round-trip, protected-route redirect, and confirming you can't read another user's profile via SQL (RLS). See prompt.md → Phase 2 Verification.
-- **Apply the Phase 3 migration (one-time, dashboard).** Run `supabase/migrations/20260618120000_projects.sql` (SQL Editor or `supabase db push`) after the profiles one. No new dashboard config needed beyond Phase 2.
-- **Phase 3 live verification — partially done (2026-06-18).** Real keys now in `.env`, both migrations applied live, Email provider on. Confirmed: sign-in works, profile row auto-created, session persists on reload, and **creating a project now works** (after the 403/RETURNING-policy bugfix above) — shows with the Owner badge. **Still pending: the two-user RLS checks** — with two test users confirm: creating a project auto-adds the creator as an `owner` member; a non-member sees nothing (`select * from projects` returns only their own); a non-owner member can read but not update/delete; only the owner can add/remove members; and crucially that selecting/inserting on `project_members` raises **no** "infinite recursion detected in policy" error. Then eyeball the dashboard — card accents, create/edit/delete, optimistic updates, the accent picker, and the per-project route — in a browser (both themes).
-- **Apply the Phase 4 migration (one-time, dashboard).** Run `supabase/migrations/20260618140000_kanban.sql` after the earlier two (SQL Editor or `supabase db push`). No new dashboard config. It also **backfills default columns** into any project created before Phase 4, so existing boards appear immediately.
-- **Phase 4 live verification still pending** (needs a browser): open a project → board shows To Do/In Progress/Done; add/rename/delete a column; quick-add cards; open a card and edit title/description (persists + optimistic); drag a card within a column, across columns, and reorder columns (smooth on mouse **and** touch, persists on reload); dropping a card into **Done** fires confetti (and respects reduced-motion); confirm a non-member still can't read another project's columns/cards (RLS) and that no `project_members` recursion error appears.
-- **Bundle size:** the single JS chunk is now ~819 kB (243 kB gzip) — grew with dnd-kit; still a build warning, not an error. Code-splitting is a Phase 10 polish item.
-- (Log bugs, blockers, and TODOs here as they appear, with enough detail to resume cold.)
-
----
-
-## ▶️ Next step (do this next)
-
-Open `prompt.md` (or `prompts.html`) → **Phase 5 — Card details** (checklists / to-dos, due dates, labels). The `cards` table already has nullable `due_date` + `assignee_id`; Phase 5 adds `checklist_items`, `labels` + `card_labels` (all member-gated on `is_project_member(project_id)` — the same Phase 3/4 pattern) and fills the placeholder section already left in `CardDetailModal`.
-
-Before that, apply the **Phase 4 migration** (`20260618140000_kanban.sql`) in the Supabase dashboard, then run the **Phase 4 live verification** in the open-items list above (board renders default columns, column/card CRUD, drag-and-drop on mouse + touch persists on reload, confetti on Done, RLS isolation). The earlier one-time setup (real `.env` keys, profiles + projects migrations, Email/Google providers) is already done.
+    │       ├── CardDetailModal.tsx ← edit titl
