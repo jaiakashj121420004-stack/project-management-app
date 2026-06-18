@@ -1,18 +1,43 @@
 /**
  * Supabase database types.
  *
- * Placeholder for the scaffold. Once tables exist (Phase 2 onward), regenerate
- * this from the live schema with the Supabase CLI:
+ * Hand-maintained to mirror the SQL in supabase/migrations until the schema is
+ * regenerated from the live project with the Supabase CLI:
  *
  *   npx supabase gen types typescript --project-id <ref> > src/types/database.ts
  *
- * The data model these types will mirror is specified in plan.md §5.
+ * The data model is specified in plan.md §5.
  */
 export interface Database {
   public: {
-    Tables: Record<string, never>;
+    Tables: {
+      profiles: {
+        Row: {
+          id: string;
+          display_name: string | null;
+          avatar_url: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          display_name?: string | null;
+          avatar_url?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          display_name?: string | null;
+          avatar_url?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+    };
     Views: Record<string, never>;
     Functions: Record<string, never>;
     Enums: Record<string, never>;
   };
 }
+
+/** Convenience row alias. */
+export type Profile = Database['public']['Tables']['profiles']['Row'];

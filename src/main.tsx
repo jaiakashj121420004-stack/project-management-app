@@ -6,6 +6,7 @@ import '@fontsource-variable/space-grotesk';
 import '@fontsource-variable/inter';
 import App from '@/App';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
+import { AuthProvider } from '@/features/auth';
 import { applyTheme, getInitialTheme } from '@/lib/theme';
 import '@/styles/index.css';
 
@@ -23,9 +24,11 @@ createRoot(rootElement).render(
   <StrictMode>
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <AuthProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
   </StrictMode>,

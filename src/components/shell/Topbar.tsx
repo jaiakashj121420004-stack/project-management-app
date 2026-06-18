@@ -1,6 +1,6 @@
 import { Menu, Search } from 'lucide-react';
-import { Avatar } from '@/components/Avatar';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { UserMenu } from '@/features/auth';
 import { cn } from '@/lib/cn';
 
 /** App top bar: mobile menu trigger, a search affordance, theme toggle, avatar. */
@@ -30,7 +30,7 @@ export function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
 
       <div className="ml-auto flex items-center gap-2.5">
         <ThemeToggle />
-        <Avatar name="Jai Akash" size={38} />
+        <UserMenu />
       </div>
     </header>
   );
