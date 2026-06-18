@@ -3,6 +3,7 @@ import { AppShell } from '@/components/shell/AppShell';
 import { StyleGuide } from '@/pages/StyleGuide';
 import { Placeholder } from '@/pages/Placeholder';
 import { ProjectsPage, ProjectPage } from '@/features/projects';
+import { CalendarPage } from '@/features/calendar';
 import {
   ForgotPasswordPage,
   LoginPage,
@@ -31,7 +32,7 @@ export default function App() {
         <Route element={<AppShell />}>
           <Route index element={<ProjectsPage />} />
           <Route path="projects/:projectId" element={<ProjectPage />} />
-          <Route path="calendar" element={<Placeholder title="Calendar" phase="Phase 6" />} />
+          <Route path="calendar" element={<CalendarPage />} />
           <Route path="notes" element={<Placeholder title="Notes" phase="Phase 7" />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="style-guide" element={<StyleGuide />} />
