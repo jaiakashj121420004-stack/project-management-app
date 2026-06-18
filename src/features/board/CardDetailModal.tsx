@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Trash2 } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { Field } from '@/components/forms/Field';
 import { TextArea } from '@/components/forms/TextArea';
@@ -25,7 +25,9 @@ interface CardDetailModalProps {
   accent: AccentName;
   onClose: () => void;
   onSave: (id: string, values: CardDetailValues) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
   isPending: boolean;
+  isDeleting: boolean;
 }
 
 /**
@@ -41,7 +43,9 @@ export function CardDetailModal({
   accent,
   onClose,
   onSave,
+  onDelete,
   isPending,
+  isDeleting,
 }: CardDetailModalProps) {
   return (
     <Modal open={open} onClose={onClose} accent={accent} title="Card">
@@ -52,7 +56,9 @@ export function CardDetailModal({
           projectId={projectId}
           onClose={onClose}
           onSave={onSave}
+          onDelete={onDelete}
           isPending={isPending}
+          isDeleting={isDeleting}
         />
       ) : null}
     </Modal>
@@ -65,19 +71,25 @@ function CardDetailForm({
   projectId,
   onClose,
   onSave,
+  onDelete,
   isPending,
+  isDeleting,
 }: {
   card: Card;
   projectId: string;
   onClose: () => void;
   onSave: CardDetailModalProps['onSave'];
+  onDelete: CardDetailModalProps['onDelete'];
   isPending: boolean;
+  isDeleting: boolean;
 }) {
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description ?? '');
   const [dueDate, setDueDate] = useState<string | null>(card.due_date);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const { data: extras } = useCardExtras(projectId);
   const projectLabels = extras?.labels ?? [];
@@ -113,6 +125,16 @@ function CardDetailForm({
       onClose();
     } catch {
       setFormError('Could not save this card. Please try again.');
+    }
+  }
+
+  async function handleDelete() {
+    setDeleteError(null);
+    try {
+      await onDelete(card.id);
+      // On success the parent closes the modal; nothing more to do here.
+    } catch {
+      setDeleteError('Could not delete this card. Please try again.');
     }
   }
 
@@ -163,14 +185,62 @@ function CardDetailForm({
 
       <Checklist projectId={projectId} cardId={card.id} items={checklistItems} />
 
-      <div className="flex justify-end gap-2.5 border-t border-[var(--glass-border)] pt-4">
-        <GradientButton type="button" variant="ghost" onClick={onClose} disabled={isPending}>
-          Cancel
-        </GradientButton>
-        <GradientButton type="submit" isLoading={isPending}>
-          Save changes
-        </GradientButton>
-      </div>
+      {confirmingDelete ? (
+        <div className="flex flex-col gap-3 border-t border-danger/30 pt-4">
+          <div className="flex items-start gap-2.5 text-sm text-fg-muted">
+            <AlertTriangle size={18} className="mt-px shrink-0 text-danger" />
+            <span>
+              Delete <span className="font-semibold text-fg">{card.title}</span>? This can&apos;t be
+              undone.
+            </span>
+          </div>
+          {deleteError && (
+            <p role="alert" className="text-sm text-danger">
+              {deleteError}
+            </p>
+          )}
+          <div className="flex justify-end gap-2.5">
+            <GradientButton
+              type="button"
+              variant="ghost"
+              onClick={() => setConfirmingDelete(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </GradientButton>
+            <GradientButton
+              type="button"
+              accent="ember"
+              leftIcon={<Trash2 size={16} />}
+              isLoading={isDeleting}
+              onClick={() => void handleDelete()}
+            >
+              Delete card
+            </GradientButton>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between gap-2.5 border-t border-[var(--glass-border)] pt-4">
+          <GradientButton
+            type="button"
+            variant="ghost"
+            leftIcon={<Trash2 size={16} />}
+            onClick={() => setConfirmingDelete(true)}
+            disabled={isPending || isDeleting}
+            className="text-danger hover:bg-danger/10 hover:text-danger"
+          >
+            Delete
+          </GradientButton>
+          <div className="flex gap-2.5">
+            <GradientButton type="button" variant="ghost" onClick={onClose} disabled={isPending}>
+              Cancel
+            </GradientButton>
+            <GradientButton type="submit" isLoading={isPending}>
+              Save changes
+            </GradientButton>
+          </div>
+        </div>
+      )}
     </form>
   );
 }

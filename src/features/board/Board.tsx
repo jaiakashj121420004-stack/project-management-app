@@ -45,13 +45,14 @@ import {
   useAddCard,
   useAddColumn,
   useBoard,
+  useDeleteCard,
   useDeleteColumn,
   useMoveCard,
   useMoveColumn,
   useRenameColumn,
   useUpdateCard,
 } from './useBoard';
-import { useCardExtras } from './useCardExtras';
+import { useCardExtras, useRemoveCardExtras } from './useCardExtras';
 
 type Containers = Record<string, string[]>;
 type ActiveType = 'card' | 'column';
@@ -79,6 +80,8 @@ export function Board({ projectId, accent }: BoardProps) {
   const addCard = useAddCard(projectId);
   const updateCard = useUpdateCard(projectId);
   const moveCard = useMoveCard(projectId);
+  const deleteCard = useDeleteCard(projectId);
+  const removeCardExtras = useRemoveCardExtras(projectId);
 
   const columns = useMemo(() => (data ? sortColumns(data.columns) : []), [data]);
   const cards = useMemo(() => (data ? [...data.cards].sort(byPosition) : []), [data]);
@@ -356,6 +359,14 @@ export function Board({ projectId, accent }: BoardProps) {
     });
   }
 
+  async function handleDeleteCard(id: string) {
+    await deleteCard.mutateAsync({ id });
+    // The card's delete cascades to its checklist items + label links in the DB;
+    // mirror that in the extras cache so nothing dangles, then close the modal.
+    removeCardExtras(id);
+    setOpenCardId(null);
+  }
+
   const activeCard = activeType === 'card' && activeId ? cardsById.get(activeId) : undefined;
   const activeColumn = activeType === 'column' && activeId ? columnsById.get(activeId) : undefined;
   const activeFace = activeCard ? faceByCardId.get(activeCard.id) : undefined;
@@ -458,7 +469,9 @@ export function Board({ projectId, accent }: BoardProps) {
         accent={accent}
         onClose={() => setOpenCardId(null)}
         onSave={handleSaveCard}
+        onDelete={handleDeleteCard}
         isPending={updateCard.isPending}
+        isDeleting={deleteCard.isPending}
       />
 
       <DeleteColumnDialog

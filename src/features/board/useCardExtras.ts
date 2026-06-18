@@ -205,3 +205,26 @@ export function useDeleteChecklistItem(projectId: string) {
     }),
   );
 }
+
+// --- Card removal cleanup ---------------------------------------------------
+
+/**
+ * Drop a deleted card's checklist items and label attachments from the cache.
+ * Deleting the card row cascades to these in the DB; this mirrors that in the
+ * local snapshot immediately, so nothing dangles while we wait for a refetch.
+ * Returns a stable callback the board calls after a card delete succeeds.
+ */
+export function useRemoveCardExtras(projectId: string) {
+  const queryClient = useQueryClient();
+  return (cardId: string) => {
+    queryClient.setQueryData<CardExtras>(extrasKey(projectId), (old) =>
+      old
+        ? {
+            ...old,
+            checklist: old.checklist.filter((item) => item.card_id !== cardId),
+            cardLabels: old.cardLabels.filter((link) => link.card_id !== cardId),
+          }
+        : old,
+    );
+  };
+}
