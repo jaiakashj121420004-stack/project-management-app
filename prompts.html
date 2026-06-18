@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Aurora — Build Playbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0B0710;
+    --ink:#F4EEFF;
+    --ink-soft:#B9AED1;
+    --ink-faint:#8B7FA8;
+    --glass:rgba(255,255,255,0.055);
+    --glass-strong:rgba(255,255,255,0.09);
+    --border:rgba(255,255,255,0.12);
+    --border-bright:rgba(255,255,255,0.22);
+    --g-aurora:linear-gradient(135deg,#7C3AED,#06B6D4);
+    --g-bloom:linear-gradient(135deg,#EC4899,#8B5CF6);
+    --g-sunset:linear-gradient(135deg,#FF6B6B,#FFD93D);
+    --g-lagoon:linear-gradient(135deg,#06B6D4,#10B981);
+    --g-ember:linear-gradient(135deg,#F97316,#EF4444);
+    --g-galaxy:linear-gradient(135deg,#6366F1,#A855F7);
+    --opus:linear-gradient(135deg,#A855F7,#EC4899);
+    --sonnet:linear-gradient(135deg,#06B6D4,#3B82F6);
+    --haiku:linear-gradient(135deg,#10B981,#84CC16);
+    --ok:#34D399;
+    --radius:22px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+    line-height:1.6;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* ---------- animated aurora background ---------- */
+  .aurora{position:fixed;inset:0;z-index:-1;overflow:hidden;filter:blur(0);}
+  .blob{position:absolute;border-radius:50%;filter:blur(80px);opacity:.55;will-change:transform;}
+  .b1{width:46vw;height:46vw;background:radial-gradient(circle at 30% 30%,#7C3AED,transparent 70%);top:-8vw;left:-6vw;animation:drift1 26s ease-in-out infinite;}
+  .b2{width:40vw;height:40vw;background:radial-gradient(circle at 30% 30%,#06B6D4,transparent 70%);top:20vh;right:-8vw;animation:drift2 32s ease-in-out infinite;}
+  .b3{width:38vw;height:38vw;background:radial-gradient(circle at 30% 30%,#EC4899,transparent 70%);bottom:-10vw;left:20vw;animation:drift3 30s ease-in-out infinite;}
+  .b4{width:30vw;height:30vw;background:radial-gradient(circle at 30% 30%,#F97316,transparent 70%);top:55vh;left:5vw;opacity:.35;animation:drift1 38s ease-in-out infinite reverse;}
+  @keyframes drift1{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(8vw,6vh) scale(1.15);}}
+  @keyframes drift2{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(-7vw,8vh) scale(1.1);}}
+  @keyframes drift3{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(6vw,-7vh) scale(1.2);}}
+  .grain{position:fixed;inset:0;z-index:-1;opacity:.035;pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+  /* ---------- layout ---------- */
+  .wrap{max-width:920px;margin:0 auto;padding:54px 20px 90px;}
+  header.hero{text-align:center;margin-bottom:38px;}
+  .eyebrow{font-size:.78rem;letter-spacing:.28em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;margin-bottom:14px;}
+  h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(2.4rem,6vw,3.6rem);line-height:1.05;margin:0 0 12px;
+    background:linear-gradient(120deg,#fff 0%,#C4B5FD 28%,#67E8F9 52%,#F9A8D4 76%,#fff 100%);
+    background-size:220% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    animation:flow 9s ease-in-out infinite;}
+  @keyframes flow{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
+  .sub{color:var(--ink-soft);max-width:560px;margin:0 auto;font-size:1.02rem;}
+
+  /* ---------- progress ---------- */
+  .progress-card{margin:30px auto 8px;}
+  .glass{background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+    border:1px solid var(--border);border-radius:var(--radius);
+    box-shadow:0 18px 50px -20px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.08);}
+  .progress-inner{padding:20px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+  .progress-meta{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:1.05rem;white-space:nowrap;}
+  .progress-meta span{color:var(--ink-faint);font-weight:500;}
+  .bar{flex:1;min-width:180px;height:12px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;position:relative;}
+  .bar-fill{height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,#7C3AED,#EC4899,#06B6D4);
+    background-size:200% 100%;transition:width .5s cubic-bezier(.4,0,.2,1);animation:shimmer 4s linear infinite;}
+  @keyframes shimmer{to{background-position:200% 0;}}
+  .reset{background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--ink-soft);padding:8px 16px;border-radius:99px;
+    font-size:.82rem;cursor:pointer;font-family:inherit;white-space:nowrap;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 6px 14px -6px rgba(0,0,0,.5);
+    transition:transform .15s ease,box-shadow .15s ease,border-color .2s,color .2s;}
+  .reset:hover{border-color:var(--border-bright);color:var(--ink);transform:translateY(-2px);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.26),0 12px 22px -8px rgba(0,0,0,.55);}
+  .reset:active{transform:translateY(1px);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 4px 10px -5px rgba(0,0,0,.6);}
+
+  /* ---------- legend ---------- */
+  .legend{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:22px 0 34px;}
+  .legend .badge{cursor:default;}
+  .badge{display:inline-flex;align-items:center;gap:7px;padding:5px 13px;border-radius:99px;font-size:.76rem;font-weight:600;
+    color:#fff;letter-spacing:.02em;background-size:180% 180%;animation:flow 6s ease-in-out infinite;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 6px 16px -6px rgba(0,0,0,.7);}
+  .badge.opus{background:var(--opus);}
+  .badge.sonnet{background:var(--sonnet);}
+  .badge.haiku{background:var(--haiku);}
+  .badge .dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.85);}
+  .legend small{color:var(--ink-faint);font-size:.74rem;align-self:center;}
+
+  /* ---------- phase cards ---------- */
+  .phase{margin-bottom:20px;overflow:hidden;position:relative;transform-style:preserve-3d;
+    transform:perspective(1200px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
+    transition:transform .3s cubic-bezier(.2,.7,.2,1),box-shadow .3s ease,opacity .35s;will-change:transform;}
+  .phase:hover{box-shadow:0 36px 80px -28px rgba(124,58,237,.5),inset 0 1px 0 rgba(255,255,255,.14);}
+  .phase::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--g-aurora);opacity:.9;}
+  .phase[data-model="sonnet"]::before{background:var(--sonnet);}
+  .phase[data-model="opus"]::before{background:var(--opus);}
+  .phead{display:flex;align-items:center;gap:16px;padding:20px 24px;cursor:pointer;user-select:none;}
+  .check{appearance:none;-webkit-appearance:none;flex:none;width:26px;height:26px;border-radius:9px;border:2px solid var(--border-bright);
+    background:rgba(255,255,255,.04);cursor:pointer;position:relative;transition:.2s;}
+  .check:hover{border-color:#A855F7;box-shadow:0 0 0 4px rgba(168,85,247,.15);}
+  .check:checked{background:var(--opus);border-color:transparent;}
+  .check:checked::after{content:"";position:absolute;left:8px;top:3px;width:6px;height:12px;border:solid #fff;border-width:0 3px 3px 0;transform:rotate(45deg);}
+  .pnum{font-family:'Space Grotesk',sans-serif;font-size:.8rem;color:var(--ink-faint);font-weight:600;letter-spacing:.05em;}
+  .ptitle{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:1.18rem;flex:1;line-height:1.25;}
+  .pmodel{flex:none;}
+  .toggle-ico{flex:none;color:var(--ink-faint);transition:transform .3s;font-size:.9rem;}
+  .phase.open .toggle-ico{transform:rotate(180deg);}
+
+  .pbody{display:none;padding:0 24px 24px;}
+  .phase.open .pbody{display:block;animation:reveal .35s ease;}
+  @keyframes reveal{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:none;}}
+
+  .sec-label{display:flex;align-items:center;gap:8px;font-size:.74rem;text-transform:uppercase;letter-spacing:.16em;
+    color:var(--ink-faint);font-weight:700;margin:20px 0 10px;}
+  .sec-label .ic{font-size:.95rem;}
+  ul.clean{list-style:none;margin:0;padding:0;}
+  ul.clean li{position:relative;padding:5px 0 5px 22px;color:var(--ink-soft);font-size:.92rem;}
+  ul.clean li::before{content:"";position:absolute;left:2px;top:13px;width:7px;height:7px;border-radius:50%;background:var(--g-lagoon);}
+  ul.verify li::before{background:var(--g-sunset);}
+
+  .prompt-block{position:relative;margin-top:6px;}
+  pre.prompt{margin:0;padding:18px 18px 18px;background:rgba(0,0,0,.32);border:1px solid var(--border);border-radius:16px;
+    font-family:'SF Mono',ui-monospace,'Cascadia Code',Menlo,Consolas,monospace;font-size:.83rem;line-height:1.62;
+    color:#E7DEFB;white-space:pre-wrap;word-wrap:break-word;max-height:340px;overflow:auto;}
+  pre.prompt::-webkit-scrollbar{width:10px;}
+  pre.prompt::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:99px;}
+  .copy{position:absolute;top:10px;right:10px;background:var(--glass-strong);border:1px solid var(--border-bright);
+    color:var(--ink);padding:7px 14px;border-radius:10px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit;
+    backdrop-filter:blur(8px);z-index:2;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 6px 14px -4px rgba(0,0,0,.6),0 2px 4px rgba(0,0,0,.35);
+    transition:transform .15s ease,box-shadow .15s ease,background .2s ease;}
+  .copy:hover{background:var(--opus);border-color:transparent;transform:translateY(-2px);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 14px 26px -6px rgba(124,58,237,.6),0 4px 8px rgba(0,0,0,.4);}
+  .copy:active{transform:translateY(1px) scale(.97);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 4px 10px -4px rgba(0,0,0,.6);}
+  .copy.copied{background:var(--g-lagoon);border-color:transparent;}
+
+  /* ---------- done state ---------- */
+  .phase.done{opacity:.62;}
+  .phase.done::before{background:var(--g-lagoon)!important;}
+  .phase.done .ptitle{text-decoration:line-through;text-decoration-color:var(--ink-faint);color:var(--ink-soft);}
+  .phase.done pre.prompt{text-decoration:line-through;text-decoration-color:rgba(180,160,210,.45);color:var(--ink-faint);}
+  .donepill{display:none;}
+  .phase.done .donepill{display:inline-flex;align-items:center;gap:6px;font-size:.72rem;color:var(--ok);font-weight:700;
+    letter-spacing:.04em;text-transform:uppercase;}
+  .phase.done .donepill::before{content:"✓";}
+
+  footer{text-align:center;margin-top:46px;color:var(--ink-faint);font-size:.85rem;}
+  footer code{background:rgba(255,255,255,.07);padding:2px 8px;border-radius:7px;color:var(--ink-soft);font-size:.82rem;}
+  .files{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px;}
+  .files code{font-family:'SF Mono',ui-monospace,monospace;}
+
+  @media (max-width:560px){
+    .wrap{padding:34px 14px 70px;}
+    .phead{padding:16px;gap:12px;}
+    .ptitle{font-size:1.04rem;}
+    .pbody{padding:0 16px 18px;}
+    .pmodel .badge{padding:4px 9px;font-size:.68rem;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .blob,.bar-fill,h1,.badge{animation:none!important;}
+    .phase{transform:none!important;}
+    *{transition:none!important;}
+  }
+</style>
+</head>
+<body>
+  <div class="aurora" aria-hidden="true">
+    <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div>
+  </div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <div class="wrap">
+    <header class="hero">
+      <div class="eyebrow">Aurora · Project Management App</div>
+      <h1>Build Playbook</h1>
+      <p class="sub">Eleven prompts, top to bottom. Tick a phase once you've pasted it into Claude Code — it strikes through so you always know where you are. Progress saves automatically in this browser.</p>
+    </header>
+
+    <div class="progress-card glass">
+      <div class="progress-inner">
+        <div class="progress-meta"><span id="pcount">0 / 11</span> phases pasted</div>
+        <div class="bar"><div class="bar-fill" id="pfill"></div></div>
+        <button class="reset" id="resetBtn">Reset progress</button>
+      </div>
+    </div>
+
+    <div class="legend">
+      <span class="badge opus"><span class="dot"></span>Opus 4.8</span>
+      <small>architecture · security · design</small>
+      <span class="badge sonnet"><span class="dot"></span>Sonnet 4.6</span>
+      <small>feature build-out</small>
+      <span class="badge haiku"><span class="dot"></span>Haiku 4.5</span>
+      <small>tiny tweaks</small>
+    </div>
+
+    <div id="phases"></div>
+
+    <footer>
+      Full detail lives in your repo docs:
+      <div class="files">
+        <code>CLAUDE.md</code><code>plan.md</code><code>memory.md</code><code>prompt.md</code>
+      </div>
+      <p style="margin-top:14px">After each phase: run the verification → update <code>memory.md</code> → commit to git.</p>
+    </footer>
+  </div>
+
+  <!-- ===================== PROMPT BODIES (raw text, never HTML-parsed) ===================== -->
+  <script type="text/plain" id="prompt-p0">Read CLAUDE.md, plan.md, and memory.md fully before doing anything.
+
+Scaffold the foundation of the Aurora project-management app in this repo.
+
+1. Initialize a Vite + React + TypeScript project IN PLACE (do not nest it in a subfolder; keep the existing .md files at the repo root). Enable TypeScript strict mode.
+2. Install and configure: Tailwind CSS, Framer Motion, dnd-kit, @tanstack/react-query, react-router-dom, @supabase/supabase-js, zod, date-fns, and vite-plugin-pwa. Wire Tailwind and PostCSS correctly.
+3. Create a typed Supabase client in src/lib/supabase.ts that reads VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY from import.meta.env. Add a .env.example documenting these vars. Create a real .env locally but DO NOT commit it.
+4. Add a .gitignore covering node_modules, dist, .env, .env.local, and OS/editor cruft. Confirm no secrets are tracked.
+5. Set up a clean folder structure: src/components, src/features, src/lib, src/hooks, src/pages, src/types, src/styles. Add a placeholder App that renders a simple "Aurora — coming soon" screen so the build works.
+6. Add npm scripts for dev, build, preview, typecheck, and lint. Set up ESLint + Prettier with sensible TypeScript rules.
+7. Initialize git, make a clean initial commit, then connect and push to the existing GitHub repo: git branch -M main; git remote add origin https://github.com/jaiakashj121420004-stack/project-management-app.git; git push -u origin main. (If git asks for identity, set user.email and user.name first. Confirm .env is NOT tracked.)
+8. Write a short README section on how to run locally and how to deploy to Cloudflare Pages (build command: npm run build, output dir: dist, plus the two VITE_ env vars in the Cloudflare dashboard).
+
+Constraints: TypeScript strict, no any, no leftover boilerplate clutter. Keep components small.
+
+When finished: update memory.md (mark Phase 0 done, set next step to Phase 1, update the file tree) and commit everything with a Conventional Commit message.</script>
+
+  <script type="text/plain" id="prompt-p1">Read CLAUDE.md, plan.md (especially section 4, the Aurora Design System — note 4.4 on depth, 3D & motion), and memory.md first.
+
+Build the Aurora design system and the app shell. This is the visual foundation — it must look stunning, colorful, premium, animated, and three-dimensional, never a plain flat or dark-blue app.
+
+1. Theme: set up Tailwind theme tokens + CSS variables for the full Aurora palette from plan.md (the six project accent gradients, dark/light base colors, glass surface values, semantic colors). Implement BOTH a luminous light mode AND a rich dark mode as first-class, with a ThemeToggle that persists the choice and cross-fades smoothly between them. Default to dark. Design and test every component in both themes.
+2. Fonts: load Space Grotesk (or Sora) for display/headings and Inter for body, via a performant method. Set up a generous type scale.
+3. Animated AuroraBackground: 3–4 large, softly blurred gradient "blobs" that continuously drift AND parallax subtly toward the pointer. Rich but not distracting. Honor prefers-reduced-motion.
+4. Animated, flowing gradients: headings, primary buttons, and active states animate their gradient position (a slow "liquid" shimmer on a ~200% gradient, or a rotating conic gradient). Add a reusable animated gradient-border utility for key surfaces.
+5. Core reusable components (in src/components), all typed, with full hover/focus/active states, working in BOTH themes:
+   - GlassPanel and GlassCard — frosted translucent surfaces, blur, luminous border, layered shadow + accent glow. GlassCard has pointer-reactive 3D tilt (rotateX/rotateY following the cursor) with a shadow that shifts as it tilts.
+   - GradientButton — looks raised and tactile: top inner highlight + layered drop shadows + accent glow + glossy animated gradient. Hover lifts it (translateY up, bigger shadow/glow); active presses it down (translateY, slight scale-down, smaller shadow). Include ghost/secondary variants.
+   - Field/Input, Badge/Pill, Avatar, Modal/Sheet (spring-animated with Framer Motion), Spinner/Skeleton.
+   - A motion wrapper utility for consistent spring transitions.
+6. App shell layout: responsive sidebar/nav (collapsible on mobile, becomes a bottom bar or drawer), a top bar, and a main content area — all on glass over the aurora background. Must look great on phone AND desktop.
+7. Build a /style-guide route that showcases every component, BOTH themes (with the toggle), all six accent gradients, the 3D buttons, the tilt cards, and the flowing gradients — so we can eyeball the system.
+8. Make it deploy-ready: ensure npm run build is clean (no type or console errors), then commit and push to main so Cloudflare Pages builds it. Confirm the two VITE_ env vars are set in Cloudflare (SETUP.md §3).
+
+Constraints: honor plan.md section 4 (especially 4.4) exactly. Depth and motion are defining features: flowing gradients, 3D tactile buttons, card tilt, layered shadows/glows. Both light and dark must be first-class. Every interactive element has hover/focus/active states. Fully responsive and touch-friendly. Gate heavy motion (tilt, parallax, flowing gradients) behind prefers-reduced-motion.
+
+When finished: update memory.md (Phase 1 done, next step Phase 2, note the components created), commit, and push.</script>
+
+  <script type="text/plain" id="prompt-p2">Read CLAUDE.md, plan.md (sections 5–6), and memory.md first.
+
+Implement authentication using Supabase Auth.
+
+1. SQL migration: create a profiles table (id references auth.users, display_name, avatar_url, created_at). Add a trigger that inserts a profile row automatically when a new auth user is created. Enable Row Level Security: a user may select/update only their own profile. Save migrations under supabase/migrations.
+2. Beautiful Aurora-styled auth screens (using Phase 1 components): Sign Up, Log In, and Forgot Password — plus a "Continue with Google" button. Validate all inputs with Zod and show friendly inline errors.
+3. Auth state: a useAuth hook / context exposing the current session and user, with loading states. Handle session persistence and refresh.
+4. Routing: a ProtectedRoute wrapper. Unauthenticated users are redirected to login; authenticated users landing on auth pages go to the app. Add a Sign Out action in the nav with the user's avatar/name.
+5. A minimal profile screen to edit display name (avatar upload can wait).
+
+Constraints: never expose the service_role key. Rely on RLS, not client checks, for data protection. Treat all input as untrusted. Keep the screens on-brand (Aurora).
+
+When finished: update memory.md (Phase 2 done, decisions if any, next step Phase 3) and commit, including the SQL migration.</script>
+
+  <script type="text/plain" id="prompt-p3">Read CLAUDE.md, plan.md (sections 5–6), and memory.md first.
+
+Implement Projects (workspaces) with correct multi-tenant security.
+
+1. SQL migration: create projects (id, owner_id, name, description, accent, created_at) and project_members (project_id, user_id, role in owner/editor/viewer, created_at; PK on project_id+user_id). When a project is created, the creator is inserted as an owner member.
+2. Create a SECURITY DEFINER function is_project_member(p_project_id uuid) that returns whether auth.uid() is a member — to avoid RLS recursion on project_members. Document why.
+3. Enable RLS:
+   - projects: a user can SELECT a project if is_project_member(id); INSERT if owner_id = auth.uid(); UPDATE/DELETE only if they're the owner.
+   - project_members: a user can SELECT rows for projects they belong to; only owners can INSERT/DELETE members.
+   Test that these policies do not recurse or error.
+4. Frontend: a Projects dashboard listing the user's projects as vivid Aurora glass cards, each showing its accent gradient. "New Project" modal with name, description, and an accent-gradient picker (the six options from plan.md). Edit and delete (owner only).
+5. Use TanStack Query for fetching/caching with optimistic create/update/delete. Validate with Zod.
+6. Clicking a project opens a project route (board comes in Phase 4 — a placeholder is fine).
+
+Constraints: all access governed by RLS, not client logic. Keep components small and typed. On-brand visuals.
+
+When finished: update memory.md (Phase 3 done, note the RLS pattern + is_project_member helper as a decision, next step Phase 4) and commit with the migration.</script>
+
+  <script type="text/plain" id="prompt-p4">Read CLAUDE.md, plan.md, and memory.md first.
+
+Build the Kanban board for a project.
+
+1. SQL migration: columns (id, project_id, name, position, created_at) and cards (id, project_id, column_id, title, description, due_date nullable, assignee_id nullable, position, created_at). Enable RLS gating both by is_project_member(project_id). Seed a new project with default columns (To Do, In Progress, Done).
+2. Board UI: columns laid out horizontally (scrollable on mobile), each a GlassPanel; cards are GlassCards carrying the project accent glow. Add column, rename column, delete column.
+3. Cards: quick-add a card to a column; click a card to open a detail modal (title + description editable now; checklists/due dates arrive in Phase 5 — leave room).
+4. Drag-and-drop with dnd-kit: reorder cards within a column and move cards between columns; reorder columns. Persist position (use a fractional or reindex strategy that avoids collisions). Use Framer Motion so cards lift/scale while dragging and columns reflow with spring physics.
+5. Add a small celebration animation (e.g., a confetti burst) when a card is dropped into a "Done"-type column.
+6. Optimistic updates via TanStack Query so the board feels instant.
+
+Constraints: smooth on touch and mouse. Honor reduced-motion. Keep ordering logic robust and typed.
+
+When finished: update memory.md (Phase 4 done, next step Phase 5) and commit with the migration.</script>
+
+  <script type="text/plain" id="prompt-p5">Read CLAUDE.md, plan.md, and memory.md first.
+
+Enrich cards with to-do checklists, due dates, and labels.
+
+1. SQL migration: checklist_items (id, card_id, text, is_done, position), labels (id, project_id, name, color), card_labels (card_id, label_id, PK both). RLS on all three gated via the parent project's membership.
+2. Card detail modal:
+   - Checklist (the "to-do list" inside a card): add/edit/delete/reorder items, tick them off, with a progress bar (e.g., 3/5).
+   - Due date picker (date-fns). On the card face, show a due-date pill colored by urgency: neutral (future), warning (due soon), danger (overdue).
+   - Labels: create project labels with colors, attach/detach them to cards, show as pills on the card face.
+3. Board filtering/sorting: filter cards by label and by due status (overdue / due this week); a quick search by title.
+4. Keep everything optimistic and on-brand.
+
+Constraints: typed, validated (Zod), responsive, small components.
+
+When finished: update memory.md (Phase 5 done — note "usable MVP reached", next step Phase 6) and commit with the migration.</script>
+
+  <script type="text/plain" id="prompt-p6">Read CLAUDE.md, plan.md, and memory.md first.
+
+Add a Calendar view of dated work.
+
+1. A calendar (month and week toggle) rendering every card that has a due_date, across the current project (and optionally an "all projects" mode). Use date-fns for date math — no heavy calendar dependency unless clearly justified.
+2. Cards appear on their due date as compact chips tinted by project accent / urgency. Click a chip to open the same card detail modal from Phase 5.
+3. Allow drag-to-reschedule: dragging a card chip to another day updates its due_date (optimistic). Use Framer Motion for smooth movement.
+4. Empty days and overflow ("+3 more") handled gracefully. Fully responsive: month grid on desktop, a sensible agenda/list layout on small phones.
+
+Constraints: on-brand Aurora styling, reduced-motion safe, typed.
+
+When finished: update memory.md (Phase 6 done, next step Phase 7) and commit.</script>
+
+  <script type="text/plain" id="prompt-p7">Read CLAUDE.md, plan.md, and memory.md first.
+
+Add per-project Notes/docs.
+
+1. SQL migration: notes (id, project_id, title, content, updated_at, created_at). RLS gated by project membership.
+2. A Notes tab inside a project: list notes, create/rename/delete, and edit content. Use a clean, pleasant editor — markdown textarea with live preview is fine (avoid a heavy rich-text dependency unless justified). Autosave with a debounced update and a subtle "saved" indicator.
+3. Notes list and editor styled on-brand (glass, readable typography, generous spacing).
+
+Constraints: typed, validated, responsive, autosave must not thrash the database (debounce).
+
+When finished: update memory.md (Phase 7 done, next step Phase 8) and commit with the migration.</script>
+
+  <script type="text/plain" id="prompt-p8">Read CLAUDE.md, plan.md (sections 5–6), and memory.md first.
+
+Add real-time collaboration.
+
+1. Invitations: let a project owner invite a user by email to a project with a role (editor/viewer). Implement cleanly — e.g., an invitations table keyed by email that resolves to a project_members row when that user signs up / accepts. Update RLS so owners manage members and roles; editors can modify board content; viewers are read-only. Enforce role permissions in RLS, not just the UI.
+2. Members UI: a project members panel showing avatars, roles, invite, change-role, and remove (owner only).
+3. Realtime: subscribe to Supabase Realtime for the active project's columns, cards, checklist_items, labels, and notes so changes from other members appear live without refresh. Reconcile realtime events with TanStack Query caches without flicker or duplicates.
+4. Presence (nice-to-have): show avatars of members currently viewing the board.
+
+Constraints: roles enforced at the database layer (RLS). Realtime must be conflict-tolerant and not leak data across projects. Keep it on-brand.
+
+When finished: update memory.md (Phase 8 done — note the invitations/roles design as a decision, next step Phase 9) and commit with the migration.</script>
+
+  <script type="text/plain" id="prompt-p9">Read CLAUDE.md, plan.md, and memory.md first.
+
+Make it an installable PWA and add due-date reminders.
+
+1. Configure vite-plugin-pwa: web manifest (Aurora icons, theme colors, name), installability on mobile + desktop, and a service worker that caches the app shell for offline loading. Verify the install prompt works.
+2. Provide app icons and a maskable icon; set theme-color for light/dark.
+3. Reminders for due dates: implement a reliable approach and document the trade-off — either (a) browser Notifications + a scheduled check, or (b) email reminders via a Supabase Edge Function on a cron schedule (pg_cron / scheduled function) that finds cards due soon and notifies assignees. Prefer the email/edge-function path for reliability; let me opt in.
+4. Graceful offline UX: read-only cached view when offline, with a clear "offline" indicator and queued writes if feasible.
+
+Constraints: don't break existing flows; keep bundle lean. Document any new env vars/secrets (kept out of git).
+
+When finished: update memory.md (Phase 9 done, next step Phase 10) and commit.</script>
+
+  <script type="text/plain" id="prompt-p10">Read CLAUDE.md, plan.md (sections 6 and 8), and memory.md first.
+
+Prepare the app to launch and (optionally) sell.
+
+1. Marketing landing page (public, no auth) that is a true showcase of the Aurora aesthetic — hero with animated gradients, feature highlights, screenshots, and clear calls to action to sign up. Must be responsive and fast.
+2. Billing with Stripe (test mode): define a free plan and a paid plan (e.g., limits on number of projects or members on free). Implement Stripe Checkout for upgrades and a customer portal for managing the subscription. Handle the webhook in a Supabase Edge Function and VERIFY the webhook signature; update the user's plan in the database from verified events only. Never trust client-side plan claims.
+3. Enforce plan limits via RLS / server checks, not just UI.
+4. Legal: add Terms of Service and Privacy Policy pages, plus basic rate-limiting considerations. Document production env vars and the go-live checklist (move Stripe to live keys, set production redirect URLs, etc.).
+
+Constraints: webhook signature verification is mandatory. Secrets stay server-side and out of git. Keep everything on-brand.
+
+When finished: update memory.md (Phase 10 done — project at launchable state, list any follow-ups) and commit.</script>
+
+  <!-- ===================== APP LOGIC ===================== -->
+  <script>
+    const PHASES = [
+      { id:'p0',  n:'Phase 0',  title:'Setup & infra', model:'opus',
+        prereq:['Node.js, Git, and GitHub / Supabase / Cloudflare accounts — done.','Repo: github.com/jaiakashj121420004-stack/project-management-app','Have your Supabase Project URL + anon public key ready (Settings → API). See SETUP.md — keep them out of chat / git.'],
+        verify:['npm run dev loads the screen with no console errors.','npm run build produces dist/ and npm run typecheck passes.','git status is clean and .env is NOT tracked.','(Optional) Cloudflare Pages deploy succeeds.'] },
+      { id:'p1',  n:'Phase 1',  title:'Design system & app shell', model:'opus',
+        prereq:['Phase 0 complete and committed.'],
+        verify:['/style-guide shows every component in BOTH light + dark; the theme toggle persists and cross-fades.','Gradients visibly flow / animate on headings and primary buttons.','Buttons feel 3D — lift on hover, press on click; cards tilt toward the cursor.','Aurora background drifts + parallaxes; reduced-motion calms all of it.','Looks impressive at phone width and is touch-friendly.','🚀 Deploy checkpoint: connect Cloudflare Pages (SETUP.md §3) if needed, then open the live *.pages.dev URL on your computer AND phone — both themes render, aurora animates, no console errors.'] },
+      { id:'p2',  n:'Phase 2',  title:'Auth — email/password + Google', model:'opus',
+        prereq:['Phase 1 complete.','In Supabase: enable Email + Google providers, add Google OAuth credentials, set Site URL + redirect URLs.'],
+        verify:['Email sign-up auto-creates a profiles row.','Log out / in works and survives refresh.','Continue with Google completes the OAuth flow.','Protected route redirects when logged out.','You cannot read another user’s profile (RLS).'] },
+      { id:'p3',  n:'Phase 3',  title:'Projects (workspaces) + RLS', model:'opus',
+        prereq:['Phase 2 complete.'],
+        verify:['Create / rename / recolor / delete a project; persists on refresh.','A second account cannot see your projects (RLS).','No infinite-recursion errors on project_members policies.','Accent gradients render per project.'] },
+      { id:'p4',  n:'Phase 4',  title:'Kanban board', model:'sonnet',
+        prereq:['Phase 3 complete.'],
+        verify:['Add / rename / delete columns and cards; persists.','Drag cards within + across columns and reorder columns; order persists.','Smooth on desktop and touch.','Dropping into Done triggers the celebration; reduced-motion stays calm.'] },
+      { id:'p5',  n:'Phase 5',  title:'Card details — to-dos, due dates, labels', model:'sonnet',
+        prereq:['Phase 4 complete. (Usable MVP after this phase.)'],
+        verify:['Checklist items tick off and the progress bar updates; persists.','Due-date pill shows correct urgency colour (overdue vs future).','Create labels, attach to cards, filter board by label + due status.','Second account still blocked by RLS.'] },
+      { id:'p6',  n:'Phase 6',  title:'Calendar view', model:'sonnet',
+        prereq:['Phase 5 complete.'],
+        verify:['Dated cards appear on the correct days.','Month / week toggle works; mobile layout is usable.','Drag a card to a new day to reschedule; persists.','Clicking a chip opens the full card modal.'] },
+      { id:'p7',  n:'Phase 7',  title:'Notes / docs per project', model:'sonnet',
+        prereq:['Phase 6 complete.'],
+        verify:['Create / edit / rename / delete notes; content persists.','Autosave is debounced (not every keystroke).','Markdown preview renders; readable on mobile.','RLS confirmed against a second account.'] },
+      { id:'p8',  n:'Phase 8',  title:'Collaboration — members, roles, realtime', model:'opus',
+        prereq:['Phase 7 complete.'],
+        verify:['Invite a second account as editor (gains access) / viewer (read-only, enforced via API too).','A change in one browser appears live in another.','Removing a member revokes access immediately.','No cross-project leakage in realtime channels.'] },
+      { id:'p9',  n:'Phase 9',  title:'PWA & reminders', model:'sonnet',
+        prereq:['Phase 8 complete.'],
+        verify:['Install to phone + desktop; launches full-screen with the Aurora icon.','Loads offline with an offline indicator.','A due-soon reminder is received.','Lighthouse PWA installability passes.'] },
+      { id:'p10', n:'Phase 10', title:'Polish & launch — landing + Stripe', model:'opus',
+        prereq:['Phase 9 complete.','Create a Stripe account (test mode) and grab test keys.'],
+        verify:['Landing page looks stunning and converts to sign-up; great on mobile.','Test Stripe checkout flips the account to paid via a signature-verified webhook.','Free-plan limits enforced server-side (try to exceed via UI + direct calls).','ToS / Privacy exist; go-live checklist documented.'] },
+    ];
+
+    const MODEL_LABEL = { opus:'Opus 4.8', sonnet:'Sonnet 4.6', haiku:'Haiku 4.5' };
+    const STORE_KEY = 'aurora-playbook-progress-v1';
+    const state = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
+
+    const esc = (s) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const container = document.getElementById('phases');
+
+    PHASES.forEach((p) => {
+      const promptText = document.getElementById('prompt-' + p.id).textContent.trim();
+      const done = !!state[p.id];
+      const art = document.createElement('article');
+      art.className = 'phase glass' + (done ? ' done' : '');
+      art.dataset.id = p.id;
+      art.dataset.model = p.model;
+      art.innerHTML = `
+        <div class="phead">
+          <input type="checkbox" class="check" ${done ? 'checked' : ''} title="Mark as pasted" />
+          <div style="flex:1;display:flex;flex-direction:column;gap:2px;">
+            <span class="pnum">${p.n} &nbsp;·&nbsp; <span class="donepill">pasted</span></span>
+            <span class="ptitle">${esc(p.title)}</span>
+          </div>
+          <span class="pmodel"><span class="badge ${p.model}"><span class="dot"></span>${MODEL_LABEL[p.model]}</span></span>
+          <span class="toggle-ico">▾</span>
+        </div>
+        <div class="pbody">
+          <div class="sec-label"><span class="ic">📋</span> Prerequisites</div>
+          <ul class="clean prereq">${p.prereq.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+          <div class="sec-label"><span class="ic">⌨️</span> Prompt — paste into Claude Code</div>
+          <div class="prompt-block">
+            <button class="copy">Copy</button>
+            <pre class="prompt"></pre>
+          </div>
+          <div class="sec-label"><span class="ic">✅</span> Verify before moving on</div>
+          <ul class="clean verify">${p.verify.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+        </div>`;
+      art.querySelector('pre.prompt').textContent = promptText;
+      container.appendChild(art);
+
+      // expand / collapse (ignore clicks on the checkbox)
+      const head = art.querySelector('.phead');
+      head.addEventListener('click', (e) => {
+        if (e.target.classList.contains('check')) return;
+        art.classList.toggle('open');
+      });
+
+      // checkbox -> done + strike + persist
+      const cb = art.querySelector('.check');
+      cb.addEventListener('click', (e) => e.stopPropagation());
+      cb.addEventListener('change', () => {
+        art.classList.toggle('done', cb.checked);
+        if (cb.checked) state[p.id] = true; else delete state[p.id];
+        localStorage.setItem(STORE_KEY, JSON.stringify(state));
+        updateProgress();
+      });
+
+      // copy
+      const copyBtn = art.querySelector('.copy');
+      copyBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(promptText).then(() => {
+          copyBtn.textContent = 'Copied!';
+          copyBtn.classList.add('copied');
+          setTimeout(() => { copyBtn.textContent = 'Copy'; copyBtn.classList.remove('copied'); }, 1600);
+        }).catch(() => {
+          // fallback: select the text
+          const r = document.createRange(); r.selectNodeContents(art.querySelector('pre.prompt'));
+          const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+          copyBtn.textContent = 'Select+Copy';
+          setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1600);
+        });
+      });
+    });
+
+    function updateProgress(){
+      const total = PHASES.length;
+      const done = PHASES.filter(p => state[p.id]).length;
+      document.getElementById('pcount').textContent = `${done} / ${total}`;
+      document.getElementById('pfill').style.width = (done/total*100) + '%';
+    }
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      if(!confirm('Reset all progress?')) return;
+      Object.keys(state).forEach(k => delete state[k]);
+      localStorage.removeItem(STORE_KEY);
+      document.querySelectorAll('.phase').forEach(a => { a.classList.remove('done'); a.querySelector('.check').checked = false; });
+      updateProgress();
+    });
+
+    // 3D pointer-tilt on phase cards (respects reduced motion)
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      document.querySelectorAll('.phase').forEach((card) => {
+        card.addEventListener('pointermove', (e) => {
+          const r = card.getBoundingClientRect();
+          const px = (e.clientX - r.left) / r.width - 0.5;
+          const py = (e.clientY - r.top) / r.height - 0.5;
+          card.style.setProperty('--ry', (px * 5).toFixed(2) + 'deg');
+          card.style.setProperty('--rx', (py * -4).toFixed(2) + 'deg');
+        });
+        card.addEventListener('pointerleave', () => {
+          card.style.setProperty('--rx', '0deg');
+          card.style.setProperty('--ry', '0deg');
+        });
+      });
+    }
+
+    // open the first not-done phase by default
+    const firstOpen = PHASES.find(p => !state[p.id]) || PHASES[0];
+    const firstEl = container.querySelector(`[data-id="${firstOpen.id}"]`);
+    if (firstEl) firstEl.classList.add('open');
+
+    updateProgress();
+  </script>
+</body>
+</html>
