@@ -177,13 +177,16 @@ export function useAddCard(projectId: string) {
 }
 
 export function useUpdateCard(projectId: string) {
-  return useBoardMutation<Card, { id: string; title: string; description: string | null }>(
+  return useBoardMutation<
+    Card,
+    { id: string; title: string; description: string | null; due_date: string | null }
+  >(
     projectId,
-    ({ id, title, description }) => updateCardDetail(id, { title, description }),
-    (board, { id, title, description }) => ({
+    ({ id, title, description, due_date }) => updateCardDetail(id, { title, description, due_date }),
+    (board, { id, title, description, due_date }) => ({
       ...board,
       cards: board.cards.map((card) =>
-        card.id === id ? { ...card, title: title.trim(), description } : card,
+        card.id === id ? { ...card, title: title.trim(), description, due_date } : card,
       ),
     }),
   );

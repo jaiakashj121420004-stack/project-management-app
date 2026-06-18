@@ -1,10 +1,21 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { Card } from '@/types/database';
-import { CardSurface } from './CardSurface';
+import type { Card, Label } from '@/types/database';
+import { cn } from '@/lib/cn';
+import { CardSurface, type ChecklistProgress } from './CardSurface';
+
+/** The Phase 5 detail a card shows on its face: labels + checklist tally. */
+export interface CardFace {
+  labels: Label[];
+  checklist: ChecklistProgress | null;
+}
 
 interface BoardCardProps {
   card: Card;
+  face: CardFace | undefined;
+  /** Filtered out by the board toolbar — kept mounted but visually hidden so
+   *  drag ordering (which reads the full list) stays correct. */
+  hidden?: boolean;
   onOpen: () => void;
 }
 
@@ -17,7 +28,7 @@ interface BoardCardProps {
  * so a quick tap opens the card and a vertical swipe still scrolls the column —
  * only a long-press starts a drag.
  */
-export function BoardCard({ card, onOpen }: BoardCardProps) {
+export function BoardCard({ card, face, hidden = false, onOpen }: BoardCardProps) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: card.id,
     data: { type: 'card', columnId: card.column_id },
@@ -27,7 +38,7 @@ export function BoardCard({ card, onOpen }: BoardCardProps) {
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className="list-none animate-fade-in"
+      className={cn('list-none animate-fade-in', hidden && 'hidden')}
       {...attributes}
       {...listeners}
     >
@@ -35,6 +46,8 @@ export function BoardCard({ card, onOpen }: BoardCardProps) {
         title={card.title}
         description={card.description}
         dueDate={card.due_date}
+        labels={face?.labels}
+        checklist={face?.checklist}
         dimmed={isDragging}
         onClick={onOpen}
       />

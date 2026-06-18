@@ -5,12 +5,16 @@ import { Check, GripVertical, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import { cn } from '@/lib/cn';
 import type { Card, Column } from '@/types/database';
-import { BoardCard } from './BoardCard';
+import { BoardCard, type CardFace } from './BoardCard';
 import { columnNameSchema, cardTitleSchema } from './schemas';
 
 interface BoardColumnProps {
   column: Column;
   cards: Card[];
+  faceByCardId: Map<string, CardFace>;
+  hiddenCardIds: Set<string>;
+  /** True while the board toolbar has an active filter/search. */
+  filtering: boolean;
   onRename: (columnId: string, name: string) => void;
   onDelete: (column: Column) => void;
   onAddCard: (columnId: string, title: string) => void;
@@ -26,6 +30,9 @@ interface BoardColumnProps {
 export function BoardColumn({
   column,
   cards,
+  faceByCardId,
+  hiddenCardIds,
+  filtering,
   onRename,
   onDelete,
   onAddCard,
@@ -37,6 +44,11 @@ export function BoardColumn({
   });
 
   const [renaming, setRenaming] = useState(false);
+
+  // When filtering, the count reflects how many cards actually match.
+  const visibleCount = filtering
+    ? cards.reduce((total, card) => (hiddenCardIds.has(card.id) ? total : total + 1), 0)
+    : cards.length;
 
   return (
     <div
@@ -74,7 +86,7 @@ export function BoardColumn({
                 {column.name}
               </h3>
               <span className="grid h-6 min-w-6 place-items-center rounded-full bg-[var(--glass-fill)] px-1.5 text-xs font-medium text-fg-muted">
-                {cards.length}
+                {visibleCount}
               </span>
               <div className="flex items-center">
                 <HeaderAction label={`Rename ${column.name}`} onClick={() => setRenaming(true)}>
@@ -91,8 +103,17 @@ export function BoardColumn({
         <SortableContext items={cards.map((card) => card.id)} strategy={verticalListSortingStrategy}>
           <ul className="flex min-h-[0.5rem] flex-col gap-2.5 overflow-y-auto">
             {cards.map((card) => (
-              <BoardCard key={card.id} card={card} onOpen={() => onOpenCard(card)} />
+              <BoardCard
+                key={card.id}
+                card={card}
+                face={faceByCardId.get(card.id)}
+                hidden={hiddenCardIds.has(card.id)}
+                onOpen={() => onOpenCard(card)}
+              />
             ))}
+            {filtering && visibleCount === 0 && (
+              <li className="list-none px-1 py-2 text-xs text-fg-subtle">No matching cards.</li>
+            )}
           </ul>
         </SortableContext>
 

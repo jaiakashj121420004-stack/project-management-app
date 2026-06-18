@@ -1,12 +1,24 @@
 import { forwardRef, type CSSProperties } from 'react';
-import { CalendarClock } from 'lucide-react';
+import { CalendarClock, CheckSquare } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import type { Label } from '@/types/database';
+import { LabelPill } from './LabelPill';
+import { dueStatus, formatDueLabel } from './due';
+
+export interface ChecklistProgress {
+  done: number;
+  total: number;
+}
 
 interface CardSurfaceProps {
   title: string;
   description?: string | null;
-  /** Reserved for Phase 5 (due dates); shown as a quiet pill when present. */
+  /** Due date (YYYY-MM-DD); shown as a pill colored by urgency when present. */
   dueDate?: string | null;
+  /** Labels attached to this card; shown as small swatches above the title. */
+  labels?: Label[];
+  /** Checklist tally; shown as a "2/5" pill when the card has any items. */
+  checklist?: ChecklistProgress | null;
   /** Render as the lifted drag clone: stronger glow + grab cursor. */
   lifted?: boolean;
   /** Dim the in-list original while its clone is being dragged. */
@@ -16,17 +28,26 @@ interface CardSurfaceProps {
   onClick?: () => void;
 }
 
+const DUE_PILL: Record<ReturnType<typeof dueStatus>, string> = {
+  overdue: 'border-danger/30 bg-danger/10 text-danger',
+  soon: 'border-warning/30 bg-warning/10 text-warning',
+  upcoming: 'border-[var(--glass-border)] bg-[var(--glass-fill)] text-fg-muted',
+};
+
 /**
  * Presentational Kanban card: a glass tile carrying the project accent glow
  * (plan.md §4.2/§4.4). Pure and ref-forwarding so it backs both the in-list
- * sortable card and the lifted DragOverlay clone. Layout is intentionally roomy
- * below the title — checklists, labels, due dates, and an assignee avatar slot
- * in here in Phase 5.
+ * sortable card and the lifted DragOverlay clone. The face surfaces a card's
+ * Phase 5 detail at a glance: label swatches, a urgency-colored due pill, and
+ * checklist progress.
  */
 export const CardSurface = forwardRef<HTMLDivElement, CardSurfaceProps>(function CardSurface(
-  { title, description, dueDate, lifted = false, dimmed = false, className, style, onClick },
+  { title, description, dueDate, labels, checklist, lifted = false, dimmed = false, className, style, onClick },
   ref,
 ) {
+  const status = dueDate ? dueStatus(dueDate) : null;
+  const hasChecklist = checklist && checklist.total > 0;
+
   return (
     <div
       ref={ref}
@@ -43,21 +64,51 @@ export const CardSurface = forwardRef<HTMLDivElement, CardSurfaceProps>(function
         className,
       )}
     >
-      {/* Thin accent strip for a vivid, per-project feel. */}
-      <span
-        aria-hidden
-        className="mb-2.5 block h-1 w-9 rounded-full bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))]"
-      />
+      {labels && labels.length > 0 ? (
+        <div className="mb-2 flex flex-wrap gap-x-3 gap-y-1">
+          {labels.map((label) => (
+            <LabelPill key={label.id} name={label.name} color={label.color} variant="dot" />
+          ))}
+        </div>
+      ) : (
+        // Thin accent strip when there are no labels, for a vivid per-project feel.
+        <span
+          aria-hidden
+          className="mb-2.5 block h-1 w-9 rounded-full bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))]"
+        />
+      )}
+
       <p className="font-medium leading-snug text-fg">{title}</p>
       {description ? (
         <p className="mt-1.5 line-clamp-2 text-sm text-fg-subtle">{description}</p>
       ) : null}
-      {dueDate ? (
-        <div className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-medium text-fg-muted">
-          <CalendarClock size={13} aria-hidden />
-          {dueDate}
+
+      {(status || hasChecklist) && (
+        <div className="mt-2.5 flex flex-wrap items-center gap-2">
+          {status && dueDate ? (
+            <span
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium',
+                DUE_PILL[status],
+              )}
+            >
+              <CalendarClock size={12} aria-hidden />
+              {formatDueLabel(dueDate)}
+            </span>
+          ) : null}
+          {hasChecklist ? (
+            <span
+              className={cn(
+                'inline-flex items-center gap-1 text-xs font-medium',
+                checklist.done === checklist.total ? 'text-success' : 'text-fg-muted',
+              )}
+            >
+              <CheckSquare size={13} aria-hidden />
+              {checklist.done}/{checklist.total}
+            </span>
+          ) : null}
         </div>
-      ) : null}
+      )}
     </div>
   );
 });

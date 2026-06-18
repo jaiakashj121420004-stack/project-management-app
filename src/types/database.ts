@@ -9,6 +9,7 @@
  * The data model is specified in plan.md §5.
  */
 import type { AccentName } from '@/lib/accents';
+import type { LabelColor } from '@/lib/labelColors';
 
 /** A member's permission level within a project (plan.md §5–6). */
 export type ProjectRole = 'owner' | 'editor' | 'viewer';
@@ -148,6 +149,74 @@ export interface Database {
         };
         Relationships: [];
       };
+      checklist_items: {
+        Row: {
+          id: string;
+          card_id: string;
+          text: string;
+          is_done: boolean;
+          // Fractional rank within a card; ordered ascending (ordering.ts).
+          position: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          card_id: string;
+          text: string;
+          is_done?: boolean;
+          position: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          card_id?: string;
+          text?: string;
+          is_done?: boolean;
+          position?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      labels: {
+        Row: {
+          id: string;
+          project_id: string;
+          name: string;
+          // Constrained to the label palette names by a DB check constraint.
+          color: LabelColor;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          name: string;
+          color: LabelColor;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          name?: string;
+          color?: LabelColor;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      card_labels: {
+        Row: {
+          card_id: string;
+          label_id: string;
+        };
+        Insert: {
+          card_id: string;
+          label_id: string;
+        };
+        Update: {
+          card_id?: string;
+          label_id?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -158,6 +227,10 @@ export interface Database {
       };
       is_project_owner: {
         Args: { p_project_id: string };
+        Returns: boolean;
+      };
+      can_access_card: {
+        Args: { p_card_id: string };
         Returns: boolean;
       };
     };
@@ -171,3 +244,6 @@ export type Project = Database['public']['Tables']['projects']['Row'];
 export type ProjectMember = Database['public']['Tables']['project_members']['Row'];
 export type Column = Database['public']['Tables']['columns']['Row'];
 export type Card = Database['public']['Tables']['cards']['Row'];
+export type ChecklistItem = Database['public']['Tables']['checklist_items']['Row'];
+export type Label = Database['public']['Tables']['labels']['Row'];
+export type CardLabel = Database['public']['Tables']['card_labels']['Row'];

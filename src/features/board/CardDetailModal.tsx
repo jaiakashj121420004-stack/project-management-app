@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from 'react';
-import { AlertCircle, ListChecks, Tags, UserPlus } from 'lucide-react';
+import { useMemo, useState, type FormEvent } from 'react';
+import { AlertCircle } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { Field } from '@/components/forms/Field';
 import { TextArea } from '@/components/forms/TextArea';
@@ -7,24 +7,37 @@ import { GradientButton } from '@/components/buttons/GradientButton';
 import type { AccentName } from '@/lib/accents';
 import type { Card } from '@/types/database';
 import { cardDetailSchema, fieldErrorsOf } from './schemas';
+import { useCardExtras } from './useCardExtras';
+import { DueDateField } from './DueDateField';
+import { CardLabelsSection } from './CardLabelsSection';
+import { Checklist } from './Checklist';
+
+export interface CardDetailValues {
+  title: string;
+  description: string | null;
+  due_date: string | null;
+}
 
 interface CardDetailModalProps {
   card: Card | null;
   open: boolean;
+  projectId: string;
   accent: AccentName;
   onClose: () => void;
-  onSave: (id: string, values: { title: string; description: string | null }) => Promise<void>;
+  onSave: (id: string, values: CardDetailValues) => Promise<void>;
   isPending: boolean;
 }
 
 /**
- * Open a card to edit its title + description (Phase 4). The lower section is a
- * deliberate placeholder for Phase 5 — checklists, due dates, labels, and
- * assignee — so the layout already has room for them.
+ * Open a card to edit it. Title, description, and due date are committed
+ * together with "Save changes"; labels and checklist items mutate immediately
+ * (optimistic) since they're list operations. All card extras read from the one
+ * useCardExtras cache the board shares.
  */
 export function CardDetailModal({
   card,
   open,
+  projectId,
   accent,
   onClose,
   onSave,
@@ -36,6 +49,7 @@ export function CardDetailModal({
         <CardDetailForm
           key={card.id}
           card={card}
+          projectId={projectId}
           onClose={onClose}
           onSave={onSave}
           isPending={isPending}
@@ -48,19 +62,38 @@ export function CardDetailModal({
 /** Keyed by card id so it re-seeds whenever a different card opens. */
 function CardDetailForm({
   card,
+  projectId,
   onClose,
   onSave,
   isPending,
 }: {
   card: Card;
+  projectId: string;
   onClose: () => void;
   onSave: CardDetailModalProps['onSave'];
   isPending: boolean;
 }) {
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description ?? '');
+  const [dueDate, setDueDate] = useState<string | null>(card.due_date);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
+
+  const { data: extras } = useCardExtras(projectId);
+  const projectLabels = extras?.labels ?? [];
+  const checklistItems = useMemo(
+    () => (extras?.checklist ?? []).filter((item) => item.card_id === card.id),
+    [extras?.checklist, card.id],
+  );
+  const attachedLabelIds = useMemo(
+    () =>
+      new Set(
+        (extras?.cardLabels ?? [])
+          .filter((link) => link.card_id === card.id)
+          .map((link) => link.label_id),
+      ),
+    [extras?.cardLabels, card.id],
+  );
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -75,6 +108,7 @@ function CardDetailForm({
       await onSave(card.id, {
         title: parsed.data.title,
         description: parsed.data.description.trim() || null,
+        due_date: dueDate,
       });
       onClose();
     } catch {
@@ -83,7 +117,11 @@ function CardDetailForm({
   }
 
   return (
-    <form onSubmit={(event) => void handleSubmit(event)} noValidate className="flex flex-col gap-4">
+    <form
+      onSubmit={(event) => void handleSubmit(event)}
+      noValidate
+      className="-mr-2 flex max-h-[72vh] flex-col gap-5 overflow-y-auto pr-2"
+    >
       {formError && (
         <div
           role="alert"
@@ -94,47 +132,38 @@ function CardDetailForm({
         </div>
       )}
 
-      <Field
-        label="Title"
-        value={title}
-        onChange={(event) => setTitle(event.target.value)}
-        error={errors.title}
-        maxLength={200}
-        autoFocus
-      />
-      <TextArea
-        label="Description"
-        placeholder="Add more detail… (optional)"
-        value={description}
-        onChange={(event) => setDescription(event.target.value)}
-        error={errors.description}
-        className="min-h-[140px]"
-        maxLength={5000}
+      <div className="flex flex-col gap-4">
+        <Field
+          label="Title"
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          error={errors.title}
+          maxLength={200}
+          autoFocus
+        />
+        <TextArea
+          label="Description"
+          placeholder="Add more detail… (optional)"
+          value={description}
+          onChange={(event) => setDescription(event.target.value)}
+          error={errors.description}
+          className="min-h-[120px]"
+          maxLength={5000}
+        />
+      </div>
+
+      <DueDateField value={dueDate} onChange={setDueDate} />
+
+      <CardLabelsSection
+        projectId={projectId}
+        cardId={card.id}
+        labels={projectLabels}
+        attachedLabelIds={attachedLabelIds}
       />
 
-      {/* Phase 5 lives here: checklists, due dates, labels, assignee. */}
-      <section
-        aria-label="Coming in Phase 5"
-        className="rounded-2xl border border-dashed border-[var(--glass-border)] px-4 py-3"
-      >
-        <p className="text-xs font-medium uppercase tracking-wide text-fg-subtle">Coming soon</p>
-        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-fg-muted">
-          <span className="inline-flex items-center gap-1.5">
-            <ListChecks size={15} /> Checklists
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <AlertCircle size={15} /> Due dates
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <Tags size={15} /> Labels
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <UserPlus size={15} /> Assignee
-          </span>
-        </div>
-      </section>
+      <Checklist projectId={projectId} cardId={card.id} items={checklistItems} />
 
-      <div className="mt-1 flex justify-end gap-2.5">
+      <div className="flex justify-end gap-2.5 border-t border-[var(--glass-border)] pt-4">
         <GradientButton type="button" variant="ghost" onClick={onClose} disabled={isPending}>
           Cancel
         </GradientButton>

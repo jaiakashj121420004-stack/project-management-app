@@ -24,13 +24,16 @@ import { GlassPanel } from '@/components/glass/GlassPanel';
 import { Skeleton } from '@/components/feedback/Skeleton';
 import { accentVars, type AccentName } from '@/lib/accents';
 import { springs } from '@/lib/motion';
-import type { Card, Column } from '@/types/database';
+import type { Card, Column, Label } from '@/types/database';
 import { BoardColumn } from './BoardColumn';
+import type { CardFace } from './BoardCard';
 import { AddColumn } from './AddColumn';
-import { CardSurface } from './CardSurface';
-import { CardDetailModal } from './CardDetailModal';
+import { CardSurface, type ChecklistProgress } from './CardSurface';
+import { CardDetailModal, type CardDetailValues } from './CardDetailModal';
 import { DeleteColumnDialog } from './DeleteColumnDialog';
 import { Confetti } from './Confetti';
+import { BoardToolbar, type DueFilter } from './BoardToolbar';
+import { isDueThisWeek, isOverdue } from './due';
 import {
   byPosition,
   cardsInColumn,
@@ -48,6 +51,7 @@ import {
   useRenameColumn,
   useUpdateCard,
 } from './useBoard';
+import { useCardExtras } from './useCardExtras';
 
 type Containers = Record<string, string[]>;
 type ActiveType = 'card' | 'column';
@@ -81,6 +85,99 @@ export function Board({ projectId, accent }: BoardProps) {
 
   const columnsById = useMemo(() => new Map(columns.map((c) => [c.id, c])), [columns]);
   const cardsById = useMemo(() => new Map(cards.map((c) => [c.id, c])), [cards]);
+
+  // Phase 5 card extras (labels + checklist) share one cache, read here for the
+  // card faces and the toolbar filter; the modal reads + mutates the same cache.
+  const { data: extras } = useCardExtras(projectId);
+  const projectLabels = useMemo(() => extras?.labels ?? [], [extras?.labels]);
+  const labelsById = useMemo(() => new Map(projectLabels.map((l) => [l.id, l])), [projectLabels]);
+
+  const labelsByCardId = useMemo(() => {
+    const map = new Map<string, Label[]>();
+    for (const link of extras?.cardLabels ?? []) {
+      const label = labelsById.get(link.label_id);
+      if (!label) continue;
+      const list = map.get(link.card_id) ?? [];
+      list.push(label);
+      map.set(link.card_id, list);
+    }
+    return map;
+  }, [extras?.cardLabels, labelsById]);
+
+  const checklistByCardId = useMemo(() => {
+    const map = new Map<string, ChecklistProgress>();
+    for (const item of extras?.checklist ?? []) {
+      const tally = map.get(item.card_id) ?? { done: 0, total: 0 };
+      tally.total += 1;
+      if (item.is_done) tally.done += 1;
+      map.set(item.card_id, tally);
+    }
+    return map;
+  }, [extras?.checklist]);
+
+  const faceByCardId = useMemo(() => {
+    const map = new Map<string, CardFace>();
+    for (const card of cards) {
+      map.set(card.id, {
+        labels: labelsByCardId.get(card.id) ?? [],
+        checklist: checklistByCardId.get(card.id) ?? null,
+      });
+    }
+    return map;
+  }, [cards, labelsByCardId, checklistByCardId]);
+
+  // Toolbar filter/search state. Hidden cards stay mounted (BoardCard adds
+  // `hidden`) so drag ordering, which reads the full lists, stays correct.
+  const [query, setQuery] = useState('');
+  const [selectedLabelIds, setSelectedLabelIds] = useState<Set<string>>(new Set());
+  const [dueFilters, setDueFilters] = useState<Set<DueFilter>>(new Set());
+
+  const trimmedQuery = query.trim().toLowerCase();
+  const filtering = trimmedQuery !== '' || selectedLabelIds.size > 0 || dueFilters.size > 0;
+
+  const hiddenCardIds = useMemo(() => {
+    const hidden = new Set<string>();
+    if (!filtering) return hidden;
+    for (const card of cards) {
+      const matchesQuery = trimmedQuery === '' || card.title.toLowerCase().includes(trimmedQuery);
+      const matchesLabels =
+        selectedLabelIds.size === 0 ||
+        (labelsByCardId.get(card.id) ?? []).some((label) => selectedLabelIds.has(label.id));
+      const matchesDue =
+        dueFilters.size === 0 ||
+        Boolean(
+          card.due_date &&
+            ((dueFilters.has('overdue') && isOverdue(card.due_date)) ||
+              (dueFilters.has('week') && isDueThisWeek(card.due_date))),
+        );
+      if (!(matchesQuery && matchesLabels && matchesDue)) hidden.add(card.id);
+    }
+    return hidden;
+  }, [cards, filtering, trimmedQuery, selectedLabelIds, dueFilters, labelsByCardId]);
+
+  function toggleLabelFilter(id: string) {
+    setSelectedLabelIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleDueFilter(filter: DueFilter) {
+    setDueFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(filter)) next.delete(filter);
+      else next.add(filter);
+      return next;
+    });
+  }
+
+  function clearFilters() {
+    setQuery('');
+    setSelectedLabelIds(new Set());
+    setDueFilters(new Set());
+  }
 
   const baseColumnOrder = useMemo(() => columns.map((c) => c.id), [columns]);
   const baseContainers = useMemo<Containers>(() => {
@@ -250,12 +347,18 @@ export function Board({ projectId, accent }: BoardProps) {
     setDeletingColumn(null);
   }
 
-  async function handleSaveCard(id: string, values: { title: string; description: string | null }) {
-    await updateCard.mutateAsync({ id, title: values.title, description: values.description });
+  async function handleSaveCard(id: string, values: CardDetailValues) {
+    await updateCard.mutateAsync({
+      id,
+      title: values.title,
+      description: values.description,
+      due_date: values.due_date,
+    });
   }
 
   const activeCard = activeType === 'card' && activeId ? cardsById.get(activeId) : undefined;
   const activeColumn = activeType === 'column' && activeId ? columnsById.get(activeId) : undefined;
+  const activeFace = activeCard ? faceByCardId.get(activeCard.id) : undefined;
   const openCard = openCardId ? (cardsById.get(openCardId) ?? null) : null;
 
   if (isLoading) return <BoardSkeleton />;
@@ -269,7 +372,19 @@ export function Board({ projectId, accent }: BoardProps) {
   }
 
   return (
-    <div style={accentVars(accent)}>
+    <div className="flex flex-col gap-4" style={accentVars(accent)}>
+      <BoardToolbar
+        labels={projectLabels}
+        query={query}
+        onQueryChange={setQuery}
+        selectedLabelIds={selectedLabelIds}
+        onToggleLabel={toggleLabelFilter}
+        dueFilters={dueFilters}
+        onToggleDue={toggleDueFilter}
+        filtering={filtering}
+        onClear={clearFilters}
+      />
+
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
@@ -292,6 +407,9 @@ export function Board({ projectId, accent }: BoardProps) {
                   key={column.id}
                   column={column}
                   cards={columnCards}
+                  faceByCardId={faceByCardId}
+                  hiddenCardIds={hiddenCardIds}
+                  filtering={filtering}
                   onRename={(id, name) => renameColumn.mutate({ id, name })}
                   onDelete={setDeletingColumn}
                   onAddCard={handleAddCard}
@@ -316,6 +434,8 @@ export function Board({ projectId, accent }: BoardProps) {
                 title={activeCard.title}
                 description={activeCard.description}
                 dueDate={activeCard.due_date}
+                labels={activeFace?.labels}
+                checklist={activeFace?.checklist}
               />
             </motion.div>
           ) : activeColumn ? (
@@ -334,6 +454,7 @@ export function Board({ projectId, accent }: BoardProps) {
       <CardDetailModal
         card={openCard}
         open={Boolean(openCard)}
+        projectId={projectId}
         accent={accent}
         onClose={() => setOpenCardId(null)}
         onSave={handleSaveCard}
