@@ -123,13 +123,19 @@ alter table public.project_members enable row level security;
 
 -- projects -------------------------------------------------------------------
 
--- Read a project only if you belong to it.
+-- Read a project if you own it OR belong to it. The owner_id clause is
+-- essential: on INSERT ... RETURNING, Postgres applies this SELECT policy to
+-- the new row, and the creator's owner row in project_members (written by the
+-- AFTER-insert trigger below) is not yet visible at that instant — so gating on
+-- membership alone makes the read-back fail and rolls back the whole insert
+-- (403). Checking owner_id = auth.uid(), which is true the moment the row is
+-- inserted, lets the RETURNING read-back succeed.
 drop policy if exists "Projects: select if member" on public.projects;
 create policy "Projects: select if member"
   on public.projects
   for select
   to authenticated
-  using (public.is_project_member(id));
+  using (owner_id = auth.uid() or public.is_project_member(id));
 
 -- Create a project only for yourself. The trigger then makes you its owner
 -- member, so the RETURNING select (gated by the select policy) succeeds.
