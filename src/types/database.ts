@@ -112,4 +112,62 @@ export interface Database {
         Relationships: [];
       };
       cards: {
-        
+        Row: {
+          id: string;
+          project_id: string;
+          column_id: string;
+          title: string;
+          description: string | null;
+          // ISO date (YYYY-MM-DD); checklists/labels/assignment land in Phase 5.
+          due_date: string | null;
+          assignee_id: string | null;
+          position: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          column_id: string;
+          title: string;
+          description?: string | null;
+          due_date?: string | null;
+          assignee_id?: string | null;
+          position: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          column_id?: string;
+          title?: string;
+          description?: string | null;
+          due_date?: string | null;
+          assignee_id?: string | null;
+          position?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+    };
+    Views: Record<string, never>;
+    Functions: {
+      // SECURITY DEFINER membership/ownership helpers used by RLS (plan.md §6).
+      is_project_member: {
+        Args: { p_project_id: string };
+        Returns: boolean;
+      };
+      is_project_owner: {
+        Args: { p_project_id: string };
+        Returns: boolean;
+      };
+    };
+    Enums: Record<string, never>;
+  };
+}
+
+/** Convenience row aliases. */
+export type Profile = Database['public']['Tables']['profiles']['Row'];
+export type Project = Database['public']['Tables']['projects']['Row'];
+export type ProjectMember = Database['public']['Tables']['project_members']['Row'];
+export type Column = Database['public']['Tables']['columns']['Row'];
+export type Card = Database['public']['Tables']['cards']['Row'];

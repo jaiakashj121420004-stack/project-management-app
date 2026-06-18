@@ -14,6 +14,7 @@ export default {
       colors: {
         // Theme-reactive (channels set per theme in CSS).
         base: 'rgb(var(--bg) / <alpha-value>)',
+        'base-2': 'rgb(var(--bg-2) / <alpha-value>)',
         fg: 'rgb(var(--fg) / <alpha-value>)',
         'fg-muted': 'rgb(var(--fg-muted) / <alpha-value>)',
         'fg-subtle': 'rgb(var(--fg-subtle) / <alpha-value>)',
@@ -54,12 +55,22 @@ export default {
           from: { opacity: '0' },
           to: { opacity: '1' },
         },
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-7px)' },
+        },
+        'pulse-glow': {
+          '0%, 100%': { opacity: '0.55' },
+          '50%': { opacity: '1' },
+        },
       },
       animation: {
         'gradient-flow': 'gradient-flow 6s ease-in-out infinite',
         'spin-slow': 'spin-slow 8s linear infinite',
         shimmer: 'shimmer 1.6s ease-in-out infinite',
         'fade-in': 'fade-in 0.4s ease both',
+        float: 'float 6s ease-in-out infinite',
+        'pulse-glow': 'pulse-glow 4s ease-in-out infinite',
       },
     },
   },

@@ -22,15 +22,15 @@ const SIZES: Record<Size, string> = {
 
 const BASE =
   'relative inline-flex select-none items-center justify-center font-medium ' +
-  'transition-[transform,box-shadow] duration-200 ease-spring ' +
-  'hover:-translate-y-0.5 active:translate-y-px active:scale-[0.98] ' +
+  'transition-[transform,box-shadow] duration-200 ease-spring [transform:translateZ(0)] ' +
+  'hover:-translate-y-[3px] active:translate-y-[3px] active:scale-[0.97] ' +
   'disabled:pointer-events-none disabled:opacity-55';
 
 /**
  * The raised, tactile primary action (plan.md §4.4): a glossy flowing-gradient
- * surface with a top highlight, layered shadows, and an accent glow that lifts
- * on hover and presses in on click. `secondary` is a glass equivalent;
- * `ghost` is a quiet text button.
+ * surface with a top highlight, a solid accent "base edge", layered shadows,
+ * and an accent glow that grows on hover and collapses on press for a real
+ * chunky 3D button. `secondary` is a glass equivalent; `ghost` is quiet.
  */
 export function GradientButton({
   variant = 'primary',
@@ -62,16 +62,15 @@ export function GradientButton({
         ],
         variant === 'secondary' && 'btn-3d-soft glass-strong text-fg',
         variant === 'ghost' &&
-          'rounded-2xl text-fg-muted hover:bg-[var(--glass-fill)] hover:text-fg active:scale-100',
+          'rounded-2xl text-fg-muted hover:bg-[var(--glass-fill)] hover:text-fg active:translate-y-0 active:scale-100',
         className,
       )}
       {...rest}
     >
-      {/* Glossy top sheen for the primary variant. */}
       {isPrimary && (
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-1/2 rounded-t-[inherit] bg-gradient-to-b from-white/30 to-transparent"
+          className="pointer-events-none absolute inset-x-0 top-0 h-1/2 rounded-t-[inherit] bg-gradient-to-b from-white/35 to-transparent"
         />
       )}
       {isLoading ? <Spinner size={16} className="text-current" /> : leftIcon}

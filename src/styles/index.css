@@ -3,74 +3,111 @@
 @tailwind utilities;
 
 /* =========================================================================
-   Aurora design system — theme tokens (plan.md §4).
-   Dark is the default (:root); .light overrides. Both are first-class.
+   AURORA — "Cosmic Bento" design system (plan.md §4, elevated).
+   Content floats as a bento constellation of glass cards over a living sky:
+   deep-space nebula in DARK, dawn nebula in LIGHT — both first-class, both
+   grand. Starfield, drifting aurora ribbons, fine film grain, layered glass,
+   and chunky tactile 3D buttons.
+
    Channel vars (--bg, --fg…) are "r g b" triplets so Tailwind can apply alpha.
-   Glass/shadow vars hold finished values because their alpha differs per theme.
+   Finished-value vars (glass/shadow) hold per-theme alphas directly.
+   All existing class/variable names are preserved so every screen inherits
+   the upgrade with no markup changes.
    ========================================================================= */
 :root,
 .dark {
   color-scheme: dark;
 
-  --bg: 11 7 16; /* #0B0710 deep aubergine-black, not navy */
+  --bg: 8 6 15; /* #08060F deep cosmic black, not navy */
+  --bg-2: 16 11 28;
   --fg: 245 243 255;
-  --fg-muted: 198 192 224;
-  --fg-subtle: 150 144 178;
+  --fg-muted: 200 194 226;
+  --fg-subtle: 152 146 182;
 
-  --glass-fill: rgba(255, 255, 255, 0.06);
-  --glass-fill-strong: rgba(255, 255, 255, 0.1);
-  --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-highlight: rgba(255, 255, 255, 0.22);
+  --glass-fill: rgba(255, 255, 255, 0.055);
+  --glass-fill-strong: rgba(255, 255, 255, 0.095);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --glass-highlight: rgba(255, 255, 255, 0.28);
   --glass-shadow:
-    0 1px 0 0 var(--glass-highlight) inset, 0 18px 40px -16px rgba(0, 0, 0, 0.65),
-    0 6px 16px -8px rgba(0, 0, 0, 0.5);
+    inset 0 1px 0 0 var(--glass-highlight),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 2px 6px -2px rgba(0, 0, 0, 0.5),
+    0 18px 42px -18px rgba(0, 0, 0, 0.72),
+    0 8px 20px -10px rgba(0, 0, 0, 0.55);
   --glass-shadow-lift:
-    0 1px 0 0 var(--glass-highlight) inset, 0 32px 60px -20px rgba(0, 0, 0, 0.7),
-    0 12px 28px -10px rgba(0, 0, 0, 0.55);
+    inset 0 1px 0 0 var(--glass-highlight),
+    0 2px 6px -2px rgba(0, 0, 0, 0.5),
+    0 36px 72px -22px rgba(0, 0, 0, 0.78),
+    0 16px 34px -12px rgba(0, 0, 0, 0.6);
   --hairline: rgba(255, 255, 255, 0.1);
-  --field-bg: rgba(255, 255, 255, 0.05);
+  --field-bg: rgba(255, 255, 255, 0.045);
 
-  /* Aurora background blob tints (violet / cyan / magenta). */
-  --blob-1: rgba(124, 58, 237, 0.5);
-  --blob-2: rgba(6, 182, 212, 0.42);
-  --blob-3: rgba(236, 72, 153, 0.4);
-  --blob-opacity: 0.55;
+  --neb-1: rgba(124, 58, 237, 0.55);
+  --neb-2: rgba(6, 182, 212, 0.42);
+  --neb-3: rgba(236, 72, 153, 0.4);
+  --neb-4: rgba(79, 70, 229, 0.4);
+  --neb-opacity: 0.85;
+  --ribbon-1: linear-gradient(90deg, rgba(124, 58, 237, 0), rgba(124, 58, 237, 0.55), rgba(6, 182, 212, 0.5), rgba(124, 58, 237, 0));
+  --ribbon-2: linear-gradient(90deg, rgba(236, 72, 153, 0), rgba(236, 72, 153, 0.45), rgba(99, 102, 241, 0.45), rgba(236, 72, 153, 0));
+  --star-color: rgba(255, 255, 255, 0.95);
+  --star-color-2: rgba(186, 230, 253, 0.9);
+  --star-opacity: 0.9;
+  --grain-opacity: 0.1;
+  --grain-blend: overlay;
 
-  /* Default app accent = Aurora (violet → cyan). Overridable per element. */
+  --btn-cast: rgba(0, 0, 0, 0.55);
+
   --accent-from: #7c3aed;
   --accent-to: #06b6d4;
-  --accent-glow: rgba(124, 58, 237, 0.45);
+  --accent-glow: rgba(124, 58, 237, 0.5);
   --accent-fg: #ffffff;
+
+  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .light {
   color-scheme: light;
 
-  --bg: 250 247 255; /* #FAF7FF warm off-white */
-  --fg: 26 20 48; /* deep plum, not navy */
-  --fg-muted: 86 74 122;
-  --fg-subtle: 130 120 160;
+  --bg: 247 244 255; /* #F7F4FF warm dawn off-white */
+  --bg-2: 255 255 255;
+  --fg: 26 18 48;
+  --fg-muted: 88 74 124;
+  --fg-subtle: 128 116 158;
 
-  --glass-fill: rgba(255, 255, 255, 0.55);
-  --glass-fill-strong: rgba(255, 255, 255, 0.72);
-  --glass-border: rgba(255, 255, 255, 0.7);
-  --glass-highlight: rgba(255, 255, 255, 0.9);
+  --glass-fill: rgba(255, 255, 255, 0.58);
+  --glass-fill-strong: rgba(255, 255, 255, 0.76);
+  --glass-border: rgba(255, 255, 255, 0.85);
+  --glass-highlight: rgba(255, 255, 255, 0.95);
   --glass-shadow:
-    0 1px 0 0 var(--glass-highlight) inset, 0 20px 44px -20px rgba(80, 40, 120, 0.28),
-    0 6px 16px -10px rgba(80, 40, 120, 0.18);
+    inset 0 1px 0 0 var(--glass-highlight),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35),
+    0 2px 6px -2px rgba(86, 50, 140, 0.14),
+    0 22px 48px -22px rgba(86, 50, 140, 0.3),
+    0 10px 24px -14px rgba(86, 50, 140, 0.22);
   --glass-shadow-lift:
-    0 1px 0 0 var(--glass-highlight) inset, 0 34px 64px -24px rgba(80, 40, 120, 0.34),
-    0 12px 28px -12px rgba(80, 40, 120, 0.22);
-  --hairline: rgba(40, 20, 70, 0.08);
-  --field-bg: rgba(255, 255, 255, 0.6);
+    inset 0 1px 0 0 var(--glass-highlight),
+    0 2px 6px -2px rgba(86, 50, 140, 0.14),
+    0 38px 70px -24px rgba(86, 50, 140, 0.36),
+    0 18px 36px -16px rgba(86, 50, 140, 0.26);
+  --hairline: rgba(60, 30, 100, 0.1);
+  --field-bg: rgba(255, 255, 255, 0.7);
 
-  /* Pastel aurora blobs (soft violet / peach / mint) at low opacity. */
-  --blob-1: rgba(167, 139, 250, 0.5);
-  --blob-2: rgba(253, 186, 140, 0.45);
-  --blob-3: rgba(110, 231, 183, 0.45);
-  --blob-opacity: 0.7;
+  --neb-1: rgba(167, 139, 250, 0.5);
+  --neb-2: rgba(125, 211, 252, 0.42);
+  --neb-3: rgba(251, 207, 232, 0.55);
+  --neb-4: rgba(167, 243, 208, 0.42);
+  --neb-opacity: 0.9;
+  --ribbon-1: linear-gradient(90deg, rgba(167, 139, 250, 0), rgba(167, 139, 250, 0.5), rgba(125, 211, 252, 0.5), rgba(167, 139, 250, 0));
+  --ribbon-2: linear-gradient(90deg, rgba(251, 207, 232, 0), rgba(251, 191, 159, 0.5), rgba(196, 181, 253, 0.5), rgba(251, 207, 232, 0));
+  --star-color: rgba(124, 58, 237, 0.5);
+  --star-color-2: rgba(244, 114, 182, 0.45);
+  --star-opacity: 0.55;
+  --grain-opacity: 0.05;
+  --grain-blend: multiply;
 
-  --accent-glow: rgba(124, 58, 237, 0.3);
+  --btn-cast: rgba(86, 50, 140, 0.28);
+
+  --accent-glow: rgba(124, 58, 237, 0.34);
 }
 
 @layer base {
@@ -90,7 +127,6 @@
     background-color: rgb(var(--bg));
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    /* Cross-fade the theme switch when View Transitions are unavailable. */
     transition:
       background-color 0.5s ease,
       color 0.5s ease;
@@ -103,88 +139,123 @@
     font-family: 'Space Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
   }
 
-  /* Accessible, on-brand focus ring. */
   :focus-visible {
     outline: 2px solid transparent;
     outline-offset: 2px;
     box-shadow:
       0 0 0 2px rgb(var(--bg)),
       0 0 0 4px var(--accent-from);
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--accent-from) 36%, transparent);
+    color: rgb(var(--fg));
   }
 }
 
 @layer components {
-  /* Frosted glass surface (plan.md §4.2). */
   .glass {
     background: var(--glass-fill);
-    backdrop-filter: blur(18px) saturate(1.4);
-    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    backdrop-filter: blur(20px) saturate(1.5);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5);
     border: 1px solid var(--glass-border);
     box-shadow: var(--glass-shadow);
   }
 
   .glass-strong {
     background: var(--glass-fill-strong);
-    backdrop-filter: blur(24px) saturate(1.5);
-    -webkit-backdrop-filter: blur(24px) saturate(1.5);
+    backdrop-filter: blur(28px) saturate(1.6);
+    -webkit-backdrop-filter: blur(28px) saturate(1.6);
     border: 1px solid var(--glass-border);
     box-shadow: var(--glass-shadow);
   }
 
-  /* Flowing accent gradient as text (plan.md §4.4). */
+  .glass-edge {
+    position: relative;
+  }
+  .glass-edge::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      160deg,
+      rgba(255, 255, 255, 0.5),
+      rgba(255, 255, 255, 0) 32%,
+      rgba(255, 255, 255, 0) 70%,
+      color-mix(in srgb, var(--accent-from) 40%, transparent)
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0.7;
+  }
+
+  .card-glow {
+    box-shadow: var(--glass-shadow), 0 30px 60px -28px var(--accent-glow);
+  }
+
   .gradient-text {
     background-image: linear-gradient(
       110deg,
       var(--accent-from),
       var(--accent-to),
+      color-mix(in srgb, var(--accent-from) 60%, #ffffff),
       var(--accent-from)
     );
-    background-size: 220% auto;
+    background-size: 280% auto;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    animation: gradient-flow 6s ease-in-out infinite;
+    animation: gradient-flow 7s ease-in-out infinite;
   }
 
-  /* Layered, tactile button elevation (plan.md §4.4). Hover intensifies the
-     glow + shadow; :active collapses it for a real "press". Translate/scale are
-     applied via Tailwind utilities on the button. */
   .btn-3d {
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.5),
-      inset 0 -2px 6px rgba(0, 0, 0, 0.18),
-      0 10px 22px -8px var(--accent-glow),
-      0 5px 12px -6px rgba(0, 0, 0, 0.45);
+      inset 0 1px 0 rgba(255, 255, 255, 0.6),
+      inset 0 -2px 6px rgba(0, 0, 0, 0.22),
+      0 4px 0 0 color-mix(in srgb, var(--accent-from) 58%, #04020a),
+      0 11px 22px -6px var(--accent-glow),
+      0 16px 30px -12px var(--btn-cast);
   }
   .btn-3d:hover {
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.55),
-      inset 0 -2px 6px rgba(0, 0, 0, 0.18),
-      0 18px 34px -10px var(--accent-glow),
-      0 8px 18px -8px rgba(0, 0, 0, 0.5);
+      inset 0 1px 0 rgba(255, 255, 255, 0.65),
+      inset 0 -2px 6px rgba(0, 0, 0, 0.22),
+      0 6px 0 0 color-mix(in srgb, var(--accent-from) 58%, #04020a),
+      0 20px 38px -8px var(--accent-glow),
+      0 24px 40px -14px var(--btn-cast);
   }
   .btn-3d:active {
     box-shadow:
-      inset 0 2px 5px rgba(0, 0, 0, 0.3),
-      0 4px 10px -6px var(--accent-glow);
+      inset 0 2px 6px rgba(0, 0, 0, 0.38),
+      0 1px 0 0 color-mix(in srgb, var(--accent-from) 58%, #04020a),
+      0 5px 12px -6px var(--accent-glow);
   }
 
   .btn-3d-soft {
     box-shadow:
       inset 0 1px 0 var(--glass-highlight),
-      0 8px 18px -10px rgba(0, 0, 0, 0.4);
+      0 3px 0 0 color-mix(in srgb, rgb(var(--fg)) 12%, transparent),
+      0 12px 24px -12px var(--btn-cast);
   }
   .btn-3d-soft:hover {
     box-shadow:
       inset 0 1px 0 var(--glass-highlight),
-      0 16px 30px -12px var(--accent-glow);
+      0 5px 0 0 color-mix(in srgb, rgb(var(--fg)) 12%, transparent),
+      0 20px 34px -12px var(--accent-glow);
   }
   .btn-3d-soft:active {
-    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.18);
+    box-shadow:
+      inset 0 2px 6px rgba(0, 0, 0, 0.2),
+      0 1px 0 0 color-mix(in srgb, rgb(var(--fg)) 12%, transparent);
   }
 
-  /* Rotating conic gradient border for key surfaces (plan.md §4.4). */
   .gradient-border {
     position: relative;
     isolation: isolate;
@@ -200,12 +271,10 @@
       from var(--angle, 0deg),
       var(--accent-from),
       var(--accent-to),
+      color-mix(in srgb, var(--accent-from) 50%, #ffffff),
       var(--accent-from)
     );
     -webkit-mask:
-      linear-gradient(#000 0 0) content-box,
-      linear-gradient(#000 0 0);
-    mask:
       linear-gradient(#000 0 0) content-box,
       linear-gradient(#000 0 0);
     -webkit-mask-composite: xor;
@@ -214,94 +283,95 @@
   }
 }
 
-/* @property enables the conic gradient angle to animate smoothly. */
 @property --angle {
   syntax: '<angle>';
   initial-value: 0deg;
   inherits: false;
 }
 
-/* Aurora background blobs (plan.md §4.3) — drift continuously; JS adds pointer
-   parallax on top. Kept in CSS so the component JSX stays clean. */
-.aurora-field {
+.cosmos {
   position: fixed;
   inset: 0;
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 78% -10%, color-mix(in srgb, var(--neb-1) 70%, transparent), transparent 60%),
+    radial-gradient(120% 80% at 0% 110%, color-mix(in srgb, var(--neb-2) 60%, transparent), transparent 55%);
 }
-.aurora-blob {
+
+.neb {
   position: absolute;
   border-radius: 9999px;
-  filter: blur(72px);
-  opacity: var(--blob-opacity);
+  filter: blur(80px);
+  opacity: var(--neb-opacity);
   will-change: transform;
 }
-/* Subtle film grain for premium texture (plan.md §4.4 micro-details). */
-.aurora-grain {
+.neb--1 { width: 52vmax; height: 52vmax; top: -16vmax; left: -10vmax; background: var(--neb-1); animation: neb-drift-1 30s ease-in-out infinite alternate; }
+.neb--2 { width: 44vmax; height: 44vmax; bottom: -18vmax; right: -12vmax; background: var(--neb-2); animation: neb-drift-2 36s ease-in-out infinite alternate; }
+.neb--3 { width: 38vmax; height: 38vmax; top: 26%; left: 34%; background: var(--neb-3); animation: neb-drift-3 42s ease-in-out infinite alternate; }
+.neb--4 { width: 34vmax; height: 34vmax; top: 8%; right: 18%; background: var(--neb-4); animation: neb-drift-1 48s ease-in-out infinite alternate-reverse; }
+
+.ribbon {
+  position: absolute;
+  left: -30%;
+  width: 160%;
+  height: 26vmax;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: 0.7;
+  will-change: transform;
+}
+.ribbon--1 { top: 14%; background: var(--ribbon-1); transform: rotate(-14deg); animation: ribbon-sweep-1 28s ease-in-out infinite alternate; }
+.ribbon--2 { top: 52%; background: var(--ribbon-2); transform: rotate(8deg); animation: ribbon-sweep-2 34s ease-in-out infinite alternate; }
+
+.stars {
+  position: absolute;
+  inset: -20%;
+  opacity: var(--star-opacity);
+  background-image:
+    radial-gradient(1.6px 1.6px at 20px 30px, var(--star-color), transparent),
+    radial-gradient(1.4px 1.4px at 140px 80px, var(--star-color-2), transparent),
+    radial-gradient(1.2px 1.2px at 240px 50px, var(--star-color), transparent),
+    radial-gradient(1.5px 1.5px at 90px 160px, var(--star-color-2), transparent),
+    radial-gradient(1.1px 1.1px at 300px 140px, var(--star-color), transparent),
+    radial-gradient(1.3px 1.3px at 360px 220px, var(--star-color), transparent),
+    radial-gradient(1.2px 1.2px at 180px 260px, var(--star-color-2), transparent);
+  background-repeat: repeat;
+  background-size: 420px 320px;
+  animation: twinkle 5s ease-in-out infinite;
+}
+.stars--far {
+  background-size: 280px 240px;
+  opacity: calc(var(--star-opacity) * 0.6);
+  animation-duration: 8s;
+  animation-delay: -2s;
+}
+
+.aurora-grain,
+.grain {
   position: absolute;
   inset: 0;
-  opacity: 0.4;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
-}
-.aurora-blob--1 {
-  width: 46vmax;
-  height: 46vmax;
-  top: -14vmax;
-  left: -8vmax;
-  background: var(--blob-1);
-  animation: aurora-drift-1 26s ease-in-out infinite alternate;
-}
-.aurora-blob--2 {
-  width: 40vmax;
-  height: 40vmax;
-  bottom: -16vmax;
-  right: -10vmax;
-  background: var(--blob-2);
-  animation: aurora-drift-2 32s ease-in-out infinite alternate;
-}
-.aurora-blob--3 {
-  width: 34vmax;
-  height: 34vmax;
-  top: 28%;
-  left: 36%;
-  background: var(--blob-3);
-  animation: aurora-drift-3 38s ease-in-out infinite alternate;
+  opacity: var(--grain-opacity);
+  mix-blend-mode: var(--grain-blend);
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
 }
 
-@keyframes aurora-drift-1 {
-  from {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  to {
-    transform: translate3d(8vmax, 6vmax, 0) scale(1.12);
-  }
-}
-@keyframes aurora-drift-2 {
-  from {
-    transform: translate3d(0, 0, 0) scale(1.05);
-  }
-  to {
-    transform: translate3d(-10vmax, -5vmax, 0) scale(0.92);
-  }
-}
-@keyframes aurora-drift-3 {
-  from {
-    transform: translate3d(0, 0, 0) scale(0.95);
-  }
-  to {
-    transform: translate3d(-6vmax, 8vmax, 0) scale(1.1);
-  }
-}
+@keyframes neb-drift-1 { from { transform: translate3d(0, 0, 0) scale(1); } to { transform: translate3d(9vmax, 7vmax, 0) scale(1.14); } }
+@keyframes neb-drift-2 { from { transform: translate3d(0, 0, 0) scale(1.06); } to { transform: translate3d(-11vmax, -6vmax, 0) scale(0.9); } }
+@keyframes neb-drift-3 { from { transform: translate3d(0, 0, 0) scale(0.94); } to { transform: translate3d(-7vmax, 9vmax, 0) scale(1.12); } }
+@keyframes ribbon-sweep-1 { from { transform: rotate(-14deg) translateX(-6%); } to { transform: rotate(-10deg) translateX(8%); } }
+@keyframes ribbon-sweep-2 { from { transform: rotate(8deg) translateX(7%); } to { transform: rotate(5deg) translateX(-7%); } }
+@keyframes twinkle { 0%, 100% { opacity: var(--star-opacity); } 50% { opacity: calc(var(--star-opacity) * 0.5); } }
+@keyframes float-y { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
 
-/* View Transitions cross-fade for theme toggle (Chromium). */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation-duration: 0.5s;
 }
 
-/* Honor prefers-reduced-motion: calm all heavy motion (plan.md §4.4). */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -311,7 +381,9 @@
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
-  .aurora-blob {
+  .neb,
+  .ribbon,
+  .stars {
     animation: none !important;
   }
 }

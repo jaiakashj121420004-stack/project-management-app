@@ -22,11 +22,11 @@ export function SidebarNav({
           className={({ isActive }) =>
             cn(
               'group relative flex items-center gap-3 rounded-2xl px-3.5 py-2.5',
-              'text-sm font-medium transition-colors duration-200',
+              'text-sm font-medium transition-all duration-200',
               collapsed && 'justify-center px-0',
               isActive
                 ? 'text-white'
-                : 'text-fg-muted hover:bg-[var(--glass-fill)] hover:text-fg',
+                : 'text-fg-muted hover:translate-x-0.5 hover:bg-[var(--glass-fill)] hover:text-fg',
             )
           }
         >
@@ -35,11 +35,11 @@ export function SidebarNav({
               {isActive && (
                 <span
                   aria-hidden
-                  className="absolute inset-0 -z-10 rounded-2xl bg-[length:220%_auto] bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to),var(--accent-from))] shadow-[0_10px_24px_-12px_var(--accent-glow)] motion-safe:animate-gradient-flow"
+                  className="absolute inset-0 -z-10 rounded-2xl bg-[length:220%_auto] bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to),var(--accent-from))] shadow-[0_10px_26px_-8px_var(--accent-glow)] ring-1 ring-white/20 motion-safe:animate-gradient-flow"
                 />
               )}
-              <Icon size={19} strokeWidth={2.1} className="shrink-0" />
-              {!collapsed && <span>{label}</span>}
+              <Icon size={19} strokeWidth={2.1} className="relative shrink-0" />
+              {!collapsed && <span className="relative">{label}</span>}
             </>
           )}
         </NavLink>

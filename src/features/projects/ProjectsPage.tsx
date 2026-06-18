@@ -1,24 +1,27 @@
 import { useState } from 'react';
-import { FolderPlus, Plus } from 'lucide-react';
+import { FolderPlus, Plus, Sparkles } from 'lucide-react';
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import { GradientButton } from '@/components/buttons/GradientButton';
 import { Skeleton } from '@/components/feedback/Skeleton';
 import { Reveal } from '@/components/motion/Reveal';
+import { cn } from '@/lib/cn';
 import { useAuth } from '@/hooks/useAuth';
 import type { Project } from '@/types/database';
 import { ProjectCard } from './ProjectCard';
 import { ProjectFormModal } from './ProjectFormModal';
 import { DeleteProjectDialog } from './DeleteProjectDialog';
-import {
-  useCreateProject,
-  useDeleteProject,
-  useProjects,
-  useUpdateProject,
-} from './useProjects';
+import { useCreateProject, useDeleteProject, useProjects, useUpdateProject } from './useProjects';
 import type { ProjectFormInput } from './schemas';
 
-/** The Projects dashboard (plan.md §5, Phase 3): the user's workspaces as vivid
- *  Aurora glass cards, with create / edit / delete. */
+/** Bento-grid span for a project tile: the first is a hero, with periodic wides. */
+function spanFor(index: number): string {
+  if (index === 0) return 'sm:col-span-2 sm:row-span-2';
+  if (index % 7 === 4) return 'lg:col-span-2';
+  return '';
+}
+
+/** The Projects dashboard (plan.md §5): the user's workspaces as a constellation
+ *  of floating Aurora glass cards, with create / edit / delete. */
 export function ProjectsPage() {
   const { user } = useAuth();
   const { data: projects, isLoading, isError } = useProjects();
@@ -29,7 +32,6 @@ export function ProjectsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Project | null>(null);
   const [deleting, setDeleting] = useState<Project | null>(null);
-  // Bumped on every open so the form modal remounts and re-seeds from `initial`.
   const [formKey, setFormKey] = useState(0);
 
   function openCreate() {
@@ -60,20 +62,32 @@ export function ProjectsPage() {
   }
 
   const hasProjects = Boolean(projects && projects.length > 0);
+  const count = projects?.length ?? 0;
 
   return (
     <div className="flex flex-col gap-8">
       <Reveal>
         <header className="flex flex-wrap items-end justify-between gap-4 pt-2">
           <div>
-            <p className="text-sm font-medium text-fg-muted">Your workspaces</p>
-            <h1 className="gradient-text mt-1 font-display text-headline font-bold">Projects</h1>
-            <p className="mt-2 max-w-prose text-fg-muted">
+            <span className="inline-flex items-center gap-1.5 rounded-full border bg-[var(--glass-fill)] px-3 py-1 text-xs font-medium text-fg-muted backdrop-blur-sm">
+              <Sparkles size={13} className="text-[var(--accent-from)]" />
+              Your workspaces
+            </span>
+            <h1 className="gradient-text mt-3 font-display text-display font-bold leading-none">
+              Projects
+            </h1>
+            <p className="mt-3 max-w-prose text-fg-muted">
               Every idea gets its own colorful space. Create a project, pick an accent, and start
               planning.
+              {count > 0 && (
+                <span className="text-fg-subtle">
+                  {' '}
+                  · {count} {count === 1 ? 'workspace' : 'workspaces'}
+                </span>
+              )}
             </p>
           </div>
-          <GradientButton leftIcon={<Plus size={18} />} onClick={openCreate}>
+          <GradientButton size="lg" leftIcon={<Plus size={18} />} onClick={openCreate}>
             New project
           </GradientButton>
         </header>
@@ -86,12 +100,13 @@ export function ProjectsPage() {
           Couldn&apos;t load your projects. Check your connection and try again.
         </GlassPanel>
       ) : hasProjects ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:auto-rows-[212px] sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
           {projects!.map((project, index) => (
-            <Reveal key={project.id} delay={index * 0.05}>
+            <Reveal key={project.id} delay={index * 0.05} className={cn(spanFor(index), 'h-full')}>
               <ProjectCard
                 project={project}
                 isOwner={project.owner_id === user?.id}
+                featured={index === 0}
                 onEdit={() => openEdit(project)}
                 onDelete={() => setDeleting(project)}
               />
@@ -129,9 +144,9 @@ export function ProjectsPage() {
 
 function LoadingGrid() {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      {Array.from({ length: 6 }).map((_, index) => (
-        <Skeleton key={index} className="h-44 rounded-3xl" />
+    <div className="grid grid-cols-1 gap-4 sm:auto-rows-[212px] sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
+      {Array.from({ length: 7 }).map((_, index) => (
+        <Skeleton key={index} className={cn('h-full min-h-44 rounded-3xl', index === 0 && 'sm:col-span-2 sm:row-span-2')} />
       ))}
     </div>
   );
@@ -143,19 +158,20 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
       <GlassPanel
         strong
         glow
+        gradientBorder
         className="mx-auto mt-4 flex max-w-xl flex-col items-center gap-4 p-10 text-center"
       >
         <span
-          className="grid h-14 w-14 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-white shadow-[0_12px_26px_-12px_var(--accent-glow)]"
+          className="grid h-16 w-16 place-items-center rounded-3xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-white shadow-[0_16px_32px_-12px_var(--accent-glow)] ring-1 ring-white/20 motion-safe:animate-float"
           aria-hidden
         >
-          <FolderPlus size={26} />
+          <FolderPlus size={28} />
         </span>
         <h2 className="font-display text-title font-semibold text-fg">No projects yet</h2>
         <p className="text-fg-muted">
           Create your first workspace to start building boards, lists, and notes.
         </p>
-        <GradientButton leftIcon={<Plus size={18} />} onClick={onCreate}>
+        <GradientButton size="lg" leftIcon={<Plus size={18} />} onClick={onCreate}>
           New project
         </GradientButton>
       </GlassPanel>

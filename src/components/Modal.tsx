@@ -48,7 +48,7 @@ export function Modal({
       {open && (
         <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
           <motion.div
-            className="absolute inset-0 bg-black/45 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/60 backdrop-blur-md"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -64,7 +64,7 @@ export function Modal({
             exit="exit"
             style={accent ? accentVars(accent) : undefined}
             className={cn(
-              'glass-strong relative z-10 w-full max-w-lg rounded-4xl p-6 sm:p-7',
+              'glass-strong glass-edge relative z-10 w-full max-w-lg rounded-4xl p-6 sm:p-7',
               className,
             )}
           >

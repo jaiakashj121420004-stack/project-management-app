@@ -2,23 +2,27 @@ import { useEffect } from 'react';
 import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'framer-motion';
 
 /**
- * The living aurora backdrop (plan.md §4.3): softly blurred gradient blobs that
- * drift continuously (CSS keyframes) and parallax toward the pointer in two
- * depth layers. All pointer motion is disabled under prefers-reduced-motion.
+ * The living cosmic backdrop (plan.md §4.3, "Cosmic Bento"): drifting nebula
+ * clouds, sweeping aurora ribbons, a twinkling starfield, and fine film grain.
+ * Three depth planes parallax toward the pointer by different amounts so the
+ * sky feels three-dimensional. All pointer motion is disabled under
+ * prefers-reduced-motion; the slow CSS drifts calm themselves via the global
+ * reduced-motion rule. Works in both the deep-space dark and dawn light themes.
  */
 export function AuroraBackground() {
   const reducedMotion = useReducedMotion();
 
   const pointerX = useMotionValue(0);
   const pointerY = useMotionValue(0);
-  const smoothX = useSpring(pointerX, { stiffness: 60, damping: 20, mass: 0.6 });
-  const smoothY = useSpring(pointerY, { stiffness: 60, damping: 20, mass: 0.6 });
+  const smoothX = useSpring(pointerX, { stiffness: 50, damping: 22, mass: 0.7 });
+  const smoothY = useSpring(pointerY, { stiffness: 50, damping: 22, mass: 0.7 });
 
-  // Two layers move by different amounts → parallax depth.
-  const nearX = useTransform(smoothX, [-0.5, 0.5], [-30, 30]);
-  const nearY = useTransform(smoothY, [-0.5, 0.5], [-30, 30]);
-  const farX = useTransform(smoothX, [-0.5, 0.5], [16, -16]);
-  const farY = useTransform(smoothY, [-0.5, 0.5], [16, -16]);
+  const farX = useTransform(smoothX, [-0.5, 0.5], [10, -10]);
+  const farY = useTransform(smoothY, [-0.5, 0.5], [10, -10]);
+  const midX = useTransform(smoothX, [-0.5, 0.5], [-22, 22]);
+  const midY = useTransform(smoothY, [-0.5, 0.5], [-22, 22]);
+  const nearX = useTransform(smoothX, [-0.5, 0.5], [-40, 40]);
+  const nearY = useTransform(smoothY, [-0.5, 0.5], [-40, 40]);
 
   useEffect(() => {
     if (reducedMotion) return;
@@ -30,16 +34,28 @@ export function AuroraBackground() {
     return () => window.removeEventListener('pointermove', onPointerMove);
   }, [pointerX, pointerY, reducedMotion]);
 
+  const layer = (x: typeof farX, y: typeof farY) => (reducedMotion ? undefined : { x, y });
+
   return (
-    <div className="aurora-field" aria-hidden>
-      <motion.div className="absolute inset-0" style={reducedMotion ? undefined : { x: nearX, y: nearY }}>
-        <div className="aurora-blob aurora-blob--1" />
-        <div className="aurora-blob aurora-blob--3" />
+    <div className="cosmos" aria-hidden>
+      <motion.div className="absolute inset-0" style={layer(farX, farY)}>
+        <div className="stars stars--far" />
+        <div className="neb neb--4" />
       </motion.div>
-      <motion.div className="absolute inset-0" style={reducedMotion ? undefined : { x: farX, y: farY }}>
-        <div className="aurora-blob aurora-blob--2" />
+
+      <motion.div className="absolute inset-0" style={layer(midX, midY)}>
+        <div className="ribbon ribbon--1" />
+        <div className="ribbon ribbon--2" />
+        <div className="neb neb--2" />
+        <div className="neb neb--3" />
       </motion.div>
-      <div className="aurora-grain" />
+
+      <motion.div className="absolute inset-0" style={layer(nearX, nearY)}>
+        <div className="neb neb--1" />
+        <div className="stars" />
+      </motion.div>
+
+      <div className="grain" />
     </div>
   );
 }

@@ -46,7 +46,7 @@ export function BoardColumn({
     >
       <GlassPanel
         strong
-        className={cn('flex max-h-full flex-col gap-3 p-3 transition-opacity', isDragging && 'opacity-40')}
+        className={cn('glass-edge flex max-h-full flex-col gap-3 p-3 transition-opacity', isDragging && 'opacity-40')}
       >
         <header className="flex items-center gap-1.5">
           <button
