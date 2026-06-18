@@ -1,16 +1,16 @@
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, KanbanSquare } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import { Badge } from '@/components/Badge';
 import { Spinner } from '@/components/feedback/Spinner';
 import { Reveal } from '@/components/motion/Reveal';
 import { useAuth } from '@/hooks/useAuth';
 import { accentVars } from '@/lib/accents';
+import { Board } from '@/features/board';
 import { useProject } from './useProjects';
 
-/** A single project. The Kanban board lands here in Phase 4 — for now an
- *  accent-themed header plus a placeholder. RLS guarantees that a project the
- *  user can't access simply isn't returned. */
+/** A single project: an accent-themed header above its Kanban board (Phase 4).
+ *  RLS guarantees that a project the user can't access simply isn't returned. */
 export function ProjectPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const { user } = useAuth();
@@ -63,25 +63,7 @@ export function ProjectPage() {
         </header>
       </Reveal>
 
-      <Reveal delay={0.05}>
-        <GlassPanel
-          strong
-          glow
-          className="flex flex-col items-center gap-4 p-12 text-center"
-        >
-          <span
-            className="grid h-14 w-14 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-white shadow-[0_12px_26px_-12px_var(--accent-glow)]"
-            aria-hidden
-          >
-            <KanbanSquare size={26} />
-          </span>
-          <h2 className="font-display text-title font-semibold text-fg">Board coming soon</h2>
-          <p className="max-w-prose text-fg-muted">
-            The Kanban board — columns, cards, and drag-and-drop — arrives in Phase 4. This
-            workspace is ready and waiting for it.
-          </p>
-        </GlassPanel>
-      </Reveal>
+      <Board projectId={project.id} accent={project.accent} />
     </div>
   );
 }

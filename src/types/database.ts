@@ -86,6 +86,68 @@ export interface Database {
         };
         Relationships: [];
       };
+      columns: {
+        Row: {
+          id: string;
+          project_id: string;
+          name: string;
+          // Fractional rank; ordered ascending. See features/board/ordering.ts.
+          position: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          name: string;
+          position: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          name?: string;
+          position?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      cards: {
+        Row: {
+          id: string;
+          project_id: string;
+          column_id: string;
+          title: string;
+          description: string | null;
+          // ISO date (YYYY-MM-DD); checklists/labels/assignment land in Phase 5.
+          due_date: string | null;
+          assignee_id: string | null;
+          position: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          column_id: string;
+          title: string;
+          description?: string | null;
+          due_date?: string | null;
+          assignee_id?: string | null;
+          position: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          column_id?: string;
+          title?: string;
+          description?: string | null;
+          due_date?: string | null;
+          assignee_id?: string | null;
+          position?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -107,3 +169,5 @@ export interface Database {
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type Project = Database['public']['Tables']['projects']['Row'];
 export type ProjectMember = Database['public']['Tables']['project_members']['Row'];
+export type Column = Database['public']['Tables']['columns']['Row'];
+export type Card = Database['public']['Tables']['cards']['Row'];
