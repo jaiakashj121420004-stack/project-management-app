@@ -6,6 +6,7 @@ export { GlassPanel } from './glass/GlassPanel';
 export { GlassCard } from './glass/GlassCard';
 export { GradientButton } from './buttons/GradientButton';
 export { Field } from './forms/Field';
+export { TextArea } from './forms/TextArea';
 export { Spinner } from './feedback/Spinner';
 export { Skeleton } from './feedback/Skeleton';
 export { Reveal } from './motion/Reveal';
