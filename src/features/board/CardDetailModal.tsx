@@ -9,6 +9,7 @@ import type { Card } from '@/types/database';
 import { cardDetailSchema, fieldErrorsOf } from './schemas';
 import { useCardExtras } from './useCardExtras';
 import { DueDateField } from './DueDateField';
+import { PriorityField } from './PriorityField';
 import { CardLabelsSection } from './CardLabelsSection';
 import { Checklist } from './Checklist';
 
@@ -16,6 +17,7 @@ export interface CardDetailValues {
   title: string;
   description: string | null;
   due_date: string | null;
+  priority: number | null;
 }
 
 interface CardDetailModalProps {
@@ -86,6 +88,7 @@ function CardDetailForm({
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description ?? '');
   const [dueDate, setDueDate] = useState<string | null>(card.due_date);
+  const [priority, setPriority] = useState<number | null>(card.priority);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -121,6 +124,7 @@ function CardDetailForm({
         title: parsed.data.title,
         description: parsed.data.description.trim() || null,
         due_date: dueDate,
+        priority,
       });
       onClose();
     } catch {
@@ -175,6 +179,8 @@ function CardDetailForm({
       </div>
 
       <DueDateField value={dueDate} onChange={setDueDate} />
+
+      <PriorityField value={priority} onChange={setPriority} />
 
       <CardLabelsSection
         projectId={projectId}

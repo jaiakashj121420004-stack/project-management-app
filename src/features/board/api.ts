@@ -100,11 +100,21 @@ export async function insertCard(input: {
 
 export async function updateCardDetail(
   id: string,
-  patch: { title: string; description: string | null; due_date: string | null },
+  patch: {
+    title: string;
+    description: string | null;
+    due_date: string | null;
+    priority: number | null;
+  },
 ): Promise<Card> {
   const { data, error } = await supabase
     .from('cards')
-    .update({ title: patch.title, description: patch.description, due_date: patch.due_date })
+    .update({
+      title: patch.title,
+      description: patch.description,
+      due_date: patch.due_date,
+      priority: patch.priority,
+    })
     .eq('id', id)
     .select('*')
     .single();

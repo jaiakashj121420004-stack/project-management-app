@@ -164,6 +164,7 @@ export function useAddCard(projectId: string) {
           description: null,
           due_date: null,
           assignee_id: null,
+          priority: null,
           position,
           created_at: new Date().toISOString(),
         },
@@ -179,14 +180,21 @@ export function useAddCard(projectId: string) {
 export function useUpdateCard(projectId: string) {
   return useBoardMutation<
     Card,
-    { id: string; title: string; description: string | null; due_date: string | null }
+    {
+      id: string;
+      title: string;
+      description: string | null;
+      due_date: string | null;
+      priority: number | null;
+    }
   >(
     projectId,
-    ({ id, title, description, due_date }) => updateCardDetail(id, { title, description, due_date }),
-    (board, { id, title, description, due_date }) => ({
+    ({ id, title, description, due_date, priority }) =>
+      updateCardDetail(id, { title, description, due_date, priority }),
+    (board, { id, title, description, due_date, priority }) => ({
       ...board,
       cards: board.cards.map((card) =>
-        card.id === id ? { ...card, title: title.trim(), description, due_date } : card,
+        card.id === id ? { ...card, title: title.trim(), description, due_date, priority } : card,
       ),
     }),
   );

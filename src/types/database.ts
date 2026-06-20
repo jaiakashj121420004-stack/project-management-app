@@ -122,6 +122,8 @@ export interface Database {
           // ISO date (YYYY-MM-DD); checklists/labels/assignment land in Phase 5.
           due_date: string | null;
           assignee_id: string | null;
+          // Open-ended priority: 1 = P1 (highest), NULL = unset. See lib/priority.ts.
+          priority: number | null;
           position: number;
           created_at: string;
         };
@@ -133,6 +135,7 @@ export interface Database {
           description?: string | null;
           due_date?: string | null;
           assignee_id?: string | null;
+          priority?: number | null;
           position: number;
           created_at?: string;
         };
@@ -144,6 +147,7 @@ export interface Database {
           description?: string | null;
           due_date?: string | null;
           assignee_id?: string | null;
+          priority?: number | null;
           position?: number;
           created_at?: string;
         };
@@ -217,6 +221,62 @@ export interface Database {
         };
         Relationships: [];
       };
+      todo_lists: {
+        Row: {
+          id: string;
+          user_id: string;
+          // Calendar day this list belongs to (YYYY-MM-DD).
+          list_date: string;
+          name: string;
+          position: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          // Defaults to auth.uid() in the DB; clients omit it.
+          user_id?: string;
+          list_date: string;
+          name: string;
+          position: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          list_date?: string;
+          name?: string;
+          position?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      todo_items: {
+        Row: {
+          id: string;
+          list_id: string;
+          text: string;
+          is_done: boolean;
+          position: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          list_id: string;
+          text: string;
+          is_done?: boolean;
+          position: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          list_id?: string;
+          text?: string;
+          is_done?: boolean;
+          position?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -233,6 +293,10 @@ export interface Database {
         Args: { p_card_id: string };
         Returns: boolean;
       };
+      owns_todo_list: {
+        Args: { p_list_id: string };
+        Returns: boolean;
+      };
     };
     Enums: Record<string, never>;
   };
@@ -247,3 +311,5 @@ export type Card = Database['public']['Tables']['cards']['Row'];
 export type ChecklistItem = Database['public']['Tables']['checklist_items']['Row'];
 export type Label = Database['public']['Tables']['labels']['Row'];
 export type CardLabel = Database['public']['Tables']['card_labels']['Row'];
+export type TodoList = Database['public']['Tables']['todo_lists']['Row'];
+export type TodoItem = Database['public']['Tables']['todo_items']['Row'];

@@ -356,6 +356,7 @@ export function Board({ projectId, accent }: BoardProps) {
       title: values.title,
       description: values.description,
       due_date: values.due_date,
+      priority: values.priority,
     });
   }
 
@@ -445,6 +446,7 @@ export function Board({ projectId, accent }: BoardProps) {
                 title={activeCard.title}
                 description={activeCard.description}
                 dueDate={activeCard.due_date}
+                priority={activeCard.priority}
                 labels={activeFace?.labels}
                 checklist={activeFace?.checklist}
               />

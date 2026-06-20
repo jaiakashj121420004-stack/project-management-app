@@ -71,16 +71,23 @@ export function useUpdateCalendarCard() {
   return useMutation<
     Card,
     Error,
-    { id: string; projectId: string; title: string; description: string | null; due_date: string | null },
+    {
+      id: string;
+      projectId: string;
+      title: string;
+      description: string | null;
+      due_date: string | null;
+      priority: number | null;
+    },
     CardMutationContext
   >({
-    mutationFn: ({ id, title, description, due_date }) =>
-      updateCardDetail(id, { title, description, due_date }),
-    onMutate: async ({ id, projectId, title, description, due_date }) => {
+    mutationFn: ({ id, title, description, due_date, priority }) =>
+      updateCardDetail(id, { title, description, due_date, priority }),
+    onMutate: async ({ id, projectId, title, description, due_date, priority }) => {
       await queryClient.cancelQueries({ queryKey: calendarKey });
       const prevCalendar = queryClient.getQueryData<Card[]>(calendarKey);
       const prevBoard = queryClient.getQueryData<BoardData>(boardKey(projectId));
-      const patch = { title: title.trim(), description, due_date };
+      const patch = { title: title.trim(), description, due_date, priority };
       queryClient.setQueryData<Card[]>(calendarKey, (old) => patchCalendar(old, id, patch));
       queryClient.setQueryData<BoardData>(boardKey(projectId), (old) => patchBoard(old, id, patch));
       return { prevCalendar, prevBoard, projectId };

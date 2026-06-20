@@ -1,7 +1,8 @@
 import { forwardRef, type CSSProperties } from 'react';
-import { CalendarClock, CheckSquare } from 'lucide-react';
+import { CalendarClock, CheckSquare, Flag } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import type { Label } from '@/types/database';
+import { formatPriority, priorityPillClass } from '@/lib/priority';
 import { LabelPill } from './LabelPill';
 import { dueStatus, formatDueLabel } from './due';
 
@@ -15,6 +16,8 @@ interface CardSurfaceProps {
   description?: string | null;
   /** Due date (YYYY-MM-DD); shown as a pill colored by urgency when present. */
   dueDate?: string | null;
+  /** Task priority (1 = P1); shown as a tier-colored pill when present. */
+  priority?: number | null;
   /** Labels attached to this card; shown as small swatches above the title. */
   labels?: Label[];
   /** Checklist tally; shown as a "2/5" pill when the card has any items. */
@@ -42,11 +45,12 @@ const DUE_PILL: Record<ReturnType<typeof dueStatus>, string> = {
  * checklist progress.
  */
 export const CardSurface = forwardRef<HTMLDivElement, CardSurfaceProps>(function CardSurface(
-  { title, description, dueDate, labels, checklist, lifted = false, dimmed = false, className, style, onClick },
+  { title, description, dueDate, priority, labels, checklist, lifted = false, dimmed = false, className, style, onClick },
   ref,
 ) {
   const status = dueDate ? dueStatus(dueDate) : null;
   const hasChecklist = checklist && checklist.total > 0;
+  const hasPriority = priority != null;
 
   return (
     <div
@@ -83,8 +87,19 @@ export const CardSurface = forwardRef<HTMLDivElement, CardSurfaceProps>(function
         <p className="mt-1.5 line-clamp-2 text-sm text-fg-subtle">{description}</p>
       ) : null}
 
-      {(status || hasChecklist) && (
+      {(status || hasChecklist || hasPriority) && (
         <div className="mt-2.5 flex flex-wrap items-center gap-2">
+          {priority != null ? (
+            <span
+              className={cn(
+                'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold',
+                priorityPillClass(priority),
+              )}
+            >
+              <Flag size={11} aria-hidden />
+              {formatPriority(priority)}
+            </span>
+          ) : null}
           {status && dueDate ? (
             <span
               className={cn(
