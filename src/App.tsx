@@ -4,6 +4,7 @@ import { StyleGuide } from '@/pages/StyleGuide';
 import { Placeholder } from '@/pages/Placeholder';
 import { ProjectsPage, ProjectPage } from '@/features/projects';
 import { CalendarPage } from '@/features/calendar';
+import { TodosPage } from '@/features/todos';
 import {
   ForgotPasswordPage,
   LoginPage,
@@ -33,6 +34,7 @@ export default function App() {
           <Route index element={<ProjectsPage />} />
           <Route path="projects/:projectId" element={<ProjectPage />} />
           <Route path="calendar" element={<CalendarPage />} />
+          <Route path="todos" element={<TodosPage />} />
           <Route path="notes" element={<Placeholder title="Notes" phase="Phase 7" />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="style-guide" element={<StyleGuide />} />
