@@ -1,5 +1,7 @@
-import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, LayoutGrid, NotebookPen } from 'lucide-react';
+import { cn } from '@/lib/cn';
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import { Badge } from '@/components/Badge';
 import { Spinner } from '@/components/feedback/Spinner';
@@ -7,7 +9,10 @@ import { Reveal } from '@/components/motion/Reveal';
 import { useAuth } from '@/hooks/useAuth';
 import { accentVars } from '@/lib/accents';
 import { Board } from '@/features/board';
+import { NotesPanel } from '@/features/notes';
 import { useProject } from './useProjects';
+
+type ProjectTab = 'board' | 'notes';
 
 /** A single project: an accent-themed header above its Kanban board (Phase 4).
  *  RLS guarantees that a project the user can't access simply isn't returned. */
@@ -15,6 +20,19 @@ export function ProjectPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const { user } = useAuth();
   const { data: project, isLoading } = useProject(projectId);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab: ProjectTab = searchParams.get('tab') === 'notes' ? 'notes' : 'board';
+
+  function selectTab(next: ProjectTab) {
+    setSearchParams(
+      (params) => {
+        if (next === 'board') params.delete('tab');
+        else params.set('tab', next);
+        return params;
+      },
+      { replace: true },
+    );
+  }
 
   if (isLoading) {
     return (
@@ -60,10 +78,65 @@ export function ProjectPage() {
           {project.description && (
             <p className="mt-2 max-w-prose text-fg-muted">{project.description}</p>
           )}
+
+          <div
+            role="tablist"
+            aria-label="Project views"
+            className="mt-5 inline-flex items-center gap-1 rounded-2xl border border-[var(--glass-border)] p-1"
+          >
+            <TabButton
+              active={tab === 'board'}
+              onClick={() => selectTab('board')}
+              icon={<LayoutGrid size={15} />}
+            >
+              Board
+            </TabButton>
+            <TabButton
+              active={tab === 'notes'}
+              onClick={() => selectTab('notes')}
+              icon={<NotebookPen size={15} />}
+            >
+              Notes
+            </TabButton>
+          </div>
         </header>
       </Reveal>
 
-      <Board projectId={project.id} accent={project.accent} />
+      {tab === 'board' ? (
+        <Board projectId={project.id} accent={project.accent} />
+      ) : (
+        <NotesPanel projectId={project.id} />
+      )}
     </div>
+  );
+}
+
+function TabButton({
+  active,
+  onClick,
+  icon,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-sm font-semibold transition-colors',
+        active
+          ? 'bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-white shadow-[0_8px_18px_-10px_var(--accent-glow)]'
+          : 'text-fg-muted hover:text-fg',
+      )}
+    >
+      {icon}
+      {children}
+    </button>
   );
 }

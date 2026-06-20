@@ -277,6 +277,36 @@ export interface Database {
         };
         Relationships: [];
       };
+      notes: {
+        Row: {
+          id: string;
+          project_id: string;
+          title: string;
+          // Markdown body; rendered to a live preview client-side.
+          content: string;
+          // Stamped server-side by the notes_set_updated_at trigger on every edit.
+          updated_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          // Defaults to 'Untitled note' in the DB.
+          title?: string;
+          content?: string;
+          updated_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          title?: string;
+          content?: string;
+          updated_at?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -313,3 +343,4 @@ export type Label = Database['public']['Tables']['labels']['Row'];
 export type CardLabel = Database['public']['Tables']['card_labels']['Row'];
 export type TodoList = Database['public']['Tables']['todo_lists']['Row'];
 export type TodoItem = Database['public']['Tables']['todo_items']['Row'];
+export type Note = Database['public']['Tables']['notes']['Row'];
