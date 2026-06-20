@@ -23,7 +23,7 @@ const SIZES: Record<Size, string> = {
 const BASE =
   'relative inline-flex select-none items-center justify-center font-medium ' +
   'transition-[transform,box-shadow] duration-200 ease-spring ' +
-  'hover:-translate-y-0.5 active:translate-y-px active:scale-[0.98] ' +
+  'hover:-translate-y-1 active:translate-y-0.5 active:scale-[0.97] ' +
   'disabled:pointer-events-none disabled:opacity-55';
 
 /**
