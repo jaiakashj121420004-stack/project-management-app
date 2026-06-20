@@ -32,7 +32,7 @@ function snippet(content: string): string {
  * for the editor). All access is membership-gated by RLS — this component never
  * filters by user. New/rename/delete + autosave run through useNotes.
  */
-export function NotesPanel({ projectId }: { projectId: string }) {
+export function NotesPanel({ projectId, canEdit }: { projectId: string; canEdit: boolean }) {
   const { data, isLoading, isError } = useNotes(projectId);
   const addNote = useAddNote(projectId);
   const isDesktop = useMediaQuery('(min-width: 1024px)');
@@ -86,9 +86,11 @@ export function NotesPanel({ projectId }: { projectId: string }) {
             <NotebookPen size={15} /> Notes
             {notes.length > 0 && <span className="text-fg-subtle">· {notes.length}</span>}
           </h2>
-          <GradientButton size="sm" leftIcon={<Plus size={15} />} onClick={handleCreate}>
-            New
-          </GradientButton>
+          {canEdit && (
+            <GradientButton size="sm" leftIcon={<Plus size={15} />} onClick={handleCreate}>
+              New
+            </GradientButton>
+          )}
         </div>
 
         {notes.length === 0 ? (
@@ -96,7 +98,11 @@ export function NotesPanel({ projectId }: { projectId: string }) {
             <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-white">
               <FileText size={20} />
             </span>
-            <p className="text-sm text-fg-muted">No notes yet. Capture a spec, a doc, or a brain-dump.</p>
+            <p className="text-sm text-fg-muted">
+              {canEdit
+                ? 'No notes yet. Capture a spec, a doc, or a brain-dump.'
+                : 'No notes have been added to this project yet.'}
+            </p>
           </GlassPanel>
         ) : (
           <ul className="flex flex-col gap-2">
@@ -120,6 +126,7 @@ export function NotesPanel({ projectId }: { projectId: string }) {
               key={selected.id}
               projectId={projectId}
               note={selected}
+              canEdit={canEdit}
               onBack={() => setSelectedId(null)}
             />
           </GlassPanel>
@@ -130,11 +137,15 @@ export function NotesPanel({ projectId }: { projectId: string }) {
                 <NotebookPen size={26} />
               </span>
               <p className="max-w-xs text-fg-muted">
-                Select a note to edit, or create one to start documenting this project.
+                {canEdit
+                  ? 'Select a note to edit, or create one to start documenting this project.'
+                  : 'Select a note to read.'}
               </p>
-              <GradientButton leftIcon={<Plus size={16} />} onClick={handleCreate}>
-                New note
-              </GradientButton>
+              {canEdit && (
+                <GradientButton leftIcon={<Plus size={16} />} onClick={handleCreate}>
+                  New note
+                </GradientButton>
+              )}
             </div>
           </GlassPanel>
         )}

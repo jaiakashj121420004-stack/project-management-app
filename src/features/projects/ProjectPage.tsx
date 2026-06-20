@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { accentVars } from '@/lib/accents';
 import { Board } from '@/features/board';
 import { NotesPanel } from '@/features/notes';
+import { MembersBar, useMyRole, useProjectRealtime } from '@/features/members';
 import { useProject } from './useProjects';
 
 type ProjectTab = 'board' | 'notes';
@@ -22,6 +23,11 @@ export function ProjectPage() {
   const { data: project, isLoading } = useProject(projectId);
   const [searchParams, setSearchParams] = useSearchParams();
   const tab: ProjectTab = searchParams.get('tab') === 'notes' ? 'notes' : 'board';
+
+  // Live collaboration for the active project: stream other members' changes into
+  // the board/notes/members caches. Role drives read-only vs. editable.
+  useProjectRealtime(projectId);
+  const role = useMyRole(projectId);
 
   function selectTab(next: ProjectTab) {
     setSearchParams(
@@ -60,24 +66,39 @@ export function ProjectPage() {
   }
 
   const isOwner = project.owner_id === user?.id;
+  // Optimistically editable until membership resolves, so editors never flash a
+  // read-only board; once role is known, viewers lose write affordances (RLS is
+  // the real guarantee either way).
+  const canEdit = role !== 'viewer';
+  const roleLabel = isOwner ? 'Owner' : role ? role[0]!.toUpperCase() + role.slice(1) : 'Shared';
 
   return (
     <div className="flex flex-col gap-8" style={accentVars(project.accent)}>
       <Reveal>
         <header className="pt-2">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-fg-muted transition-colors hover:text-fg"
-          >
-            <ArrowLeft size={16} /> Projects
-          </Link>
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <h1 className="gradient-text font-display text-headline font-bold">{project.name}</h1>
-            <Badge tone={isOwner ? 'accent' : 'neutral'}>{isOwner ? 'Owner' : 'Shared'}</Badge>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0">
+              <Link
+                to="/"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-fg-muted transition-colors hover:text-fg"
+              >
+                <ArrowLeft size={16} /> Projects
+              </Link>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <h1 className="gradient-text font-display text-headline font-bold">{project.name}</h1>
+                <Badge tone={isOwner ? 'accent' : role === 'viewer' ? 'neutral' : 'info'}>
+                  {roleLabel}
+                </Badge>
+              </div>
+              {project.description && (
+                <p className="mt-2 max-w-prose text-fg-muted">{project.description}</p>
+              )}
+            </div>
+
+            <div className="shrink-0 pt-1">
+              <MembersBar projectId={project.id} accent={project.accent} isOwner={isOwner} />
+            </div>
           </div>
-          {project.description && (
-            <p className="mt-2 max-w-prose text-fg-muted">{project.description}</p>
-          )}
 
           <div
             role="tablist"
@@ -103,9 +124,9 @@ export function ProjectPage() {
       </Reveal>
 
       {tab === 'board' ? (
-        <Board projectId={project.id} accent={project.accent} />
+        <Board projectId={project.id} accent={project.accent} canEdit={canEdit} />
       ) : (
-        <NotesPanel projectId={project.id} />
+        <NotesPanel projectId={project.id} canEdit={canEdit} />
       )}
     </div>
   );

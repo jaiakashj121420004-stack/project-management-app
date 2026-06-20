@@ -21,6 +21,7 @@ import { springs } from '@/lib/motion';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type { Card } from '@/types/database';
 import { useProjects } from '@/features/projects/useProjects';
+import { useMyRole } from '@/features/members';
 import { CardDetailModal, type CardDetailValues } from '@/features/board/CardDetailModal';
 import { CalendarToolbar } from './CalendarToolbar';
 import { CalendarGrid } from './CalendarGrid';
@@ -120,6 +121,10 @@ export function CalendarPage() {
   }
 
   const openCard = openCardId ? (cardsById.get(openCardId) ?? null) : null;
+  // Editing rights follow the opened card's project role (a viewer on a shared
+  // project gets the read-only card view). Optimistically editable until known.
+  const openCardRole = useMyRole(openCard?.project_id);
+  const canEditOpenCard = openCardRole !== 'viewer';
   const activeCard = activeCardId ? (cardsById.get(activeCardId) ?? null) : null;
   const peekDate = peekDateKey ? parseISO(peekDateKey) : null;
   const peekCards = peekDateKey ? (cardsByDate.get(peekDateKey) ?? []) : [];
@@ -208,6 +213,7 @@ export function CalendarPage() {
         open={Boolean(openCard)}
         projectId={openCard?.project_id ?? ''}
         accent={openCard ? accentFor(openCard.project_id) : 'aurora'}
+        canEdit={canEditOpenCard}
         onClose={() => setOpenCardId(null)}
         onSave={handleSaveCard}
         onDelete={handleDeleteCard}

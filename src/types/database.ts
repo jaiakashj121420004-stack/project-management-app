@@ -14,6 +14,9 @@ import type { LabelColor } from '@/lib/labelColors';
 /** A member's permission level within a project (plan.md §5–6). */
 export type ProjectRole = 'owner' | 'editor' | 'viewer';
 
+/** Roles that can be invited / assigned to others (never 'owner'). */
+export type InvitationRole = Exclude<ProjectRole, 'owner'>;
+
 export interface Database {
   public: {
     Tables: {
@@ -307,6 +310,35 @@ export interface Database {
         };
         Relationships: [];
       };
+      invitations: {
+        Row: {
+          id: string;
+          project_id: string;
+          // Stored as entered; matched case-insensitively on redemption.
+          email: string;
+          // Only 'editor' / 'viewer' are invitable — 'owner' is the creator alone.
+          role: InvitationRole;
+          invited_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          email: string;
+          role?: InvitationRole;
+          invited_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          email?: string;
+          role?: InvitationRole;
+          invited_by?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -327,6 +359,24 @@ export interface Database {
         Args: { p_list_id: string };
         Returns: boolean;
       };
+      // Role-aware write checks + co-member visibility (Phase 8, plan.md §6).
+      can_edit_project: {
+        Args: { p_project_id: string };
+        Returns: boolean;
+      };
+      can_edit_card: {
+        Args: { p_card_id: string };
+        Returns: boolean;
+      };
+      shares_a_project_with: {
+        Args: { p_user_id: string };
+        Returns: boolean;
+      };
+      // RPC: redeem the calling user's pending invitations; returns the count.
+      redeem_my_invitations: {
+        Args: Record<string, never>;
+        Returns: number;
+      };
     };
     Enums: Record<string, never>;
   };
@@ -344,3 +394,4 @@ export type CardLabel = Database['public']['Tables']['card_labels']['Row'];
 export type TodoList = Database['public']['Tables']['todo_lists']['Row'];
 export type TodoItem = Database['public']['Tables']['todo_items']['Row'];
 export type Note = Database['public']['Tables']['notes']['Row'];
+export type Invitation = Database['public']['Tables']['invitations']['Row'];

@@ -15,6 +15,8 @@ interface BoardColumnProps {
   hiddenCardIds: Set<string>;
   /** True while the board toolbar has an active filter/search. */
   filtering: boolean;
+  /** Owners/editors get drag + rename/delete + quick-add; viewers don't. */
+  canEdit: boolean;
   onRename: (columnId: string, name: string) => void;
   onDelete: (column: Column) => void;
   onAddCard: (columnId: string, title: string) => void;
@@ -33,6 +35,7 @@ export function BoardColumn({
   faceByCardId,
   hiddenCardIds,
   filtering,
+  canEdit,
   onRename,
   onDelete,
   onAddCard,
@@ -61,15 +64,17 @@ export function BoardColumn({
         className={cn('flex max-h-full flex-col gap-3 p-3 transition-opacity', isDragging && 'opacity-40')}
       >
         <header className="flex items-center gap-1.5">
-          <button
-            type="button"
-            aria-label={`Reorder ${column.name}`}
-            className="grid h-7 w-7 shrink-0 cursor-grab touch-none place-items-center rounded-lg text-fg-subtle transition-colors hover:bg-[var(--glass-fill)] hover:text-fg active:cursor-grabbing"
-            {...attributes}
-            {...listeners}
-          >
-            <GripVertical size={16} />
-          </button>
+          {canEdit && (
+            <button
+              type="button"
+              aria-label={`Reorder ${column.name}`}
+              className="grid h-7 w-7 shrink-0 cursor-grab touch-none place-items-center rounded-lg text-fg-subtle transition-colors hover:bg-[var(--glass-fill)] hover:text-fg active:cursor-grabbing"
+              {...attributes}
+              {...listeners}
+            >
+              <GripVertical size={16} />
+            </button>
+          )}
 
           {renaming ? (
             <ColumnNameEditor
@@ -88,14 +93,16 @@ export function BoardColumn({
               <span className="grid h-6 min-w-6 place-items-center rounded-full bg-[var(--glass-fill)] px-1.5 text-xs font-medium text-fg-muted">
                 {visibleCount}
               </span>
-              <div className="flex items-center">
-                <HeaderAction label={`Rename ${column.name}`} onClick={() => setRenaming(true)}>
-                  <Pencil size={14} />
-                </HeaderAction>
-                <HeaderAction label={`Delete ${column.name}`} onClick={() => onDelete(column)}>
-                  <Trash2 size={14} />
-                </HeaderAction>
-              </div>
+              {canEdit && (
+                <div className="flex items-center">
+                  <HeaderAction label={`Rename ${column.name}`} onClick={() => setRenaming(true)}>
+                    <Pencil size={14} />
+                  </HeaderAction>
+                  <HeaderAction label={`Delete ${column.name}`} onClick={() => onDelete(column)}>
+                    <Trash2 size={14} />
+                  </HeaderAction>
+                </div>
+              )}
             </>
           )}
         </header>
@@ -117,7 +124,7 @@ export function BoardColumn({
           </ul>
         </SortableContext>
 
-        <CardComposer onAdd={(title) => onAddCard(column.id, title)} />
+        {canEdit && <CardComposer onAdd={(title) => onAddCard(column.id, title)} />}
       </GlassPanel>
     </div>
   );

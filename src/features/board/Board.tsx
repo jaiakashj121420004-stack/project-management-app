@@ -60,6 +60,8 @@ type ActiveType = 'card' | 'column';
 interface BoardProps {
   projectId: string;
   accent: AccentName;
+  /** Owners/editors can modify the board; viewers see it read-only. */
+  canEdit: boolean;
 }
 
 /**
@@ -69,7 +71,7 @@ interface BoardProps {
  * drop (ordering.ts). Optimistic TanStack mutations make every change feel
  * instant. A confetti burst fires when a card lands in a "Done"-type column.
  */
-export function Board({ projectId, accent }: BoardProps) {
+export function Board({ projectId, accent, canEdit }: BoardProps) {
   const reducedMotion = useReducedMotion();
   const { data, isLoading, isError } = useBoard(projectId);
 
@@ -209,6 +211,10 @@ export function Board({ projectId, accent }: BoardProps) {
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
+  // Viewers can't drag: an empty sensor set means no drag ever starts (cards
+  // still open read-only on click). RLS would reject the write regardless.
+  const readOnlySensors = useSensors();
+  const activeSensors = canEdit ? sensors : readOnlySensors;
 
   const columnOrder = dndColumnOrder ?? baseColumnOrder;
   const containers = dndContainers ?? baseContainers;
@@ -398,7 +404,7 @@ export function Board({ projectId, accent }: BoardProps) {
       />
 
       <DndContext
-        sensors={sensors}
+        sensors={activeSensors}
         collisionDetection={closestCorners}
         measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
         onDragStart={handleDragStart}
@@ -422,6 +428,7 @@ export function Board({ projectId, accent }: BoardProps) {
                   faceByCardId={faceByCardId}
                   hiddenCardIds={hiddenCardIds}
                   filtering={filtering}
+                  canEdit={canEdit}
                   onRename={(id, name) => renameColumn.mutate({ id, name })}
                   onDelete={setDeletingColumn}
                   onAddCard={handleAddCard}
@@ -431,7 +438,7 @@ export function Board({ projectId, accent }: BoardProps) {
             })}
           </SortableContext>
 
-          <AddColumn onAdd={handleAddColumn} />
+          {canEdit && <AddColumn onAdd={handleAddColumn} />}
         </div>
 
         <DragOverlay dropAnimation={reducedMotion ? null : undefined}>
@@ -469,6 +476,7 @@ export function Board({ projectId, accent }: BoardProps) {
         open={Boolean(openCard)}
         projectId={projectId}
         accent={accent}
+        canEdit={canEdit}
         onClose={() => setOpenCardId(null)}
         onSave={handleSaveCard}
         onDelete={handleDeleteCard}

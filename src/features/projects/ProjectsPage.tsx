@@ -5,6 +5,7 @@ import { GradientButton } from '@/components/buttons/GradientButton';
 import { Skeleton } from '@/components/feedback/Skeleton';
 import { Reveal } from '@/components/motion/Reveal';
 import { useAuth } from '@/hooks/useAuth';
+import { useRedeemInvitations } from '@/features/members';
 import type { Project } from '@/types/database';
 import { ProjectCard } from './ProjectCard';
 import { ProjectFormModal } from './ProjectFormModal';
@@ -21,6 +22,9 @@ import type { ProjectFormInput } from './schemas';
  *  Aurora glass cards, with create / edit / delete. */
 export function ProjectsPage() {
   const { user } = useAuth();
+  // Claim any pending invitations addressed to this user, so shared projects show
+  // up here on first load (newly-signed-up users are auto-redeemed by a trigger).
+  useRedeemInvitations();
   const { data: projects, isLoading, isError } = useProjects();
   const createProject = useCreateProject();
   const updateProject = useUpdateProject();

@@ -11,6 +11,8 @@ interface NoteEditorProps {
   projectId: string;
   /** Keyed by id in the parent, so this remounts (re-seeds) when the note changes. */
   note: Note;
+  /** Editors/owners can edit + delete; viewers get a read-only rendered view. */
+  canEdit: boolean;
   /** Return to the list (mobile) — also used to clear selection after a delete. */
   onBack: () => void;
 }
@@ -45,7 +47,7 @@ function buildPatch(title: string, content: string, saved: Snapshot) {
  * notes never drops an in-flight change. Save status is derived during render;
  * only async outcomes touch state.
  */
-export function NoteEditor({ projectId, note, onBack }: NoteEditorProps) {
+export function NoteEditor({ projectId, note, canEdit, onBack }: NoteEditorProps) {
   // mutate is a stable reference in TanStack Query, so the debounce effect below
   // only re-runs on real edits — background re-renders can't reset the timer.
   const { mutate: runUpdate } = useUpdateNote(projectId);
@@ -70,6 +72,7 @@ export function NoteEditor({ projectId, note, onBack }: NoteEditorProps) {
   // Debounced autosave. setState only runs inside async callbacks, never
   // synchronously in the effect body.
   useEffect(() => {
+    if (!canEdit) return;
     const patch = buildPatch(title, content, saved);
     if (!patch) return;
     const timer = setTimeout(() => {
@@ -86,13 +89,14 @@ export function NoteEditor({ projectId, note, onBack }: NoteEditorProps) {
       );
     }, AUTOSAVE_DELAY);
     return () => clearTimeout(timer);
-  }, [title, content, saved, note.id, runUpdate]);
+  }, [title, content, saved, note.id, runUpdate, canEdit]);
 
   // Keep a flush closure current, then run it once on unmount so a change made
   // within the debounce window (e.g. quickly switching notes) is still saved.
   const flushRef = useRef<() => void>(() => {});
   useEffect(() => {
     flushRef.current = () => {
+      if (!canEdit) return;
       const patch = buildPatch(title, content, saved);
       if (patch) runUpdate({ id: note.id, ...patch });
     };
@@ -120,29 +124,32 @@ export function NoteEditor({ projectId, note, onBack }: NoteEditorProps) {
             <input
               value={title}
               maxLength={120}
+              readOnly={!canEdit}
               onChange={(event: ChangeEvent<HTMLInputElement>) => setTitle(event.target.value)}
               placeholder="Note title…"
               aria-label="Note title"
               className="w-full truncate bg-transparent font-display text-xl font-bold text-fg placeholder:text-fg-subtle focus:outline-none sm:text-2xl"
             />
-            {titleError && <p className="mt-1 text-xs text-danger">{titleError}</p>}
+            {canEdit && titleError && <p className="mt-1 text-xs text-danger">{titleError}</p>}
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
-          <SaveIndicator status={status} />
-          <button
-            type="button"
-            aria-label="Delete note"
-            onClick={() => setConfirmingDelete((open) => !open)}
-            className="grid h-9 w-9 place-items-center rounded-xl text-fg-subtle transition-colors hover:bg-danger/10 hover:text-danger"
-          >
-            <Trash2 size={16} />
-          </button>
-        </div>
+        {canEdit && (
+          <div className="flex shrink-0 items-center gap-2">
+            <SaveIndicator status={status} />
+            <button
+              type="button"
+              aria-label="Delete note"
+              onClick={() => setConfirmingDelete((open) => !open)}
+              className="grid h-9 w-9 place-items-center rounded-xl text-fg-subtle transition-colors hover:bg-danger/10 hover:text-danger"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        )}
       </div>
 
-      {confirmingDelete && (
+      {confirmingDelete && canEdit && (
         <div className="flex items-center justify-between gap-2 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-fg-muted">
           <span>
             Delete <span className="font-semibold text-fg">{note.title}</span>? This can&apos;t be
@@ -167,50 +174,63 @@ export function NoteEditor({ projectId, note, onBack }: NoteEditorProps) {
         </div>
       )}
 
-      {/* Write / Preview toggle — mobile only; desktop shows both panes. */}
-      <div className="flex items-center gap-1 self-start rounded-xl border border-[var(--glass-border)] p-1 lg:hidden">
-        <ModeButton
-          active={mode === 'write'}
-          onClick={() => setMode('write')}
-          icon={<Pencil size={14} />}
-        >
-          Write
-        </ModeButton>
-        <ModeButton
-          active={mode === 'preview'}
-          onClick={() => setMode('preview')}
-          icon={<Eye size={14} />}
-        >
-          Preview
-        </ModeButton>
-      </div>
+      {/* Write / Preview toggle — mobile only; desktop shows both panes. Viewers
+          get a single rendered pane, so the toggle is hidden for them. */}
+      {canEdit && (
+        <div className="flex items-center gap-1 self-start rounded-xl border border-[var(--glass-border)] p-1 lg:hidden">
+          <ModeButton
+            active={mode === 'write'}
+            onClick={() => setMode('write')}
+            icon={<Pencil size={14} />}
+          >
+            Write
+          </ModeButton>
+          <ModeButton
+            active={mode === 'preview'}
+            onClick={() => setMode('preview')}
+            icon={<Eye size={14} />}
+          >
+            Preview
+          </ModeButton>
+        </div>
+      )}
 
-      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-2">
-        <textarea
-          value={content}
-          onChange={(event) => setContent(event.target.value)}
-          placeholder="Write in markdown… **bold**, # headings, - lists, [links](https://…)"
-          aria-label="Note content"
-          spellCheck
-          className={cn(
-            'min-h-[40vh] w-full resize-none rounded-2xl border bg-[var(--field-bg)] p-4 font-mono text-sm leading-relaxed text-fg',
-            'placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]',
-            mode === 'preview' && 'hidden lg:block',
-          )}
-        />
-        <div
-          className={cn(
-            'min-h-[40vh] overflow-y-auto rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-fill)] p-4',
-            mode === 'write' && 'hidden lg:block',
-          )}
-        >
+      {canEdit ? (
+        <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-2">
+          <textarea
+            value={content}
+            onChange={(event) => setContent(event.target.value)}
+            placeholder="Write in markdown… **bold**, # headings, - lists, [links](https://…)"
+            aria-label="Note content"
+            spellCheck
+            className={cn(
+              'min-h-[40vh] w-full resize-none rounded-2xl border bg-[var(--field-bg)] p-4 font-mono text-sm leading-relaxed text-fg',
+              'placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]',
+              mode === 'preview' && 'hidden lg:block',
+            )}
+          />
+          <div
+            className={cn(
+              'min-h-[40vh] overflow-y-auto rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-fill)] p-4',
+              mode === 'write' && 'hidden lg:block',
+            )}
+          >
+            {content.trim() ? (
+              <Markdown source={content} />
+            ) : (
+              <p className="text-sm text-fg-subtle">Nothing to preview yet.</p>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="min-h-[40vh] flex-1 overflow-y-auto rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-fill)] p-4 sm:p-6">
           {content.trim() ? (
             <Markdown source={content} />
           ) : (
-            <p className="text-sm text-fg-subtle">Nothing to preview yet.</p>
+            <p className="text-sm text-fg-subtle">This note is empty.</p>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 }
