@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent, type KeyboardEvent } from 'react';
+import { useMemo, useState, type KeyboardEvent } from 'react';
 import {
   DndContext,
   KeyboardSensor,
@@ -144,20 +144,20 @@ function ChecklistComposer({ onAdd }: { onAdd: (text: string) => void }) {
     setError(null);
   }
 
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    submit();
-  }
-
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === 'Escape') {
+    if (event.key === 'Enter') {
+      // Add the item without submitting the enclosing card form (which would
+      // save + close the modal). The composer is a plain div, not a <form>.
+      event.preventDefault();
+      submit();
+    } else if (event.key === 'Escape') {
       setValue('');
       setError(null);
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-1.5">
       <div className="flex items-center gap-2">
         <input
           value={value}
@@ -169,7 +169,8 @@ function ChecklistComposer({ onAdd }: { onAdd: (text: string) => void }) {
           className="h-9 min-w-0 flex-1 rounded-xl border bg-[var(--field-bg)] px-3 text-sm text-fg placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
         />
         <button
-          type="submit"
+          type="button"
+          onClick={submit}
           aria-label="Add item"
           className="btn-3d grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-white"
         >
@@ -177,6 +178,6 @@ function ChecklistComposer({ onAdd }: { onAdd: (text: string) => void }) {
         </button>
       </div>
       {error && <p className="text-xs text-danger">{error}</p>}
-    </form>
+    </div>
   );
 }

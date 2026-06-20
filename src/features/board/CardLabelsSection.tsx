@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type KeyboardEvent } from 'react';
 import { Check, Plus, Tags, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import {
@@ -133,8 +133,7 @@ function LabelCreator({ onCreate }: { onCreate: (name: string, color: LabelColor
   const [color, setColor] = useState<LabelColor>(DEFAULT_LABEL_COLOR);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
+  async function submit() {
     const parsed = labelNameSchema.safeParse(name);
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? 'Invalid name.');
@@ -149,19 +148,30 @@ function LabelCreator({ onCreate }: { onCreate: (name: string, color: LabelColor
     }
   }
 
+  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === 'Enter') {
+      // Create without submitting the enclosing card form (which would save +
+      // close the modal). This block is a plain div, not a <form>.
+      event.preventDefault();
+      void submit();
+    }
+  }
+
   return (
-    <form onSubmit={(event) => void handleSubmit(event)} className="flex flex-col gap-2 border-t border-[var(--glass-border)] pt-2">
+    <div className="flex flex-col gap-2 border-t border-[var(--glass-border)] pt-2">
       <div className="flex items-center gap-2">
         <input
           value={name}
           maxLength={40}
           placeholder="New label name"
           onChange={(event) => setName(event.target.value)}
+          onKeyDown={handleKeyDown}
           aria-label="New label name"
           className="h-9 min-w-0 flex-1 rounded-xl border bg-[var(--field-bg)] px-3 text-sm text-fg placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
         />
         <button
-          type="submit"
+          type="button"
+          onClick={() => void submit()}
           aria-label="Create label"
           className="btn-3d grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-white"
         >
@@ -192,6 +202,6 @@ function LabelCreator({ onCreate }: { onCreate: (name: string, color: LabelColor
         })}
       </div>
       {error && <p className="text-xs text-danger">{error}</p>}
-    </form>
+    </div>
   );
 }
