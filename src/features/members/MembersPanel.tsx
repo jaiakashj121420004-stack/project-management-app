@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react';
 import { AlertCircle, Check, Mail, UserMinus, X } from 'lucide-react';
-import { cn } from '@/lib/cn';
 import { Avatar } from '@/components/Avatar';
 import { Field } from '@/components/forms/Field';
 import { GradientButton } from '@/components/buttons/GradientButton';
@@ -259,18 +258,7 @@ function InviteForm({ projectId }: { projectId: string }) {
             aria-label="Invitee email"
           />
         </div>
-        <select
-          value={role}
-          onChange={(event) => setRole(event.target.value as InvitationRole)}
-          aria-label="Invite role"
-          className={cn(
-            'h-11 rounded-2xl border border-[var(--glass-border)] bg-[var(--field-bg)] px-3 text-sm font-medium text-fg',
-            'backdrop-blur-sm transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]',
-          )}
-        >
-          <option value="editor">Editor</option>
-          <option value="viewer">Viewer</option>
-        </select>
+        <RoleSelect value={role} onChange={setRole} size="md" openUp />
         <GradientButton type="submit" isLoading={invite.isPending} className="sm:h-11">
           Invite
         </GradientButton>
