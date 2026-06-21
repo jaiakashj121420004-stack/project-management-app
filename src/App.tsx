@@ -9,7 +9,7 @@ import { TodosPage } from '@/features/todos';
 import { NotesHome } from '@/features/notes';
 import { BillingPage } from '@/features/billing';
 import { CeoMessagePage } from '@/features/announcements';
-import { FeedbackInbox } from '@/features/feedback';
+import { FeedbackPage } from '@/features/feedback';
 import { LandingPage, PricingPage, TermsPage, PrivacyPage } from '@/features/marketing';
 import {
   ForgotPasswordPage,
@@ -58,7 +58,7 @@ export default function App() {
           <Route path="todos" element={<TodosPage />} />
           <Route path="notes" element={<NotesHome />} />
           <Route path="from-the-founder" element={<CeoMessagePage />} />
-          <Route path="feedback" element={<FeedbackInbox />} />
+          <Route path="feedback" element={<FeedbackPage />} />
           <Route path="billing" element={<BillingPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="style-guide" element={<StyleGuide />} />

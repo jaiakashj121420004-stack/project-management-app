@@ -2,7 +2,7 @@ import { Check } from 'lucide-react';
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import { cn } from '@/lib/cn';
 import { accentVars, type AccentName } from '@/lib/accents';
-import type { Plan } from '@/lib/plans';
+import { PRO_ANNUAL_DISCOUNT_PCT, type Plan } from '@/lib/plans';
 import { MarketingButton } from './MarketingButton';
 
 interface PlanCardProps {
@@ -44,6 +44,11 @@ export function PlanCard({ plan, accent, featured = false, ctaLabel, note }: Pla
         <span className="gradient-text font-display text-4xl font-bold">${plan.priceMonthly}</span>
         <span className="pb-1 text-sm text-fg-muted">/month</span>
       </div>
+      {plan.priceAnnual !== null && (
+        <p className="mt-1.5 text-xs text-fg-subtle">
+          or ${plan.priceAnnual.toFixed(2)}/year — save {PRO_ANNUAL_DISCOUNT_PCT}%
+        </p>
+      )}
 
       <p className="mt-2 text-sm leading-relaxed text-fg-muted">{plan.tagline}</p>
 

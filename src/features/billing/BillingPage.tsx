@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Check, CreditCard, Sparkles, X } from 'lucide-react';
@@ -7,8 +7,16 @@ import { GradientButton } from '@/components/buttons/GradientButton';
 import { Reveal } from '@/components/motion/Reveal';
 import { Spinner } from '@/components/feedback/Spinner';
 import { useProfile } from '@/features/auth/useProfile';
-import { PLANS, type PlanId } from '@/lib/plans';
+import {
+  PLANS,
+  annualPerMonth,
+  planPrice,
+  PRO_ANNUAL_DISCOUNT_PCT,
+  type BillingInterval,
+  type PlanId,
+} from '@/lib/plans';
 import { PlanBadge } from './PlanBadge';
+import { IntervalToggle } from './IntervalToggle';
 import { useBilling } from './useBilling';
 
 /** Account → Billing: shows the current plan and the upgrade / manage actions. */
@@ -119,7 +127,7 @@ export function BillingPage() {
                 <GradientButton
                   leftIcon={<Sparkles size={17} />}
                   isLoading={pending === 'checkout'}
-                  onClick={startCheckout}
+                  onClick={() => startCheckout('month')}
                 >
                   Upgrade to Pro
                 </GradientButton>
@@ -170,9 +178,20 @@ function Banner({
   );
 }
 
-/** A compact "why go Pro" card shown to free users under their current plan. */
-function ProUpsell({ onUpgrade, upgrading }: { onUpgrade: () => void; upgrading: boolean }) {
+/** A compact "why go Pro" card shown to free users under their current plan,
+ *  with a Monthly / Annual switch (annual saves PRO_ANNUAL_DISCOUNT_PCT %). */
+function ProUpsell({
+  onUpgrade,
+  upgrading,
+}: {
+  onUpgrade: (interval: BillingInterval) => void;
+  upgrading: boolean;
+}) {
+  const [interval, setInterval] = useState<BillingInterval>('month');
   const pro = PLANS.pro;
+  const annual = interval === 'year';
+  const perMonth = annual ? (annualPerMonth('pro') ?? pro.priceMonthly) : pro.priceMonthly;
+
   return (
     <GlassPanel className="mt-6 p-6 sm:p-8">
       <div className="flex items-center gap-2">
@@ -180,6 +199,23 @@ function ProUpsell({ onUpgrade, upgrading }: { onUpgrade: () => void; upgrading:
         <h2 className="font-display text-title font-semibold text-fg">Go Pro</h2>
       </div>
       <p className="mt-1 text-sm text-fg-muted">{pro.tagline}</p>
+
+      <div className="mt-4">
+        <IntervalToggle value={interval} onChange={setInterval} />
+      </div>
+
+      <div className="mt-4 flex items-baseline gap-1.5">
+        <span className="gradient-text font-display text-title font-bold">
+          ${perMonth.toFixed(2)}
+        </span>
+        <span className="text-sm text-fg-muted">/ month</span>
+      </div>
+      {annual && (
+        <p className="mt-1 text-sm text-fg-muted">
+          ${planPrice('pro', 'year').toFixed(2)} billed yearly — save {PRO_ANNUAL_DISCOUNT_PCT}%
+        </p>
+      )}
+
       <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
         {pro.features.map((feature) => (
           <li key={feature} className="flex items-start gap-2 text-sm text-fg">
@@ -189,8 +225,14 @@ function ProUpsell({ onUpgrade, upgrading }: { onUpgrade: () => void; upgrading:
         ))}
       </ul>
       <div className="mt-6">
-        <GradientButton leftIcon={<Sparkles size={17} />} isLoading={upgrading} onClick={onUpgrade}>
-          Upgrade for ${pro.priceMonthly}/mo
+        <GradientButton
+          leftIcon={<Sparkles size={17} />}
+          isLoading={upgrading}
+          onClick={() => onUpgrade(interval)}
+        >
+          {annual
+            ? `Get Pro — $${planPrice('pro', 'year').toFixed(2)}/yr`
+            : `Upgrade for $${pro.priceMonthly.toFixed(2)}/mo`}
         </GradientButton>
       </div>
     </GlassPanel>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { BillingInterval } from '@/lib/plans';
 import { createCheckoutUrl, createPortalUrl } from './api';
 
 type Pending = 'checkout' | 'portal' | null;
@@ -13,11 +14,11 @@ export function useBilling() {
   const [pending, setPending] = useState<Pending>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function go(kind: Exclude<Pending, null>): Promise<void> {
+  async function go(kind: Exclude<Pending, null>, interval: BillingInterval): Promise<void> {
     setPending(kind);
     setError(null);
     try {
-      const url = kind === 'checkout' ? await createCheckoutUrl() : await createPortalUrl();
+      const url = kind === 'checkout' ? await createCheckoutUrl(interval) : await createPortalUrl();
       window.location.href = url;
     } catch {
       setError(
@@ -30,8 +31,9 @@ export function useBilling() {
   }
 
   return {
-    startCheckout: () => void go('checkout'),
-    openPortal: () => void go('portal'),
+    /** Begin Stripe Checkout for Pro at the given interval (defaults to monthly). */
+    startCheckout: (interval: BillingInterval = 'month') => void go('checkout', interval),
+    openPortal: () => void go('portal', 'month'),
     pending,
     error,
   };

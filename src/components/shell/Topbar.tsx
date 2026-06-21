@@ -19,7 +19,7 @@ export function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
       <button
         type="button"
         className={cn(
-          'flex h-10 flex-1 items-center gap-2.5 rounded-2xl border bg-[var(--field-bg)] px-3.5',
+          'flex h-11 flex-1 items-center gap-2.5 rounded-2xl border bg-[var(--field-bg)] px-3.5 leading-none',
           'text-left text-sm text-fg-subtle transition-colors hover:text-fg-muted',
           'max-w-md',
         )}

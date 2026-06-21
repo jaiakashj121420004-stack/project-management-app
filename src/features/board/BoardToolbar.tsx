@@ -46,7 +46,7 @@ export function BoardToolbar({
           onChange={(event) => onQueryChange(event.target.value)}
           placeholder="Search cards…"
           aria-label="Search cards by title"
-          className="h-10 w-full rounded-2xl border bg-[var(--field-bg)] pl-10 pr-3 text-sm text-fg placeholder:text-fg-subtle backdrop-blur-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
+          className="h-11 w-full rounded-2xl border bg-[var(--field-bg)] pl-10 pr-3 text-sm leading-none text-fg placeholder:text-fg-subtle backdrop-blur-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
         />
       </div>
 

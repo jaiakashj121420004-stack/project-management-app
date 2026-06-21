@@ -1,9 +1,9 @@
 import {
   CalendarDays,
-  Inbox,
   LayoutGrid,
   ListTodo,
   Megaphone,
+  MessageSquareHeart,
   NotebookPen,
   Sparkles,
   type LucideIcon,
@@ -28,6 +28,6 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: 'Calendar', to: '/calendar', icon: CalendarDays, bottomNav: true },
   { label: 'Notes', to: '/notes', icon: NotebookPen, bottomNav: true },
   { label: 'From the Founder', to: '/from-the-founder', icon: Megaphone },
-  { label: 'Feedback', to: '/feedback', icon: Inbox, adminOnly: true },
+  { label: 'Feedback/Features', to: '/feedback', icon: MessageSquareHeart },
   { label: 'Style Guide', to: '/style-guide', icon: Sparkles },
 ];

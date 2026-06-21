@@ -131,9 +131,13 @@ columns writable **only** by the service role, and the `current_plan()` helper.
 
 ### 2. Create the Stripe product (test mode)
 In the Stripe dashboard (toggle **Test mode**): **Products → add product**
-"Aurora Pro" with a **recurring** monthly price. Copy:
-- the **Price ID** (`price_…`) → `STRIPE_PRICE_PRO`
+"Aurora Pro" with **two recurring prices** on the same product — a **monthly**
+price ($5.99) and a **yearly** price ($68.29 = 12 × $5.99 − 5%). Copy:
+- the **monthly Price ID** (`price_…`) → `STRIPE_PRICE_PRO`
+- the **yearly Price ID** (`price_…`) → `STRIPE_PRICE_PRO_ANNUAL`
 - your **secret key** (`sk_test_…`, Developers → API keys) → `STRIPE_SECRET_KEY`
+
+(If you only create the monthly price, annual checkout safely falls back to it.)
 
 Enable the **Customer Portal** (Settings → Billing → Customer portal) so "Manage
 billing" works.
@@ -161,6 +165,7 @@ npx supabase secrets set \
   STRIPE_SECRET_KEY=sk_test_xxx \
   STRIPE_WEBHOOK_SECRET=whsec_xxx \
   STRIPE_PRICE_PRO=price_xxx \
+  STRIPE_PRICE_PRO_ANNUAL=price_xxx \
   APP_URL=https://project-management-app-dev.pages.dev
 ```
 `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically.

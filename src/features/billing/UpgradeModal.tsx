@@ -1,8 +1,17 @@
+import { useState } from 'react';
 import { Check, Sparkles } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { GradientButton } from '@/components/buttons/GradientButton';
-import { PLANS } from '@/lib/plans';
+import {
+  PLANS,
+  annualPerMonth,
+  annualSavings,
+  planPrice,
+  PRO_ANNUAL_DISCOUNT_PCT,
+  type BillingInterval,
+} from '@/lib/plans';
 import { useBilling } from './useBilling';
+import { IntervalToggle } from './IntervalToggle';
 
 interface UpgradeModalProps {
   open: boolean;
@@ -15,7 +24,10 @@ interface UpgradeModalProps {
  *  plan limit is reached (e.g. creating one project too many). */
 export function UpgradeModal({ open, onClose, reason }: UpgradeModalProps) {
   const { startCheckout, pending, error } = useBilling();
+  const [interval, setInterval] = useState<BillingInterval>('month');
   const pro = PLANS.pro;
+  const annual = interval === 'year';
+  const perMonth = annual ? (annualPerMonth('pro') ?? pro.priceMonthly) : pro.priceMonthly;
 
   return (
     <Modal
@@ -25,9 +37,21 @@ export function UpgradeModal({ open, onClose, reason }: UpgradeModalProps) {
       description={reason ?? 'Unlock unlimited projects and more.'}
     >
       <div className="flex flex-col gap-5">
-        <div className="flex items-baseline gap-1.5">
-          <span className="gradient-text font-display text-headline font-bold">${pro.priceMonthly}</span>
-          <span className="text-fg-muted">/ month</span>
+        <IntervalToggle value={interval} onChange={setInterval} />
+
+        <div>
+          <div className="flex items-baseline gap-1.5">
+            <span className="gradient-text font-display text-headline font-bold">
+              ${perMonth.toFixed(2)}
+            </span>
+            <span className="text-fg-muted">/ month</span>
+          </div>
+          {annual && (
+            <p className="mt-1 text-sm text-fg-muted">
+              ${planPrice('pro', 'year').toFixed(2)} billed yearly — save $
+              {(annualSavings('pro') ?? 0).toFixed(2)} ({PRO_ANNUAL_DISCOUNT_PCT}%)
+            </p>
+          )}
         </div>
 
         <ul className="flex flex-col gap-2.5">
@@ -54,9 +78,9 @@ export function UpgradeModal({ open, onClose, reason }: UpgradeModalProps) {
           <GradientButton
             leftIcon={<Sparkles size={17} />}
             isLoading={pending === 'checkout'}
-            onClick={startCheckout}
+            onClick={() => startCheckout(interval)}
           >
-            Upgrade to Pro
+            {annual ? 'Get Pro yearly' : 'Upgrade to Pro'}
           </GradientButton>
         </div>
 

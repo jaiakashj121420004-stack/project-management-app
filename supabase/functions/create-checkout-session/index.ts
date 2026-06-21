@@ -10,9 +10,11 @@
 // it is excluded from the app's TypeScript/ESLint config on purpose.
 //
 // Required secrets (set with `supabase secrets set`, never committed):
-//   STRIPE_SECRET_KEY — Stripe secret API key (sk_...)
-//   STRIPE_PRICE_PRO  — Stripe Price ID for the Pro plan (price_...)
-//   APP_URL           — site origin used for success/cancel redirects
+//   STRIPE_SECRET_KEY        — Stripe secret API key (sk_...)
+//   STRIPE_PRICE_PRO         — Stripe Price ID for the MONTHLY Pro plan (price_...)
+//   STRIPE_PRICE_PRO_ANNUAL  — Stripe Price ID for the YEARLY Pro plan (price_...);
+//                              falls back to the monthly price if unset
+//   APP_URL                  — site origin used for success/cancel redirects
 // Provided automatically by the Edge runtime: SUPABASE_URL,
 // SUPABASE_SERVICE_ROLE_KEY.
 
@@ -22,6 +24,7 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY')!;
 const STRIPE_PRICE_PRO = Deno.env.get('STRIPE_PRICE_PRO')!;
+const STRIPE_PRICE_PRO_ANNUAL = Deno.env.get('STRIPE_PRICE_PRO_ANNUAL') ?? STRIPE_PRICE_PRO;
 const APP_URL = Deno.env.get('APP_URL')!;
 
 // Stripe must use the Fetch HTTP client on Deno; the default Node client can't run here.
@@ -92,9 +95,20 @@ Deno.serve(async (req: Request) => {
     const profile = await getProfile(user.id);
     const customerId = profile?.stripe_customer_id ?? null;
 
+    // Which billing interval the user picked (defaults to monthly). The annual
+    // price falls back to the monthly one if STRIPE_PRICE_PRO_ANNUAL is unset.
+    let interval: 'month' | 'year' = 'month';
+    try {
+      const body = (await req.json()) as { interval?: string } | null;
+      if (body?.interval === 'year') interval = 'year';
+    } catch {
+      // No or invalid JSON body → keep the monthly default.
+    }
+    const price = interval === 'year' ? STRIPE_PRICE_PRO_ANNUAL : STRIPE_PRICE_PRO;
+
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
-      line_items: [{ price: STRIPE_PRICE_PRO, quantity: 1 }],
+      line_items: [{ price, quantity: 1 }],
       // Attach to an existing customer when known; otherwise let Stripe create
       // one keyed to this email. Only one of the two may be set.
       ...(customerId ? { customer: customerId } : { customer_email: user.email ?? undefined }),
