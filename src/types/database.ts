@@ -25,18 +25,25 @@ export interface Database {
           id: string;
           display_name: string | null;
           avatar_url: string | null;
+          // Phase 9 due-date reminder preferences (own-row RLS).
+          reminder_emails_enabled: boolean;
+          reminder_lead_days: number;
           created_at: string;
         };
         Insert: {
           id: string;
           display_name?: string | null;
           avatar_url?: string | null;
+          reminder_emails_enabled?: boolean;
+          reminder_lead_days?: number;
           created_at?: string;
         };
         Update: {
           id?: string;
           display_name?: string | null;
           avatar_url?: string | null;
+          reminder_emails_enabled?: boolean;
+          reminder_lead_days?: number;
           created_at?: string;
         };
         Relationships: [];
@@ -127,6 +134,9 @@ export interface Database {
           assignee_id: string | null;
           // Open-ended priority: 1 = P1 (highest), NULL = unset. See lib/priority.ts.
           priority: number | null;
+          // Phase 9: the due_date we last emailed a reminder for (dedupe marker).
+          // Written only by the reminders Edge Function (service role).
+          reminder_sent_for: string | null;
           position: number;
           created_at: string;
         };
@@ -139,6 +149,7 @@ export interface Database {
           due_date?: string | null;
           assignee_id?: string | null;
           priority?: number | null;
+          reminder_sent_for?: string | null;
           position: number;
           created_at?: string;
         };
@@ -151,6 +162,7 @@ export interface Database {
           due_date?: string | null;
           assignee_id?: string | null;
           priority?: number | null;
+          reminder_sent_for?: string | null;
           position?: number;
           created_at?: string;
         };
@@ -376,6 +388,25 @@ export interface Database {
       redeem_my_invitations: {
         Args: Record<string, never>;
         Returns: number;
+      };
+      // Phase 9 reminders — SECURITY DEFINER, service_role only (the Edge
+      // Function calls these; the browser is denied EXECUTE by RLS grants).
+      due_reminder_candidates: {
+        Args: { p_lead_days?: number };
+        Returns: {
+          card_id: string;
+          title: string;
+          due_date: string;
+          project_id: string;
+          project_name: string;
+          assignee_id: string;
+          email: string;
+          display_name: string | null;
+        }[];
+      };
+      mark_reminders_sent: {
+        Args: { p_card_ids: string[] };
+        Returns: undefined;
       };
     };
     Enums: Record<string, never>;

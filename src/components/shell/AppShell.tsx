@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { AuroraBackground } from '@/components/AuroraBackground';
+import { OfflineBanner } from '@/components/pwa/OfflineBanner';
+import { PWAReloadPrompt } from '@/components/pwa/PWAReloadPrompt';
+import { useDueReminders } from '@/features/reminders';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { BottomNav } from './BottomNav';
@@ -13,6 +16,9 @@ import { BottomNav } from './BottomNav';
 export function AppShell() {
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // In-app due-date reminders (browser notifications) — opt-in, runs app-wide.
+  useDueReminders();
 
   return (
     <div className="relative min-h-dvh">
@@ -35,6 +41,9 @@ export function AppShell() {
       </div>
 
       <BottomNav />
+
+      <OfflineBanner />
+      <PWAReloadPrompt />
     </div>
   );
 }

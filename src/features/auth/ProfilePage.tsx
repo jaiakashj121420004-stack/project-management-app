@@ -7,6 +7,7 @@ import { Reveal } from '@/components/motion/Reveal';
 import { Avatar } from '@/components/Avatar';
 import { Spinner } from '@/components/feedback/Spinner';
 import { useAuth } from '@/hooks/useAuth';
+import { ReminderSettings } from '@/features/reminders';
 import { useProfile, useUpdateProfile } from './useProfile';
 import { resolveAvatarUrl, resolveDisplayName } from './identity';
 import { FormNotice } from './FormNotice';
@@ -105,6 +106,17 @@ export function ProfilePage() {
           </>
         )}
       </GlassPanel>
+
+      <section className="mt-8">
+        <h2 className="px-1 font-display text-title font-semibold text-fg">Reminders</h2>
+        <p className="mt-1 px-1 text-sm text-fg-muted">
+          Stay ahead of due dates. Email reminders need a one-time server setup (see the project
+          README); browser notifications work right away.
+        </p>
+        <GlassPanel strong className="mt-3 px-5 py-1 sm:px-6">
+          <ReminderSettings />
+        </GlassPanel>
+      </section>
     </Reveal>
   );
 }

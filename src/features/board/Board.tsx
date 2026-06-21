@@ -363,6 +363,7 @@ export function Board({ projectId, accent, canEdit }: BoardProps) {
       description: values.description,
       due_date: values.due_date,
       priority: values.priority,
+      assignee_id: values.assignee_id,
     });
   }
 

@@ -6,7 +6,9 @@ import tseslint from 'typescript-eslint';
 import prettier from 'eslint-config-prettier';
 
 export default tseslint.config(
-  { ignores: ['dist', 'dev-dist', 'node_modules', '.remember'] },
+  // supabase/functions runs on Deno (its own runtime/globals) and scripts/ are
+  // standalone Node tools — neither belongs to the app's typed TS project graph.
+  { ignores: ['dist', 'dev-dist', 'node_modules', '.remember', 'supabase/functions', 'scripts'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommendedTypeChecked],
     files: ['**/*.{ts,tsx}'],

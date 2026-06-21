@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { clearPersistedCache } from '@/lib/queryClient';
 import { AuthContext, type AuthContextValue } from './auth-context';
 
 /**
@@ -14,7 +14,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isRecovery, setIsRecovery] = useState(false);
-  const queryClient = useQueryClient();
 
   useEffect(() => {
     let active = true;
@@ -34,8 +33,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === 'PASSWORD_RECOVERY') setIsRecovery(true);
       if (event === 'SIGNED_OUT') {
         setIsRecovery(false);
-        // Drop cached user-scoped data so nothing leaks to the next session.
-        queryClient.clear();
+        // Drop in-memory AND persisted user-scoped data so nothing leaks to the
+        // next session (the cache is persisted to localStorage in Phase 9).
+        clearPersistedCache();
       }
     });
 
@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       active = false;
       subscription.unsubscribe();
     };
-  }, [queryClient]);
+  }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({ session, user: session?.user ?? null, loading, isRecovery }),

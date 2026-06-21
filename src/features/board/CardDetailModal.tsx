@@ -7,6 +7,7 @@ import {
   ListChecks,
   Tags,
   Trash2,
+  UserCircle2,
 } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { Field } from '@/components/forms/Field';
@@ -24,14 +25,17 @@ import { byPosition } from './ordering';
 import { LabelPill } from './LabelPill';
 import { DueDateField } from './DueDateField';
 import { PriorityField } from './PriorityField';
+import { AssigneeField } from './AssigneeField';
 import { CardLabelsSection } from './CardLabelsSection';
 import { Checklist } from './Checklist';
+import { useMembers } from '@/features/members/useMembers';
 
 export interface CardDetailValues {
   title: string;
   description: string | null;
   due_date: string | null;
   priority: number | null;
+  assignee_id: string | null;
 }
 
 interface CardDetailModalProps {
@@ -110,6 +114,7 @@ function CardDetailForm({
   const [description, setDescription] = useState(card.description ?? '');
   const [dueDate, setDueDate] = useState<string | null>(card.due_date);
   const [priority, setPriority] = useState<number | null>(card.priority);
+  const [assigneeId, setAssigneeId] = useState<string | null>(card.assignee_id);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -146,6 +151,7 @@ function CardDetailForm({
         description: parsed.data.description.trim() || null,
         due_date: dueDate,
         priority,
+        assignee_id: assigneeId,
       });
       onClose();
     } catch {
@@ -202,6 +208,8 @@ function CardDetailForm({
       <DueDateField value={dueDate} onChange={setDueDate} />
 
       <PriorityField value={priority} onChange={setPriority} />
+
+      <AssigneeField projectId={projectId} value={assigneeId} onChange={setAssigneeId} />
 
       <CardLabelsSection
         projectId={projectId}
@@ -291,6 +299,10 @@ function CardReadOnlyView({
   onClose: () => void;
 }) {
   const { data: extras } = useCardExtras(projectId);
+  const { data: membersData } = useMembers(projectId);
+  const assignee = card.assignee_id
+    ? membersData?.members.find((member) => member.userId === card.assignee_id)
+    : undefined;
 
   const checklist = useMemo(
     () => (extras?.checklist ?? []).filter((item) => item.card_id === card.id).sort(byPosition),
@@ -337,6 +349,16 @@ function CardReadOnlyView({
               {formatPriority(card.priority)}
             </span>
           )}
+        </div>
+      )}
+
+      {assignee && (
+        <div className="flex items-center gap-2 text-sm text-fg-muted">
+          <UserCircle2 size={16} aria-hidden />
+          <span>
+            Assigned to{' '}
+            <span className="font-medium text-fg">{assignee.displayName ?? 'Member'}</span>
+          </span>
         </div>
       )}
 

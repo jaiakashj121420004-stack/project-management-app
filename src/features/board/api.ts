@@ -105,6 +105,7 @@ export async function updateCardDetail(
     description: string | null;
     due_date: string | null;
     priority: number | null;
+    assignee_id: string | null;
   },
 ): Promise<Card> {
   const { data, error } = await supabase
@@ -114,6 +115,7 @@ export async function updateCardDetail(
       description: patch.description,
       due_date: patch.due_date,
       priority: patch.priority,
+      assignee_id: patch.assignee_id,
     })
     .eq('id', id)
     .select('*')

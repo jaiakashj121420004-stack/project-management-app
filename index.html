@@ -3,11 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#0B0710" />
+    <!-- Single dynamic theme-color, kept in sync with the active theme by applyTheme(). -->
+    <meta name="theme-color" content="#0B0710" id="theme-color" />
     <meta
       name="description"
       content="Aurora — a modern project-management app with boards, calendar, notes, and collaboration."
     />
+
+    <!-- PWA icons -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="mask-icon" href="/favicon.svg" color="#7C3AED" />
+
+    <!-- iOS standalone (home-screen) hints -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Aurora" />
+
     <title>Aurora</title>
     <!-- Set the theme class before first paint to avoid a flash of the wrong theme. -->
     <script>
@@ -18,6 +30,8 @@
           var theme = stored === 'dark' || stored === 'light' ? stored : prefersLight ? 'light' : 'dark';
           document.documentElement.classList.remove('dark', 'light');
           document.documentElement.classList.add(theme);
+          var meta = document.getElementById('theme-color');
+          if (meta) meta.setAttribute('content', theme === 'light' ? '#FAF7FF' : '#0B0710');
         } catch (e) {
           /* keep the default dark class */
         }
