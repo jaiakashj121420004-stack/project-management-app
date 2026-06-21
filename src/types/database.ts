@@ -389,6 +389,21 @@ export interface Database {
         Args: Record<string, never>;
         Returns: number;
       };
+      // Invitation accept/decline (no auto-join): list my invites + accept one.
+      my_pending_invitations: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          project_id: string;
+          project_name: string;
+          role: string;
+          created_at: string;
+        }[];
+      };
+      accept_invitation: {
+        Args: { p_invitation_id: string };
+        Returns: string;
+      };
       // Phase 9 reminders — SECURITY DEFINER, service_role only (the Edge
       // Function calls these; the browser is denied EXECUTE by RLS grants).
       due_reminder_candidates: {

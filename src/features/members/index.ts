@@ -1,5 +1,11 @@
 export { MembersBar } from './MembersBar';
 export { MembersPanel } from './MembersPanel';
+export { PendingInvitations } from './PendingInvitations';
 export { useMembers, useMyRole } from './useMembers';
 export { useProjectRealtime } from './useProjectRealtime';
-export { useRedeemInvitations } from './useRedeemInvitations';
+export {
+  useMyInvitations,
+  useAcceptInvitation,
+  useDeclineInvitation,
+  useLeaveProject,
+} from './useInvitations';

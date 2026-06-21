@@ -151,3 +151,41 @@ export async function redeemMyInvitations(): Promise<number> {
   if (error) throw error;
   return data ?? 0;
 }
+
+/** A pending invitation addressed to the current user, with its project name. */
+export interface MyInvitation {
+  id: string;
+  projectId: string;
+  projectName: string;
+  role: InvitationRole;
+  createdAt: string;
+}
+
+/** Invitations addressed to the current user (RPC; resolves the project name,
+ *  which the members-only projects RLS would otherwise hide before joining). */
+export async function fetchMyInvitations(): Promise<MyInvitation[]> {
+  const { data, error } = await supabase.rpc('my_pending_invitations');
+  if (error) throw error;
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    projectId: row.project_id,
+    projectName: row.project_name,
+    role: row.role as InvitationRole,
+    createdAt: row.created_at,
+  }));
+}
+
+/** Accept an invitation → become a member (RPC). Returns the project id. */
+export async function acceptInvitation(invitationId: string): Promise<string> {
+  const { data, error } = await supabase.rpc('accept_invitation', {
+    p_invitation_id: invitationId,
+  });
+  if (error) throw error;
+  return data as string;
+}
+
+/** Decline (delete) an invitation addressed to me (invitee-delete RLS). */
+export async function declineInvitation(invitationId: string): Promise<void> {
+  const { error } = await supabase.from('invitations').delete().eq('id', invitationId);
+  if (error) throw error;
+}

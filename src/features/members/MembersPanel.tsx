@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
-import { AlertCircle, Check, Mail, UserMinus, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { AlertCircle, Check, LogOut, Mail, UserMinus, X } from 'lucide-react';
 import { Avatar } from '@/components/Avatar';
 import { Field } from '@/components/forms/Field';
 import { GradientButton } from '@/components/buttons/GradientButton';
@@ -8,6 +9,7 @@ import type { Invitation, InvitationRole } from '@/types/database';
 import type { MemberWithProfile } from './api';
 import { useCancelInvitation, useInviteMember, useMembers, useRemoveMember, useUpdateMemberRole } from './useMembers';
 import { RoleBadge, RoleSelect, ROLE_LABEL } from './RoleControl';
+import { useLeaveProject } from './useInvitations';
 import { inviteSchema, fieldErrorsOf } from './schemas';
 
 interface MembersPanelProps {
@@ -22,6 +24,8 @@ interface MembersPanelProps {
  *  roles, pending invitations, and — for the owner — an invite form. */
 export function MembersPanel({ projectId, isOwner, currentUserId, onlineUserIds }: MembersPanelProps) {
   const { data, isLoading, isError } = useMembers(projectId);
+  const navigate = useNavigate();
+  const leaveProject = useLeaveProject();
 
   if (isLoading) {
     return (
@@ -80,9 +84,27 @@ export function MembersPanel({ projectId, isOwner, currentUserId, onlineUserIds 
       {isOwner ? (
         <InviteForm projectId={projectId} />
       ) : (
-        <p className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-fill)] px-3.5 py-3 text-sm text-fg-muted">
-          Only the project owner can invite people or change roles.
-        </p>
+        <div className="flex flex-col gap-3 border-t border-[var(--glass-border)] pt-5">
+          <p className="text-sm text-fg-muted">
+            Only the project owner can invite people or change roles.
+          </p>
+          {currentUserId && (
+            <button
+              type="button"
+              onClick={() =>
+                leaveProject.mutate(
+                  { projectId, userId: currentUserId },
+                  { onSuccess: () => void navigate('/') },
+                )
+              }
+              disabled={leaveProject.isPending}
+              className="inline-flex items-center justify-center gap-2 self-start rounded-2xl border border-danger/30 bg-danger/10 px-4 py-2.5 text-sm font-medium text-danger transition-colors hover:bg-danger/20 disabled:opacity-50"
+            >
+              <LogOut size={16} aria-hidden />
+              Leave project
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
