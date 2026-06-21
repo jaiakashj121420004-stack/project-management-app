@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { LogOut, User, type LucideIcon } from 'lucide-react';
+import { CreditCard, LogOut, MessageSquarePlus, User, type LucideIcon } from 'lucide-react';
 import { Avatar } from '@/components/Avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { springs } from '@/lib/motion';
@@ -9,6 +9,8 @@ import { cn } from '@/lib/cn';
 import { useProfile } from './useProfile';
 import { resolveAvatarUrl, resolveDisplayName } from './identity';
 import { signOut } from './api';
+import { PlanBadge } from '@/features/billing/PlanBadge';
+import { FeedbackModal } from '@/features/feedback';
 
 function MenuItem({
   icon: Icon,
@@ -44,6 +46,7 @@ export function UserMenu() {
   const { data: profile } = useProfile();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   const name = resolveDisplayName(profile, user);
@@ -97,7 +100,10 @@ export function UserMenu() {
             <div className="flex items-center gap-3 px-3 py-2.5">
               <Avatar name={name} src={avatarUrl} size={40} />
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-fg">{name}</p>
+                <p className="flex items-center gap-1.5 truncate text-sm font-semibold text-fg">
+                  {name}
+                  {profile && <PlanBadge plan={profile.plan} />}
+                </p>
                 {user?.email && <p className="truncate text-xs text-fg-subtle">{user.email}</p>}
               </div>
             </div>
@@ -111,12 +117,32 @@ export function UserMenu() {
             >
               Profile
             </MenuItem>
+            <MenuItem
+              icon={CreditCard}
+              onClick={() => {
+                setOpen(false);
+                void navigate('/billing');
+              }}
+            >
+              Billing
+            </MenuItem>
+            <MenuItem
+              icon={MessageSquarePlus}
+              onClick={() => {
+                setOpen(false);
+                setFeedbackOpen(true);
+              }}
+            >
+              Send feedback
+            </MenuItem>
             <MenuItem icon={LogOut} tone="danger" onClick={() => void onSignOut()}>
               Sign out
             </MenuItem>
           </motion.div>
         )}
       </AnimatePresence>
+
+      <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </div>
   );
 }

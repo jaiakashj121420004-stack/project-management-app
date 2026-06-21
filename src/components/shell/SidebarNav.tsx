@@ -1,5 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { NAV_ITEMS } from './navItems';
+import { useAuth } from '@/hooks/useAuth';
+import { isAdminUser } from '@/lib/admin';
 import { cn } from '@/lib/cn';
 
 /** The nav links, shared by the desktop sidebar and the mobile drawer. */
@@ -10,9 +12,12 @@ export function SidebarNav({
   collapsed?: boolean;
   onNavigate?: () => void;
 }) {
+  const { user } = useAuth();
+  const admin = isAdminUser(user);
+  const items = NAV_ITEMS.filter((item) => !item.adminOnly || admin);
   return (
     <nav className="flex flex-col gap-1.5">
-      {NAV_ITEMS.map(({ label, to, icon: Icon, end }) => (
+      {items.map(({ label, to, icon: Icon, end }) => (
         <NavLink
           key={to}
           to={to}

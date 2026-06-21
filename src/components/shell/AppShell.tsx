@@ -24,7 +24,7 @@ export function AppShell() {
     <div className="relative min-h-dvh">
       <AuroraBackground />
 
-      <div className="mx-auto flex min-h-dvh w-full max-w-[1500px] gap-4 p-3 sm:p-4">
+      <div className="mx-auto flex min-h-dvh w-full max-w-[1500px] gap-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:pb-4 sm:pt-[max(1rem,env(safe-area-inset-top))] sm:pl-[max(1rem,env(safe-area-inset-left))] sm:pr-[max(1rem,env(safe-area-inset-right))]">
         <Sidebar
           collapsed={collapsed}
           onToggleCollapsed={() => setCollapsed((value) => !value)}
@@ -34,7 +34,7 @@ export function AppShell() {
 
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           <Topbar onOpenMenu={() => setDrawerOpen(true)} />
-          <main className="min-w-0 flex-1 pb-24 md:pb-2">
+          <main className="min-w-0 flex-1 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-2">
             <Outlet />
           </main>
         </div>

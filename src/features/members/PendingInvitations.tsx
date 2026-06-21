@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, Mail, X } from 'lucide-react';
 import { GlassPanel } from '@/components/glass/GlassPanel';
@@ -16,6 +17,7 @@ export function PendingInvitations() {
   const accept = useAcceptInvitation();
   const decline = useDeclineInvitation();
   const navigate = useNavigate();
+  const [error, setError] = useState<string | null>(null);
 
   if (!invitations || invitations.length === 0) return null;
 
@@ -45,11 +47,20 @@ export function PendingInvitations() {
                   leftIcon={<Check size={15} />}
                   isLoading={accept.isPending}
                   disabled={pending}
-                  onClick={() =>
+                  onClick={() => {
+                    setError(null);
                     accept.mutate(invitation.id, {
                       onSuccess: (projectId) => void navigate(`/projects/${projectId}`),
-                    })
-                  }
+                      onError: (err) =>
+                        setError(
+                          String((err as { message?: string })?.message ?? '').includes(
+                            'MEMBER_LIMIT_REACHED',
+                          )
+                            ? `"${invitation.projectName}" is full — its owner needs to upgrade to Pro to add more members.`
+                            : 'Could not accept that invitation. Please try again.',
+                        ),
+                    });
+                  }}
                 >
                   Accept
                 </GradientButton>
@@ -66,6 +77,11 @@ export function PendingInvitations() {
             </li>
           ))}
         </ul>
+        {error && (
+          <p className="rounded-2xl border border-danger/30 bg-danger/10 px-3.5 py-2.5 text-sm text-danger">
+            {error}
+          </p>
+        )}
       </GlassPanel>
     </Reveal>
   );

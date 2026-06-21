@@ -20,7 +20,7 @@ function Inner({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () 
 
   function handleNewProject() {
     onNavigate?.();
-    void navigate('/?new=1');
+    void navigate('/boards?new=1');
   }
 
   return (
@@ -41,7 +41,16 @@ function Inner({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () 
 
       <SidebarNav collapsed={collapsed} onNavigate={onNavigate} />
 
-      <div className="mt-auto px-1.5 text-xs text-fg-subtle">{!collapsed && 'Aurora · v0.1'}</div>
+      <div className="mt-auto px-1.5 text-xs leading-relaxed text-fg-subtle">
+        {!collapsed && (
+          <>
+            <p>Aurora · v0.1</p>
+            <p className="mt-0.5">
+              Made by <span className="font-medium text-fg-muted">J. Jai Akash</span>
+            </p>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -84,7 +93,7 @@ export function Sidebar({
               onClick={onCloseDrawer}
             />
             <motion.aside
-              className="glass-strong absolute inset-y-0 left-0 w-72 rounded-r-3xl"
+              className="glass-strong absolute inset-y-0 left-0 w-72 rounded-r-3xl pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pt-[env(safe-area-inset-top)]"
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}

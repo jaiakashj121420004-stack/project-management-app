@@ -10,7 +10,7 @@ export function PublicOnlyRoute() {
 
   if (loading) return <FullScreenLoader />;
   if (session) {
-    const from = (location.state as { from?: Location } | null)?.from?.pathname ?? '/';
+    const from = (location.state as { from?: Location } | null)?.from?.pathname ?? '/boards';
     return <Navigate to={from} replace />;
   }
   return <Outlet />;

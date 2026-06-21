@@ -10,12 +10,16 @@
  */
 import type { AccentName } from '@/lib/accents';
 import type { LabelColor } from '@/lib/labelColors';
+import type { PlanId } from '@/lib/plans';
 
 /** A member's permission level within a project (plan.md §5–6). */
 export type ProjectRole = 'owner' | 'editor' | 'viewer';
 
 /** Roles that can be invited / assigned to others (never 'owner'). */
 export type InvitationRole = Exclude<ProjectRole, 'owner'>;
+
+/** What a feedback submission is: a general note or a feature request. */
+export type FeedbackKind = 'feedback' | 'feature';
 
 export interface Database {
   public: {
@@ -28,6 +32,12 @@ export interface Database {
           // Phase 9 due-date reminder preferences (own-row RLS).
           reminder_emails_enabled: boolean;
           reminder_lead_days: number;
+          // Phase 10 billing — writable only by the Stripe webhook (service role);
+          // a trigger blocks users from changing these on their own profile row.
+          plan: PlanId;
+          stripe_customer_id: string | null;
+          stripe_subscription_id: string | null;
+          plan_status: string | null;
           created_at: string;
         };
         Insert: {
@@ -36,6 +46,10 @@ export interface Database {
           avatar_url?: string | null;
           reminder_emails_enabled?: boolean;
           reminder_lead_days?: number;
+          plan?: PlanId;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          plan_status?: string | null;
           created_at?: string;
         };
         Update: {
@@ -44,6 +58,10 @@ export interface Database {
           avatar_url?: string | null;
           reminder_emails_enabled?: boolean;
           reminder_lead_days?: number;
+          plan?: PlanId;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          plan_status?: string | null;
           created_at?: string;
         };
         Relationships: [];
@@ -351,6 +369,54 @@ export interface Database {
         };
         Relationships: [];
       };
+      feedback: {
+        Row: {
+          id: string;
+          user_id: string;
+          // 'feedback' = a general note, 'feature' = a feature request.
+          kind: FeedbackKind;
+          message: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          // Defaults to auth.uid() in the DB; clients may omit it.
+          user_id?: string;
+          kind: FeedbackKind;
+          message: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          kind?: FeedbackKind;
+          message?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      ceo_messages: {
+        Row: {
+          id: string;
+          message: string;
+          // Stamped server-side on every edit by a DB trigger.
+          updated_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          message: string;
+          updated_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          message?: string;
+          updated_at?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -423,6 +489,17 @@ export interface Database {
         Args: { p_card_ids: string[] };
         Returns: undefined;
       };
+      // Phase 10 billing: the caller's plan ('free' | 'pro').
+      current_plan: {
+        Args: Record<string, never>;
+        Returns: string;
+      };
+      // True when the caller is the app administrator (ADMIN_EMAIL). Used by the
+      // feedback / ceo_messages RLS policies (lib/admin.ts mirrors it in the UI).
+      is_admin: {
+        Args: Record<string, never>;
+        Returns: boolean;
+      };
     };
     Enums: Record<string, never>;
   };
@@ -441,3 +518,5 @@ export type TodoList = Database['public']['Tables']['todo_lists']['Row'];
 export type TodoItem = Database['public']['Tables']['todo_items']['Row'];
 export type Note = Database['public']['Tables']['notes']['Row'];
 export type Invitation = Database['public']['Tables']['invitations']['Row'];
+export type Feedback = Database['public']['Tables']['feedback']['Row'];
+export type CeoMessage = Database['public']['Tables']['ceo_messages']['Row'];

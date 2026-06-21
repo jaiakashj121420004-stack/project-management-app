@@ -6,7 +6,10 @@ import { GradientButton } from '@/components/buttons/GradientButton';
 import { Skeleton } from '@/components/feedback/Skeleton';
 import { Reveal } from '@/components/motion/Reveal';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/features/auth/useProfile';
 import { PendingInvitations } from '@/features/members';
+import { UpgradeModal } from '@/features/billing';
+import { FREE_PROJECT_LIMIT, isAtProjectLimit } from '@/lib/plans';
 import type { Project } from '@/types/database';
 import { ProjectCard } from './ProjectCard';
 import { ProjectFormModal } from './ProjectFormModal';
@@ -23,6 +26,7 @@ import type { ProjectFormInput } from './schemas';
  *  Aurora glass cards, with create / edit / delete. */
 export function ProjectsPage() {
   const { user } = useAuth();
+  const { data: profile } = useProfile();
   const { data: projects, isLoading, isError } = useProjects();
   const createProject = useCreateProject();
   const updateProject = useUpdateProject();
@@ -33,13 +37,23 @@ export function ProjectsPage() {
   const [deleting, setDeleting] = useState<Project | null>(null);
   // Bumped on every open so the form modal remounts and re-seeds from `initial`.
   const [formKey, setFormKey] = useState(0);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
+  const plan = profile?.plan ?? 'free';
+  const ownedCount = projects?.filter((project) => project.owner_id === user?.id).length ?? 0;
+  const atProjectLimit = isAtProjectLimit(plan, ownedCount);
+
   const openCreate = useCallback(() => {
+    // Free users at their project cap get the upgrade prompt instead of the form.
+    if (atProjectLimit) {
+      setUpgradeOpen(true);
+      return;
+    }
     setEditing(null);
     setFormKey((key) => key + 1);
     setFormOpen(true);
-  }, []);
+  }, [atProjectLimit]);
 
   // The sidebar's "New project" button navigates here with ?new=1 — open the
   // create modal once, then strip the param so it doesn't re-trigger.
@@ -64,12 +78,23 @@ export function ProjectsPage() {
   }
 
   async function handleSubmit(values: ProjectFormInput) {
-    if (editing) {
-      await updateProject.mutateAsync({ id: editing.id, ...values });
-    } else {
-      await createProject.mutateAsync(values);
+    try {
+      if (editing) {
+        await updateProject.mutateAsync({ id: editing.id, ...values });
+      } else {
+        await createProject.mutateAsync(values);
+      }
+      setFormOpen(false);
+    } catch (error) {
+      // The DB trigger is the real gate — surface the upgrade prompt if a free
+      // user slipped past the client check (e.g. a stale project count).
+      if (isProjectLimitError(error)) {
+        setFormOpen(false);
+        setUpgradeOpen(true);
+        return;
+      }
+      throw error;
     }
-    setFormOpen(false);
   }
 
   async function handleConfirmDelete() {
@@ -92,9 +117,16 @@ export function ProjectsPage() {
               planning.
             </p>
           </div>
-          <GradientButton leftIcon={<Plus size={18} />} onClick={openCreate}>
-            New project
-          </GradientButton>
+          <div className="flex flex-col items-center gap-1.5 sm:items-end">
+            <GradientButton leftIcon={<Plus size={18} />} onClick={openCreate}>
+              New project
+            </GradientButton>
+            {plan === 'free' && (
+              <p className="text-xs text-fg-subtle">
+                {ownedCount} / {FREE_PROJECT_LIMIT} projects used
+              </p>
+            )}
+          </div>
         </header>
       </Reveal>
 
@@ -144,7 +176,23 @@ export function ProjectsPage() {
         onConfirm={handleConfirmDelete}
         isPending={deleteProject.isPending}
       />
+
+      <UpgradeModal
+        open={upgradeOpen}
+        onClose={() => setUpgradeOpen(false)}
+        reason={`You've reached the Free plan's ${FREE_PROJECT_LIMIT}-project limit. Go Pro for unlimited projects.`}
+      />
     </div>
+  );
+}
+
+function isProjectLimitError(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof (error as { message: unknown }).message === 'string' &&
+    (error as { message: string }).message.includes('PROJECT_LIMIT_REACHED')
   );
 }
 

@@ -42,7 +42,7 @@ export function NotesHome() {
             Create a project first — notes live inside each project.
           </p>
           <Link
-            to="/"
+            to="/boards"
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--accent-from)] hover:underline"
           >
             Go to projects <ArrowRight size={16} />

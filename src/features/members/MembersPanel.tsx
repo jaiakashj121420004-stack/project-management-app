@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AlertCircle, Check, LogOut, Mail, UserMinus, X } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { AlertCircle, Check, LogOut, Mail, Sparkles, UserMinus, X } from 'lucide-react';
 import { Avatar } from '@/components/Avatar';
 import { Field } from '@/components/forms/Field';
 import { GradientButton } from '@/components/buttons/GradientButton';
@@ -10,6 +10,8 @@ import type { MemberWithProfile } from './api';
 import { useCancelInvitation, useInviteMember, useMembers, useRemoveMember, useUpdateMemberRole } from './useMembers';
 import { RoleBadge, RoleSelect, ROLE_LABEL } from './RoleControl';
 import { useLeaveProject } from './useInvitations';
+import { useProfile } from '@/features/auth/useProfile';
+import { FREE_MEMBER_LIMIT, isAtMemberLimit } from '@/lib/plans';
 import { inviteSchema, fieldErrorsOf } from './schemas';
 
 interface MembersPanelProps {
@@ -24,6 +26,7 @@ interface MembersPanelProps {
  *  roles, pending invitations, and — for the owner — an invite form. */
 export function MembersPanel({ projectId, isOwner, currentUserId, onlineUserIds }: MembersPanelProps) {
   const { data, isLoading, isError } = useMembers(projectId);
+  const { data: profile } = useProfile();
   const navigate = useNavigate();
   const leaveProject = useLeaveProject();
 
@@ -42,6 +45,8 @@ export function MembersPanel({ projectId, isOwner, currentUserId, onlineUserIds 
       </p>
     );
   }
+
+  const atMemberLimit = isAtMemberLimit(profile?.plan ?? 'free', data.members.length);
 
   return (
     <div className="-mr-2 flex max-h-[70vh] flex-col gap-6 overflow-y-auto pr-2">
@@ -82,7 +87,11 @@ export function MembersPanel({ projectId, isOwner, currentUserId, onlineUserIds 
       )}
 
       {isOwner ? (
-        <InviteForm projectId={projectId} />
+        atMemberLimit ? (
+          <MemberLimitNotice />
+        ) : (
+          <InviteForm projectId={projectId} />
+        )
       ) : (
         <div className="flex flex-col gap-3 border-t border-[var(--glass-border)] pt-5">
           <p className="text-sm text-fg-muted">
@@ -94,7 +103,7 @@ export function MembersPanel({ projectId, isOwner, currentUserId, onlineUserIds 
               onClick={() =>
                 leaveProject.mutate(
                   { projectId, userId: currentUserId },
-                  { onSuccess: () => void navigate('/') },
+                  { onSuccess: () => void navigate('/boards') },
                 )
               }
               disabled={leaveProject.isPending}
@@ -208,6 +217,31 @@ function InvitationRow({
         </button>
       )}
     </li>
+  );
+}
+
+function MemberLimitNotice() {
+  return (
+    <div className="flex flex-col gap-3 border-t border-[var(--glass-border)] pt-5">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Invite someone</h3>
+      <div className="flex items-start gap-3 rounded-2xl border border-[var(--accent-from)]/30 bg-[var(--glass-fill)] px-3.5 py-3">
+        <Sparkles size={18} className="mt-0.5 shrink-0 text-[var(--accent-from)]" aria-hidden />
+        <div className="text-sm">
+          <p className="font-medium text-fg">
+            You&apos;ve reached {FREE_MEMBER_LIMIT} members on the Free plan.
+          </p>
+          <p className="mt-0.5 text-fg-muted">
+            <Link
+              to="/billing"
+              className="font-semibold text-[var(--accent-from)] hover:underline"
+            >
+              Upgrade to Pro
+            </Link>{' '}
+            for unlimited collaborators per board.
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
 

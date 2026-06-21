@@ -113,3 +113,64 @@ select cron.schedule(
 Each run emails every assignee who opted in a digest of their cards due within
 their chosen lead window, then marks those cards so they aren't emailed again for
 the same due date. To stop it: `select cron.unschedule('aurora-due-reminders');`.
+
+## Stripe billing (Phase 10 — optional)
+
+Phase 10 adds a **Free** vs **Pro** plan. The free limit (3 projects) is enforced
+in the database, and the only thing that flips a user to Pro is the **verified
+Stripe webhook** — the browser never sets `profiles.plan`. Skip this whole
+section to keep the app free + unlimited.
+
+Pieces: a migration, three Edge Functions, Stripe dashboard config, and secrets.
+
+### 1. Apply the migration
+Run [`migrations/20260621210000_billing.sql`](./migrations/20260621210000_billing.sql)
+(SQL Editor or `db push`). It adds `plan` + Stripe id columns to `profiles`, a
+trigger enforcing the free 3-project cap, a trigger that makes the billing
+columns writable **only** by the service role, and the `current_plan()` helper.
+
+### 2. Create the Stripe product (test mode)
+In the Stripe dashboard (toggle **Test mode**): **Products → add product**
+"Aurora Pro" with a **recurring** monthly price. Copy:
+- the **Price ID** (`price_…`) → `STRIPE_PRICE_PRO`
+- your **secret key** (`sk_test_…`, Developers → API keys) → `STRIPE_SECRET_KEY`
+
+Enable the **Customer Portal** (Settings → Billing → Customer portal) so "Manage
+billing" works.
+
+### 3. Deploy the three functions
+```bash
+npx supabase functions deploy create-checkout-session
+npx supabase functions deploy create-portal-session
+npx supabase functions deploy stripe-webhook --no-verify-jwt
+```
+The webhook **must** be `--no-verify-jwt` (Stripe can't send a Supabase JWT; it
+proves authenticity with a signature instead). The other two require a logged-in
+user's JWT, so deploy them normally.
+
+### 4. Add the webhook endpoint
+Stripe → **Developers → Webhooks → Add endpoint**:
+`https://<ref>.supabase.co/functions/v1/stripe-webhook`, listening for exactly:
+`checkout.session.completed`, `customer.subscription.updated`,
+`customer.subscription.deleted`. Copy its **Signing secret** (`whsec_…`) →
+`STRIPE_WEBHOOK_SECRET`.
+
+### 5. Set the secrets
+```bash
+npx supabase secrets set \
+  STRIPE_SECRET_KEY=sk_test_xxx \
+  STRIPE_WEBHOOK_SECRET=whsec_xxx \
+  STRIPE_PRICE_PRO=price_xxx \
+  APP_URL=https://project-management-app-dev.pages.dev
+```
+`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically.
+
+### Go-live checklist (before charging real cards)
+- Swap the **test** key/price/webhook for **live** ones (and update
+  `STRIPE_WEBHOOK_SECRET` from the live endpoint).
+- Point `APP_URL` at your production origin; confirm the Supabase Auth **Site
+  URL** + redirect allow-list match it.
+- Have a lawyer review the `/terms` and `/privacy` pages (shipped as templates).
+- Re-confirm the webhook signature check; ensure no `service_role` key is in the
+  frontend. Consider rate-limiting and the invitation email-ownership note
+  (decision log, 2026-06-20) before going public.

@@ -56,7 +56,7 @@ export function ProjectPage() {
           It may have been deleted, or you don&apos;t have access to it.
         </p>
         <Link
-          to="/"
+          to="/boards"
           className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--accent-from)] hover:underline"
         >
           <ArrowLeft size={16} /> Back to projects
@@ -79,7 +79,7 @@ export function ProjectPage() {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0">
               <Link
-                to="/"
+                to="/boards"
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-fg-muted transition-colors hover:text-fg"
               >
                 <ArrowLeft size={16} /> Projects
