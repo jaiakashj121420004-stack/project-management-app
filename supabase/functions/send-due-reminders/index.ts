@@ -47,7 +47,10 @@ async function rpc<T>(name: string, body: Record<string, unknown>): Promise<T> {
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`RPC ${name} failed: ${res.status} ${await res.text()}`);
-  return (await res.json()) as T;
+  // Some RPCs (e.g. mark_reminders_sent) return void → an empty body. Only
+  // JSON.parse when there's actually a body, else res.json() throws on "".
+  const text = await res.text();
+  return (text ? (JSON.parse(text) as T) : (null as T));
 }
 
 function escapeHtml(value: string): string {
