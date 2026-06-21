@@ -92,7 +92,7 @@ export function UserMenu() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: -6 }}
             transition={springs.snappy}
-            className="glass-strong absolute right-0 top-12 z-50 w-60 origin-top-right rounded-3xl p-2"
+            className="glass-menu absolute right-0 top-12 z-50 w-60 origin-top-right rounded-3xl p-2"
           >
             <div className="flex items-center gap-3 px-3 py-2.5">
               <Avatar name={name} src={avatarUrl} size={40} />

@@ -19,6 +19,8 @@
 
   --glass-fill: rgba(255, 255, 255, 0.06);
   --glass-fill-strong: rgba(255, 255, 255, 0.1);
+  /* Opaque surface for dropdown menus/popovers (no content bleed-through). */
+  --menu-fill: linear-gradient(0deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08)), rgb(var(--bg));
   --glass-border: rgba(255, 255, 255, 0.12);
   --glass-highlight: rgba(255, 255, 255, 0.22);
   --glass-shadow:
@@ -53,6 +55,7 @@
 
   --glass-fill: rgba(255, 255, 255, 0.55);
   --glass-fill-strong: rgba(255, 255, 255, 0.72);
+  --menu-fill: linear-gradient(0deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)), rgb(var(--bg));
   --glass-border: rgba(255, 255, 255, 0.7);
   --glass-highlight: rgba(255, 255, 255, 0.9);
   --glass-shadow:
@@ -130,6 +133,14 @@
     -webkit-backdrop-filter: blur(24px) saturate(1.5);
     border: 1px solid var(--glass-border);
     box-shadow: var(--glass-shadow);
+  }
+
+  /* Opaque surface for dropdown menus/popovers so content underneath never
+     bleeds through and overlaps the menu text. */
+  .glass-menu {
+    background: var(--menu-fill);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow-lift);
   }
 
   /* Flowing accent gradient as text (plan.md §4.4). */
