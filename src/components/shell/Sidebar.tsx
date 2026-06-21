@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { PanelLeftClose, PanelLeftOpen, Plus } from 'lucide-react';
 import { Brand } from './Brand';
 import { SidebarNav } from './SidebarNav';
@@ -15,6 +16,13 @@ interface SidebarProps {
 
 /** Inner content shared by the desktop rail and the mobile drawer. */
 function Inner({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
+  const navigate = useNavigate();
+
+  function handleNewProject() {
+    onNavigate?.();
+    void navigate('/?new=1');
+  }
+
   return (
     <div className="flex h-full flex-col gap-6 p-3">
       <div className={cn('px-1.5 pt-2', collapsed && 'flex justify-center px-0')}>
@@ -24,6 +32,7 @@ function Inner({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () 
       <GradientButton
         size={collapsed ? 'sm' : 'md'}
         leftIcon={<Plus size={18} />}
+        onClick={handleNewProject}
         className={cn('w-full', collapsed && 'aspect-square w-11 px-0')}
         aria-label="New project"
       >

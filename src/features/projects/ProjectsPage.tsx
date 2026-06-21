@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { FolderPlus, Plus } from 'lucide-react';
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import { GradientButton } from '@/components/buttons/GradientButton';
@@ -35,12 +36,29 @@ export function ProjectsPage() {
   const [deleting, setDeleting] = useState<Project | null>(null);
   // Bumped on every open so the form modal remounts and re-seeds from `initial`.
   const [formKey, setFormKey] = useState(0);
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  function openCreate() {
+  const openCreate = useCallback(() => {
     setEditing(null);
     setFormKey((key) => key + 1);
     setFormOpen(true);
-  }
+  }, []);
+
+  // The sidebar's "New project" button navigates here with ?new=1 — open the
+  // create modal once, then strip the param so it doesn't re-trigger.
+  const wantsNew = searchParams.has('new');
+  useEffect(() => {
+    if (!wantsNew) return;
+    openCreate();
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete('new');
+        return next;
+      },
+      { replace: true },
+    );
+  }, [wantsNew, openCreate, setSearchParams]);
 
   function openEdit(project: Project) {
     setEditing(project);
