@@ -181,7 +181,7 @@ export async function acceptInvitation(invitationId: string): Promise<string> {
     p_invitation_id: invitationId,
   });
   if (error) throw error;
-  return data as string;
+  return data;
 }
 
 /** Decline (delete) an invitation addressed to me (invitee-delete RLS). */

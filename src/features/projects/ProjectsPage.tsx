@@ -60,6 +60,9 @@ export function ProjectsPage() {
   const wantsNew = searchParams.has('new');
   useEffect(() => {
     if (!wantsNew) return;
+    // Deliberate one-time, URL-driven side effect: ?new=1 opens the create modal
+    // once, then we strip the param so it can't re-fire (not a render loop).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     openCreate();
     setSearchParams(
       (prev) => {
@@ -191,8 +194,8 @@ function isProjectLimitError(error: unknown): boolean {
     typeof error === 'object' &&
     error !== null &&
     'message' in error &&
-    typeof (error as { message: unknown }).message === 'string' &&
-    (error as { message: string }).message.includes('PROJECT_LIMIT_REACHED')
+    typeof error.message === 'string' &&
+    error.message.includes('PROJECT_LIMIT_REACHED')
   );
 }
 

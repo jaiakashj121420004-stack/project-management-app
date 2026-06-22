@@ -18,7 +18,10 @@ async function invokeForUrl(
   body: Record<string, unknown> = {},
 ): Promise<string> {
   // supabase-js attaches the signed-in user's JWT, which the function verifies.
-  const { data, error } = await supabase.functions.invoke<UrlResponse>(fn, { body });
+  const { data, error } = (await supabase.functions.invoke<UrlResponse>(fn, { body })) as {
+    data: UrlResponse | null;
+    error: Error | null;
+  };
   if (error) throw error;
   if (!data?.url) throw new Error(data?.error ?? 'No redirect URL was returned.');
   return data.url;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const PROBE_URL = `${SUPABASE_URL}/auth/v1/health`;
 const PROBE_INTERVAL_MS = 30_000;
 const PROBE_TIMEOUT_MS = 6_000;
