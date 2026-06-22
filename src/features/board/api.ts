@@ -126,6 +126,31 @@ export async function updateCardDetail(
   return data;
 }
 
+/** A card's review-flow fields (Pro collaboration). Setting review_status fires
+ *  a SECURITY DEFINER trigger that logs activity + notifies the right person. */
+export interface CardReviewPatch {
+  review_status: Card['review_status'];
+  review_assignee_id: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+}
+
+export async function updateCardReview(id: string, patch: CardReviewPatch): Promise<Card> {
+  const { data, error } = await supabase
+    .from('cards')
+    .update({
+      review_status: patch.review_status,
+      review_assignee_id: patch.review_assignee_id,
+      reviewed_by: patch.reviewed_by,
+      reviewed_at: patch.reviewed_at,
+    })
+    .eq('id', id)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 /** Move a card: new column and/or new fractional position. */
 export async function moveCard(
   id: string,

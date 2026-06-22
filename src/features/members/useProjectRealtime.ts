@@ -51,6 +51,13 @@ export function useProjectRealtime(projectId: string | undefined) {
       invalidate(['projects']);
       invalidate(['project', projectId]);
     };
+    // Pro collaboration. Comments + activity carry project_id (filtered server-
+    // side); reactions don't, so they're invalidated broadly (RLS still scopes
+    // which events arrive). The keys are prefixes, so invalidating ['comments',
+    // projectId] reaches every open card thread for this project.
+    const refreshComments = () => invalidate(['comments', projectId]);
+    const refreshActivity = () => invalidate(['activity', projectId]);
+    const refreshReactions = () => invalidate(['reactions']);
 
     const projectFilter = `project_id=eq.${projectId}`;
     const channel = supabase
@@ -82,6 +89,16 @@ export function useProjectRealtime(projectId: string | undefined) {
         { event: '*', schema: 'public', table: 'project_members', filter: projectFilter },
         refreshMembers,
       )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'comments', filter: projectFilter },
+        refreshComments,
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'activity_log', filter: projectFilter },
+        refreshActivity,
+      )
       // Card children have no project_id to filter on; RLS still scopes which
       // events arrive, and the refetch is project-scoped, so refreshing this
       // project's extras on any of them is safe (at worst a redundant refetch).
@@ -95,6 +112,9 @@ export function useProjectRealtime(projectId: string | undefined) {
         { event: '*', schema: 'public', table: 'card_labels' },
         refreshExtras,
       )
+      // Reactions carry no project_id; RLS scopes which arrive, the refetch is
+      // target-scoped, so a broad invalidation is safe (at worst redundant).
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reactions' }, refreshReactions)
       .subscribe();
 
     return () => {

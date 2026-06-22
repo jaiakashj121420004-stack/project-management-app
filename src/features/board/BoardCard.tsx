@@ -47,6 +47,7 @@ export function BoardCard({ card, face, hidden = false, onOpen }: BoardCardProps
         description={card.description}
         dueDate={card.due_date}
         priority={card.priority}
+        reviewStatus={card.review_status}
         labels={face?.labels}
         checklist={face?.checklist}
         dimmed={isDragging}

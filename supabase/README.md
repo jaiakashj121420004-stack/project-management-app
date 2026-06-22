@@ -242,3 +242,42 @@ per-type cap). The finer per-type caps (**image ≤ 10 MB, audio ≤ 25 MB, vide
 client-side in [`../src/lib/storage.ts`](../src/lib/storage.ts) before upload — a
 single bucket limit can't express per-type byte caps. Keep the migration's
 `file_size_limit` in sync with `MEDIA_CAPS.video.maxBytes`.
+
+## Pro collaboration (comments, reactions, review, activity, notifications)
+
+Adds the Pro collaboration layer: threaded **comments** with @mentions, emoji
+**reactions**, a card **review** flow, an append-only **activity log**, and a
+**notification** inbox (the Topbar bell). All of it is Pro-gated on the board
+owner's plan (`project_is_pro`) and streamed over Realtime.
+
+Two one-time steps — a migration and (if email notifications are wanted) a
+redeploy of the existing reminders function. **No new secret.**
+
+### 1. Apply the migration
+Run [`migrations/20260622160000_collaboration_pro.sql`](./migrations/20260622160000_collaboration_pro.sql)
+(SQL Editor or `db push`). It:
+- Creates `comments`, `comment_mentions`, `reactions`, `activity_log`,
+  `notifications`, and adds `review_status` / `review_assignee_id` /
+  `reviewed_by` / `reviewed_at` to `cards`.
+- Adds the RLS (read = member; comments/reactions **INSERT** require
+  `project_is_pro` — the real Pro gate) and the `SECURITY DEFINER` triggers that
+  write the activity log + notifications (those tables have **no client INSERT
+  policy** — only the triggers write them).
+- **Realtime:** adds `comments`, `comment_mentions`, `reactions`, `activity_log`,
+  and `notifications` to the `supabase_realtime` publication with `REPLICA
+  IDENTITY FULL` (idempotent), exactly like Phase 8. No dashboard action needed
+  if Realtime is already enabled for the project (it is by default).
+
+### 2. (Optional) Email notifications
+There is **no new Edge Function**. The existing `send-due-reminders` function
+gained a third pass that emails un-emailed notifications (mentions / replies /
+reviews) for users who have email reminders on, via the service-role RPCs
+`notification_email_candidates` / `mark_notifications_emailed`. If you've already
+set up due-date email reminders (Resend key + `CRON_SECRET` + the 10-min cron),
+just **redeploy** the function to pick up the change:
+
+```bash
+supabase functions deploy send-due-reminders --no-verify-jwt
+```
+
+In-app notifications (the bell) need nothing server-side beyond the migration.

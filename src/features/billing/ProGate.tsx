@@ -17,6 +17,13 @@ interface ProGateProps {
   reason?: string;
   /** Replace the default glass upgrade card with your own locked-state UI. */
   fallback?: ReactNode;
+  /**
+   * Override the gate with an explicit Pro flag. Use for PROJECT-scoped features
+   * where the board owner's plan governs (useProjectIsPro), not the viewer's own.
+   * When set, the caller owns the loading state; when omitted, the viewer's
+   * profile plan is used.
+   */
+  isPro?: boolean;
 }
 
 /**
@@ -25,12 +32,14 @@ interface ProGateProps {
  * enforcement (plan.md §6). While the plan is still loading we render nothing so
  * the upgrade prompt never flashes for a user who turns out to be Pro.
  */
-export function ProGate({ children, title, reason, fallback }: ProGateProps) {
+export function ProGate({ children, title, reason, fallback, isPro }: ProGateProps) {
   const { data: profile, isLoading } = useProfile();
   const [modalOpen, setModalOpen] = useState(false);
 
-  if (isLoading && !profile) return null;
-  if (profile?.plan === 'pro') return <>{children}</>;
+  const unlocked = isPro ?? profile?.plan === 'pro';
+  // Only self-suppress while loading when WE own the plan check (no override).
+  if (isPro === undefined && isLoading && !profile) return null;
+  if (unlocked) return <>{children}</>;
   if (fallback) return <>{fallback}</>;
 
   return (

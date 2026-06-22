@@ -9,8 +9,10 @@ import {
   removeColumn,
   renameColumn,
   updateCardDetail,
+  updateCardReview,
   updateColumnPosition,
   type BoardData,
+  type CardReviewPatch,
 } from './api';
 
 /**
@@ -167,6 +169,10 @@ export function useAddCard(projectId: string) {
           assignee_id: null,
           priority: null,
           reminder_sent_for: null,
+          review_status: 'none',
+          review_assignee_id: null,
+          reviewed_by: null,
+          reviewed_at: null,
           position,
           created_at: new Date().toISOString(),
         },
@@ -200,6 +206,24 @@ export function useUpdateCard(projectId: string) {
       cards: board.cards.map((card) =>
         card.id === id
           ? { ...card, title: title.trim(), description, due_date, due_at, priority, assignee_id }
+          : card,
+      ),
+    }),
+  );
+}
+
+/** Set a card's review state (request / approve / request changes / clear). The
+ *  cards UPDATE policy (owner/editor) governs this; a DB trigger handles the
+ *  activity + notification side effects. Optimistic so the badge flips instantly. */
+export function useUpdateCardReview(projectId: string) {
+  return useBoardMutation<Card, { id: string } & CardReviewPatch>(
+    projectId,
+    ({ id, ...patch }) => updateCardReview(id, patch),
+    (board, { id, review_status, review_assignee_id, reviewed_by, reviewed_at }) => ({
+      ...board,
+      cards: board.cards.map((card) =>
+        card.id === id
+          ? { ...card, review_status, review_assignee_id, reviewed_by, reviewed_at }
           : card,
       ),
     }),

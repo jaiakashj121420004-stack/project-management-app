@@ -32,7 +32,7 @@ import { CardSurface, type ChecklistProgress } from './CardSurface';
 import { CardDetailModal, type CardDetailValues } from './CardDetailModal';
 import { DeleteColumnDialog } from './DeleteColumnDialog';
 import { Confetti } from './Confetti';
-import { BoardToolbar, type DueFilter } from './BoardToolbar';
+import { BoardToolbar, type DueFilter, type ReviewFilter } from './BoardToolbar';
 import { isDueThisWeek, isOverdue } from './due';
 import {
   byPosition,
@@ -136,9 +136,14 @@ export function Board({ projectId, accent, canEdit }: BoardProps) {
   const [query, setQuery] = useState('');
   const [selectedLabelIds, setSelectedLabelIds] = useState<Set<string>>(new Set());
   const [dueFilters, setDueFilters] = useState<Set<DueFilter>>(new Set());
+  const [reviewFilters, setReviewFilters] = useState<Set<ReviewFilter>>(new Set());
 
   const trimmedQuery = query.trim().toLowerCase();
-  const filtering = trimmedQuery !== '' || selectedLabelIds.size > 0 || dueFilters.size > 0;
+  const filtering =
+    trimmedQuery !== '' ||
+    selectedLabelIds.size > 0 ||
+    dueFilters.size > 0 ||
+    reviewFilters.size > 0;
 
   const hiddenCardIds = useMemo(() => {
     const hidden = new Set<string>();
@@ -155,10 +160,12 @@ export function Board({ projectId, accent, canEdit }: BoardProps) {
             ((dueFilters.has('overdue') && isOverdue(card.due_date)) ||
               (dueFilters.has('week') && isDueThisWeek(card.due_date))),
         );
-      if (!(matchesQuery && matchesLabels && matchesDue)) hidden.add(card.id);
+      const matchesReview =
+        reviewFilters.size === 0 || reviewFilters.has(card.review_status as ReviewFilter);
+      if (!(matchesQuery && matchesLabels && matchesDue && matchesReview)) hidden.add(card.id);
     }
     return hidden;
-  }, [cards, filtering, trimmedQuery, selectedLabelIds, dueFilters, labelsByCardId]);
+  }, [cards, filtering, trimmedQuery, selectedLabelIds, dueFilters, reviewFilters, labelsByCardId]);
 
   function toggleLabelFilter(id: string) {
     setSelectedLabelIds((prev) => {
@@ -178,10 +185,20 @@ export function Board({ projectId, accent, canEdit }: BoardProps) {
     });
   }
 
+  function toggleReviewFilter(filter: ReviewFilter) {
+    setReviewFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(filter)) next.delete(filter);
+      else next.add(filter);
+      return next;
+    });
+  }
+
   function clearFilters() {
     setQuery('');
     setSelectedLabelIds(new Set());
     setDueFilters(new Set());
+    setReviewFilters(new Set());
   }
 
   const baseColumnOrder = useMemo(() => columns.map((c) => c.id), [columns]);
@@ -401,6 +418,8 @@ export function Board({ projectId, accent, canEdit }: BoardProps) {
         onToggleLabel={toggleLabelFilter}
         dueFilters={dueFilters}
         onToggleDue={toggleDueFilter}
+        reviewFilters={reviewFilters}
+        onToggleReview={toggleReviewFilter}
         filtering={filtering}
         onClear={clearFilters}
       />
@@ -456,6 +475,7 @@ export function Board({ projectId, accent, canEdit }: BoardProps) {
                 description={activeCard.description}
                 dueDate={activeCard.due_date}
                 priority={activeCard.priority}
+                reviewStatus={activeCard.review_status}
                 labels={activeFace?.labels}
                 checklist={activeFace?.checklist}
               />

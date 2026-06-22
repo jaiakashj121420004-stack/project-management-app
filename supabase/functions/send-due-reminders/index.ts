@@ -1,6 +1,6 @@
 // Aurora — due-date reminder Edge Function (Phase 9 + Pro P1).
 //
-// Runs on a schedule (pg_cron → pg_net, see supabase/README.md). It does TWO
+// Runs on a schedule (pg_cron → pg_net, see supabase/README.md). It does THREE
 // independent things each invocation:
 //   (1) Day-based digest (free): cards due within each assignee's lead window,
 //       via `due_reminder_candidates`; one digest email per assignee, then
@@ -9,6 +9,10 @@
 //       whose offset moment has just arrived, via `due_time_reminder_candidates`;
 //       one email per reminder, then `mark_time_reminders_sent` (deduped per
 //       (reminder, due_at) by card_reminder_dispatches).
+//   (3) Collaboration notification emails (Pro): each un-emailed notification
+//       (mention/reply/review) for a user who has email reminders on, via
+//       `notification_email_candidates`; then `mark_notifications_emailed`
+//       (deduped per notification by notifications.emailed_at).
 // Because (1) self-dedupes per due_date, running EVERY 10 MINUTES (so the timed
 // path is precise) never re-sends a daily digest — it just sends each as soon as
 // the card enters the window. Both paths are idempotent + window-based.
@@ -46,6 +50,16 @@ interface TimeCandidate {
   project_id: string;
   project_name: string;
   assignee_id: string;
+  email: string;
+  display_name: string | null;
+}
+
+/** One un-emailed collaboration notification (mention/reply/review). */
+interface NotificationEmailCandidate {
+  id: string;
+  user_id: string;
+  kind: string;
+  payload: Record<string, unknown>;
   email: string;
   display_name: string | null;
 }
@@ -217,6 +231,80 @@ async function runTimedReminders(): Promise<number> {
   return sentReminderIds.length;
 }
 
+/** Plain-text one-liner for a collaboration notification (subject + body). */
+function notificationLine(candidate: NotificationEmailCandidate): string {
+  const payload = candidate.payload ?? {};
+  const actor = typeof payload.actor_name === 'string' ? payload.actor_name : 'Someone';
+  const card = typeof payload.card_title === 'string' ? payload.card_title : 'a card';
+  switch (candidate.kind) {
+    case 'mention':
+      return `${actor} mentioned you on “${card}”`;
+    case 'reply':
+      return `${actor} replied to you on “${card}”`;
+    case 'review_request':
+      return `${actor} requested your review on “${card}”`;
+    case 'review_approved':
+      return `${actor} approved “${card}”`;
+    case 'review_changes':
+      return `${actor} requested changes on “${card}”`;
+    default:
+      return `${actor} updated “${card}”`;
+  }
+}
+
+/** On-brand HTML for a single collaboration notification. */
+function renderNotificationEmail(candidate: NotificationEmailCandidate): string {
+  const greeting = candidate.display_name
+    ? escapeHtml(candidate.display_name.split(' ')[0])
+    : 'there';
+  const line = escapeHtml(notificationLine(candidate));
+  const payload = candidate.payload ?? {};
+  const project = typeof payload.project_name === 'string' ? escapeHtml(payload.project_name) : '';
+  const snippet = typeof payload.snippet === 'string' ? escapeHtml(payload.snippet) : '';
+  return `<!doctype html><html><body style="margin:0;background:#faf7ff;font-family:Inter,Segoe UI,Arial,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 0;">
+      <tr><td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 12px 40px rgba(80,40,120,.12);">
+          <tr><td style="background:linear-gradient(110deg,#7C3AED,#06B6D4);padding:28px 24px;">
+            <div style="color:#fff;font-size:22px;font-weight:700;">Aurora</div>
+            <div style="color:rgba(255,255,255,.85);font-size:14px;margin-top:4px;">New activity</div>
+          </td></tr>
+          <tr><td style="padding:24px;">
+            <p style="margin:0 0 6px;color:#1a1330;font-size:15px;">Hi ${greeting},</p>
+            <p style="margin:0 0 4px;color:#1a1330;font-size:16px;font-weight:600;">${line}.</p>
+            ${project ? `<p style="margin:0;color:#7a7090;font-size:13px;">${project}</p>` : ''}
+            ${snippet ? `<p style="margin:12px 0 0;padding:12px 14px;background:#f6f2ff;border-radius:12px;color:#4a4060;font-size:14px;">“${snippet}”</p>` : ''}
+          </td></tr>
+          <tr><td style="padding:0 24px 28px;">
+            <p style="margin:0;color:#9a90a8;font-size:12px;">You're receiving this because email notifications are on in your Aurora profile. Turn them off any time in Profile → Reminders.</p>
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </body></html>`;
+}
+
+/** (3) Collaboration notification emails. Returns how many were sent. */
+async function runNotificationEmails(): Promise<number> {
+  const candidates = await rpc<NotificationEmailCandidate[]>('notification_email_candidates', {
+    p_max_age_minutes: 1440,
+  });
+  if (!candidates || candidates.length === 0) return 0;
+
+  const sentIds: string[] = [];
+  for (const c of candidates) {
+    if (!c.email) continue;
+    const ok = await sendEmail(c.email, notificationLine(c), renderNotificationEmail(c));
+    if (ok) sentIds.push(c.id);
+  }
+
+  // Mark only what we actually sent, so a failed send retries next run.
+  if (sentIds.length > 0) {
+    await rpc('mark_notifications_emailed', { p_ids: sentIds });
+  }
+  return sentIds.length;
+}
+
 Deno.serve(async (req: Request) => {
   // Only the scheduler (which knows CRON_SECRET) may invoke this.
   if (!CRON_SECRET || req.headers.get('x-cron-secret') !== CRON_SECRET) {
@@ -261,11 +349,15 @@ Deno.serve(async (req: Request) => {
     // (2) Precise Pro timed reminders (channel='email').
     const timedEmails = await runTimedReminders();
 
+    // (3) Collaboration notification emails (mentions / replies / reviews).
+    const notificationEmails = await runNotificationEmails();
+
     return Response.json({
       ok: true,
       reminded: sentCardIds.length,
       emails,
       timedEmails,
+      notificationEmails,
     });
   } catch (err) {
     console.error(err);

@@ -5,6 +5,14 @@ import { labelHex, withAlpha } from '@/lib/labelColors';
 import type { Label } from '@/types/database';
 
 export type DueFilter = 'overdue' | 'week';
+/** Review states the board can filter by (Pro collaboration). */
+export type ReviewFilter = 'in_review' | 'changes_requested' | 'approved';
+
+const REVIEW_FILTER_LABELS: Record<ReviewFilter, string> = {
+  in_review: 'In review',
+  changes_requested: 'Needs changes',
+  approved: 'Approved',
+};
 
 interface BoardToolbarProps {
   labels: Label[];
@@ -14,6 +22,8 @@ interface BoardToolbarProps {
   onToggleLabel: (id: string) => void;
   dueFilters: Set<DueFilter>;
   onToggleDue: (filter: DueFilter) => void;
+  reviewFilters: Set<ReviewFilter>;
+  onToggleReview: (filter: ReviewFilter) => void;
   filtering: boolean;
   onClear: () => void;
 }
@@ -29,6 +39,8 @@ export function BoardToolbar({
   onToggleLabel,
   dueFilters,
   onToggleDue,
+  reviewFilters,
+  onToggleReview,
   filtering,
   onClear,
 }: BoardToolbarProps) {
@@ -57,6 +69,16 @@ export function BoardToolbar({
         <FilterChip active={dueFilters.has('week')} onClick={() => onToggleDue('week')}>
           Due this week
         </FilterChip>
+
+        {(Object.keys(REVIEW_FILTER_LABELS) as ReviewFilter[]).map((filter) => (
+          <FilterChip
+            key={filter}
+            active={reviewFilters.has(filter)}
+            onClick={() => onToggleReview(filter)}
+          >
+            {REVIEW_FILTER_LABELS[filter]}
+          </FilterChip>
+        ))}
 
         {labels.map((label) => {
           const active = selectedLabelIds.has(label.id);

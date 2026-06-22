@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, LayoutGrid, NotebookPen } from 'lucide-react';
+import { Activity, ArrowLeft, LayoutGrid, NotebookPen } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import { Badge } from '@/components/Badge';
@@ -11,9 +11,11 @@ import { accentVars } from '@/lib/accents';
 import { Board } from '@/features/board';
 import { NotesPanel } from '@/features/notes';
 import { MembersBar, useMyRole, useProjectRealtime } from '@/features/members';
+import { ProGate } from '@/features/billing';
+import { ActivityFeed, useProjectIsPro } from '@/features/collaboration';
 import { useProject } from './useProjects';
 
-type ProjectTab = 'board' | 'notes';
+type ProjectTab = 'board' | 'notes' | 'activity';
 
 /** A single project: an accent-themed header above its Kanban board (Phase 4).
  *  RLS guarantees that a project the user can't access simply isn't returned. */
@@ -22,12 +24,15 @@ export function ProjectPage() {
   const { user } = useAuth();
   const { data: project, isLoading } = useProject(projectId);
   const [searchParams, setSearchParams] = useSearchParams();
-  const tab: ProjectTab = searchParams.get('tab') === 'notes' ? 'notes' : 'board';
+  const tabParam = searchParams.get('tab');
+  const tab: ProjectTab =
+    tabParam === 'notes' ? 'notes' : tabParam === 'activity' ? 'activity' : 'board';
 
   // Live collaboration for the active project: stream other members' changes into
   // the board/notes/members caches. Role drives read-only vs. editable.
   useProjectRealtime(projectId);
   const role = useMyRole(projectId);
+  const { data: isProBoard } = useProjectIsPro(projectId);
 
   function selectTab(next: ProjectTab) {
     setSearchParams(
@@ -119,14 +124,29 @@ export function ProjectPage() {
             >
               Notes
             </TabButton>
+            <TabButton
+              active={tab === 'activity'}
+              onClick={() => selectTab('activity')}
+              icon={<Activity size={15} />}
+            >
+              Activity
+            </TabButton>
           </div>
         </header>
       </Reveal>
 
-      {tab === 'board' ? (
-        <Board projectId={project.id} accent={project.accent} canEdit={canEdit} />
-      ) : (
-        <NotesPanel projectId={project.id} canEdit={canEdit} />
+      {tab === 'board' && <Board projectId={project.id} accent={project.accent} canEdit={canEdit} />}
+      {tab === 'notes' && <NotesPanel projectId={project.id} canEdit={canEdit} />}
+      {tab === 'activity' && (
+        <GlassPanel className="p-5 sm:p-6">
+          <ProGate
+            isPro={isProBoard}
+            title="The activity feed is a Pro feature"
+            reason="Upgrade to Pro to see a live history of comments, reviews, and changes across this board."
+          >
+            <ActivityFeed projectId={project.id} />
+          </ProGate>
+        </GlassPanel>
       )}
     </div>
   );

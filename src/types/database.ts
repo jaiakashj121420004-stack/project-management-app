@@ -24,6 +24,20 @@ export type FeedbackKind = 'feedback' | 'feature';
 /** Delivery channel for a Pro custom reminder (P1). */
 export type ReminderChannel = 'email' | 'push';
 
+/** A card's code-review state (Pro collaboration). */
+export type ReviewStatus = 'none' | 'in_review' | 'approved' | 'changes_requested';
+
+/** What an emoji reaction is attached to (Pro collaboration). */
+export type ReactionTarget = 'comment' | 'card';
+
+/** A notification's kind — drives its icon + copy in the bell dropdown. */
+export type NotificationKind =
+  | 'mention'
+  | 'reply'
+  | 'review_request'
+  | 'review_approved'
+  | 'review_changes';
+
 export interface Database {
   public: {
     Tables: {
@@ -162,6 +176,11 @@ export interface Database {
           // Phase 9: the due_date we last emailed a reminder for (dedupe marker).
           // Written only by the reminders Edge Function (service role).
           reminder_sent_for: string | null;
+          // Pro collaboration: a request-review / approve / request-changes flow.
+          review_status: ReviewStatus;
+          review_assignee_id: string | null;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
           position: number;
           created_at: string;
         };
@@ -176,6 +195,10 @@ export interface Database {
           assignee_id?: string | null;
           priority?: number | null;
           reminder_sent_for?: string | null;
+          review_status?: ReviewStatus;
+          review_assignee_id?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
           position: number;
           created_at?: string;
         };
@@ -190,6 +213,10 @@ export interface Database {
           assignee_id?: string | null;
           priority?: number | null;
           reminder_sent_for?: string | null;
+          review_status?: ReviewStatus;
+          review_assignee_id?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
           position?: number;
           created_at?: string;
         };
@@ -473,6 +500,156 @@ export interface Database {
         };
         Relationships: [];
       };
+      comments: {
+        Row: {
+          id: string;
+          // Denormalised from the card; a BEFORE INSERT trigger keeps it correct.
+          project_id: string;
+          // Exactly one of card_id / canvas_note_id is set (DB check).
+          card_id: string | null;
+          canvas_note_id: string | null;
+          author_id: string;
+          body: string;
+          // Self-FK for threads; null for a top-level comment.
+          parent_id: string | null;
+          created_at: string;
+          edited_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          // Forced from the card by the trigger; send the card's project_id anyway.
+          project_id: string;
+          card_id?: string | null;
+          canvas_note_id?: string | null;
+          author_id: string;
+          body: string;
+          parent_id?: string | null;
+          created_at?: string;
+          edited_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          card_id?: string | null;
+          canvas_note_id?: string | null;
+          author_id?: string;
+          body?: string;
+          parent_id?: string | null;
+          created_at?: string;
+          edited_at?: string | null;
+        };
+        Relationships: [];
+      };
+      comment_mentions: {
+        Row: {
+          comment_id: string;
+          mentioned_user_id: string;
+        };
+        Insert: {
+          comment_id: string;
+          mentioned_user_id: string;
+        };
+        Update: {
+          comment_id?: string;
+          mentioned_user_id?: string;
+        };
+        Relationships: [];
+      };
+      reactions: {
+        Row: {
+          id: string;
+          target_type: ReactionTarget;
+          target_id: string;
+          user_id: string;
+          emoji: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          target_type: ReactionTarget;
+          target_id: string;
+          // Defaults to auth.uid() server-side is NOT set — send it explicitly.
+          user_id: string;
+          emoji: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          target_type?: ReactionTarget;
+          target_id?: string;
+          user_id?: string;
+          emoji?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      activity_log: {
+        Row: {
+          id: string;
+          project_id: string;
+          actor_id: string | null;
+          verb: string;
+          target_type: string;
+          target_id: string | null;
+          // card_id, actor_name, card_title, snippet, … for the feed UI.
+          meta: Record<string, unknown>;
+          created_at: string;
+        };
+        // Insert/Update are trigger-only (no client write policy); kept for typing.
+        Insert: {
+          id?: string;
+          project_id: string;
+          actor_id?: string | null;
+          verb: string;
+          target_type: string;
+          target_id?: string | null;
+          meta?: Record<string, unknown>;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          actor_id?: string | null;
+          verb?: string;
+          target_type?: string;
+          target_id?: string | null;
+          meta?: Record<string, unknown>;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          kind: NotificationKind;
+          // actor_name, card_title, project_name, snippet, card_id, project_id, …
+          payload: Record<string, unknown>;
+          read_at: string | null;
+          // Set by the reminders Edge Function once an email has gone out.
+          emailed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          kind: NotificationKind;
+          payload?: Record<string, unknown>;
+          read_at?: string | null;
+          emailed_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          kind?: NotificationKind;
+          payload?: Record<string, unknown>;
+          read_at?: string | null;
+          emailed_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -588,6 +765,36 @@ export interface Database {
         Args: Record<string, never>;
         Returns: boolean;
       };
+      // Pro collaboration helpers — SECURITY DEFINER, used by RLS (plan.md §6).
+      comment_project_id: {
+        Args: { p_comment_id: string };
+        Returns: string;
+      };
+      comment_author_id: {
+        Args: { p_comment_id: string };
+        Returns: string;
+      };
+      target_project_id: {
+        Args: { p_target_type: string; p_target_id: string };
+        Returns: string;
+      };
+      // Notification emails — SECURITY DEFINER, service_role only (the reminders
+      // Edge Function calls these; the browser is denied EXECUTE).
+      notification_email_candidates: {
+        Args: { p_max_age_minutes?: number };
+        Returns: {
+          id: string;
+          user_id: string;
+          kind: string;
+          payload: Record<string, unknown>;
+          email: string;
+          display_name: string | null;
+        }[];
+      };
+      mark_notifications_emailed: {
+        Args: { p_ids: string[] };
+        Returns: undefined;
+      };
     };
     Enums: Record<string, never>;
   };
@@ -609,3 +816,8 @@ export type Invitation = Database['public']['Tables']['invitations']['Row'];
 export type Feedback = Database['public']['Tables']['feedback']['Row'];
 export type CeoMessage = Database['public']['Tables']['ceo_messages']['Row'];
 export type CardReminder = Database['public']['Tables']['card_reminders']['Row'];
+export type Comment = Database['public']['Tables']['comments']['Row'];
+export type CommentMention = Database['public']['Tables']['comment_mentions']['Row'];
+export type Reaction = Database['public']['Tables']['reactions']['Row'];
+export type ActivityEntry = Database['public']['Tables']['activity_log']['Row'];
+export type Notification = Database['public']['Tables']['notifications']['Row'];

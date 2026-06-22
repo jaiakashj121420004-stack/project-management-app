@@ -1,10 +1,29 @@
 import { forwardRef, type CSSProperties } from 'react';
-import { CalendarClock, CheckSquare, Flag } from 'lucide-react';
+import {
+  CalendarClock,
+  CheckCircle2,
+  CheckSquare,
+  Eye,
+  Flag,
+  RotateCcw,
+  type LucideIcon,
+} from 'lucide-react';
 import { cn } from '@/lib/cn';
-import type { Label } from '@/types/database';
+import type { Label, ReviewStatus } from '@/types/database';
 import { formatPriority, priorityPillClass } from '@/lib/priority';
 import { LabelPill } from './LabelPill';
 import { dueStatus, formatDueLabel } from './due';
+
+/** Compact review pill config for the card face (mirrors collaboration/ReviewBadge). */
+const REVIEW_PILL: Record<Exclude<ReviewStatus, 'none'>, { label: string; cls: string; icon: LucideIcon }> = {
+  in_review: { label: 'In review', cls: 'border-info/30 bg-info/10 text-info', icon: Eye },
+  approved: { label: 'Approved', cls: 'border-success/30 bg-success/10 text-success', icon: CheckCircle2 },
+  changes_requested: {
+    label: 'Changes',
+    cls: 'border-warning/30 bg-warning/10 text-warning',
+    icon: RotateCcw,
+  },
+};
 
 export interface ChecklistProgress {
   done: number;
@@ -18,6 +37,8 @@ interface CardSurfaceProps {
   dueDate?: string | null;
   /** Task priority (1 = P1); shown as a tier-colored pill when present. */
   priority?: number | null;
+  /** Review state; shown as a colored pill when a review is in progress. */
+  reviewStatus?: ReviewStatus;
   /** Labels attached to this card; shown as small swatches above the title. */
   labels?: Label[];
   /** Checklist tally; shown as a "2/5" pill when the card has any items. */
@@ -45,12 +66,13 @@ const DUE_PILL: Record<ReturnType<typeof dueStatus>, string> = {
  * checklist progress.
  */
 export const CardSurface = forwardRef<HTMLDivElement, CardSurfaceProps>(function CardSurface(
-  { title, description, dueDate, priority, labels, checklist, lifted = false, dimmed = false, className, style, onClick },
+  { title, description, dueDate, priority, reviewStatus, labels, checklist, lifted = false, dimmed = false, className, style, onClick },
   ref,
 ) {
   const status = dueDate ? dueStatus(dueDate) : null;
   const hasChecklist = checklist && checklist.total > 0;
   const hasPriority = priority != null;
+  const review = reviewStatus && reviewStatus !== 'none' ? REVIEW_PILL[reviewStatus] : null;
 
   return (
     <div
@@ -87,8 +109,19 @@ export const CardSurface = forwardRef<HTMLDivElement, CardSurfaceProps>(function
         <p className="mt-1.5 line-clamp-2 text-sm text-fg-subtle">{description}</p>
       ) : null}
 
-      {(status || hasChecklist || hasPriority) && (
+      {(status || hasChecklist || hasPriority || review) && (
         <div className="mt-2.5 flex flex-wrap items-center gap-2">
+          {review ? (
+            <span
+              className={cn(
+                'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium',
+                review.cls,
+              )}
+            >
+              <review.icon size={11} aria-hidden />
+              {review.label}
+            </span>
+          ) : null}
           {priority != null ? (
             <span
               className={cn(

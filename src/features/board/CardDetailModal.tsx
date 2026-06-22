@@ -4,7 +4,9 @@ import {
   AlertTriangle,
   CalendarClock,
   Check,
+  History,
   ListChecks,
+  Smile,
   Tags,
   Trash2,
   UserCircle2,
@@ -21,6 +23,13 @@ import type { AccentName } from '@/lib/accents';
 import type { Card } from '@/types/database';
 import { useIsPro } from '@/features/billing';
 import { RemindersSection } from '@/features/reminders';
+import {
+  ActivityFeed,
+  CommentThread,
+  ReactionBar,
+  ReviewControl,
+  useProjectIsPro,
+} from '@/features/collaboration';
 import { cardDetailSchema, fieldErrorsOf } from './schemas';
 import { useCardExtras } from './useCardExtras';
 import { dueStatus, formatDueLabel, type DueStatus } from './due';
@@ -184,11 +193,12 @@ function CardDetailForm({
   }
 
   return (
-    <form
-      onSubmit={(event) => void handleSubmit(event)}
-      noValidate
-      className="-mr-2 flex max-h-[72vh] flex-col gap-5 overflow-y-auto pr-2"
-    >
+    <div className="-mr-2 flex max-h-[72vh] flex-col gap-5 overflow-y-auto pr-2">
+      <form
+        onSubmit={(event) => void handleSubmit(event)}
+        noValidate
+        className="flex flex-col gap-5"
+      >
       {formError && (
         <div
           role="alert"
@@ -298,7 +308,53 @@ function CardDetailForm({
           </div>
         </div>
       )}
-    </form>
+      </form>
+
+      <CardCollaboration card={card} projectId={projectId} canEdit />
+    </div>
+  );
+}
+
+/**
+ * The Pro collaboration block shared by the editable + read-only card views:
+ * the review flow, card-level emoji reactions, the comment thread, and a
+ * per-card activity feed. Each piece Pro-gates itself on the board owner's plan.
+ */
+function CardCollaboration({
+  card,
+  projectId,
+  canEdit,
+}: {
+  card: Card;
+  projectId: string;
+  canEdit: boolean;
+}) {
+  const { data: isProBoard } = useProjectIsPro(projectId);
+
+  return (
+    <>
+      <ReviewControl card={card} projectId={projectId} canEdit={canEdit} />
+
+      {isProBoard && (
+        <section className="flex flex-col gap-2 border-t border-[var(--glass-border)] pt-4">
+          <h4 className="flex items-center gap-2 text-sm font-semibold text-fg">
+            <Smile size={16} aria-hidden /> Reactions
+          </h4>
+          <ReactionBar targetType="card" targetId={card.id} canReact />
+        </section>
+      )}
+
+      <CommentThread projectId={projectId} cardId={card.id} />
+
+      {isProBoard && (
+        <section className="flex flex-col gap-2.5 border-t border-[var(--glass-border)] pt-4">
+          <h4 className="flex items-center gap-2 text-sm font-semibold text-fg">
+            <History size={16} aria-hidden /> Activity
+          </h4>
+          <ActivityFeed projectId={projectId} cardId={card.id} />
+        </section>
+      )}
+    </>
   );
 }
 
@@ -429,6 +485,8 @@ function CardReadOnlyView({
           </ul>
         </section>
       )}
+
+      <CardCollaboration card={card} projectId={projectId} canEdit={false} />
 
       <div className="flex items-center justify-between gap-3 border-t border-[var(--glass-border)] pt-4">
         <Badge tone="neutral">Read-only</Badge>
