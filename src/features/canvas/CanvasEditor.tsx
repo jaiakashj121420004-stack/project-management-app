@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
-import { AlertCircle, ArrowLeft, Check, Trash2 } from 'lucide-react';
+import { AlertCircle, Check, Eye, Pencil, Trash2 } from 'lucide-react';
 import { Spinner } from '@/components/feedback/Spinner';
+import { SegmentedToggle } from '@/components/forms/SegmentedToggle';
 import type { PageType } from '@/lib/canvasPages';
 import type { CanvasNote } from '@/types/database';
 import { canvasTitleSchema } from './schemas';
@@ -27,14 +28,13 @@ interface CanvasEditorProps {
   projectId: string;
   /** Editors/owners can edit; viewers get a read-only, pan/zoom-only canvas. */
   canEdit: boolean;
-  /** Return to the list (mobile) and after a delete. */
-  onBack: () => void;
+  /** Clear the parent's selection after a delete (falls back to the next one). */
   onDeleted: () => void;
 }
 
 /** Loads the full canvas (with its scene) then hands a concrete note to the
  *  stateful editor, keyed by id so it re-seeds when the canvas changes. */
-export function CanvasEditor({ noteId, projectId, canEdit, onBack, onDeleted }: CanvasEditorProps) {
+export function CanvasEditor({ noteId, projectId, canEdit, onDeleted }: CanvasEditorProps) {
   const { data: note, isLoading } = useCanvas(noteId);
 
   // Prefer any cached doc (incl. the optimistic one a just-created canvas seeds)
@@ -57,7 +57,6 @@ export function CanvasEditor({ noteId, projectId, canEdit, onBack, onDeleted }: 
       note={note}
       projectId={projectId}
       canEdit={canEdit}
-      onBack={onBack}
       onDeleted={onDeleted}
     />
   );
@@ -71,17 +70,10 @@ interface CanvasEditorReadyProps {
   note: CanvasNote;
   projectId: string;
   canEdit: boolean;
-  onBack: () => void;
   onDeleted: () => void;
 }
 
-function CanvasEditorReady({
-  note,
-  projectId,
-  canEdit,
-  onBack,
-  onDeleted,
-}: CanvasEditorReadyProps) {
+function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditorReadyProps) {
   const { mutate: runSave } = useSaveCanvas(projectId);
   const { mutate: runDelete } = useDeleteCanvas(projectId);
 
@@ -92,6 +84,10 @@ function CanvasEditorReady({
 
   const [title, setTitle] = useState(note.title);
   const [pageType, setPageType] = useState<PageType>(note.page_type);
+  // Editors can flip to a read-only View; viewers are always read-only. The
+  // stage + toolbar key all their editing affordances off `editing`.
+  const [mode, setMode] = useState<'edit' | 'view'>('edit');
+  const editing = canEdit && mode === 'edit';
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0, scale: 1 });
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
@@ -242,7 +238,7 @@ function CanvasEditorReady({
     actionsRef.current = { undo, redo, deleteSelected, hasSelection: Boolean(selectedElement) };
   });
   useEffect(() => {
-    if (!canEdit) return;
+    if (!editing) return;
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
       if (
@@ -269,7 +265,7 @@ function CanvasEditorReady({
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [canEdit]);
+  }, [editing]);
 
   function handleDelete() {
     runDelete({ id: note.id });
@@ -277,29 +273,19 @@ function CanvasEditorReady({
   }
 
   return (
-    <div className="flex h-full flex-col gap-3">
+    <div className="flex flex-col gap-3">
       <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          <button
-            type="button"
-            onClick={onBack}
-            aria-label="Back to canvases"
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg lg:hidden"
-          >
-            <ArrowLeft size={18} />
-          </button>
-          <div className="min-w-0 flex-1">
-            <input
-              value={title}
-              maxLength={120}
-              readOnly={!canEdit}
-              onChange={(event: ChangeEvent<HTMLInputElement>) => setTitle(event.target.value)}
-              placeholder="Canvas title…"
-              aria-label="Canvas title"
-              className="w-full truncate bg-transparent font-display text-xl font-bold text-fg placeholder:text-fg-subtle focus:outline-none sm:text-2xl"
-            />
-            {canEdit && titleError && <p className="mt-1 text-xs text-danger">{titleError}</p>}
-          </div>
+        <div className="min-w-0 flex-1">
+          <input
+            value={title}
+            maxLength={120}
+            readOnly={!canEdit}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => setTitle(event.target.value)}
+            placeholder="Canvas title…"
+            aria-label="Canvas title"
+            className="w-full truncate bg-transparent font-display text-xl font-bold text-fg placeholder:text-fg-subtle focus:outline-none sm:text-2xl"
+          />
+          {canEdit && titleError && <p className="mt-1 text-xs text-danger">{titleError}</p>}
         </div>
 
         {canEdit && (
@@ -342,7 +328,21 @@ function CanvasEditorReady({
         </div>
       )}
 
-      <div className="relative h-[58vh] w-full sm:h-[66vh]">
+      {/* Edit / View toggle on every breakpoint — View renders the stage
+          read-only (pan/zoom only). Viewers are always read-only (no toggle). */}
+      {canEdit && (
+        <SegmentedToggle
+          label="Canvas mode"
+          value={mode}
+          onChange={setMode}
+          options={[
+            { value: 'edit', label: 'Edit', icon: <Pencil size={14} /> },
+            { value: 'view', label: 'View', icon: <Eye size={14} /> },
+          ]}
+        />
+      )}
+
+      <div className="relative min-h-[75vh] w-full flex-1">
         <div className="absolute inset-0">
           <CanvasStage
             elements={scene.elements}
@@ -350,7 +350,7 @@ function CanvasEditorReady({
             selectedId={effectiveSelectedId}
             camera={camera}
             tool="select"
-            canEdit={canEdit}
+            canEdit={editing}
             onSelect={setSelectedId}
             onChangeElement={changeElement}
             onCameraChange={setCamera}
@@ -360,7 +360,7 @@ function CanvasEditorReady({
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center p-2 sm:p-3">
           <CanvasToolbar
             className="pointer-events-auto"
-            canEdit={canEdit}
+            canEdit={editing}
             pageType={pageType}
             onPageType={setPageType}
             scale={camera.scale}

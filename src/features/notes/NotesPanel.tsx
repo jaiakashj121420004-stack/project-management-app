@@ -1,11 +1,9 @@
 import { useMemo, useState } from 'react';
-import { formatDistanceToNow } from 'date-fns';
-import { FileText, NotebookPen, Plus } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { NotebookPen, Plus } from 'lucide-react';
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import { GradientButton } from '@/components/buttons/GradientButton';
 import { Spinner } from '@/components/feedback/Spinner';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { EntityPicker } from '@/components/forms/EntityPicker';
 import type { Note } from '@/types/database';
 import { useAddNote, useNotes } from './useNotes';
 import { NoteEditor } from './NoteEditor';
@@ -27,15 +25,15 @@ function snippet(content: string): string {
 }
 
 /**
- * The per-project Notes tab: a list of notes on the left and the markdown editor
- * on the right (a single column on phones, where selecting a note swaps the list
- * for the editor). All access is membership-gated by RLS — this component never
- * filters by user. New/rename/delete + autosave run through useNotes.
+ * The per-project Notes tab: a full-width header (a glass dropdown picker for
+ * the active note, the count, and a New button) over the selected note's editor
+ * at full width on every breakpoint. The most-recently-edited note is selected
+ * by default; deleting falls back to the next one. All access is membership-gated
+ * by RLS — this component never filters by user.
  */
 export function NotesPanel({ projectId, canEdit }: { projectId: string; canEdit: boolean }) {
   const { data, isLoading, isError } = useNotes(projectId);
   const addNote = useAddNote(projectId);
-  const isDesktop = useMediaQuery('(min-width: 1024px)');
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -48,10 +46,8 @@ export function NotesPanel({ projectId, canEdit }: { projectId: string; canEdit:
   );
 
   // Derived selection (no effect): the explicit choice if it still exists, else
-  // — on desktop only — the most-recent note. Phones stay on the list until a
-  // note is tapped, and a deleted note falls back cleanly.
-  const selected: Note | undefined =
-    notes.find((note) => note.id === selectedId) ?? (isDesktop ? notes[0] : undefined);
+  // the most-recent note. A deleted note simply falls back to the next one.
+  const selected: Note | undefined = notes.find((note) => note.id === selectedId) ?? notes[0];
 
   function handleCreate() {
     const tempId = crypto.randomUUID();
@@ -79,108 +75,63 @@ export function NotesPanel({ projectId, canEdit }: { projectId: string; canEdit:
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[18rem_minmax(0,1fr)]">
-      <aside className={cn('flex-col gap-3', selected ? 'hidden lg:flex' : 'flex')}>
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-fg-muted">
-            <NotebookPen size={15} /> Notes
-            {notes.length > 0 && <span className="text-fg-subtle">· {notes.length}</span>}
-          </h2>
-          {canEdit && (
-            <GradientButton size="sm" leftIcon={<Plus size={15} />} onClick={handleCreate}>
-              New
-            </GradientButton>
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          {notes.length > 0 && (
+            <EntityPicker
+              className="w-full max-w-[15rem] sm:max-w-[18rem]"
+              label="Select a note"
+              items={notes.map((note) => ({
+                id: note.id,
+                title: note.title,
+                subtitle: snippet(note.content) || 'Empty note',
+              }))}
+              selectedId={selected?.id ?? null}
+              onSelect={setSelectedId}
+            />
           )}
+          <span className="flex shrink-0 items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-fg-muted">
+            <NotebookPen size={15} /> Notes
+            <span className="text-fg-subtle">· {notes.length}</span>
+          </span>
         </div>
+        {canEdit && (
+          <GradientButton size="sm" leftIcon={<Plus size={15} />} onClick={handleCreate}>
+            New
+          </GradientButton>
+        )}
+      </div>
 
-        {notes.length === 0 ? (
-          <GlassPanel className="flex flex-col items-center gap-2 p-6 text-center">
-            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-white">
-              <FileText size={20} />
+      {notes.length === 0 ? (
+        <GlassPanel className="grid min-h-[50vh] place-items-center p-10 text-center">
+          <div className="flex flex-col items-center gap-3">
+            <span className="grid h-14 w-14 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-white shadow-[0_12px_26px_-12px_var(--accent-glow)]">
+              <NotebookPen size={26} />
             </span>
-            <p className="text-sm text-fg-muted">
+            <p className="max-w-xs text-fg-muted">
               {canEdit
                 ? 'No notes yet. Capture a spec, a doc, or a brain-dump.'
                 : 'No notes have been added to this project yet.'}
             </p>
-          </GlassPanel>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {notes.map((note) => (
-              <li key={note.id}>
-                <NoteListItem
-                  note={note}
-                  active={note.id === selected?.id}
-                  onSelect={() => setSelectedId(note.id)}
-                />
-              </li>
-            ))}
-          </ul>
-        )}
-      </aside>
-
-      <section className={cn('min-h-[60vh]', selected ? 'block' : 'hidden lg:block')}>
-        {selected ? (
-          <GlassPanel className="h-full p-5 sm:p-6">
-            <NoteEditor
-              key={selected.id}
-              projectId={projectId}
-              note={selected}
-              canEdit={canEdit}
-              onBack={() => setSelectedId(null)}
-            />
-          </GlassPanel>
-        ) : (
-          <GlassPanel className="grid h-full place-items-center p-10 text-center">
-            <div className="flex flex-col items-center gap-3">
-              <span className="grid h-14 w-14 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-white shadow-[0_12px_26px_-12px_var(--accent-glow)]">
-                <NotebookPen size={26} />
-              </span>
-              <p className="max-w-xs text-fg-muted">
-                {canEdit
-                  ? 'Select a note to edit, or create one to start documenting this project.'
-                  : 'Select a note to read.'}
-              </p>
-              {canEdit && (
-                <GradientButton leftIcon={<Plus size={16} />} onClick={handleCreate}>
-                  New note
-                </GradientButton>
-              )}
-            </div>
-          </GlassPanel>
-        )}
-      </section>
+            {canEdit && (
+              <GradientButton leftIcon={<Plus size={16} />} onClick={handleCreate}>
+                New note
+              </GradientButton>
+            )}
+          </div>
+        </GlassPanel>
+      ) : selected ? (
+        <GlassPanel className="flex min-h-[70vh] flex-col p-5 sm:p-6">
+          <NoteEditor
+            key={selected.id}
+            projectId={projectId}
+            note={selected}
+            canEdit={canEdit}
+            onDeleted={() => setSelectedId(null)}
+          />
+        </GlassPanel>
+      ) : null}
     </div>
-  );
-}
-
-function NoteListItem({
-  note,
-  active,
-  onSelect,
-}: {
-  note: Note;
-  active: boolean;
-  onSelect: () => void;
-}) {
-  const preview = snippet(note.content);
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      aria-current={active}
-      className={cn(
-        'w-full rounded-2xl border p-3 text-left transition-colors',
-        active
-          ? 'border-[var(--accent-from)]/60 bg-[var(--glass-fill)] shadow-[0_10px_24px_-18px_var(--accent-glow)]'
-          : 'border-[var(--glass-border)] hover:bg-[var(--glass-fill)]',
-      )}
-    >
-      <p className="truncate text-sm font-semibold text-fg">{note.title}</p>
-      <p className="mt-0.5 truncate text-xs text-fg-subtle">{preview || 'Empty note'}</p>
-      <p className="mt-1 text-[0.7rem] text-fg-subtle">
-        {formatDistanceToNow(new Date(note.updated_at), { addSuffix: true })}
-      </p>
-    </button>
   );
 }

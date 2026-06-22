@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
-import { AlertCircle, ArrowLeft, Check, Eye, Pencil, Trash2 } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { AlertCircle, Check, Eye, Pencil, Trash2 } from 'lucide-react';
 import { Spinner } from '@/components/feedback/Spinner';
+import { SegmentedToggle } from '@/components/forms/SegmentedToggle';
 import type { Note } from '@/types/database';
 import { noteTitleSchema } from './schemas';
 import { useDeleteNote, useUpdateNote } from './useNotes';
@@ -13,8 +13,8 @@ interface NoteEditorProps {
   note: Note;
   /** Editors/owners can edit + delete; viewers get a read-only rendered view. */
   canEdit: boolean;
-  /** Return to the list (mobile) — also used to clear selection after a delete. */
-  onBack: () => void;
+  /** Clear the parent's selection after a delete (falls back to the next note). */
+  onDeleted: () => void;
 }
 
 type SaveStatus = 'saved' | 'unsaved' | 'saving' | 'error';
@@ -41,13 +41,13 @@ function buildPatch(title: string, content: string, saved: Snapshot) {
 }
 
 /**
- * The note editor: an inline title, a markdown textarea with a live preview
- * (side-by-side on desktop, Write/Preview toggle on mobile), and a subtle save
- * indicator. Edits autosave on a debounce and flush on unmount, so switching
- * notes never drops an in-flight change. Save status is derived during render;
- * only async outcomes touch state.
+ * The note editor: an inline title, a full-width markdown pane with an
+ * Edit/Preview toggle (single pane on every breakpoint — never side-by-side),
+ * and a subtle save indicator. Edits autosave on a debounce and flush on
+ * unmount, so switching notes never drops an in-flight change. Save status is
+ * derived during render; only async outcomes touch state.
  */
-export function NoteEditor({ projectId, note, canEdit, onBack }: NoteEditorProps) {
+export function NoteEditor({ projectId, note, canEdit, onDeleted }: NoteEditorProps) {
   // mutate is a stable reference in TanStack Query, so the debounce effect below
   // only re-runs on real edits — background re-renders can't reset the timer.
   const { mutate: runUpdate } = useUpdateNote(projectId);
@@ -57,7 +57,7 @@ export function NoteEditor({ projectId, note, canEdit, onBack }: NoteEditorProps
   const [content, setContent] = useState(note.content);
   const [saved, setSaved] = useState<Snapshot>({ title: note.title, content: note.content });
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'error'>('idle');
-  const [mode, setMode] = useState<'write' | 'preview'>('write');
+  const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   // Derived (no setState in render): validity + dirtiness + the shown status.
@@ -105,33 +105,23 @@ export function NoteEditor({ projectId, note, canEdit, onBack }: NoteEditorProps
 
   function handleDelete() {
     runDelete({ id: note.id });
-    onBack();
+    onDeleted();
   }
 
   return (
-    <div className="flex h-full flex-col gap-4">
+    <div className="flex flex-1 flex-col gap-4">
       <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          <button
-            type="button"
-            onClick={onBack}
-            aria-label="Back to notes"
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg lg:hidden"
-          >
-            <ArrowLeft size={18} />
-          </button>
-          <div className="min-w-0 flex-1">
-            <input
-              value={title}
-              maxLength={120}
-              readOnly={!canEdit}
-              onChange={(event: ChangeEvent<HTMLInputElement>) => setTitle(event.target.value)}
-              placeholder="Note title…"
-              aria-label="Note title"
-              className="w-full truncate bg-transparent font-display text-xl font-bold text-fg placeholder:text-fg-subtle focus:outline-none sm:text-2xl"
-            />
-            {canEdit && titleError && <p className="mt-1 text-xs text-danger">{titleError}</p>}
-          </div>
+        <div className="min-w-0 flex-1">
+          <input
+            value={title}
+            maxLength={120}
+            readOnly={!canEdit}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => setTitle(event.target.value)}
+            placeholder="Note title…"
+            aria-label="Note title"
+            className="w-full truncate bg-transparent font-display text-xl font-bold text-fg placeholder:text-fg-subtle focus:outline-none sm:text-2xl"
+          />
+          {canEdit && titleError && <p className="mt-1 text-xs text-danger">{titleError}</p>}
         </div>
 
         {canEdit && (
@@ -174,56 +164,43 @@ export function NoteEditor({ projectId, note, canEdit, onBack }: NoteEditorProps
         </div>
       )}
 
-      {/* Write / Preview toggle — mobile only; desktop shows both panes. Viewers
-          get a single rendered pane, so the toggle is hidden for them. */}
+      {/* Edit / Preview toggle on every breakpoint — only the active pane shows,
+          always full width. Viewers get a single rendered pane (no toggle). */}
       {canEdit && (
-        <div className="flex items-center gap-1 self-start rounded-xl border border-[var(--glass-border)] p-1 lg:hidden">
-          <ModeButton
-            active={mode === 'write'}
-            onClick={() => setMode('write')}
-            icon={<Pencil size={14} />}
-          >
-            Write
-          </ModeButton>
-          <ModeButton
-            active={mode === 'preview'}
-            onClick={() => setMode('preview')}
-            icon={<Eye size={14} />}
-          >
-            Preview
-          </ModeButton>
-        </div>
+        <SegmentedToggle
+          label="Editor mode"
+          value={mode}
+          onChange={setMode}
+          options={[
+            { value: 'edit', label: 'Edit', icon: <Pencil size={14} /> },
+            { value: 'preview', label: 'Preview', icon: <Eye size={14} /> },
+          ]}
+        />
       )}
 
       {canEdit ? (
-        <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-2">
-          <textarea
-            value={content}
-            onChange={(event) => setContent(event.target.value)}
-            placeholder="Write in markdown… **bold**, # headings, - lists, [links](https://…)"
-            aria-label="Note content"
-            spellCheck
-            className={cn(
-              'min-h-[40vh] w-full resize-none rounded-2xl border bg-[var(--field-bg)] p-4 font-mono text-sm leading-relaxed text-fg',
-              'placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]',
-              mode === 'preview' && 'hidden lg:block',
-            )}
-          />
-          <div
-            className={cn(
-              'min-h-[40vh] overflow-y-auto rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-fill)] p-4',
-              mode === 'write' && 'hidden lg:block',
-            )}
-          >
-            {content.trim() ? (
-              <Markdown source={content} />
-            ) : (
-              <p className="text-sm text-fg-subtle">Nothing to preview yet.</p>
-            )}
-          </div>
+        <div className="flex min-h-0 flex-1 flex-col">
+          {mode === 'edit' ? (
+            <textarea
+              value={content}
+              onChange={(event) => setContent(event.target.value)}
+              placeholder="Write in markdown… **bold**, # headings, - lists, [links](https://…)"
+              aria-label="Note content"
+              spellCheck
+              className="h-full min-h-[50vh] w-full flex-1 resize-none rounded-2xl border bg-[var(--field-bg)] p-4 font-mono text-sm leading-relaxed text-fg placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
+            />
+          ) : (
+            <div className="h-full min-h-[50vh] flex-1 overflow-y-auto rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-fill)] p-4">
+              {content.trim() ? (
+                <Markdown source={content} />
+              ) : (
+                <p className="text-sm text-fg-subtle">Nothing to preview yet.</p>
+              )}
+            </div>
+          )}
         </div>
       ) : (
-        <div className="min-h-[40vh] flex-1 overflow-y-auto rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-fill)] p-4 sm:p-6">
+        <div className="min-h-[50vh] flex-1 overflow-y-auto rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-fill)] p-4 sm:p-6">
           {content.trim() ? (
             <Markdown source={content} />
           ) : (
@@ -232,34 +209,6 @@ export function NoteEditor({ projectId, note, canEdit, onBack }: NoteEditorProps
         </div>
       )}
     </div>
-  );
-}
-
-function ModeButton({
-  active,
-  onClick,
-  icon,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  icon: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
-        active
-          ? 'bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-white'
-          : 'text-fg-muted hover:text-fg',
-      )}
-    >
-      {icon}
-      {children}
-    </button>
   );
 }
 
