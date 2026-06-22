@@ -29,6 +29,12 @@ export function formatDueTime(iso: string): string {
   return format(parseISO(iso), 'h:mm a');
 }
 
+/** Human 12-hour label for an `HH:mm` clock string, e.g. "14:30" → "2:30 PM". */
+export function formatClockTime(hhmm: string): string {
+  const [h, m] = hhmm.split(':');
+  return format(new Date(2000, 0, 1, Number(h ?? 0), Number(m ?? 0)), 'h:mm a');
+}
+
 /** Matches a 24-hour `HH:mm` time string. */
 export const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 

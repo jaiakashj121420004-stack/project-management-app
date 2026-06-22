@@ -1,5 +1,7 @@
-import { CalendarClock, Clock, X } from 'lucide-react';
+import { CalendarClock } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { formatClockTime } from '@/lib/dueAt';
+import { DatePicker } from '@/components/forms/DatePicker';
 import { dueStatus, formatDueLabel } from './due';
 
 interface DueDateFieldProps {
@@ -19,7 +21,7 @@ const HINT: Record<ReturnType<typeof dueStatus>, string> = {
   upcoming: 'text-fg-muted',
 };
 
-/** Pick a due date (and, for Pro, a time) with a clear button and an
+/** Pick a due date (and, for Pro, a time) via the on-brand DatePicker, with an
  *  urgency-tinted summary. The values are saved with the card form. */
 export function DueDateField({ value, onChange, showTime, time, onTimeChange }: DueDateFieldProps) {
   const status = value ? dueStatus(value) : null;
@@ -29,50 +31,20 @@ export function DueDateField({ value, onChange, showTime, time, onTimeChange }: 
       <h3 className="flex items-center gap-2 text-sm font-semibold text-fg">
         <CalendarClock size={16} aria-hidden /> Due date
       </h3>
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          type="date"
-          value={value ?? ''}
-          onChange={(event) => onChange(event.target.value || null)}
-          aria-label="Due date"
-          className="h-11 min-w-[9rem] flex-1 rounded-2xl border bg-[var(--field-bg)] px-4 text-fg backdrop-blur-sm transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)] [color-scheme:light_dark]"
-        />
-        {showTime && (
-          <div className="relative flex items-center">
-            <Clock
-              size={15}
-              aria-hidden
-              className="pointer-events-none absolute left-3 text-fg-subtle"
-            />
-            <input
-              type="time"
-              value={time ?? ''}
-              disabled={!value}
-              onChange={(event) => onTimeChange?.(event.target.value || null)}
-              aria-label="Due time"
-              className="h-11 rounded-2xl border bg-[var(--field-bg)] pl-9 pr-3 text-fg backdrop-blur-sm transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)] disabled:opacity-50 [color-scheme:light_dark]"
-            />
-          </div>
-        )}
-        {value && (
-          <button
-            type="button"
-            onClick={() => {
-              onChange(null);
-              onTimeChange?.(null);
-            }}
-            aria-label="Clear due date"
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-fg-subtle transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
-          >
-            <X size={18} />
-          </button>
-        )}
-      </div>
+      <DatePicker
+        label="Due date"
+        placeholder="No due date"
+        value={value}
+        onChange={onChange}
+        showTime={showTime}
+        time={time}
+        onTimeChange={onTimeChange}
+      />
       {status && value && (
         <p className={cn('text-xs font-medium', HINT[status])}>
           {status === 'overdue' ? 'Overdue · ' : status === 'soon' ? 'Due soon · ' : 'Due '}
           {formatDueLabel(value)}
-          {showTime && time ? ` · ${time}` : ''}
+          {showTime && time ? ` · ${formatClockTime(time)}` : ''}
         </p>
       )}
     </section>
