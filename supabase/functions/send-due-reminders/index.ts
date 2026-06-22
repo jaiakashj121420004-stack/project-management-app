@@ -1,10 +1,17 @@
-// Aurora — due-date reminder Edge Function (Phase 9).
+// Aurora — due-date reminder Edge Function (Phase 9 + Pro P1).
 //
-// Runs on a schedule (pg_cron → pg_net, see supabase/README.md). It asks the DB
-// for cards due within each assignee's lead window (via the SECURITY DEFINER
-// `due_reminder_candidates` RPC, service-role only), emails each assignee a
-// digest through Resend, then marks those cards reminded so they aren't emailed
-// again for the same due date.
+// Runs on a schedule (pg_cron → pg_net, see supabase/README.md). It does TWO
+// independent things each invocation:
+//   (1) Day-based digest (free): cards due within each assignee's lead window,
+//       via `due_reminder_candidates`; one digest email per assignee, then
+//       `mark_reminders_sent` (deduped per due_date by cards.reminder_sent_for).
+//   (2) Custom timed reminders (Pro, P1): each `channel = 'email'` card_reminder
+//       whose offset moment has just arrived, via `due_time_reminder_candidates`;
+//       one email per reminder, then `mark_time_reminders_sent` (deduped per
+//       (reminder, due_at) by card_reminder_dispatches).
+// Because (1) self-dedupes per due_date, running EVERY 10 MINUTES (so the timed
+// path is precise) never re-sends a daily digest — it just sends each as soon as
+// the card enters the window. Both paths are idempotent + window-based.
 //
 // This file runs on Deno (Supabase Edge Runtime), NOT in the Vite app bundle —
 // it is excluded from the app's TypeScript/ESLint config on purpose.
@@ -22,6 +29,20 @@ interface Candidate {
   card_id: string;
   title: string;
   due_date: string;
+  project_id: string;
+  project_name: string;
+  assignee_id: string;
+  email: string;
+  display_name: string | null;
+}
+
+/** One pending Pro timed reminder (channel='email') whose offset moment arrived. */
+interface TimeCandidate {
+  card_reminder_id: string;
+  card_id: string;
+  title: string;
+  due_at: string;
+  offset_minutes: number;
   project_id: string;
   project_name: string;
   assignee_id: string;
@@ -126,6 +147,76 @@ async function sendEmail(to: string, subject: string, html: string): Promise<boo
   return true;
 }
 
+/** "2 hours" / "15 minutes" / "1 day" / "now" — how long before due_at this fires. */
+function durationLabel(minutes: number): string {
+  if (minutes <= 0) return 'now';
+  const days = Math.floor(minutes / 1440);
+  const hours = Math.floor((minutes % 1440) / 60);
+  const mins = minutes % 60;
+  const parts: string[] = [];
+  if (days) parts.push(`${days} day${days === 1 ? '' : 's'}`);
+  if (hours) parts.push(`${hours} hour${hours === 1 ? '' : 's'}`);
+  if (mins) parts.push(`${mins} minute${mins === 1 ? '' : 's'}`);
+  return parts.join(' ');
+}
+
+/** On-brand HTML for a single precise (timed) reminder. */
+function renderTimeEmail(candidate: TimeCandidate): string {
+  const greeting = candidate.display_name
+    ? escapeHtml(candidate.display_name.split(' ')[0])
+    : 'there';
+  const when =
+    candidate.offset_minutes <= 0
+      ? 'is due now'
+      : `is due in ${escapeHtml(durationLabel(candidate.offset_minutes))}`;
+  return `<!doctype html><html><body style="margin:0;background:#faf7ff;font-family:Inter,Segoe UI,Arial,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 0;">
+      <tr><td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 12px 40px rgba(80,40,120,.12);">
+          <tr><td style="background:linear-gradient(110deg,#7C3AED,#06B6D4);padding:28px 24px;">
+            <div style="color:#fff;font-size:22px;font-weight:700;">Aurora</div>
+            <div style="color:rgba(255,255,255,.85);font-size:14px;margin-top:4px;">Reminder</div>
+          </td></tr>
+          <tr><td style="padding:24px;">
+            <p style="margin:0 0 6px;color:#1a1330;font-size:15px;">Hi ${greeting},</p>
+            <p style="margin:0 0 4px;color:#1a1330;font-size:16px;font-weight:600;">${escapeHtml(
+              candidate.title,
+            )} ${when}.</p>
+            <p style="margin:0;color:#7a7090;font-size:13px;">${escapeHtml(candidate.project_name)}</p>
+          </td></tr>
+          <tr><td style="padding:0 24px 28px;">
+            <p style="margin:0;color:#9a90a8;font-size:12px;">You set this reminder in Aurora. Remove it from the card to stop these.</p>
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </body></html>`;
+}
+
+/** (2) Precise Pro timed reminders. Returns how many emails were sent. */
+async function runTimedReminders(): Promise<number> {
+  const candidates = await rpc<TimeCandidate[]>('due_time_reminder_candidates', {
+    p_window_minutes: 10,
+  });
+  if (candidates.length === 0) return 0;
+
+  const sentReminderIds: string[] = [];
+  for (const c of candidates) {
+    const subject =
+      c.offset_minutes <= 0
+        ? `Reminder: "${c.title}" is due now`
+        : `Reminder: "${c.title}" is due in ${durationLabel(c.offset_minutes)}`;
+    const ok = await sendEmail(c.email, subject, renderTimeEmail(c));
+    if (ok) sentReminderIds.push(c.card_reminder_id);
+  }
+
+  // Mark only what we actually sent, so a failed send retries next run.
+  if (sentReminderIds.length > 0) {
+    await rpc('mark_time_reminders_sent', { p_reminder_ids: sentReminderIds });
+  }
+  return sentReminderIds.length;
+}
+
 Deno.serve(async (req: Request) => {
   // Only the scheduler (which knows CRON_SECRET) may invoke this.
   if (!CRON_SECRET || req.headers.get('x-cron-secret') !== CRON_SECRET) {
@@ -136,10 +227,9 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    // (1) Day-based digest (free). Self-dedupes per due_date, so it's safe to run
+    // every 10 minutes — it sends each card once, as soon as it enters the window.
     const candidates = await rpc<Candidate[]>('due_reminder_candidates', {});
-    if (candidates.length === 0) {
-      return Response.json({ ok: true, reminded: 0, emails: 0 });
-    }
 
     // Group by assignee email → one digest each.
     const byEmail = new Map<string, Candidate[]>();
@@ -168,7 +258,15 @@ Deno.serve(async (req: Request) => {
       await rpc('mark_reminders_sent', { p_card_ids: sentCardIds });
     }
 
-    return Response.json({ ok: true, reminded: sentCardIds.length, emails });
+    // (2) Precise Pro timed reminders (channel='email').
+    const timedEmails = await runTimedReminders();
+
+    return Response.json({
+      ok: true,
+      reminded: sentCardIds.length,
+      emails,
+      timedEmails,
+    });
   } catch (err) {
     console.error(err);
     return new Response(`Error: ${err instanceof Error ? err.message : String(err)}`, {

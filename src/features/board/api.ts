@@ -104,6 +104,7 @@ export async function updateCardDetail(
     title: string;
     description: string | null;
     due_date: string | null;
+    due_at: string | null;
     priority: number | null;
     assignee_id: string | null;
   },
@@ -114,6 +115,7 @@ export async function updateCardDetail(
       title: patch.title,
       description: patch.description,
       due_date: patch.due_date,
+      due_at: patch.due_at,
       priority: patch.priority,
       assignee_id: patch.assignee_id,
     })

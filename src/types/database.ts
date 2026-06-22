@@ -21,6 +21,9 @@ export type InvitationRole = Exclude<ProjectRole, 'owner'>;
 /** What a feedback submission is: a general note or a feature request. */
 export type FeedbackKind = 'feedback' | 'feature';
 
+/** Delivery channel for a Pro custom reminder (P1). */
+export type ReminderChannel = 'email' | 'push';
+
 export interface Database {
   public: {
     Tables: {
@@ -147,8 +150,12 @@ export interface Database {
           column_id: string;
           title: string;
           description: string | null;
-          // ISO date (YYYY-MM-DD); checklists/labels/assignment land in Phase 5.
+          // ISO date (YYYY-MM-DD); what the board/calendar group by.
           due_date: string | null;
+          // Full deadline timestamp (timestamptz). Source of truth when present;
+          // backfilled from due_date at 09:00 UTC, written from the user's local
+          // date+time. Drives Pro timed reminders (P1, card_reminders).
+          due_at: string | null;
           assignee_id: string | null;
           // Open-ended priority: 1 = P1 (highest), NULL = unset. See lib/priority.ts.
           priority: number | null;
@@ -165,6 +172,7 @@ export interface Database {
           title: string;
           description?: string | null;
           due_date?: string | null;
+          due_at?: string | null;
           assignee_id?: string | null;
           priority?: number | null;
           reminder_sent_for?: string | null;
@@ -178,6 +186,7 @@ export interface Database {
           title?: string;
           description?: string | null;
           due_date?: string | null;
+          due_at?: string | null;
           assignee_id?: string | null;
           priority?: number | null;
           reminder_sent_for?: string | null;
@@ -417,6 +426,53 @@ export interface Database {
         };
         Relationships: [];
       };
+      card_reminders: {
+        Row: {
+          id: string;
+          card_id: string;
+          // Minutes before the card's due_at to fire (0 = at due_at).
+          offset_minutes: number;
+          // 'email' → sent by the Edge Function; 'push' → in-app browser notification.
+          channel: ReminderChannel;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          card_id: string;
+          offset_minutes: number;
+          channel?: ReminderChannel;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          card_id?: string;
+          offset_minutes?: number;
+          channel?: ReminderChannel;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      card_reminder_dispatches: {
+        Row: {
+          card_reminder_id: string;
+          due_at: string;
+          sent_at: string;
+        };
+        Insert: {
+          card_reminder_id: string;
+          due_at: string;
+          sent_at?: string;
+        };
+        Update: {
+          card_reminder_id?: string;
+          due_at?: string;
+          sent_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -489,6 +545,32 @@ export interface Database {
         Args: { p_card_ids: string[] };
         Returns: undefined;
       };
+      // Pro P1 custom timed reminders — SECURITY DEFINER, service_role only (the
+      // Edge Function calls these; the browser is denied EXECUTE).
+      due_time_reminder_candidates: {
+        Args: { p_window_minutes?: number };
+        Returns: {
+          card_reminder_id: string;
+          card_id: string;
+          title: string;
+          due_at: string;
+          offset_minutes: number;
+          project_id: string;
+          project_name: string;
+          assignee_id: string;
+          email: string;
+          display_name: string | null;
+        }[];
+      };
+      mark_time_reminders_sent: {
+        Args: { p_reminder_ids: string[] };
+        Returns: undefined;
+      };
+      // Is the board owning this card on Pro? Gates card_reminders INSERT (P1).
+      card_project_is_pro: {
+        Args: { p_card_id: string };
+        Returns: boolean;
+      };
       // Phase 10 billing: the caller's plan ('free' | 'pro').
       current_plan: {
         Args: Record<string, never>;
@@ -526,3 +608,4 @@ export type Note = Database['public']['Tables']['notes']['Row'];
 export type Invitation = Database['public']['Tables']['invitations']['Row'];
 export type Feedback = Database['public']['Tables']['feedback']['Row'];
 export type CeoMessage = Database['public']['Tables']['ceo_messages']['Row'];
+export type CardReminder = Database['public']['Tables']['card_reminders']['Row'];

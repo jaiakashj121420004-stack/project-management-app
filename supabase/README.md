@@ -57,6 +57,14 @@ Run [`migrations/20260621090000_reminders.sql`](./migrations/20260621090000_remi
 `reminder_sent_for` dedupe column to `cards`, and two **service-role-only**
 SECURITY DEFINER RPCs (`due_reminder_candidates`, `mark_reminders_sent`).
 
+Then run [`migrations/20260622140000_custom_reminders.sql`](./migrations/20260622140000_custom_reminders.sql)
+for the **Pro custom timed reminders** (P1): `cards.due_at` (a full deadline
+timestamp, backfilled from `due_date` at 09:00 UTC), the `card_reminders` table
+(per-card offsets, gated by `project_is_pro` so only Pro boards can create them),
+the `card_reminder_dispatches` dedupe ledger, and two more service-role-only RPCs
+(`due_time_reminder_candidates`, `mark_time_reminders_sent`). The same Edge
+Function below now handles both paths.
+
 ### 2. Deploy the Edge Function
 
 The function lives in [`functions/send-due-reminders/`](./functions/send-due-reminders).
@@ -90,8 +98,10 @@ npx supabase secrets set \
 
 ### 3. Schedule it (pg_cron + pg_net)
 
-In the SQL Editor, enable the extensions and schedule a daily run (e.g. 8am UTC).
-Replace `<ref>` and `<CRON_SECRET>` with your project ref and the secret above:
+In the SQL Editor, enable the extensions and schedule the function **every 10
+minutes** — the Pro timed reminders need that precision, and the day-based digest
+self-dedupes (via `cards.reminder_sent_for`) so it still emails each card only
+once. Replace `<ref>` and `<CRON_SECRET>` with your project ref and the secret:
 
 ```sql
 create extension if not exists pg_cron;
@@ -99,7 +109,7 @@ create extension if not exists pg_net;
 
 select cron.schedule(
   'aurora-due-reminders',
-  '0 8 * * *',                       -- daily at 08:00 UTC
+  '*/10 * * * *',                    -- every 10 minutes (matches the function's window)
   $$
   select net.http_post(
     url     := 'https://<ref>.functions.supabase.co/send-due-reminders',
@@ -110,9 +120,17 @@ select cron.schedule(
 );
 ```
 
-Each run emails every assignee who opted in a digest of their cards due within
-their chosen lead window, then marks those cards so they aren't emailed again for
-the same due date. To stop it: `select cron.unschedule('aurora-due-reminders');`.
+Each run (a) emails every opted-in assignee a digest of cards entering their lead
+window and marks them, and (b) sends each Pro `channel='email'` custom reminder
+whose offset moment just arrived, recording it in `card_reminder_dispatches` so it
+fires once per `due_at`. To stop it: `select cron.unschedule('aurora-due-reminders');`.
+
+> **Already had the daily job?** Reschedule it in place — same name, new cadence:
+>
+> ```sql
+> select cron.unschedule('aurora-due-reminders');
+> -- then re-run the cron.schedule(...) above with '*/10 * * * *'
+> ```
 
 ## Dodo Payments billing (optional)
 

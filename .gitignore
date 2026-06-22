@@ -10,6 +10,8 @@ dev-dist/
 .env.*.local
 # local payment-provider notes (Dodo/Stripe keys & product ids) — NEVER commit
 Aurora*api*.txt
+# supabase CLI local cache (project ref, image versions) — not source
+supabase/.temp/
 # misc
 .DS_Store
 *.log

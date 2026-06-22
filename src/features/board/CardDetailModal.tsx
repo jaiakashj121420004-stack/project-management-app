@@ -16,8 +16,11 @@ import { GradientButton } from '@/components/buttons/GradientButton';
 import { Badge } from '@/components/Badge';
 import { cn } from '@/lib/cn';
 import { formatPriority, priorityPillClass } from '@/lib/priority';
+import { combineDueAt, dueAtDate, dueAtTime, formatDueTime } from '@/lib/dueAt';
 import type { AccentName } from '@/lib/accents';
 import type { Card } from '@/types/database';
+import { useIsPro } from '@/features/billing';
+import { RemindersSection } from '@/features/reminders';
 import { cardDetailSchema, fieldErrorsOf } from './schemas';
 import { useCardExtras } from './useCardExtras';
 import { dueStatus, formatDueLabel, type DueStatus } from './due';
@@ -34,6 +37,8 @@ export interface CardDetailValues {
   title: string;
   description: string | null;
   due_date: string | null;
+  /** Full deadline timestamp; null unless a Pro user set a due time. */
+  due_at: string | null;
   priority: number | null;
   assignee_id: string | null;
 }
@@ -110,9 +115,15 @@ function CardDetailForm({
   isPending: boolean;
   isDeleting: boolean;
 }) {
+  const isPro = useIsPro();
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description ?? '');
-  const [dueDate, setDueDate] = useState<string | null>(card.due_date);
+  const [dueDate, setDueDate] = useState<string | null>(
+    card.due_date ?? (card.due_at ? dueAtDate(card.due_at) : null),
+  );
+  const [dueTime, setDueTime] = useState<string | null>(
+    card.due_at ? dueAtTime(card.due_at) : null,
+  );
   const [priority, setPriority] = useState<number | null>(card.priority);
   const [assigneeId, setAssigneeId] = useState<string | null>(card.assignee_id);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -150,6 +161,9 @@ function CardDetailForm({
         title: parsed.data.title,
         description: parsed.data.description.trim() || null,
         due_date: dueDate,
+        // due_at exists only when a (Pro) due time is set; combineDueAt returns
+        // null without a time, so free users stay purely day-based.
+        due_at: combineDueAt(dueDate, dueTime),
         priority,
         assignee_id: assigneeId,
       });
@@ -205,7 +219,15 @@ function CardDetailForm({
         />
       </div>
 
-      <DueDateField value={dueDate} onChange={setDueDate} />
+      <DueDateField
+        value={dueDate}
+        onChange={setDueDate}
+        showTime={isPro}
+        time={dueTime}
+        onTimeChange={setDueTime}
+      />
+
+      <RemindersSection cardId={card.id} dueAt={combineDueAt(dueDate, dueTime)} />
 
       <PriorityField value={priority} onChange={setPriority} />
 
@@ -337,6 +359,7 @@ function CardReadOnlyView({
           {card.due_date && (
             <Badge tone={DUE_TONE[dueStatus(card.due_date)]}>
               <CalendarClock size={13} /> {formatDueLabel(card.due_date)}
+              {card.due_at ? ` · ${formatDueTime(card.due_at)}` : ''}
             </Badge>
           )}
           {card.priority != null && (

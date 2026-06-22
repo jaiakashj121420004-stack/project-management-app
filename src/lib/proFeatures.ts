@@ -46,7 +46,7 @@ export const PRO_FEATURES: Record<ProFeatureKey, ProFeature> = {
     key: 'customReminders',
     label: 'Custom timed reminders',
     description: 'Due times (not just dates) and multiple offsets like "2h" and "15m before".',
-    shipped: false,
+    shipped: true,
   },
   collaboration: {
     key: 'collaboration',

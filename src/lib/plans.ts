@@ -81,6 +81,7 @@ export const PLANS: Record<PlanId, Plan> = {
       'Unlimited collaborators per board',
       'Everything in Free',
       PRO_FEATURES.emailReminders.label,
+      PRO_FEATURES.customReminders.label,
       'Priority support',
     ],
   },

@@ -1,7 +1,8 @@
-import type { ReactNode } from 'react';
-import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useMemo, type ReactNode } from 'react';
+import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { GradientButton } from '@/components/buttons/GradientButton';
+import { GlassSelect, type GlassSelectOption } from '@/components/forms/GlassSelect';
 import type { Project } from '@/types/database';
 import type { CalendarView } from './dates';
 
@@ -31,6 +32,14 @@ export function CalendarToolbar({
   onNext,
   onToday,
 }: CalendarToolbarProps) {
+  const scopeOptions = useMemo<GlassSelectOption<string>[]>(
+    () => [
+      { value: 'all', label: 'All projects' },
+      ...projects.map((project) => ({ value: project.id, label: project.name })),
+    ],
+    [projects],
+  );
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -61,26 +70,15 @@ export function CalendarToolbar({
         </div>
 
         <div className="ml-auto">
-          <label className="relative inline-flex items-center">
-            <span className="sr-only">Filter by project</span>
-            <select
-              value={scope}
-              onChange={(event) => onScopeChange(event.target.value)}
-              className="h-9 appearance-none rounded-xl border border-[var(--glass-border)] bg-[var(--field-bg)] pl-3.5 pr-9 text-sm font-medium text-fg backdrop-blur-sm transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
-            >
-              <option value="all">All projects</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
-            </select>
-            <ChevronDown
-              size={16}
-              aria-hidden
-              className="pointer-events-none absolute right-3 text-fg-subtle"
-            />
-          </label>
+          <GlassSelect
+            label="Filter by project"
+            size="sm"
+            value={scope}
+            onChange={onScopeChange}
+            options={scopeOptions}
+            className="w-44"
+            menuClassName="max-h-72"
+          />
         </div>
       </div>
     </div>

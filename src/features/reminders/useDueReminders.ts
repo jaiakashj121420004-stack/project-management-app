@@ -13,6 +13,7 @@ import {
   showDueNotification,
   useBrowserRemindersPref,
 } from './notifications';
+import { useTimedReminders } from './useTimedReminders';
 
 const POLL_INTERVAL = 1000 * 60 * 30; // re-check every 30 minutes
 
@@ -31,6 +32,10 @@ function dueText(dueIso: string): string {
  * per card+due-date (deduped in localStorage). Mounted once in AppShell.
  */
 export function useDueReminders(): void {
+  // Pro custom timed reminders (the precise, offset-based path) run alongside
+  // the day-based one below; both fire browser notifications under one toggle.
+  useTimedReminders();
+
   const { user } = useAuth();
   const online = useOnlineStatus();
   const prefEnabled = useBrowserRemindersPref();

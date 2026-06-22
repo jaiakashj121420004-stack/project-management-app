@@ -163,6 +163,7 @@ export function useAddCard(projectId: string) {
           title: title.trim(),
           description: null,
           due_date: null,
+          due_at: null,
           assignee_id: null,
           priority: null,
           reminder_sent_for: null,
@@ -186,18 +187,19 @@ export function useUpdateCard(projectId: string) {
       title: string;
       description: string | null;
       due_date: string | null;
+      due_at: string | null;
       priority: number | null;
       assignee_id: string | null;
     }
   >(
     projectId,
-    ({ id, title, description, due_date, priority, assignee_id }) =>
-      updateCardDetail(id, { title, description, due_date, priority, assignee_id }),
-    (board, { id, title, description, due_date, priority, assignee_id }) => ({
+    ({ id, title, description, due_date, due_at, priority, assignee_id }) =>
+      updateCardDetail(id, { title, description, due_date, due_at, priority, assignee_id }),
+    (board, { id, title, description, due_date, due_at, priority, assignee_id }) => ({
       ...board,
       cards: board.cards.map((card) =>
         card.id === id
-          ? { ...card, title: title.trim(), description, due_date, priority, assignee_id }
+          ? { ...card, title: title.trim(), description, due_date, due_at, priority, assignee_id }
           : card,
       ),
     }),

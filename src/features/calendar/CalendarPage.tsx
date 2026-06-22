@@ -18,6 +18,7 @@ import { Spinner } from '@/components/feedback/Spinner';
 import { Reveal } from '@/components/motion/Reveal';
 import { accentVars, type AccentName } from '@/lib/accents';
 import { springs } from '@/lib/motion';
+import { combineDueAt, dueAtTime } from '@/lib/dueAt';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type { Card } from '@/types/database';
 import { useProjects } from '@/features/projects/useProjects';
@@ -97,7 +98,9 @@ export function CalendarPage() {
     const card = cardsById.get(String(active.id));
     const dateKey = String(over.id); // droppable id is the day's date key
     if (!card || card.due_date === dateKey) return;
-    reschedule.mutate({ id: card.id, projectId: card.project_id, dueDate: dateKey });
+    // Preserve the card's time of day (if any) on the new date so timed reminders re-arm.
+    const dueAt = card.due_at ? combineDueAt(dateKey, dueAtTime(card.due_at)) : null;
+    reschedule.mutate({ id: card.id, projectId: card.project_id, dueDate: dateKey, dueAt });
   }
 
   function goPrev() {

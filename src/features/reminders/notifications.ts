@@ -89,12 +89,17 @@ export function reminderKey(card: Pick<Card, 'id' | 'due_date'>): string {
 
 // --- showing ----------------------------------------------------------------
 
-export function showDueNotification(card: Card, dueText: string): void {
+/** Low-level: show one browser notification (no-op without permission). */
+export function showNotification(title: string, body: string, tag: string): void {
   if (notificationPermission() !== 'granted') return;
-  new Notification(card.title, {
-    body: `Task ${dueText}`,
-    tag: reminderKey(card), // OS-level dedupe too
+  new Notification(title, {
+    body,
+    tag, // OS-level dedupe too
     icon: '/pwa-192x192.png',
     badge: '/pwa-192x192.png',
   });
+}
+
+export function showDueNotification(card: Card, dueText: string): void {
+  showNotification(card.title, `Task ${dueText}`, reminderKey(card));
 }

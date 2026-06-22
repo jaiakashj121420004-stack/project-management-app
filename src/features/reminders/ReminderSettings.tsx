@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Bell, BellRing, Mail } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { GlassSelect } from '@/components/forms/GlassSelect';
 import { useProfile, useUpdateProfile } from '@/features/auth/useProfile';
 import {
   browserNotificationsSupported,
@@ -154,23 +155,15 @@ export function ReminderSettings() {
         title="Remind me"
         description="How far ahead to send reminders (applies to both email and browser)."
       >
-        <select
-          aria-label="Reminder lead time"
+        <GlassSelect
+          label="Reminder lead time"
           value={leadDays}
           disabled={update.isPending}
-          onChange={(event) => update.mutate({ reminderLeadDays: Number(event.target.value) })}
-          className={cn(
-            'h-10 rounded-xl border border-[var(--glass-border)] bg-[var(--field-bg)] px-3',
-            'text-sm text-fg outline-none transition-colors',
-            'focus:border-[color:var(--accent-from)] disabled:opacity-50',
-          )}
-        >
-          {LEAD_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          onChange={(next) => update.mutate({ reminderLeadDays: next })}
+          options={LEAD_OPTIONS}
+          openUp
+          className="w-44"
+        />
       </SettingRow>
     </div>
   );

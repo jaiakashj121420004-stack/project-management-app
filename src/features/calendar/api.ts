@@ -23,11 +23,19 @@ export async function fetchDatedCards(): Promise<Card[]> {
   return data;
 }
 
-/** Reschedule a card to a new due date (drag-to-reschedule). */
-export async function updateCardDueDate(id: string, dueDate: string | null): Promise<Card> {
+/**
+ * Reschedule a card to a new due date (drag-to-reschedule). `dueAt` carries the
+ * card's time onto the new day (or null when the card had no due time), so a Pro
+ * card's timed reminders re-arm against the new instant.
+ */
+export async function updateCardDueDate(
+  id: string,
+  dueDate: string | null,
+  dueAt: string | null,
+): Promise<Card> {
   const { data, error } = await supabase
     .from('cards')
-    .update({ due_date: dueDate })
+    .update({ due_date: dueDate, due_at: dueAt })
     .eq('id', id)
     .select('*')
     .single();
