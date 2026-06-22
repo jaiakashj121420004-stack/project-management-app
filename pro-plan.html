@@ -222,6 +222,7 @@
         <li>Audio/video = <b>Both</b> — record/upload (Supabase Storage, capped) and embed links.</li>
         <li>Collaboration = <b>All four</b> — comments, @mentions, review/approval, activity log + reactions.</li>
         <li>Every feature is <b>Pro-gated twice</b> — in the UI and in the database (RLS), and the canvas is lazy-loaded.</li>
+        <li><b>Go-live is LAST:</b> Dodo KYC, the Refund/Cancellation + Contact pages, finalizing Terms/Privacy, and the payment TEST → LIVE switch all happen <b>after all 10 prompts</b> — build everything first.</li>
       </ul>
     </div>
 
@@ -457,7 +458,7 @@ Make the canvas collaborative in real time with Yjs over Supabase Realtime. Conv
 
 1. Install yjs + y-protocols. Model one Y.Doc per canvas note: a Y.Array<Y.Map> 'elements' (each element a Y.Map
    of its fields), and for each TextBox a Y.XmlFragment bound to Tiptap via @tiptap/extension-collaboration
-   (+ collaboration-cursor). Replace P3.1's local scene state with bindings to this Y.Doc; replace the local
+   (+ @tiptap/extension-collaboration-caret — v3 name). Replace P3.1's local scene state with bindings to this Y.Doc; replace the local
    undo stack with Y.UndoManager.
 2. TRANSPORT: write a THIN custom Yjs provider over a Supabase Realtime channel `canvas:<noteId>`:
    - On join: load the persisted doc_state (bytea) from canvas_notes and Y.applyUpdate to seed.
@@ -500,7 +501,7 @@ When finished: update memory.md (the Yjs model + provider + the doc_state column
         verify:['Stylus pressure varies stroke width; pen / marker / highlighter presets look right; the eraser removes strokes.','Strokes are first-class elements: select, move, resize, lock, z-order.','Smooth on a touch device; palm rejection works. Build is clean.'] },
 
       { id:'p33', n:'P3.3', title:'Canvas — rich text (Tiptap)', model:'sonnet',
-        prereq:['P3.1 complete.','Tiptap + extensions (underline, highlight, link, text-style, color) installed.'],
+        prereq:['P3.1 complete.','Tiptap v3 installed (@tiptap/react + pm + starter-kit + highlight + text-style; Underline/Link are in StarterKit, color is in text-style).'],
         verify:['Add a text box; apply bold, italic, underline, highlight, color, and a link.','Move / resize / rotate the box and the text stays aligned during pan and zoom.','A javascript: link is rejected; reload persists. Build is clean.'] },
 
       { id:'p34', n:'P3.4', title:'Canvas — images', model:'sonnet',

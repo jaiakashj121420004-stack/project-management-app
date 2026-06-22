@@ -31,7 +31,7 @@ Install as each phase needs them (not all upfront):
 
 - `react-konva` + `konva` — the canvas, transformer (resize/rotate), drag, hit-testing.
 - `perfect-freehand` — pressure-sensitive stylus strokes (P3.2).
-- `@tiptap/react` + `@tiptap/starter-kit` + `@tiptap/extension-*` (underline, highlight, link, text-style, color) — rich text (P3.3). For multiplayer text: `@tiptap/extension-collaboration` + `@tiptap/extension-collaboration-cursor`.
+- `@tiptap/react` + `@tiptap/pm` + `@tiptap/starter-kit` + `@tiptap/extension-highlight` + `@tiptap/extension-text-style` — rich text (P3.3). **Tiptap v3 note:** StarterKit already bundles Underline + Link (don't add them separately), and `extension-text-style` now ships color via TextStyleKit (the old standalone `extension-color` is gone). For multiplayer text: `@tiptap/extension-collaboration` + `@tiptap/extension-collaboration-caret` (v3 renamed `-cursor` → `-caret`).
 - `yjs` + `y-protocols` — CRDT document + awareness (P3.7). Transport is a **thin custom provider over Supabase Realtime broadcast** (don't add a heavyweight provider; `y-supabase` is immature — reference only).
 - Audio/video recording uses the browser **MediaRecorder API** (no dependency).
 
@@ -320,7 +320,7 @@ Read CLAUDE.md, plan.md, and memory.md first.
 
 Add rich-text elements to the canvas.
 
-1. Install @tiptap/react, @tiptap/starter-kit, and extensions: underline, highlight, link, text-style, color.
+1. Install @tiptap/react, @tiptap/pm, @tiptap/starter-kit, @tiptap/extension-highlight, @tiptap/extension-text-style. (Tiptap v3: Underline + Link are already in StarterKit; color comes from text-style/TextStyleKit — do NOT add extension-underline/link/color separately.)
 2. A TextBox element renders a Tiptap editor as an HTML overlay positioned/scaled to the element's box on the
    Konva stage (sync transform: x/y/width/rotation/zoom). Double-click to edit, click-away to commit.
 3. A formatting toolbar (appears on selection): bold, italic, underline, highlight, text color, link (paste/enter
@@ -425,7 +425,7 @@ Make the canvas collaborative in real time with Yjs over Supabase Realtime. Conv
 
 1. Install yjs + y-protocols. Model one Y.Doc per canvas note: a Y.Array<Y.Map> 'elements' (each element a Y.Map
    of its fields), and for each TextBox a Y.XmlFragment bound to Tiptap via @tiptap/extension-collaboration
-   (+ collaboration-cursor). Replace P3.1's local scene state with bindings to this Y.Doc; replace the local
+   (+ @tiptap/extension-collaboration-caret — v3 name). Replace P3.1's local scene state with bindings to this Y.Doc; replace the local
    undo stack with Y.UndoManager.
 2. TRANSPORT: write a THIN custom Yjs provider over a Supabase Realtime channel `canvas:<noteId>`:
    - On join: load the persisted doc_state (bytea) from canvas_notes and Y.applyUpdate to seed.
@@ -451,10 +451,23 @@ When finished: update memory.md (the Yjs model + provider + the doc_state column
 
 ---
 
-## After all phases
+## Final step — GO-LIVE (do this LAST, after P3 is built)
 
-- **Pricing/caps:** confirm the storage caps in `proFeatures.ts` match the $5.99 Pro economics (memory.md pricing analysis); surface usage on the billing page. Consider a higher tier if heavy voice/video users emerge.
-- **Update `plan.md`:** fold the new architecture (canvas data model, Yjs provider, Pro-gating helper, reminders model, collaboration schema) into the spec, and the new Pro features into the design/feature sections — per CLAUDE.md golden rule #4.
-- **Update `prompts.html`** if you keep the interactive tracker in sync.
-- **Go-live:** load-test the realtime canvas; re-run the security pass (RLS on every new table + Storage); confirm `project_is_pro` can't be bypassed; Lighthouse + bundle check (canvas must stay lazy-loaded).
-```
+> **Decision (2026-06-22): build everything first, then launch.** None of this happens mid-build — it only matters once P3 (the canvas) is done and you're ready to charge real customers. Most of it is on Dodo's side or is content, not code. Until then the app runs fine on Dodo **TEST** mode + the manual Pro-flip.
+
+**Payments — switch Dodo from TEST → LIVE:**
+- Complete Dodo **KYC / business verification** (Dashboard → Verification: product + payout details; ~24–72h).
+- In Dodo **Live mode**, recreate the two Pro products (monthly $5.99 / annual $68.29) → new **live** product ids; add a **live webhook** endpoint (`…/functions/v1/dodo-webhook`) → copy its signing secret.
+- `supabase secrets set DODO_PAYMENTS_ENVIRONMENT=live`, `DODO_PAYMENTS_API_KEY=<live>`, `DODO_PRODUCT_PRO_MONTHLY`/`ANNUAL=<live ids>`, `DODO_WEBHOOK_SECRET=<live>`; redeploy `send-due-reminders --no-verify-jwt` for the prod email path; test a checkout end-to-end.
+
+**Required pages (Dodo activation needs these):**
+- Add a **Refund / Cancellation policy** page and a **Contact** page (support email) as `features/marketing` routes (reuse `LegalPage`), linked in the footer.
+- Finalize **Terms** & **Privacy** (remove the "template / lawyer-review" banner; ideally a real legal review before charging).
+- Provide at least one **social link** (founder LinkedIn / product X / GitHub) for the Dodo verification form.
+
+**Polish & launch checks:**
+- **Pricing/caps:** confirm `proFeatures.ts` storage caps match the $5.99 economics; surface usage on the billing page.
+- **Update `plan.md`** to fold in the new architecture (canvas data model, Yjs provider, Pro-gating helper, reminders model, collaboration schema) — golden rule #4. Keep `prompts.html` in sync if used.
+- **Security pass:** RLS on every new table + Storage; confirm `project_is_pro` can't be bypassed.
+- **Performance:** load-test the realtime canvas; **Lighthouse** + bundle check (canvas must stay lazy-loaded).
+- Optional: a **custom domain** (more legit than `*.pages.dev`).
