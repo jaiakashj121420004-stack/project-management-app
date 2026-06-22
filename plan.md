@@ -25,7 +25,7 @@ A modern project-management app for someone running many projects across many do
 | Frontend host | **Cloudflare Pages** | Free, **commercial use allowed**, unlimited bandwidth, never expires. |
 | Backend | **Supabase** | Postgres + Auth + RLS + Realtime; free tier permits commercial use, no card. |
 | ❌ Avoid | **Vercel Hobby free tier** | Its terms **prohibit commercial/revenue use** — unusable for a sellable app without paying. |
-| Payments | **Stripe** (later) | No monthly fee; ~2.9% + 30¢ per transaction. Added at launch phase. |
+| Payments | **Dodo Payments** (Merchant of Record) | Replaced Stripe. As MoR, Dodo is the seller of record — it localizes currency and remits sales tax/VAT for us. No monthly fee; per-transaction pricing. |
 | **Docker?** | **No — not needed** | See below. |
 
 ### Why no Docker
@@ -55,7 +55,7 @@ So Docker would add real complexity (Dockerfiles, image builds, registries) for 
 [ Supabase ]  Postgres DB · Auth (email + Google) · Row Level Security · Realtime · Storage
         │
         ▼
-[ Stripe ]  (added at launch for billing)
+[ Dodo Payments ]  (Merchant of Record — billing, currency & tax)
 ```
 
 ### Frontend
@@ -184,7 +184,7 @@ The rule: **the frontend is untrusted; the database enforces the rules.**
 - **Keys:** only the public **anon** key ships to the browser. The **`service_role`** key never leaves the server/dashboard.
 - **Validation:** Zod on the client for UX; Postgres constraints + RLS on the server as the real guarantee.
 - **Transport:** HTTPS everywhere (automatic on Cloudflare + Supabase).
-- **Before charging money:** rate limiting, Terms of Service + Privacy Policy, and **verify Stripe webhook signatures**.
+- **Before charging money:** rate limiting, Terms of Service + Privacy Policy, and **verify Dodo webhook signatures** (Standard Webhooks HMAC) before any DB write.
 
 ---
 
@@ -202,14 +202,14 @@ Phases are sequenced so Phase 1 is a thin vertical slice through the whole stack
 7. **Notes/docs** — per-project notes.
 8. **Collaboration** — invite members, roles, realtime live updates.
 9. **PWA & reminders** — installable, offline, due-date reminders.
-10. **Polish & launch** — landing page, Stripe billing, plan limits, ToS/privacy.
+10. **Polish & launch** — landing page, Dodo Payments billing, plan limits, ToS/privacy.
 
 ---
 
 ## 8. Cost & scaling (honest)
 
 - **Free covers** development, personal use, and early users (Supabase: 500 MB DB, 50k monthly users; Cloudflare: unlimited bandwidth). Realistically $0 until real traction.
-- **At scale / on monetizing:** Supabase Pro ~$25/mo (removes the 7-day inactivity pause, raises limits), possibly a Cloudflare paid tier eventually, Stripe per-transaction. These arrive only once there's revenue to cover them.
+- **At scale / on monetizing:** Supabase Pro ~$25/mo (removes the 7-day inactivity pause, raises limits), possibly a Cloudflare paid tier eventually, Dodo Payments per-transaction. These arrive only once there's revenue to cover them.
 - **No lock-in:** Supabase + Postgres are open-source and self-hostable.
 - Straight talk: "free forever at large scale" isn't real for any SaaS — but "free to build, launch, and reach first paying users, then cheap relative to revenue" is exactly this stack.
 

@@ -3,11 +3,12 @@
  *
  * Limits are presentational here AND enforced server-side (triggers on
  * `projects` and `project_members` re-check them), so the UI and the database
- * can never disagree. Stripe is the source of truth for *who* is on which plan —
- * the app only ever reads `profiles.plan`, set by the verified webhook. Prices
- * here are display-only; the real charge comes from the matching Stripe Price
- * objects (monthly → STRIPE_PRICE_PRO, yearly → STRIPE_PRICE_PRO_ANNUAL). See
- * plan.md → Billing.
+ * can never disagree. Dodo Payments is the source of truth for *who* is on which
+ * plan — the app only ever reads `profiles.plan`, set by the verified webhook.
+ * Prices here are display-only (USD; Dodo localizes the currency at checkout);
+ * the real charge comes from the matching Dodo products (monthly →
+ * DODO_PRODUCT_PRO_MONTHLY, yearly → DODO_PRODUCT_PRO_ANNUAL). See plan.md →
+ * Billing.
  *
  * Which capabilities are Pro (and their storage caps) live in `proFeatures.ts` —
  * the canonical Pro-capability registry. The Pro feature copy below pulls shipped
@@ -18,18 +19,18 @@ import { PRO_FEATURES } from '@/lib/proFeatures';
 
 export type PlanId = 'free' | 'pro';
 
-/** How a paid plan is billed. Maps to a distinct Stripe Price per interval. */
+/** How a paid plan is billed. Maps to a distinct Dodo product per interval. */
 export type BillingInterval = 'month' | 'year';
 
 export interface Plan {
   id: PlanId;
   name: string;
-  /** Monthly price in USD. 0 for free. Display only — Stripe holds real prices. */
+  /** Monthly price in USD. 0 for free. Display only — Dodo holds real prices. */
   priceMonthly: number;
   /**
    * Total price in USD when billed yearly (already discounted). `null` when the
    * plan has no annual option (Free). Display only — create a matching yearly
-   * Stripe Price and wire it as STRIPE_PRICE_PRO_ANNUAL.
+   * Dodo product and wire it as DODO_PRODUCT_PRO_ANNUAL.
    */
   priceAnnual: number | null;
   tagline: string;

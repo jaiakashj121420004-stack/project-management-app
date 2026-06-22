@@ -2,10 +2,11 @@ import { supabase } from '@/lib/supabase';
 import type { BillingInterval } from '@/lib/plans';
 
 /**
- * Billing data layer. These call the Stripe Edge Functions, which run with the
- * service role and are the ONLY thing that may change a user's plan — the
- * browser never sets `profiles.plan` itself (a DB trigger forbids it). Each
- * function returns a URL we redirect the browser to (Stripe Checkout / Portal).
+ * Billing data layer. These call the Dodo Payments Edge Functions, which run
+ * with the service role; the verified Dodo webhook is the ONLY thing that may
+ * change a user's plan — the browser never sets `profiles.plan` itself (a DB
+ * trigger forbids it). Each function returns a URL we redirect the browser to
+ * (Dodo Checkout / customer portal).
  */
 
 interface UrlResponse {
@@ -14,7 +15,7 @@ interface UrlResponse {
 }
 
 async function invokeForUrl(
-  fn: 'create-checkout-session' | 'create-portal-session',
+  fn: 'dodo-create-checkout' | 'dodo-portal',
   body: Record<string, unknown> = {},
 ): Promise<string> {
   // supabase-js attaches the signed-in user's JWT, which the function verifies.
@@ -28,15 +29,15 @@ async function invokeForUrl(
 }
 
 /**
- * Start a Stripe Checkout session for the Pro plan at the chosen billing
- * interval (monthly or yearly); resolves to its URL. The Edge Function maps the
- * interval to the right Stripe Price.
+ * Start a Dodo Checkout session for the Pro plan at the chosen billing interval
+ * (monthly or yearly); resolves to its URL. The Edge Function maps the interval
+ * to the right Dodo product.
  */
 export function createCheckoutUrl(interval: BillingInterval = 'month'): Promise<string> {
-  return invokeForUrl('create-checkout-session', { interval });
+  return invokeForUrl('dodo-create-checkout', { interval });
 }
 
-/** Open the Stripe billing portal for the current customer; resolves to its URL. */
+/** Open the Dodo customer portal for the current customer; resolves to its URL. */
 export function createPortalUrl(): Promise<string> {
-  return invokeForUrl('create-portal-session');
+  return invokeForUrl('dodo-portal');
 }

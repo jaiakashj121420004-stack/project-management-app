@@ -5,10 +5,10 @@ import { createCheckoutUrl, createPortalUrl } from './api';
 type Pending = 'checkout' | 'portal' | null;
 
 /**
- * Drives the two billing actions. Both end in a full-page redirect to Stripe,
- * so `pending` simply stays set until the browser navigates away (or we reset
- * it on error). No optimistic plan change here — the plan only flips once the
- * verified webhook updates the database.
+ * Drives the two billing actions. Both end in a full-page redirect to Dodo
+ * Payments, so `pending` simply stays set until the browser navigates away (or
+ * we reset it on error). No optimistic plan change here — the plan only flips
+ * once the verified webhook updates the database.
  */
 export function useBilling() {
   const [pending, setPending] = useState<Pending>(null);
@@ -31,7 +31,7 @@ export function useBilling() {
   }
 
   return {
-    /** Begin Stripe Checkout for Pro at the given interval (defaults to monthly). */
+    /** Begin Dodo Checkout for Pro at the given interval (defaults to monthly). */
     startCheckout: (interval: BillingInterval = 'month') => void go('checkout', interval),
     openPortal: () => void go('portal', 'month'),
     pending,

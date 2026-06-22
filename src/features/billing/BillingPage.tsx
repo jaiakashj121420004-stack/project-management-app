@@ -135,7 +135,7 @@ export function BillingPage() {
             </div>
             {isPro && (
               <p className="mt-2 text-xs text-fg-subtle">
-                Update your card, download invoices, or cancel in the Stripe portal.
+                Update your card, download invoices, or cancel in the Dodo Payments portal.
               </p>
             )}
           </>

@@ -85,7 +85,7 @@ export function UpgradeModal({ open, onClose, reason }: UpgradeModalProps) {
         </div>
 
         <p className="text-center text-xs text-fg-subtle">
-          Secure checkout via Stripe. Cancel anytime.
+          Secure checkout via Dodo Payments. Cancel anytime.
         </p>
       </div>
     </Modal>

@@ -32,11 +32,11 @@ export interface Database {
           // Phase 9 due-date reminder preferences (own-row RLS).
           reminder_emails_enabled: boolean;
           reminder_lead_days: number;
-          // Phase 10 billing — writable only by the Stripe webhook (service role);
-          // a trigger blocks users from changing these on their own profile row.
+          // Billing — writable only by the Dodo webhook (service role); a trigger
+          // blocks users from changing these on their own profile row.
           plan: PlanId;
-          stripe_customer_id: string | null;
-          stripe_subscription_id: string | null;
+          dodo_customer_id: string | null;
+          dodo_subscription_id: string | null;
           plan_status: string | null;
           created_at: string;
         };
@@ -47,8 +47,8 @@ export interface Database {
           reminder_emails_enabled?: boolean;
           reminder_lead_days?: number;
           plan?: PlanId;
-          stripe_customer_id?: string | null;
-          stripe_subscription_id?: string | null;
+          dodo_customer_id?: string | null;
+          dodo_subscription_id?: string | null;
           plan_status?: string | null;
           created_at?: string;
         };
@@ -59,8 +59,8 @@ export interface Database {
           reminder_emails_enabled?: boolean;
           reminder_lead_days?: number;
           plan?: PlanId;
-          stripe_customer_id?: string | null;
-          stripe_subscription_id?: string | null;
+          dodo_customer_id?: string | null;
+          dodo_subscription_id?: string | null;
           plan_status?: string | null;
           created_at?: string;
         };

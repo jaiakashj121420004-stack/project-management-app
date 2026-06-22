@@ -114,70 +114,84 @@ Each run emails every assignee who opted in a digest of their cards due within
 their chosen lead window, then marks those cards so they aren't emailed again for
 the same due date. To stop it: `select cron.unschedule('aurora-due-reminders');`.
 
-## Stripe billing (Phase 10 — optional)
+## Dodo Payments billing (optional)
 
-Phase 10 adds a **Free** vs **Pro** plan. The free limit (3 projects) is enforced
-in the database, and the only thing that flips a user to Pro is the **verified
-Stripe webhook** — the browser never sets `profiles.plan`. Skip this whole
-section to keep the app free + unlimited.
+The app has a **Free** vs **Pro** plan. The free limits are enforced in the
+database, and the only thing that flips a user to Pro is the **verified Dodo
+webhook** — the browser never sets `profiles.plan`. Skip this whole section to
+keep the app free + unlimited.
 
-Pieces: a migration, three Edge Functions, Stripe dashboard config, and secrets.
+> **Dodo Payments replaced Stripe.** Dodo is a **Merchant of Record**: it is the
+> seller of record, so it collects payment, **localizes the currency**, and
+> **remits sales tax / VAT** for you. Stripe was never activated, so the switch
+> needs no data migration.
+
+Pieces: a migration, three Edge Functions, Dodo dashboard config, and secrets.
+Do all of this in Dodo **Test mode** first (API base `https://test.dodopayments.com`);
+flip to live later (`https://live.dodopayments.com`).
 
 ### 1. Apply the migration
-Run [`migrations/20260621210000_billing.sql`](./migrations/20260621210000_billing.sql)
-(SQL Editor or `db push`). It adds `plan` + Stripe id columns to `profiles`, a
-trigger enforcing the free 3-project cap, a trigger that makes the billing
-columns writable **only** by the service role, and the `current_plan()` helper.
+Run [`migrations/20260622120000_dodo_billing.sql`](./migrations/20260622120000_dodo_billing.sql)
+(SQL Editor or `db push`). It swaps the Stripe id columns on `profiles` for
+`dodo_customer_id` / `dodo_subscription_id` and extends the billing-column guard
+trigger so those (plus `plan` / `plan_status`) stay writable **only** by the
+service role. (`plan`, `plan_status`, the free-tier limit triggers,
+`current_plan()` and `project_is_pro()` are unchanged from the earlier
+`20260621210000_billing.sql`, so apply that first if you haven't.)
 
-### 2. Create the Stripe product (test mode)
-In the Stripe dashboard (toggle **Test mode**): **Products → add product**
-"Aurora Pro" with **two recurring prices** on the same product — a **monthly**
-price ($5.99) and a **yearly** price ($68.29 = 12 × $5.99 − 5%). Copy:
-- the **monthly Price ID** (`price_…`) → `STRIPE_PRICE_PRO`
-- the **yearly Price ID** (`price_…`) → `STRIPE_PRICE_PRO_ANNUAL`
-- your **secret key** (`sk_test_…`, Developers → API keys) → `STRIPE_SECRET_KEY`
+### 2. Create the Dodo products (test mode)
+In the Dodo dashboard (**Test mode**): create **two subscription products** —
+"Aurora Pro Monthly" ($5.99 / month) and "Aurora Pro Annual" ($68.29 / year =
+12 × $5.99 − 5%). Copy each **product id** (`pdt_…`):
+- monthly → `DODO_PRODUCT_PRO_MONTHLY` (test value: `pdt_0NhalBvSKlS70L1sUMkur`)
+- annual  → `DODO_PRODUCT_PRO_ANNUAL`  (test value: `pdt_0Nhalv2OMQi73YMxXuxm8`)
 
-(If you only create the monthly price, annual checkout safely falls back to it.)
-
-Enable the **Customer Portal** (Settings → Billing → Customer portal) so "Manage
-billing" works.
+Product ids differ between test and live, which is why they're passed via env
+(never hardcoded). Also copy your **API key** (Developer → API Keys) →
+`DODO_PAYMENTS_API_KEY`. (If you only create the monthly product, annual checkout
+safely falls back to it.)
 
 ### 3. Deploy the three functions
 ```bash
-npx supabase functions deploy create-checkout-session
-npx supabase functions deploy create-portal-session
-npx supabase functions deploy stripe-webhook --no-verify-jwt
+npx supabase functions deploy dodo-create-checkout
+npx supabase functions deploy dodo-portal
+npx supabase functions deploy dodo-webhook --no-verify-jwt
 ```
-The webhook **must** be `--no-verify-jwt` (Stripe can't send a Supabase JWT; it
-proves authenticity with a signature instead). The other two require a logged-in
-user's JWT, so deploy them normally.
+The webhook **must** be `--no-verify-jwt` (Dodo can't send a Supabase JWT; it
+proves authenticity with a Standard Webhooks signature instead). The other two
+require a logged-in user's JWT, so deploy them normally.
 
 ### 4. Add the webhook endpoint
-Stripe → **Developers → Webhooks → Add endpoint**:
-`https://<ref>.supabase.co/functions/v1/stripe-webhook`, listening for exactly:
-`checkout.session.completed`, `customer.subscription.updated`,
-`customer.subscription.deleted`. Copy its **Signing secret** (`whsec_…`) →
-`STRIPE_WEBHOOK_SECRET`.
+Dodo → **Developer → Webhooks → Add endpoint**:
+`https://<ref>.supabase.co/functions/v1/dodo-webhook`. The handler acts on the
+subscription lifecycle events: `subscription.active`, `subscription.renewed`,
+`subscription.on_hold`, `subscription.cancelled`, `subscription.expired`,
+`subscription.failed`. Copy the endpoint's **Signing secret** (`whsec_…`) →
+`DODO_WEBHOOK_SECRET`.
 
 ### 5. Set the secrets
 ```bash
 npx supabase secrets set \
-  STRIPE_SECRET_KEY=sk_test_xxx \
-  STRIPE_WEBHOOK_SECRET=whsec_xxx \
-  STRIPE_PRICE_PRO=price_xxx \
-  STRIPE_PRICE_PRO_ANNUAL=price_xxx \
+  DODO_PAYMENTS_API_KEY=xxx \
+  DODO_WEBHOOK_SECRET=whsec_xxx \
+  DODO_PRODUCT_PRO_MONTHLY=pdt_xxx \
+  DODO_PRODUCT_PRO_ANNUAL=pdt_xxx \
   APP_URL=https://project-management-app-dev.pages.dev
 ```
-`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically.
+`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically. The
+functions default to Dodo **test** mode; for production also set
+`DODO_PAYMENTS_ENVIRONMENT=live` (it selects the `https://live.dodopayments.com`
+API base).
 
 ### Go-live checklist (before charging real cards)
-- Swap the **test** key/price/webhook for **live** ones (and update
-  `STRIPE_WEBHOOK_SECRET` from the live endpoint).
+- Re-create the products in **live** mode, swap the **test** API key + product
+  ids + `DODO_WEBHOOK_SECRET` (from the live endpoint) for live ones, and set
+  `DODO_PAYMENTS_ENVIRONMENT=live`.
 - Point `APP_URL` at your production origin; confirm the Supabase Auth **Site
   URL** + redirect allow-list match it.
 - Have a lawyer review the `/terms` and `/privacy` pages (shipped as templates).
-- Re-confirm the webhook signature check; ensure no `service_role` key is in the
-  frontend. Consider rate-limiting and the invitation email-ownership note
+- Re-confirm the webhook signature check; ensure no `service_role` or Dodo key is
+  in the frontend. Consider rate-limiting and the invitation email-ownership note
   (decision log, 2026-06-20) before going public.
 
 ## Pro feature foundation (P0 — required before any Pro feature)

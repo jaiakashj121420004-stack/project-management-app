@@ -8,8 +8,11 @@ dev-dist/
 .env
 .env.local
 .env.*.local
+# local payment-provider notes (Dodo/Stripe keys & product ids) — NEVER commit
+Aurora*api*.txt
 # misc
 .DS_Store
 *.log
 .vscode/
 .idea/
+Aurora api.txt
