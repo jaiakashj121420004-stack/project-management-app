@@ -8,7 +8,13 @@
  * here are display-only; the real charge comes from the matching Stripe Price
  * objects (monthly → STRIPE_PRICE_PRO, yearly → STRIPE_PRICE_PRO_ANNUAL). See
  * plan.md → Billing.
+ *
+ * Which capabilities are Pro (and their storage caps) live in `proFeatures.ts` —
+ * the canonical Pro-capability registry. The Pro feature copy below pulls shipped
+ * labels from there so the two never drift.
  */
+
+import { PRO_FEATURES } from '@/lib/proFeatures';
 
 export type PlanId = 'free' | 'pro';
 
@@ -73,7 +79,7 @@ export const PLANS: Record<PlanId, Plan> = {
       'Unlimited project boards',
       'Unlimited collaborators per board',
       'Everything in Free',
-      'Email due-date reminders',
+      PRO_FEATURES.emailReminders.label,
       'Priority support',
     ],
   },

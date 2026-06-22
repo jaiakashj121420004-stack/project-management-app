@@ -494,6 +494,12 @@ export interface Database {
         Args: Record<string, never>;
         Returns: string;
       };
+      // Pro foundation (P0): is the OWNER of this project on Pro? The real gate
+      // for Pro tables + the canvas-media Storage policies (prompts.md P0).
+      project_is_pro: {
+        Args: { p_project_id: string };
+        Returns: boolean;
+      };
       // True when the caller is the app administrator (ADMIN_EMAIL). Used by the
       // feedback / ceo_messages RLS policies (lib/admin.ts mirrors it in the UI).
       is_admin: {

@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Aurora — Pro Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0B0710;
+    --ink:#F4EEFF;
+    --ink-soft:#B9AED1;
+    --ink-faint:#8B7FA8;
+    --glass:rgba(255,255,255,0.055);
+    --glass-strong:rgba(255,255,255,0.09);
+    --border:rgba(255,255,255,0.12);
+    --border-bright:rgba(255,255,255,0.22);
+    --g-aurora:linear-gradient(135deg,#7C3AED,#06B6D4);
+    --g-bloom:linear-gradient(135deg,#EC4899,#8B5CF6);
+    --g-sunset:linear-gradient(135deg,#FF6B6B,#FFD93D);
+    --g-lagoon:linear-gradient(135deg,#06B6D4,#10B981);
+    --g-ember:linear-gradient(135deg,#F97316,#EF4444);
+    --g-galaxy:linear-gradient(135deg,#6366F1,#A855F7);
+    --opus:linear-gradient(135deg,#A855F7,#EC4899);
+    --sonnet:linear-gradient(135deg,#06B6D4,#3B82F6);
+    --haiku:linear-gradient(135deg,#10B981,#84CC16);
+    --ok:#34D399;
+    --radius:22px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+    line-height:1.6;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* ---------- animated aurora background ---------- */
+  .aurora{position:fixed;inset:0;z-index:-1;overflow:hidden;filter:blur(0);}
+  .blob{position:absolute;border-radius:50%;filter:blur(80px);opacity:.55;will-change:transform;}
+  .b1{width:46vw;height:46vw;background:radial-gradient(circle at 30% 30%,#7C3AED,transparent 70%);top:-8vw;left:-6vw;animation:drift1 26s ease-in-out infinite;}
+  .b2{width:40vw;height:40vw;background:radial-gradient(circle at 30% 30%,#06B6D4,transparent 70%);top:20vh;right:-8vw;animation:drift2 32s ease-in-out infinite;}
+  .b3{width:38vw;height:38vw;background:radial-gradient(circle at 30% 30%,#EC4899,transparent 70%);bottom:-10vw;left:20vw;animation:drift3 30s ease-in-out infinite;}
+  .b4{width:30vw;height:30vw;background:radial-gradient(circle at 30% 30%,#F97316,transparent 70%);top:55vh;left:5vw;opacity:.35;animation:drift1 38s ease-in-out infinite reverse;}
+  @keyframes drift1{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(8vw,6vh) scale(1.15);}}
+  @keyframes drift2{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(-7vw,8vh) scale(1.1);}}
+  @keyframes drift3{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(6vw,-7vh) scale(1.2);}}
+  .grain{position:fixed;inset:0;z-index:-1;opacity:.035;pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+  /* ---------- layout ---------- */
+  .wrap{max-width:920px;margin:0 auto;padding:54px 20px 90px;}
+  header.hero{text-align:center;margin-bottom:38px;}
+  .eyebrow{font-size:.78rem;letter-spacing:.28em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;margin-bottom:14px;}
+  h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(2.4rem,6vw,3.6rem);line-height:1.05;margin:0 0 12px;
+    background:linear-gradient(120deg,#fff 0%,#C4B5FD 28%,#67E8F9 52%,#F9A8D4 76%,#fff 100%);
+    background-size:220% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    animation:flow 9s ease-in-out infinite;}
+  @keyframes flow{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
+  .sub{color:var(--ink-soft);max-width:600px;margin:0 auto;font-size:1.02rem;}
+
+  /* ---------- progress ---------- */
+  .progress-card{margin:30px auto 8px;}
+  .glass{background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+    border:1px solid var(--border);border-radius:var(--radius);
+    box-shadow:0 18px 50px -20px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.08);}
+  .progress-inner{padding:20px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+  .progress-meta{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:1.05rem;white-space:nowrap;}
+  .progress-meta span{color:var(--ink-faint);font-weight:500;}
+  .bar{flex:1;min-width:180px;height:12px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;position:relative;}
+  .bar-fill{height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,#7C3AED,#EC4899,#06B6D4);
+    background-size:200% 100%;transition:width .5s cubic-bezier(.4,0,.2,1);animation:shimmer 4s linear infinite;}
+  @keyframes shimmer{to{background-position:200% 0;}}
+  .reset{background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--ink-soft);padding:8px 16px;border-radius:99px;
+    font-size:.82rem;cursor:pointer;font-family:inherit;white-space:nowrap;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 6px 14px -6px rgba(0,0,0,.5);
+    transition:transform .15s ease,box-shadow .15s ease,border-color .2s,color .2s;}
+  .reset:hover{border-color:var(--border-bright);color:var(--ink);transform:translateY(-2px);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.26),0 12px 22px -8px rgba(0,0,0,.55);}
+  .reset:active{transform:translateY(1px);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 4px 10px -5px rgba(0,0,0,.6);}
+
+  /* ---------- legend ---------- */
+  .legend{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:22px 0 18px;}
+  .legend .badge{cursor:default;}
+  .badge{display:inline-flex;align-items:center;gap:7px;padding:5px 13px;border-radius:99px;font-size:.76rem;font-weight:600;
+    color:#fff;letter-spacing:.02em;background-size:180% 180%;animation:flow 6s ease-in-out infinite;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 6px 16px -6px rgba(0,0,0,.7);}
+  .badge.opus{background:var(--opus);}
+  .badge.sonnet{background:var(--sonnet);}
+  .badge.haiku{background:var(--haiku);}
+  .badge .dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.85);}
+  .legend small{color:var(--ink-faint);font-size:.74rem;align-self:center;}
+
+  /* ---------- decisions strip ---------- */
+  .decisions{margin:0 auto 34px;padding:16px 22px;}
+  .decisions h2{font-family:'Space Grotesk',sans-serif;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--ink-faint);margin:0 0 10px;font-weight:700;}
+  .decisions ul{margin:0;padding:0;list-style:none;display:grid;gap:8px;}
+  .decisions li{position:relative;padding-left:20px;color:var(--ink-soft);font-size:.9rem;}
+  .decisions li::before{content:"";position:absolute;left:2px;top:9px;width:8px;height:8px;border-radius:50%;background:var(--g-bloom);}
+  .decisions b{color:var(--ink);font-weight:600;}
+
+  /* ---------- phase cards ---------- */
+  .phase{margin-bottom:20px;overflow:hidden;position:relative;transform-style:preserve-3d;
+    transform:perspective(1200px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
+    transition:transform .3s cubic-bezier(.2,.7,.2,1),box-shadow .3s ease,opacity .35s;will-change:transform;}
+  .phase:hover{box-shadow:0 36px 80px -28px rgba(124,58,237,.5),inset 0 1px 0 rgba(255,255,255,.14);}
+  .phase::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--g-aurora);opacity:.9;}
+  .phase[data-model="sonnet"]::before{background:var(--sonnet);}
+  .phase[data-model="opus"]::before{background:var(--opus);}
+  .phase[data-model="haiku"]::before{background:var(--haiku);}
+  .phead{display:flex;align-items:center;gap:16px;padding:20px 24px;cursor:pointer;user-select:none;}
+  .check{appearance:none;-webkit-appearance:none;flex:none;width:26px;height:26px;border-radius:9px;border:2px solid var(--border-bright);
+    background:rgba(255,255,255,.04);cursor:pointer;position:relative;transition:.2s;}
+  .check:hover{border-color:#A855F7;box-shadow:0 0 0 4px rgba(168,85,247,.15);}
+  .check:checked{background:var(--opus);border-color:transparent;}
+  .check:checked::after{content:"";position:absolute;left:8px;top:3px;width:6px;height:12px;border:solid #fff;border-width:0 3px 3px 0;transform:rotate(45deg);}
+  .pnum{font-family:'Space Grotesk',sans-serif;font-size:.8rem;color:var(--ink-faint);font-weight:600;letter-spacing:.05em;}
+  .ptitle{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:1.18rem;flex:1;line-height:1.25;}
+  .pmodel{flex:none;}
+  .toggle-ico{flex:none;color:var(--ink-faint);transition:transform .3s;font-size:.9rem;}
+  .phase.open .toggle-ico{transform:rotate(180deg);}
+
+  .pbody{display:none;padding:0 24px 24px;}
+  .phase.open .pbody{display:block;animation:reveal .35s ease;}
+  @keyframes reveal{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:none;}}
+
+  .sec-label{display:flex;align-items:center;gap:8px;font-size:.74rem;text-transform:uppercase;letter-spacing:.16em;
+    color:var(--ink-faint);font-weight:700;margin:20px 0 10px;}
+  .sec-label .ic{font-size:.95rem;}
+  ul.clean{list-style:none;margin:0;padding:0;}
+  ul.clean li{position:relative;padding:5px 0 5px 22px;color:var(--ink-soft);font-size:.92rem;}
+  ul.clean li::before{content:"";position:absolute;left:2px;top:13px;width:7px;height:7px;border-radius:50%;background:var(--g-lagoon);}
+  ul.verify li::before{background:var(--g-sunset);}
+
+  .prompt-block{position:relative;margin-top:6px;}
+  pre.prompt{margin:0;padding:18px 18px 18px;background:rgba(0,0,0,.32);border:1px solid var(--border);border-radius:16px;
+    font-family:'SF Mono',ui-monospace,'Cascadia Code',Menlo,Consolas,monospace;font-size:.83rem;line-height:1.62;
+    color:#E7DEFB;white-space:pre-wrap;word-wrap:break-word;max-height:340px;overflow:auto;}
+  pre.prompt::-webkit-scrollbar{width:10px;}
+  pre.prompt::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:99px;}
+  .copy{position:absolute;top:10px;right:10px;background:var(--glass-strong);border:1px solid var(--border-bright);
+    color:var(--ink);padding:7px 14px;border-radius:10px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit;
+    backdrop-filter:blur(8px);z-index:2;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 6px 14px -4px rgba(0,0,0,.6),0 2px 4px rgba(0,0,0,.35);
+    transition:transform .15s ease,box-shadow .15s ease,background .2s ease;}
+  .copy:hover{background:var(--opus);border-color:transparent;transform:translateY(-2px);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 14px 26px -6px rgba(124,58,237,.6),0 4px 8px rgba(0,0,0,.4);}
+  .copy:active{transform:translateY(1px) scale(.97);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 4px 10px -4px rgba(0,0,0,.6);}
+  .copy.copied{background:var(--g-lagoon);border-color:transparent;}
+
+  /* ---------- done state ---------- */
+  .phase.done{opacity:.62;}
+  .phase.done::before{background:var(--g-lagoon)!important;}
+  .phase.done .ptitle{text-decoration:line-through;text-decoration-color:var(--ink-faint);color:var(--ink-soft);}
+  .phase.done pre.prompt{text-decoration:line-through;text-decoration-color:rgba(180,160,210,.45);color:var(--ink-faint);}
+  .donepill{display:none;}
+  .phase.done .donepill{display:inline-flex;align-items:center;gap:6px;font-size:.72rem;color:var(--ok);font-weight:700;
+    letter-spacing:.04em;text-transform:uppercase;}
+  .phase.done .donepill::before{content:"✓";}
+
+  footer{text-align:center;margin-top:46px;color:var(--ink-faint);font-size:.85rem;}
+  footer code{background:rgba(255,255,255,.07);padding:2px 8px;border-radius:7px;color:var(--ink-soft);font-size:.82rem;}
+  .files{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px;}
+  .files code{font-family:'SF Mono',ui-monospace,monospace;}
+
+  @media (max-width:560px){
+    .wrap{padding:34px 14px 70px;}
+    .phead{padding:16px;gap:12px;}
+    .ptitle{font-size:1.04rem;}
+    .pbody{padding:0 16px 18px;}
+    .pmodel .badge{padding:4px 9px;font-size:.68rem;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .blob,.bar-fill,h1,.badge{animation:none!important;}
+    .phase{transform:none!important;}
+    *{transition:none!important;}
+  }
+</style>
+</head>
+<body>
+  <div class="aurora" aria-hidden="true">
+    <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div>
+  </div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <div class="wrap">
+    <header class="hero">
+      <div class="eyebrow">Aurora · Pro Features</div>
+      <h1>Pro Plan</h1>
+      <p class="sub">Ten prompts to build the Pro tier: a collaborative Notes Canvas, custom timed reminders, and Pro collaboration. Tick a prompt once you have pasted it into Claude Code — it strikes through and the bar fills, so you always know how far you have come. Progress saves automatically in this browser.</p>
+    </header>
+
+    <div class="progress-card glass">
+      <div class="progress-inner">
+        <div class="progress-meta"><span id="pcount">0 / 10</span> prompts done</div>
+        <div class="bar"><div class="bar-fill" id="pfill"></div></div>
+        <button class="reset" id="resetBtn">Reset progress</button>
+      </div>
+    </div>
+
+    <div class="legend">
+      <span class="badge opus"><span class="dot"></span>Opus 4.8</span>
+      <small>architecture · security · multiplayer</small>
+      <span class="badge sonnet"><span class="dot"></span>Sonnet 4.6</span>
+      <small>feature build-out</small>
+      <span class="badge haiku"><span class="dot"></span>Haiku 4.5</span>
+      <small>tiny tweaks</small>
+    </div>
+
+    <div class="decisions glass">
+      <h2>Locked decisions</h2>
+      <ul>
+        <li>Canvas engine = <b>Custom</b> (react-konva + perfect-freehand + Tiptap) — tldraw rejected ($6k/yr), Excalidraw rejected (no rich text / audio-video / page types).</li>
+        <li>Live editing = <b>Multiplayer</b> via Yjs (live cursors).</li>
+        <li>Audio/video = <b>Both</b> — record/upload (Supabase Storage, capped) and embed links.</li>
+        <li>Collaboration = <b>All four</b> — comments, @mentions, review/approval, activity log + reactions.</li>
+        <li>Every feature is <b>Pro-gated twice</b> — in the UI and in the database (RLS), and the canvas is lazy-loaded.</li>
+      </ul>
+    </div>
+
+    <div id="phases"></div>
+
+    <footer>
+      Full detail lives in your repo docs:
+      <div class="files">
+        <code>prompts.md</code><code>plan.md</code><code>memory.md</code><code>CLAUDE.md</code>
+      </div>
+      <p style="margin-top:14px">After each prompt: run the verification → update <code>memory.md</code> → commit to git.</p>
+    </footer>
+  </div>
+
+  <!-- ===================== PROMPT BODIES (raw text, never HTML-parsed) ===================== -->
+  <script type="text/plain" id="prompt-p0">Read CLAUDE.md, plan.md (Security), and memory.md fully first.
+
+Build the Pro-feature foundation. This is gating + storage only — no end-user feature yet.
+
+1. Migration `supabase/migrations/<ts>_pro_foundation.sql`:
+   - Add SECURITY DEFINER helper public.project_is_pro(p_project_id uuid) returns boolean — resolves
+     the project's owner_id and returns (that owner's profiles.plan = 'pro'). Use `set search_path = ''`,
+     schema-qualified refs, mirroring is_project_member / can_edit_project. Grant execute to authenticated.
+   - Create a PRIVATE Storage bucket 'canvas-media' (insert into storage.buckets if not exists).
+   - Storage RLS on storage.objects for bucket 'canvas-media': a member of the object's project may SELECT;
+     INSERT/UPDATE/DELETE require is_project_member AND project_is_pro for the project encoded in the path
+     (path convention: '<projectId>/<noteId>/<file>'). Parse projectId via split_part(name,'/',1)::uuid.
+   - Enforce per-file size caps in the INSERT policy if feasible (else document the client-side cap).
+2. Frontend: add src/features/billing/useIsPro.ts exposing useIsPro() (reads useProfile().plan === 'pro')
+   and a small <ProGate> component that renders children for Pro users and an upgrade CTA (opens the
+   existing UpgradeModal) otherwise. Export from the billing barrel.
+3. Add src/lib/proFeatures.ts documenting which features are Pro and the storage caps (single source of truth,
+   imported by UI). Reference it from plans.ts feature lists where relevant.
+4. Add a tiny src/lib/storage.ts helper: uploadCanvasMedia(projectId, noteId, file) -> { path }, and
+   signedUrl(path) -> string, using supabase.storage. Validate file type + size against proFeatures caps
+   BEFORE upload; throw a typed error the UI can show.
+
+Constraints: TypeScript strict, no any. RLS is the real gate — the UI gate is UX only. Don't weaken any
+existing policy. Keep helpers flat (no policy re-entry), following the existing SECURITY DEFINER pattern.
+
+When finished: update memory.md (new helper, bucket, useIsPro, storage helper; note this unblocks P1–P3),
+and commit. Apply the migration in the Supabase SQL editor (note it as a one-time step in memory.md open items).</script>
+
+  <script type="text/plain" id="prompt-p1">Read CLAUDE.md, plan.md, and memory.md first (especially the Phase 9 reminders design + decision log).
+
+Add Pro custom timed reminders. Do NOT break the existing free day-based reminder.
+
+DATA MODEL — migration `supabase/migrations/<ts>_custom_reminders.sql`:
+1. Add cards.due_at timestamptz (nullable). Keep cards.due_date for back-compat; treat due_at as the
+   source of truth when present. Backfill due_at = due_date::timestamp at 09:00 local-ish (document the choice).
+2. New table card_reminders (id uuid pk, card_id uuid fk on delete cascade, offset_minutes int not null
+   check (offset_minutes >= 0), channel text check (channel in ('email','push')) default 'email',
+   created_by uuid, created_at). A card can have many. RLS: can_edit_card(card_id) to write; reads
+   gated on card membership. INSERT additionally requires project_is_pro(project of the card) — free users
+   can't create custom offsets.
+3. Dispatch dedupe: table card_reminder_dispatches (card_reminder_id, due_at, sent_at, pk(card_reminder_id, due_at))
+   so a given reminder fires once per due_at instance and re-arms if due_at changes.
+4. Update the due_reminder_candidates RPC (or add a new one) to compute, per pending card_reminder, whether
+   now() is within [due_at - offset_minutes, due_at - offset_minutes + window] and not yet dispatched.
+
+CRON + EDGE FUNCTION:
+5. Reschedule pg_cron for send-due-reminders from daily to EVERY 10 MINUTES (document the SQL in supabase/README).
+   Make the function idempotent and window-based (tolerance = the 10-min interval). Mark dispatches sent.
+6. Keep the existing free daily digest path working (day-based) alongside the new precise path.
+
+FRONTEND:
+7. In the card modal (features/board/CardDetailModal): a DueDateField upgrade that adds a TIME picker
+   (due_at). For Pro users, a "Reminders" section to add/remove multiple offsets — quick chips
+   (15m, 30m, 1h, 2h, 1 day) + a custom value + channel (email/push). Gate behind <ProGate>; free users
+   see the existing single day-based control with an upgrade hint.
+8. Extend the browser features/reminders/useDueReminders to also fire on time-based offsets (poll the
+   user's upcoming card_reminders, fire one Notification per (reminder, due_at), localStorage dedupe).
+9. Thread due_at through the board + calendar caches/mutations exactly like due_date today.
+
+Constraints: TS strict, Zod-validate offsets/time. RLS + project_is_pro enforce Pro. No secret in the client.
+
+When finished: update memory.md (data model, cron change, files) and commit. Note the migration + the pg_cron
+reschedule as one-time Supabase steps in open items.</script>
+
+  <script type="text/plain" id="prompt-p2">Read CLAUDE.md, plan.md (Security), and memory.md first (Phase 8 collaboration + realtime patterns).
+
+Add Pro collaboration. All of it is Pro-gated (project_is_pro on the board owner) and realtime.
+
+DATA MODEL — migration `supabase/migrations/<ts>_collaboration_pro.sql`:
+1. comments (id, project_id, card_id nullable, canvas_note_id nullable, author_id, body text,
+   parent_id nullable self-fk for threads, created_at, edited_at). Exactly one of card_id/canvas_note_id set.
+   RLS: read = is_project_member(project_id); write = can_edit_project OR author owns the row;
+   INSERT requires project_is_pro(project_id).
+2. comment_mentions (comment_id, mentioned_user_id) — populated from @mentions parsed server-side or on insert.
+3. reactions (id, target_type in ('comment','card'), target_id, user_id, emoji, unique(target_type,target_id,user_id,emoji)).
+4. review: add cards.review_status text check in ('none','in_review','approved','changes_requested') default 'none',
+   cards.review_assignee_id, cards.reviewed_by, cards.reviewed_at. A request-review / approve / request-changes flow.
+5. activity_log (id, project_id, actor_id, verb, target_type, target_id, meta jsonb, created_at) — append-only;
+   read = is_project_member; insert via SECURITY DEFINER triggers on cards/comments/etc. (not client-writable).
+6. Add the new tables to the supabase_realtime publication (REPLICA IDENTITY FULL), like Phase 8.
+
+NOTIFICATIONS:
+7. notifications (id, user_id, kind, payload jsonb, read_at, created_at), own-row RLS. On @mention,
+   review request, or reply: insert a notification (DB trigger) AND optionally email via the existing Resend
+   path (an Edge Function or extend send-due-reminders' infra). In-app: a bell in the Topbar with an unread count.
+
+FRONTEND (features/collaboration):
+8. A CommentThread component (card modal + later the canvas): threaded list, composer with @mention autocomplete
+   (project members), edit/delete own, realtime via useProjectRealtime (add the new tables to its invalidation map).
+9. Reactions (emoji bar) on comments and cards.
+10. A review control on the card: request review (pick a member), approve / request changes; show a colored
+    review badge on the card face. Surface review state in the board toolbar filters.
+11. An activity feed (per project + per card) and a notifications dropdown.
+12. Gate everything behind <ProGate>; free boards see the feature with an upgrade CTA.
+
+Constraints: TS strict, Zod-validate. RLS + project_is_pro are the real gates. Reuse the realtime + email infra;
+no new secrets in the client. Keep components small.
+
+When finished: update memory.md (tables, realtime additions, files) and commit. Note the migration + realtime
+enablement as one-time Supabase steps.</script>
+
+  <script type="text/plain" id="prompt-p31">Read CLAUDE.md, plan.md, and memory.md first.
+
+Create the Pro Notes Canvas foundation. No freehand/text/media yet — just the canvas, pages, elements
+scaffold, and persistence.
+
+DATA MODEL — migration `supabase/migrations/<ts>_canvas.sql`:
+1. canvas_notes (id, project_id, title, page_type text check in ('blank','ruled','grid','dotted') default 'blank',
+   doc_state bytea null  -- Yjs binary snapshot (P3.7), scene jsonb not null default '{}'  -- denormalized
+   elements for fast read/thumbnail, created_at, updated_at, updated_by). updated_at via a touch trigger.
+2. RLS: read = is_project_member(project_id); write = can_edit_project(project_id); INSERT/UPDATE require
+   project_is_pro(project_id). (Free users can't create canvases.)
+
+FRONTEND (features/canvas, lazy-loaded):
+3. Install react-konva + konva. Add a Canvas route + a "Canvas" sidebar nav item (Pro-gated; free users see
+   <ProGate> upgrade CTA). A per-project canvas list (like Notes) + an editor.
+4. CanvasStage: an infinite, pan/zoom Konva Stage on the aurora/glass background. A background layer that renders
+   the selected page_type (blank/ruled/grid/dotted) as a tiled pattern that pans with the canvas.
+5. An element model in TypeScript: a discriminated union CanvasElement = Stroke | TextBox | ImageEl | MediaEl,
+   each with id, x, y, width, height, rotation, z, locked. Store the elements array in scene jsonb. (Strokes/text/
+   media bodies arrive in later sub-phases — stub the renderers now.)
+6. Selection + transform: Konva Transformer for move/resize/rotate of a selected element; a floating glass toolbar
+   (add-element placeholder, page-type switcher, zoom controls, undo/redo).
+7. Undo/redo via a local command stack (will be replaced by Yjs history in P3.7 — keep the API swappable).
+8. Persistence: debounced autosave of scene jsonb to canvas_notes (like the notes editor's 700ms autosave +
+   flush-on-unmount). One ['canvas', noteId] TanStack cache.
+
+Constraints: TS strict, no any. Lazy-load the module so Konva never ships to non-canvas users. Honor
+prefers-reduced-motion. Match Aurora glass/gradient styling. Touch + stylus + mouse all pan/zoom/select.
+
+When finished: update memory.md (canvas table, module, element model) and commit. Note the migration as a
+one-time Supabase step.</script>
+
+  <script type="text/plain" id="prompt-p32">Read CLAUDE.md, plan.md, and memory.md first.
+
+Add pressure-sensitive freehand drawing to the canvas (features/canvas).
+
+1. Install perfect-freehand. Capture pointer events on the Stage (pointerdown/move/up); collect [x,y,pressure]
+   points. Use real stylus pressure when present (simulatePressure:false when pointer is a pen), else simulate.
+2. Render each stroke as a Konva Line/Path from getStroke(); store strokes as Stroke elements in scene (points,
+   color, size, thinning, smoothing). Strokes are first-class elements: selectable, movable, resizable, lockable,
+   z-ordered — like any other element.
+3. A pen toolbar: color, size, and a few presets (pen/marker/highlighter — highlighter = translucent, multiply).
+   An eraser (stroke-level erase). Palm rejection: ignore touch while a pen is active.
+4. Performance: draw the in-progress stroke on a dedicated layer; commit to the scene on pointerup. Keep it
+   smooth on a tablet.
+
+Constraints: TS strict. Reduced-motion safe. Don't regress pan/zoom/select from P3.1 (tool modes: select vs draw).
+
+When finished: update memory.md and commit.</script>
+
+  <script type="text/plain" id="prompt-p33">Read CLAUDE.md, plan.md, and memory.md first.
+
+Add rich-text elements to the canvas.
+
+1. Install @tiptap/react, @tiptap/starter-kit, and extensions: underline, highlight, link, text-style, color.
+2. A TextBox element renders a Tiptap editor as an HTML overlay positioned/scaled to the element's box on the
+   Konva stage (sync transform: x/y/width/rotation/zoom). Double-click to edit, click-away to commit.
+3. A formatting toolbar (appears on selection): bold, italic, underline, highlight, text color, link (paste/enter
+   URL — sanitize href to http/https/mailto, like the existing notes markdown renderer), lists.
+4. Store the TextBox body as Tiptap JSON in the element. Keep it movable/resizable/rotatable/lockable/z-ordered.
+   (In P3.7 this body becomes a Yjs fragment for collaborative editing — structure it so that swap is clean.)
+
+Constraints: TS strict. XSS-safe links. The overlay must stay aligned during pan/zoom/rotate. Match Aurora type.
+
+When finished: update memory.md and commit.</script>
+
+  <script type="text/plain" id="prompt-p34">Read CLAUDE.md, plan.md, and memory.md first.
+
+Add images to the canvas.
+
+1. Add image via file picker, paste, or drag-drop. Validate type/size against proFeatures caps; upload to the
+   'canvas-media' bucket via lib/storage (path '<projectId>/<noteId>/<uuid>.<ext>'); store an ImageEl element
+   referencing the storage path (NOT a data URL).
+2. Render via a signed URL (cache the URL); show a skeleton while loading. Move/resize (keep aspect by default,
+   shift to free-resize)/rotate/lock/z-order like any element. Crop is optional/stretch goal.
+3. Handle upload errors + oversize with friendly inline messages. Free users blocked by <ProGate> + Storage RLS.
+
+Constraints: TS strict. Never inline large images into scene jsonb — always Storage + signed URL.
+
+When finished: update memory.md and commit.</script>
+
+  <script type="text/plain" id="prompt-p35">Read CLAUDE.md, plan.md, and memory.md first.
+
+Add audio + video to the canvas. Support BOTH in-app record/upload AND external embeds (the locked decision).
+
+1. RECORD/UPLOAD: a MediaEl (kind 'audio'|'video', source 'file'). Record via MediaRecorder (audio: webm/opus;
+   video: webm/vp9) with a clear record/stop UI + duration + a size meter against the cap. Or upload a file.
+   Validate type/size (caps in proFeatures), upload to 'canvas-media', store the storage path. Render an inline
+   audio/video player (signed URL) as a movable/resizable/lockable element.
+2. EMBED: a MediaEl (source 'embed'). Paste a YouTube/Vimeo/Loom/SoundCloud URL; parse + validate the provider
+   (allow-list only), store the canonical embed URL, render a responsive iframe element. Reject unknown hosts.
+3. Respect storage caps + show usage. Prefer embeds for long video (document this in the UI hint).
+
+Constraints: TS strict. Allow-list embed providers (no arbitrary iframes — XSS/clickjacking). Permissions UX for
+the mic/camera. Free users blocked by <ProGate> + RLS. Lazy-load recorder code.
+
+When finished: update memory.md and commit.</script>
+
+  <script type="text/plain" id="prompt-p36">Read CLAUDE.md, plan.md, and memory.md first.
+
+Polish element management on the canvas.
+
+1. Pin/lock: a locked element can't be moved/resized/selected by normal drag (toggle in a context menu / toolbar);
+   a "pin to canvas" affordance for background-anchored elements.
+2. Z-order: bring-forward / send-backward / to-front / to-back; multi-select (marquee + shift-click) with group
+   move/transform; align/distribute (stretch goal); duplicate, delete, copy/paste.
+3. A right-click / long-press context menu and keyboard shortcuts (Del, Cmd/Ctrl+C/V/Z/Shift+Z, arrows nudge).
+4. A small layers/element list panel (optional) for selecting + reordering + toggling lock/visibility.
+
+Constraints: TS strict. Keyboard + touch + stylus parity. Don't regress earlier sub-phases.
+
+When finished: update memory.md and commit.</script>
+
+  <script type="text/plain" id="prompt-p37">Read CLAUDE.md, plan.md, and memory.md first (especially the Phase 8 realtime design).
+
+Make the canvas collaborative in real time with Yjs over Supabase Realtime. Convert the local scene to a CRDT.
+
+1. Install yjs + y-protocols. Model one Y.Doc per canvas note: a Y.Array<Y.Map> 'elements' (each element a Y.Map
+   of its fields), and for each TextBox a Y.XmlFragment bound to Tiptap via @tiptap/extension-collaboration
+   (+ collaboration-cursor). Replace P3.1's local scene state with bindings to this Y.Doc; replace the local
+   undo stack with Y.UndoManager.
+2. TRANSPORT: write a THIN custom Yjs provider over a Supabase Realtime channel `canvas:<noteId>`:
+   - On join: load the persisted doc_state (bytea) from canvas_notes and Y.applyUpdate to seed.
+   - Broadcast local Yjs updates (Y.on('update')) over the channel; apply remote updates.
+   - AWARENESS (y-protocols/awareness): broadcast cursor position, selection, name/color, avatar; render live
+     remote cursors + selection halos on the stage. Reuse the existing presence avatar styling.
+3. PERSISTENCE: debounce-encode Y.encodeStateAsUpdate and save to canvas_notes.doc_state (bytea); also write the
+   denormalized scene jsonb for fast non-realtime reads/thumbnails. Last-write is safe (Yjs merges). Handle
+   reconnect: re-seed from doc_state, then resume live.
+4. CONFLICTS/PERF: Yjs handles concurrent edits; ensure large image/media bodies are NOT in the Y.Doc (only the
+   storage path + transform are). Throttle awareness + update broadcasts. Cap channel payload size.
+5. Gating: only members of a Pro board join the channel (project_is_pro + membership). RLS already protects
+   doc_state.
+
+Constraints: TS strict. Don't leak across notes (channel keyed per noteId). Reduced-motion for cursor animations.
+Keep it smooth with 3–5 concurrent editors. Document the provider design in memory.md (it's novel for this repo).
+
+When finished: update memory.md (the Yjs model + provider + the doc_state column usage) and commit.</script>
+
+  <script>
+    const PHASES = [
+      { id:'p0', n:'P0', title:'Pro foundation — gating & storage', model:'opus',
+        prereq:['Billing is in place: plans.ts, profiles.plan, current_plan(), UpgradeModal.','The Pro price + annual change has been built (see memory.md).'],
+        verify:['As a FREE user a direct insert into a Pro table or a canvas-media upload is rejected by RLS; as a Pro user it succeeds.','useIsPro() returns the right value; ProGate shows the upgrade CTA for free users.','A signed URL round-trips an uploaded test file; an oversized file is rejected client-side with a friendly error.','npm run typecheck && npm run build are clean.'] },
+
+      { id:'p1', n:'P1', title:'Custom timed reminders', model:'opus',
+        prereq:['P0 complete.','Existing reminders: cards.due_date, profiles.reminder_emails_enabled / reminder_lead_days, cards.reminder_sent_for, the send-due-reminders Edge Function on daily pg_cron, browser useDueReminders, AssigneeField.'],
+        verify:['A Pro user sets a due date WITH a time and two offsets (e.g. 2h + 15m); both fire (browser + email) once each; changing due_at re-arms them.','A free user still gets the day-based reminder and sees an upgrade hint; a direct insert into card_reminders as a free user is rejected by RLS.','pg_cron runs every 10 minutes; no duplicate sends (the dispatch table works).','npm run typecheck && npm run build are clean.'] },
+
+      { id:'p2', n:'P2', title:'Collaboration — comments, review & more', model:'opus',
+        prereq:['P0 complete.','Existing collaboration: project_members, roles, useProjectRealtime, usePresence, the Resend email path.'],
+        verify:['Two members on a Pro board: a comment, an @mention (notifies + emails), a reply, and a reaction all appear live with no refresh; a free board shows the upgrade CTA and a direct comment insert is rejected by RLS.','Review flow: request review then approve / request changes updates the badge live; the activity log records each event and cannot be forged by the actor.','The notification bell shows unread counts and marks read.','npm run typecheck && npm run build are clean.'] },
+
+      { id:'p31', n:'P3.1', title:'Canvas — foundation (Konva, pages)', model:'opus',
+        prereq:['P0 complete (project_is_pro, Storage, useIsPro).','react-konva + konva installed; the whole canvas module is lazy-loaded.'],
+        verify:['A Pro user creates a canvas, switches page type (blank/ruled/grid/dotted), and pans/zooms on mouse AND touch.','A placeholder element can be selected, moved, resized, rotated; changes autosave and survive reload.','A free user sees the upgrade CTA; a direct canvas_notes insert as free is rejected by RLS.','The canvas ships as a separate lazy-loaded bundle. Build is clean.'] },
+
+      { id:'p32', n:'P3.2', title:'Canvas — freehand & stylus', model:'sonnet',
+        prereq:['P3.1 complete.','perfect-freehand installed.'],
+        verify:['Stylus pressure varies stroke width; pen / marker / highlighter presets look right; the eraser removes strokes.','Strokes are first-class elements: select, move, resize, lock, z-order.','Smooth on a touch device; palm rejection works. Build is clean.'] },
+
+      { id:'p33', n:'P3.3', title:'Canvas — rich text (Tiptap)', model:'sonnet',
+        prereq:['P3.1 complete.','Tiptap + extensions (underline, highlight, link, text-style, color) installed.'],
+        verify:['Add a text box; apply bold, italic, underline, highlight, color, and a link.','Move / resize / rotate the box and the text stays aligned during pan and zoom.','A javascript: link is rejected; reload persists. Build is clean.'] },
+
+      { id:'p34', n:'P3.4', title:'Canvas — images', model:'sonnet',
+        prereq:['P3.1 complete.','Storage bucket + lib/storage from P0.'],
+        verify:['Add an image via picker, paste, or drag-drop; it uploads to Storage and renders via a signed URL (never a data URL).','Move / resize / rotate / lock / z-order the image; oversize files are rejected.','Reload persists; a free user cannot upload (RLS). Build is clean.'] },
+
+      { id:'p35', n:'P3.5', title:'Canvas — audio & video', model:'opus',
+        prereq:['P3.1 + P3.4 complete.','MediaRecorder (browser API); embed/recorder code is lazy-loaded.'],
+        verify:['Record a short audio note and a short video; both upload, play inline, and move / resize.','An oversize recording is blocked against the cap.','Paste a YouTube and a Loom link to embed and play; a non-allow-listed URL is rejected. Free user blocked. Build is clean.'] },
+
+      { id:'p36', n:'P3.6', title:'Canvas — pin, lock & z-order', model:'sonnet',
+        prereq:['P3.1 through P3.5 complete.'],
+        verify:['Lock prevents edits; z-order (forward/back/front/back) changes stacking.','Marquee + shift-click multi-select group-moves; duplicate / delete / copy-paste work.','Keyboard shortcuts (Del, Cmd/Ctrl+C/V/Z, arrow nudge) work on mouse, touch, and keyboard. Build is clean.'] },
+
+      { id:'p37', n:'P3.7', title:'Canvas — live multiplayer (Yjs)', model:'opus',
+        prereq:['P3.1 through P3.6 complete.','yjs + y-protocols installed; Supabase Realtime enabled.'],
+        verify:['Two browsers on the same canvas: strokes, text edits, image moves, and page changes appear live in both, with remote cursors + selection.','Closing and reopening re-seeds from doc_state with no loss; edits in a different canvas never bleed in.','Smooth with 3+ concurrent editors; a non-member / free board cannot join (RLS). Build is clean.'] },
+    ];
+
+    const MODEL_LABEL = { opus:'Opus 4.8', sonnet:'Sonnet 4.6', haiku:'Haiku 4.5' };
+    const STORE_KEY = 'aurora-pro-plan-progress-v1';
+    const state = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
+
+    const esc = (s) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const container = document.getElementById('phases');
+
+    PHASES.forEach((p) => {
+      const promptText = document.getElementById('prompt-' + p.id).textContent.trim();
+      const done = !!state[p.id];
+      const art = document.createElement('article');
+      art.className = 'phase glass' + (done ? ' done' : '');
+      art.dataset.id = p.id;
+      art.dataset.model = p.model;
+      art.innerHTML = `
+        <div class="phead">
+          <input type="checkbox" class="check" ${done ? 'checked' : ''} title="Mark as pasted" />
+          <div style="flex:1;display:flex;flex-direction:column;gap:2px;">
+            <span class="pnum">${p.n} &nbsp;·&nbsp; <span class="donepill">pasted</span></span>
+            <span class="ptitle">${esc(p.title)}</span>
+          </div>
+          <span class="pmodel"><span class="badge ${p.model}"><span class="dot"></span>${MODEL_LABEL[p.model]}</span></span>
+          <span class="toggle-ico">▾</span>
+        </div>
+        <div class="pbody">
+          <div class="sec-label"><span class="ic">📋</span> Prerequisites</div>
+          <ul class="clean prereq">${p.prereq.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+          <div class="sec-label"><span class="ic">⌨️</span> Prompt — paste into Claude Code</div>
+          <div class="prompt-block">
+            <button class="copy">Copy</button>
+            <pre class="prompt"></pre>
+          </div>
+          <div class="sec-label"><span class="ic">✅</span> Verify before moving on</div>
+          <ul class="clean verify">${p.verify.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+        </div>`;
+      art.querySelector('pre.prompt').textContent = promptText;
+      container.appendChild(art);
+
+      // expand / collapse (ignore clicks on the checkbox)
+      const head = art.querySelector('.phead');
+      head.addEventListener('click', (e) => {
+        if (e.target.classList.contains('check')) return;
+        art.classList.toggle('open');
+      });
+
+      // checkbox -> done + strike + persist
+      const cb = art.querySelector('.check');
+      cb.addEventListener('click', (e) => e.stopPropagation());
+      cb.addEventListener('change', () => {
+        art.classList.toggle('done', cb.checked);
+        if (cb.checked) state[p.id] = true; else delete state[p.id];
+        localStorage.setItem(STORE_KEY, JSON.stringify(state));
+        updateProgress();
+      });
+
+      // copy
+      const copyBtn = art.querySelector('.copy');
+      copyBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(promptText).then(() => {
+          copyBtn.textContent = 'Copied!';
+          copyBtn.classList.add('copied');
+          setTimeout(() => { copyBtn.textContent = 'Copy'; copyBtn.classList.remove('copied'); }, 1600);
+        }).catch(() => {
+          const r = document.createRange(); r.selectNodeContents(art.querySelector('pre.prompt'));
+          const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+          copyBtn.textContent = 'Select+Copy';
+          setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1600);
+        });
+      });
+    });
+
+    function updateProgress(){
+      const total = PHASES.length;
+      const done = PHASES.filter(p => state[p.id]).length;
+      document.getElementById('pcount').textContent = `${done} / ${total}`;
+      document.getElementById('pfill').style.width = (done/total*100) + '%';
+    }
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      if(!confirm('Reset all progress?')) return;
+      Object.keys(state).forEach(k => delete state[k]);
+      localStorage.removeItem(STORE_KEY);
+      document.querySelectorAll('.phase').forEach(a => { a.classList.remove('done'); a.querySelector('.check').checked = false; });
+      updateProgress();
+    });
+
+    // 3D pointer-tilt on phase cards (respects reduced motion)
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      document.querySelectorAll('.phase').forEach((card) => {
+        card.addEventListener('pointermove', (e) => {
+          const r = card.getBoundingClientRect();
+          const px = (e.clientX - r.left) / r.width - 0.5;
+          const py = (e.clientY - r.top) / r.height - 0.5;
+          card.style.setProperty('--ry', (px * 5).toFixed(2) + 'deg');
+          card.style.setProperty('--rx', (py * -4).toFixed(2) + 'deg');
+        });
+        card.addEventListener('pointerleave', () => {
+          card.style.setProperty('--rx', '0deg');
+          card.style.setProperty('--ry', '0deg');
+        });
+      });
+    }
+
+    // open the first not-done phase by default
+    const firstOpen = PHASES.find(p => !state[p.id]) || PHASES[0];
+    const firstEl = container.querySelector(`[data-id="${firstOpen.id}"]`);
+    if (firstEl) firstEl.classList.add('open');
+
+    updateProgress();
+  </script>
+</body>
+</html>

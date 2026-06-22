@@ -179,3 +179,34 @@ npx supabase secrets set \
 - Re-confirm the webhook signature check; ensure no `service_role` key is in the
   frontend. Consider rate-limiting and the invitation email-ownership note
   (decision log, 2026-06-20) before going public.
+
+## Pro feature foundation (P0 — required before any Pro feature)
+
+Foundation only — no end-user Pro feature yet. It adds the database-side gate and
+storage that the upcoming Pro features (custom reminders, collaboration, the Notes
+Canvas — see [`../prompts.md`](../prompts.md)) build on.
+
+### Apply the migration
+Run [`migrations/20260622000000_pro_foundation.sql`](./migrations/20260622000000_pro_foundation.sql)
+(SQL Editor or `db push`). It adds:
+- **`project_is_pro(project)`** — a `SECURITY DEFINER` helper that returns whether
+  the project **owner** is on Pro. It's the real gate for every future Pro table
+  and the Storage policies below (the UI's `useIsPro()` / `<ProGate>` is UX only).
+- A **private `canvas-media` Storage bucket** with RLS on `storage.objects`: any
+  project **member** may read an object (so signed URLs work); only a member of a
+  **Pro** board may insert/update/delete. The path convention is
+  `<projectId>/<noteId>/<file>`; the policies parse the projectId from the first
+  path segment.
+
+No dashboard config is needed — the bucket is created by the migration. Because it
+runs `create policy` on `storage.objects`, run it as the project owner (the SQL
+Editor does this).
+
+### File-size caps
+The bucket's `file_size_limit` is a hard server ceiling of **100 MiB** (the largest
+per-type cap). The finer per-type caps (**image ≤ 10 MB, audio ≤ 25 MB, video ≤
+100 MB**) and the MIME allow-list live in
+[`../src/lib/proFeatures.ts`](../src/lib/proFeatures.ts) and are enforced
+client-side in [`../src/lib/storage.ts`](../src/lib/storage.ts) before upload — a
+single bucket limit can't express per-type byte caps. Keep the migration's
+`file_size_limit` in sync with `MEDIA_CAPS.video.maxBytes`.
