@@ -10,6 +10,7 @@
  */
 import type { AccentName } from '@/lib/accents';
 import type { LabelColor } from '@/lib/labelColors';
+import type { PageType } from '@/lib/canvasPages';
 import type { PlanId } from '@/lib/plans';
 
 /** A member's permission level within a project (plan.md §5–6). */
@@ -371,6 +372,51 @@ export interface Database {
           project_id?: string;
           title?: string;
           content?: string;
+          updated_at?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      canvas_notes: {
+        Row: {
+          id: string;
+          project_id: string;
+          title: string;
+          // Page background; constrained by a DB check (see lib/canvasPages.ts).
+          page_type: PageType;
+          // Yjs CRDT binary snapshot (P3.7). bytea → base64/hex string over
+          // PostgREST; unused until live multiplayer lands. Null today.
+          doc_state: string | null;
+          // Denormalised element array: { elements: CanvasElement[] }. Parsed +
+          // validated client-side (features/canvas/elements.ts). jsonb, so typed
+          // loosely here like activity_log.meta / notifications.payload.
+          scene: Record<string, unknown>;
+          // Last editor; stamped server-side by the canvas_notes_set_updated_at
+          // trigger on every edit (defaults to auth.uid() on insert).
+          updated_by: string | null;
+          updated_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          // Defaults to 'Untitled canvas' in the DB.
+          title?: string;
+          page_type?: PageType;
+          doc_state?: string | null;
+          scene?: Record<string, unknown>;
+          updated_by?: string | null;
+          updated_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          title?: string;
+          page_type?: PageType;
+          doc_state?: string | null;
+          scene?: Record<string, unknown>;
+          updated_by?: string | null;
           updated_at?: string;
           created_at?: string;
         };
@@ -812,6 +858,7 @@ export type CardLabel = Database['public']['Tables']['card_labels']['Row'];
 export type TodoList = Database['public']['Tables']['todo_lists']['Row'];
 export type TodoItem = Database['public']['Tables']['todo_items']['Row'];
 export type Note = Database['public']['Tables']['notes']['Row'];
+export type CanvasNote = Database['public']['Tables']['canvas_notes']['Row'];
 export type Invitation = Database['public']['Tables']['invitations']['Row'];
 export type Feedback = Database['public']['Tables']['feedback']['Row'];
 export type CeoMessage = Database['public']['Tables']['ceo_messages']['Row'];

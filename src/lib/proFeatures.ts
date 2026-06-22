@@ -58,7 +58,7 @@ export const PRO_FEATURES: Record<ProFeatureKey, ProFeature> = {
     key: 'canvas',
     label: 'Notes Canvas',
     description: 'A live, collaborative whiteboard per project — freehand, rich text and media.',
-    shipped: false,
+    shipped: true,
   },
   media: {
     key: 'media',

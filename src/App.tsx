@@ -7,6 +7,7 @@ import { ProjectsPage, ProjectPage } from '@/features/projects';
 import { CalendarPage } from '@/features/calendar';
 import { TodosPage } from '@/features/todos';
 import { NotesHome } from '@/features/notes';
+import { CanvasHome } from '@/features/canvas';
 import { BillingPage } from '@/features/billing';
 import { CeoMessagePage } from '@/features/announcements';
 import { FeedbackPage } from '@/features/feedback';
@@ -57,6 +58,7 @@ export default function App() {
           <Route path="calendar" element={<CalendarPage />} />
           <Route path="todos" element={<TodosPage />} />
           <Route path="notes" element={<NotesHome />} />
+          <Route path="canvas" element={<CanvasHome />} />
           <Route path="from-the-founder" element={<CeoMessagePage />} />
           <Route path="feedback" element={<FeedbackPage />} />
           <Route path="billing" element={<BillingPage />} />

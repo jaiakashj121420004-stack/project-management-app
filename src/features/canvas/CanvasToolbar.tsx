@@ -1,0 +1,157 @@
+import type { ReactNode } from 'react';
+import { Lock, Plus, Redo2, Trash2, Undo2, Unlock, ZoomIn, ZoomOut } from 'lucide-react';
+import { cn } from '@/lib/cn';
+import { GlassSelect } from '@/components/forms/GlassSelect';
+import { PAGE_LABELS, PAGE_TYPES, type PageType } from '@/lib/canvasPages';
+
+interface CanvasToolbarProps {
+  canEdit: boolean;
+  pageType: PageType;
+  onPageType: (pageType: PageType) => void;
+  scale: number;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+  onZoomReset: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
+  onAdd: () => void;
+  hasSelection: boolean;
+  selectedLocked: boolean;
+  onToggleLock: () => void;
+  onDeleteSelected: () => void;
+  className?: string;
+}
+
+/**
+ * The floating glass toolbar over the canvas: undo/redo, add element, the
+ * page-type switcher, and zoom controls — plus lock/delete affordances for the
+ * current selection. Edit affordances are hidden for viewers, who keep zoom +
+ * page-type-readout only. It wraps (never scroll-clips) so the GlassSelect
+ * dropdown is never cut off.
+ */
+export function CanvasToolbar({
+  canEdit,
+  pageType,
+  onPageType,
+  scale,
+  onZoomIn,
+  onZoomOut,
+  onZoomReset,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
+  onAdd,
+  hasSelection,
+  selectedLocked,
+  onToggleLock,
+  onDeleteSelected,
+  className,
+}: CanvasToolbarProps) {
+  return (
+    <div
+      className={cn(
+        'glass-menu flex max-w-full flex-wrap items-center justify-center gap-1 rounded-2xl border border-[var(--glass-border)] px-1.5 py-1 shadow-[0_14px_34px_-18px_rgba(0,0,0,0.7)]',
+        className,
+      )}
+    >
+      {canEdit && (
+        <>
+          <ToolButton label="Undo" onClick={onUndo} disabled={!canUndo}>
+            <Undo2 size={17} />
+          </ToolButton>
+          <ToolButton label="Redo" onClick={onRedo} disabled={!canRedo}>
+            <Redo2 size={17} />
+          </ToolButton>
+          <Divider />
+          <ToolButton label="Add text box" onClick={onAdd}>
+            <Plus size={18} />
+          </ToolButton>
+          <Divider />
+        </>
+      )}
+
+      <GlassSelect
+        size="sm"
+        label="Page type"
+        value={pageType}
+        onChange={onPageType}
+        disabled={!canEdit}
+        className="w-28"
+        options={PAGE_TYPES.map((type) => ({ value: type, label: PAGE_LABELS[type] }))}
+      />
+
+      <Divider />
+      <ToolButton label="Zoom out" onClick={onZoomOut}>
+        <ZoomOut size={17} />
+      </ToolButton>
+      <button
+        type="button"
+        onClick={onZoomReset}
+        aria-label="Reset zoom to 100%"
+        className="min-w-[3rem] rounded-lg px-1 text-xs font-semibold tabular-nums text-fg-muted transition-colors hover:text-fg"
+      >
+        {Math.round(scale * 100)}%
+      </button>
+      <ToolButton label="Zoom in" onClick={onZoomIn}>
+        <ZoomIn size={17} />
+      </ToolButton>
+
+      {canEdit && hasSelection && (
+        <>
+          <Divider />
+          <ToolButton
+            label={selectedLocked ? 'Unlock element' : 'Lock element'}
+            onClick={onToggleLock}
+            active={selectedLocked}
+          >
+            {selectedLocked ? <Lock size={16} /> : <Unlock size={16} />}
+          </ToolButton>
+          <ToolButton label="Delete element" onClick={onDeleteSelected}>
+            <Trash2 size={16} />
+          </ToolButton>
+        </>
+      )}
+    </div>
+  );
+}
+
+function Divider() {
+  return <span className="mx-0.5 h-5 w-px bg-[var(--glass-border)]" aria-hidden />;
+}
+
+function ToolButton({
+  label,
+  onClick,
+  disabled,
+  active,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  active?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      title={label}
+      aria-pressed={active}
+      className={cn(
+        'grid h-9 w-9 shrink-0 place-items-center rounded-xl transition-colors',
+        'hover:bg-[var(--glass-fill)] hover:text-fg disabled:pointer-events-none disabled:opacity-40',
+        active
+          ? 'bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-white'
+          : 'text-fg-muted',
+      )}
+    >
+      {children}
+    </button>
+  );
+}

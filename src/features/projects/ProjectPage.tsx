@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
+import { lazy, Suspense, type ReactNode } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { Activity, ArrowLeft, LayoutGrid, NotebookPen } from 'lucide-react';
+import { Activity, ArrowLeft, LayoutGrid, NotebookPen, PenTool } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import { Badge } from '@/components/Badge';
@@ -15,7 +15,14 @@ import { ProGate } from '@/features/billing';
 import { ActivityFeed, useProjectIsPro } from '@/features/collaboration';
 import { useProject } from './useProjects';
 
-type ProjectTab = 'board' | 'notes' | 'activity';
+// Lazy-loaded so Konva/the canvas editor never ship to users who don't open a
+// canvas (the canvas chunk is large — see prompts.md P3.1). Imported via a direct
+// dynamic import, NOT the features/canvas barrel, so the eager graph stays clean.
+const CanvasPanel = lazy(() =>
+  import('@/features/canvas/CanvasPanel').then((module) => ({ default: module.CanvasPanel })),
+);
+
+type ProjectTab = 'board' | 'notes' | 'canvas' | 'activity';
 
 /** A single project: an accent-themed header above its Kanban board (Phase 4).
  *  RLS guarantees that a project the user can't access simply isn't returned. */
@@ -26,7 +33,13 @@ export function ProjectPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   const tab: ProjectTab =
-    tabParam === 'notes' ? 'notes' : tabParam === 'activity' ? 'activity' : 'board';
+    tabParam === 'notes'
+      ? 'notes'
+      : tabParam === 'canvas'
+        ? 'canvas'
+        : tabParam === 'activity'
+          ? 'activity'
+          : 'board';
 
   // Live collaboration for the active project: stream other members' changes into
   // the board/notes/members caches. Role drives read-only vs. editable.
@@ -125,6 +138,13 @@ export function ProjectPage() {
               Notes
             </TabButton>
             <TabButton
+              active={tab === 'canvas'}
+              onClick={() => selectTab('canvas')}
+              icon={<PenTool size={15} />}
+            >
+              Canvas
+            </TabButton>
+            <TabButton
               active={tab === 'activity'}
               onClick={() => selectTab('activity')}
               icon={<Activity size={15} />}
@@ -137,6 +157,23 @@ export function ProjectPage() {
 
       {tab === 'board' && <Board projectId={project.id} accent={project.accent} canEdit={canEdit} />}
       {tab === 'notes' && <NotesPanel projectId={project.id} canEdit={canEdit} />}
+      {tab === 'canvas' && (
+        <ProGate
+          isPro={isProBoard}
+          title="The Notes Canvas is a Pro feature"
+          reason="Upgrade to Pro to sketch, lay out, and collaborate on an infinite per-project whiteboard."
+        >
+          <Suspense
+            fallback={
+              <div className="grid place-items-center py-24">
+                <Spinner size={32} />
+              </div>
+            }
+          >
+            <CanvasPanel projectId={project.id} canEdit={canEdit} />
+          </Suspense>
+        </ProGate>
+      )}
       {tab === 'activity' && (
         <GlassPanel className="p-5 sm:p-6">
           <ProGate
