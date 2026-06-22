@@ -19,6 +19,10 @@ export type ProjectRole = 'owner' | 'editor' | 'viewer';
 /** Roles that can be invited / assigned to others (never 'owner'). */
 export type InvitationRole = Exclude<ProjectRole, 'owner'>;
 
+/** A member's permission on a shared canvas (the owner is canvas_notes.owner_id,
+ *  never a member row). Mirrors InvitationRole. */
+export type CanvasRole = 'editor' | 'viewer';
+
 /** What a feedback submission is: a general note or a feature request. */
 export type FeedbackKind = 'feedback' | 'feature';
 
@@ -380,7 +384,12 @@ export interface Database {
       canvas_notes: {
         Row: {
           id: string;
-          project_id: string;
+          // NULL for a personal canvas (owned by owner_id alone); set for a
+          // project canvas (shared via project membership). Immutable.
+          project_id: string | null;
+          // The canvas owner — the only access path for a personal canvas, the
+          // creator for a project canvas. Defaults to auth.uid(); immutable.
+          owner_id: string;
           title: string;
           // Page background; constrained by a DB check (see lib/canvasPages.ts).
           page_type: PageType;
@@ -399,7 +408,9 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          project_id: string;
+          // Omit / null for a personal canvas. owner_id defaults to auth.uid().
+          project_id?: string | null;
+          owner_id?: string;
           // Defaults to 'Untitled canvas' in the DB.
           title?: string;
           page_type?: PageType;
@@ -411,13 +422,35 @@ export interface Database {
         };
         Update: {
           id?: string;
-          project_id?: string;
+          project_id?: string | null;
+          owner_id?: string;
           title?: string;
           page_type?: PageType;
           doc_state?: string | null;
           scene?: Record<string, unknown>;
           updated_by?: string | null;
           updated_at?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      canvas_members: {
+        Row: {
+          canvas_id: string;
+          user_id: string;
+          role: CanvasRole;
+          created_at: string;
+        };
+        Insert: {
+          canvas_id: string;
+          user_id: string;
+          role?: CanvasRole;
+          created_at?: string;
+        };
+        Update: {
+          canvas_id?: string;
+          user_id?: string;
+          role?: CanvasRole;
           created_at?: string;
         };
         Relationships: [];
@@ -805,6 +838,30 @@ export interface Database {
         Args: { p_project_id: string };
         Returns: boolean;
       };
+      // Standalone-canvas helpers (P3) — SECURITY DEFINER, used by canvas RLS.
+      // user_is_pro gates personal-canvas create/edit; canvas_is_pro gates edit;
+      // can_access/can_edit/is_canvas_owner resolve the owner / project / member
+      // access paths (plan.md §6).
+      user_is_pro: {
+        Args: { p_user_id: string };
+        Returns: boolean;
+      };
+      canvas_is_pro: {
+        Args: { p_canvas_id: string };
+        Returns: boolean;
+      };
+      is_canvas_owner: {
+        Args: { p_canvas_id: string };
+        Returns: boolean;
+      };
+      can_access_canvas: {
+        Args: { p_canvas_id: string };
+        Returns: boolean;
+      };
+      can_edit_canvas: {
+        Args: { p_canvas_id: string };
+        Returns: boolean;
+      };
       // True when the caller is the app administrator (ADMIN_EMAIL). Used by the
       // feedback / ceo_messages RLS policies (lib/admin.ts mirrors it in the UI).
       is_admin: {
@@ -859,6 +916,7 @@ export type TodoList = Database['public']['Tables']['todo_lists']['Row'];
 export type TodoItem = Database['public']['Tables']['todo_items']['Row'];
 export type Note = Database['public']['Tables']['notes']['Row'];
 export type CanvasNote = Database['public']['Tables']['canvas_notes']['Row'];
+export type CanvasMember = Database['public']['Tables']['canvas_members']['Row'];
 export type Invitation = Database['public']['Tables']['invitations']['Row'];
 export type Feedback = Database['public']['Tables']['feedback']['Row'];
 export type CeoMessage = Database['public']['Tables']['ceo_messages']['Row'];

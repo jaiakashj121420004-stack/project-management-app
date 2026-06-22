@@ -1,28 +1,37 @@
+import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/useAuth';
+import { useProjects } from '@/features/projects/useProjects';
 import type { CanvasNote } from '@/types/database';
 import type { PageType } from '@/lib/canvasPages';
 import type { CanvasScene } from './elements';
 import {
+  fetchAllCanvases,
   fetchCanvas,
   fetchCanvasList,
   insertCanvas,
+  insertIndependentCanvas,
   patchCanvas,
   removeCanvas,
   type CanvasNoteSummary,
 } from './api';
 
 /**
- * Two caches back the canvas feature, mirroring the notes module's strategy:
- *   - ['canvas-list', projectId] → CanvasNoteSummary[]  (the per-project list)
- *   - ['canvas', noteId]         → CanvasNote            (the full doc + scene)
+ * Three caches back the canvas feature:
+ *   - ['canvas-list', projectId] → CanvasNoteSummary[]  (one project's canvases)
+ *   - ['canvas-all', userId]     → CanvasNoteSummary[]  (every canvas I can reach,
+ *                                                        for the /canvas workspace)
+ *   - ['canvas', noteId]         → CanvasNote           (the full doc + scene)
  *
- * The list is kept newest-edited-first. The editor holds the scene locally (with
- * undo/redo) and autosaves through useSaveCanvas, which reconciles the saved row
- * back into both caches so list ordering + titles stay live. Heavy scene blobs
- * are kept out of the list payload (api.ts selects summary columns only).
+ * A canvas may belong to a project OR be personal (project_id null). Project
+ * canvases live in BOTH the per-project list and the aggregated list; personal
+ * canvases only in the aggregated one. Save/delete reconcile whichever caches are
+ * present, so both the project tab and the /canvas page stay live. Heavy scene
+ * blobs are kept out of the list payloads (api.ts selects summary columns only).
  */
 
 const listKey = (projectId: string): QueryKey => ['canvas-list', projectId];
+const allKey = (userId: string | undefined): QueryKey => ['canvas-all', userId];
 const canvasKey = (noteId: string): QueryKey => ['canvas', noteId];
 
 /** Project a full row down to a list summary (drops scene/doc_state). */
@@ -30,6 +39,7 @@ function toSummary(note: CanvasNote): CanvasNoteSummary {
   return {
     id: note.id,
     project_id: note.project_id,
+    owner_id: note.owner_id,
     title: note.title,
     page_type: note.page_type,
     updated_by: note.updated_by,
@@ -44,11 +54,53 @@ function sortByEdited<T extends { updated_at: string }>(rows: T[]): T[] {
   );
 }
 
+/** Patch a saved row into a summary list (re-sorting), or return it unchanged. */
+function reconcileList(
+  old: CanvasNoteSummary[] | undefined,
+  saved: CanvasNote,
+): CanvasNoteSummary[] | undefined {
+  if (!old) return old;
+  return sortByEdited(old.map((row) => (row.id === saved.id ? toSummary(saved) : row)));
+}
+
 export function useCanvasList(projectId: string) {
   return useQuery({
     queryKey: listKey(projectId),
     queryFn: () => fetchCanvasList(projectId),
   });
+}
+
+/** An aggregated canvas with its display group: the owning project's name, or
+ *  null for a personal canvas (the component renders that as "Personal"). */
+export interface AggregatedCanvas extends CanvasNoteSummary {
+  projectName: string | null;
+}
+
+/**
+ * Every canvas the signed-in user can access (RLS-scoped), labelled with its
+ * project name (or null = personal) from the projects cache. Backs the top-level
+ * /canvas workspace picker. Combines the raw aggregated list with the user's
+ * projects so it never has to embed the project join in the query.
+ */
+export function useAllCanvases() {
+  const { user } = useAuth();
+  const projects = useProjects();
+  const canvases = useQuery({
+    queryKey: allKey(user?.id),
+    enabled: Boolean(user?.id),
+    queryFn: fetchAllCanvases,
+  });
+
+  const data = useMemo<AggregatedCanvas[] | undefined>(() => {
+    if (!canvases.data) return undefined;
+    const names = new Map((projects.data ?? []).map((project) => [project.id, project.name]));
+    return canvases.data.map((canvas) => ({
+      ...canvas,
+      projectName: canvas.project_id ? (names.get(canvas.project_id) ?? null) : null,
+    }));
+  }, [canvases.data, projects.data]);
+
+  return { data, isLoading: canvases.isLoading, isError: canvases.isError };
 }
 
 export function useCanvas(noteId: string | undefined) {
@@ -63,8 +115,39 @@ interface CreateContext {
   previous?: CanvasNoteSummary[];
 }
 
-/** Create a canvas; optimistically prepends a placeholder summary to the list. */
+/** Build the optimistic summary a just-created canvas shows before it resolves. */
+function optimisticSummary(input: {
+  id: string;
+  projectId: string | null;
+  ownerId: string;
+  title: string;
+  pageType?: PageType;
+}): CanvasNoteSummary {
+  const now = new Date().toISOString();
+  return {
+    id: input.id,
+    project_id: input.projectId,
+    owner_id: input.ownerId,
+    title: input.title.trim(),
+    page_type: input.pageType ?? 'blank',
+    updated_by: null,
+    updated_at: now,
+    created_at: now,
+  };
+}
+
+/** Seed the editor cache with an empty doc so opening a brand-new canvas while
+ *  its insert is still in flight shows the editor (not a refetch/404). */
+function seedEditorCache(
+  queryClient: ReturnType<typeof useQueryClient>,
+  summary: CanvasNoteSummary,
+): void {
+  queryClient.setQueryData<CanvasNote>(canvasKey(summary.id), { ...summary, scene: {}, doc_state: null });
+}
+
+/** Create a canvas inside a project; optimistically prepends to the project list. */
 export function useCreateCanvas(projectId: string) {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const key = listKey(projectId);
 
@@ -78,24 +161,15 @@ export function useCreateCanvas(projectId: string) {
     onMutate: async ({ title, pageType, tempId }) => {
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<CanvasNoteSummary[]>(key);
-      const now = new Date().toISOString();
-      const optimistic: CanvasNoteSummary = {
+      const optimistic = optimisticSummary({
         id: tempId,
-        project_id: projectId,
-        title: title.trim(),
-        page_type: pageType ?? 'blank',
-        updated_by: null,
-        updated_at: now,
-        created_at: now,
-      };
-      queryClient.setQueryData<CanvasNoteSummary[]>(key, (old) => [optimistic, ...(old ?? [])]);
-      // Seed the editor cache with an empty doc so opening the new canvas while
-      // the insert is still in flight shows the editor (not a refetch/404).
-      queryClient.setQueryData<CanvasNote>(canvasKey(tempId), {
-        ...optimistic,
-        scene: {},
-        doc_state: null,
+        projectId,
+        ownerId: user?.id ?? '',
+        title,
+        pageType,
       });
+      queryClient.setQueryData<CanvasNoteSummary[]>(key, (old) => [optimistic, ...(old ?? [])]);
+      seedEditorCache(queryClient, optimistic);
       return { previous };
     },
     onError: (_error, _variables, context) => {
@@ -105,7 +179,50 @@ export function useCreateCanvas(projectId: string) {
       queryClient.setQueryData<CanvasNoteSummary[]>(key, (old) =>
         (old ?? []).map((row) => (row.id === tempId ? toSummary(created) : row)),
       );
-      // Drop the temp editor cache; seed the real one so it needs no refetch.
+      queryClient.removeQueries({ queryKey: canvasKey(tempId) });
+      queryClient.setQueryData(canvasKey(created.id), created);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: key });
+    },
+  });
+}
+
+/** Create a PERSONAL canvas (no project); optimistically prepends to the
+ *  aggregated /canvas list. Requires the caller to be on Pro (UI + RLS). */
+export function useCreateIndependentCanvas() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const key = allKey(user?.id);
+
+  return useMutation<
+    CanvasNote,
+    Error,
+    { title: string; pageType?: PageType; tempId: string },
+    CreateContext
+  >({
+    mutationFn: ({ title, pageType }) => insertIndependentCanvas({ title, pageType }),
+    onMutate: async ({ title, pageType, tempId }) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<CanvasNoteSummary[]>(key);
+      const optimistic = optimisticSummary({
+        id: tempId,
+        projectId: null,
+        ownerId: user?.id ?? '',
+        title,
+        pageType,
+      });
+      queryClient.setQueryData<CanvasNoteSummary[]>(key, (old) => [optimistic, ...(old ?? [])]);
+      seedEditorCache(queryClient, optimistic);
+      return { previous };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) queryClient.setQueryData(key, context.previous);
+    },
+    onSuccess: (created, { tempId }) => {
+      queryClient.setQueryData<CanvasNoteSummary[]>(key, (old) =>
+        (old ?? []).map((row) => (row.id === tempId ? toSummary(created) : row)),
+      );
       queryClient.removeQueries({ queryKey: canvasKey(tempId) });
       queryClient.setQueryData(canvasKey(created.id), created);
     },
@@ -116,40 +233,62 @@ export function useCreateCanvas(projectId: string) {
 }
 
 interface DeleteContext {
-  previous?: CanvasNoteSummary[];
+  previousList?: CanvasNoteSummary[];
+  previousAll?: CanvasNoteSummary[];
 }
 
-export function useDeleteCanvas(projectId: string) {
+/**
+ * Delete a canvas. `projectId` is the canvas's project (null for a personal
+ * canvas); it tells us which per-project list to patch. The aggregated list and
+ * the editor cache are always cleaned up too.
+ */
+export function useDeleteCanvas(projectId: string | null) {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
-  const key = listKey(projectId);
+  const projectListKey = projectId ? listKey(projectId) : null;
+  const aggregateKey = allKey(user?.id);
 
   return useMutation<void, Error, { id: string }, DeleteContext>({
     mutationFn: ({ id }) => removeCanvas(id),
     onMutate: async ({ id }) => {
-      await queryClient.cancelQueries({ queryKey: key });
-      const previous = queryClient.getQueryData<CanvasNoteSummary[]>(key);
-      queryClient.setQueryData<CanvasNoteSummary[]>(key, (old) =>
-        (old ?? []).filter((row) => row.id !== id),
-      );
+      const remove = (old: CanvasNoteSummary[] | undefined) =>
+        old ? old.filter((row) => row.id !== id) : old;
+
+      let previousList: CanvasNoteSummary[] | undefined;
+      if (projectListKey) {
+        await queryClient.cancelQueries({ queryKey: projectListKey });
+        previousList = queryClient.getQueryData<CanvasNoteSummary[]>(projectListKey);
+        queryClient.setQueryData<CanvasNoteSummary[]>(projectListKey, remove);
+      }
+      await queryClient.cancelQueries({ queryKey: aggregateKey });
+      const previousAll = queryClient.getQueryData<CanvasNoteSummary[]>(aggregateKey);
+      queryClient.setQueryData<CanvasNoteSummary[]>(aggregateKey, remove);
+
       queryClient.removeQueries({ queryKey: canvasKey(id) });
-      return { previous };
+      return { previousList, previousAll };
     },
     onError: (_error, _variables, context) => {
-      if (context?.previous) queryClient.setQueryData(key, context.previous);
+      if (projectListKey && context?.previousList) {
+        queryClient.setQueryData(projectListKey, context.previousList);
+      }
+      if (context?.previousAll) queryClient.setQueryData(aggregateKey, context.previousAll);
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: key });
+      if (projectListKey) void queryClient.invalidateQueries({ queryKey: projectListKey });
+      void queryClient.invalidateQueries({ queryKey: aggregateKey });
     },
   });
 }
 
 /**
  * Autosave a canvas's title, page type and/or scene. Non-optimistic on the doc
- * (the editor already holds the live scene locally); on success it reconciles
- * the saved row into the editor cache and re-sorts the list summary. The DB
- * trigger owns updated_at/updated_by, so the returned row is canonical.
+ * (the editor already holds the live scene locally); on success it reconciles the
+ * saved row into the editor cache and into every list it appears in (the project
+ * list if it's a project canvas, plus the aggregated list). The DB trigger owns
+ * updated_at/updated_by, so the returned row is canonical.
  */
-export function useSaveCanvas(projectId: string) {
+export function useSaveCanvas(projectId: string | null) {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation<
@@ -160,8 +299,13 @@ export function useSaveCanvas(projectId: string) {
     mutationFn: ({ id, ...patch }) => patchCanvas(id, patch),
     onSuccess: (saved) => {
       queryClient.setQueryData(canvasKey(saved.id), saved);
-      queryClient.setQueryData<CanvasNoteSummary[]>(listKey(projectId), (old) =>
-        old ? sortByEdited(old.map((row) => (row.id === saved.id ? toSummary(saved) : row))) : old,
+      if (projectId) {
+        queryClient.setQueryData<CanvasNoteSummary[]>(listKey(projectId), (old) =>
+          reconcileList(old, saved),
+        );
+      }
+      queryClient.setQueryData<CanvasNoteSummary[]>(allKey(user?.id), (old) =>
+        reconcileList(old, saved),
       );
     },
   });

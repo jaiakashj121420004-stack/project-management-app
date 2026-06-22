@@ -17,7 +17,8 @@ import type { CanvasScene } from './elements';
  */
 export type CanvasNoteSummary = Omit<CanvasNote, 'scene' | 'doc_state'>;
 
-const SUMMARY_COLUMNS = 'id, project_id, title, page_type, updated_by, updated_at, created_at';
+const SUMMARY_COLUMNS =
+  'id, project_id, owner_id, title, page_type, updated_by, updated_at, created_at';
 
 /** All canvases for a project, most-recently-edited first (RLS-scoped). */
 export async function fetchCanvasList(projectId: string): Promise<CanvasNoteSummary[]> {
@@ -25,6 +26,22 @@ export async function fetchCanvasList(projectId: string): Promise<CanvasNoteSumm
     .from('canvas_notes')
     .select(SUMMARY_COLUMNS)
     .eq('project_id', projectId)
+    .order('updated_at', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Every canvas the signed-in user can access, newest-edited first — their
+ * personal canvases (project_id null), canvases across all their projects, and
+ * any shared with them directly. RLS does the scoping; we never filter by user
+ * here. Backs the aggregated /canvas workspace; the hook labels each row
+ * Personal vs its project name from the projects cache.
+ */
+export async function fetchAllCanvases(): Promise<CanvasNoteSummary[]> {
+  const { data, error } = await supabase
+    .from('canvas_notes')
+    .select(SUMMARY_COLUMNS)
     .order('updated_at', { ascending: false });
   if (error) throw error;
   return data;
@@ -41,6 +58,8 @@ export async function fetchCanvas(id: string): Promise<CanvasNote> {
   return data;
 }
 
+/** Create a canvas inside a project (shared via project membership). RLS
+ *  requires a Pro board + edit rights. */
 export async function insertCanvas(input: {
   projectId: string;
   title: string;
@@ -50,6 +69,25 @@ export async function insertCanvas(input: {
     .from('canvas_notes')
     .insert({
       project_id: input.projectId,
+      title: input.title,
+      ...(input.pageType ? { page_type: input.pageType } : {}),
+    })
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/** Create a PERSONAL canvas (no project). owner_id defaults to auth.uid()
+ *  server-side; RLS requires the caller to be on Pro. */
+export async function insertIndependentCanvas(input: {
+  title: string;
+  pageType?: PageType;
+}): Promise<CanvasNote> {
+  const { data, error } = await supabase
+    .from('canvas_notes')
+    .insert({
+      project_id: null,
       title: input.title,
       ...(input.pageType ? { page_type: input.pageType } : {}),
     })

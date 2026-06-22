@@ -25,7 +25,9 @@ type SaveStatus = 'saved' | 'unsaved' | 'saving' | 'error';
 
 interface CanvasEditorProps {
   noteId: string;
-  projectId: string;
+  /** The canvas's project, or null for a personal canvas (drives which list
+   *  caches save/delete reconcile). */
+  projectId: string | null;
   /** Editors/owners can edit; viewers get a read-only, pan/zoom-only canvas. */
   canEdit: boolean;
   /** Clear the parent's selection after a delete (falls back to the next one). */
@@ -68,7 +70,7 @@ function sceneEquals(a: CanvasScene, b: CanvasScene): boolean {
 
 interface CanvasEditorReadyProps {
   note: CanvasNote;
-  projectId: string;
+  projectId: string | null;
   canEdit: boolean;
   onDeleted: () => void;
 }

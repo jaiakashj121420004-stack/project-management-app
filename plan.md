@@ -168,9 +168,13 @@ Kept deliberately tight. Postgres tables:
 | `checklist_items` | To-do list inside a card | `id`, `card_id`, `text`, `is_done`, `position` |
 | `labels` + `card_labels` | Tags / filtering | `name`, `color` / `card_id`, `label_id` |
 | `notes` | Notes/docs per project | `id`, `project_id`, `title`, `content`, `updated_at` |
+| `canvas_notes` | Infinite whiteboard (Pro) — **project OR personal** | `id`, `project_id?` (nullable), `owner_id`, `title`, `page_type`, `scene` (jsonb), `doc_state` (Yjs, reserved), `updated_at` |
+| `canvas_members` | Per-canvas sharing (for personal canvases) | `canvas_id`, `user_id`, `role` (`editor`/`viewer`) |
 | `comments` | Discussion on a card (collab) | `id`, `card_id`, `user_id`, `body`, `created_at` |
 
-**Feature → data mapping:** Multiple projects → `projects`. Kanban → `columns` + `cards` (`position` for ordering). To-do lists → `checklist_items`. Due dates & reminders → `cards.due_date` (+ reminders in Phase 9). Calendar → query cards with a `due_date`. Notes → `notes`. Collaboration → `project_members` + Realtime.
+**Feature → data mapping:** Multiple projects → `projects`. Kanban → `columns` + `cards` (`position` for ordering). To-do lists → `checklist_items`. Due dates & reminders → `cards.due_date` (+ reminders in Phase 9). Calendar → query cards with a `due_date`. Notes → `notes`. Canvas → `canvas_notes`. Collaboration → `project_members` + Realtime.
+
+**Canvas data + sharing model (Pro).** A canvas is decoupled from a project. `canvas_notes.project_id` is **nullable**: a **project canvas** carries a `project_id` and is shared via project membership (as today); a **personal canvas** has `project_id = NULL` and is owned by one user via `owner_id` (defaulted to `auth.uid()`, immutable — a canvas never re-parents). Notes remain project-only. A canvas is reachable three ways — **owner** (`owner_id`), **project membership** (if it has a project), or a **`canvas_members`** row — and the owner alone manages `canvas_members`. Sharing roles mirror projects (`editor`/`viewer`); the owner is `owner_id`, never a member row.
 
 ---
 
@@ -180,7 +184,8 @@ The rule: **the frontend is untrusted; the database enforces the rules.**
 
 - **Auth:** Supabase Auth handles password hashing, sessions, and Google OAuth. Never roll our own.
 - **Row Level Security on every table.** A row is accessible only if the current user (`auth.uid()`) is a member of that row's project. Conceptually, cards/columns/notes are gated by: *is `project_id` in the set of projects where I'm a member?*
-- **Avoid the recursion gotcha:** policies on `project_members` that reference `project_members` can infinite-loop. Use a `SECURITY DEFINER` helper function (e.g. `is_project_member(project_id)`) to check membership cleanly.
+- **Avoid the recursion gotcha:** policies on `project_members` that reference `project_members` can infinite-loop. Use a `SECURITY DEFINER` helper function (e.g. `is_project_member(project_id)`) to check membership cleanly. The standalone-canvas access paths follow the same pattern: `can_access_canvas` / `can_edit_canvas` / `is_canvas_owner` are SECURITY DEFINER helpers, so the `canvas_members` policies never sub-query `canvas_members` directly.
+- **Canvas Pro-gating is DOUBLE and plan-aware.** Creating/editing a canvas requires Pro — a **project canvas** on the board owner's plan (`project_is_pro`), a **personal canvas** on the owner's own plan (`user_is_pro`); `canvas_is_pro` picks the right one for the UPDATE check, so autosave stops if the governing plan lapses. Read + delete stay membership/owner gated (cleanup survives a lapse), mirroring the `canvas-media` Storage policies. The UI gate (`<ProGate>`) is UX only; RLS is the real enforcement.
 - **Keys:** only the public **anon** key ships to the browser. The **`service_role`** key never leaves the server/dashboard.
 - **Validation:** Zod on the client for UX; Postgres constraints + RLS on the server as the real guarantee.
 - **Transport:** HTTPS everywhere (automatic on Cloudflare + Supabase).
