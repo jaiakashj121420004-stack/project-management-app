@@ -30,13 +30,37 @@ export interface CanvasElementBase {
   locked: boolean;
 }
 
-/** A pressure-sensitive freehand stroke (body filled in P3.2). */
+/** Compositing for a stroke: 'multiply' gives the highlighter its see-through,
+ *  ink-layering look; everything else paints normally. */
+export type StrokeBlend = 'normal' | 'multiply';
+
+/**
+ * A pressure-sensitive freehand stroke (P3.2). `points` are the raw input
+ * SAMPLES — flattened `[x, y, pressure, x, y, pressure, …]` in the element's
+ * local space — NOT the rendered outline. The filled outline is recomputed from
+ * these samples with perfect-freehand at render time (freehand.ts), so a stroke
+ * stays crisp at any zoom. `thinning`/`smoothing`/`simulatePressure` are the
+ * perfect-freehand params; `opacity`/`blend` carry the pen-preset look. Every
+ * field is persisted so a reloaded stroke renders identically to when drawn.
+ */
 export interface StrokeElement extends CanvasElementBase {
   type: 'stroke';
-  /** Flattened input points [x, y, x, y, …] in the element's local space. */
+  /** Flattened input samples `[x, y, pressure, …]` in the element's local space. */
   points: number[];
   color: string;
+  /** Base stroke width (perfect-freehand `size`), in world px. */
   size: number;
+  /** Pressure→width influence (perfect-freehand `thinning`, −1..1). */
+  thinning: number;
+  /** Edge softening (perfect-freehand `smoothing`, 0..1). */
+  smoothing: number;
+  /** Stroke opacity (1 = opaque; the highlighter is translucent). */
+  opacity: number;
+  /** Compositing mode — 'multiply' for the highlighter. */
+  blend: StrokeBlend;
+  /** True when width was simulated from velocity (finger/mouse); false when it
+   *  came from real stylus pressure (pen). Persisted so re-renders match input. */
+  simulatePressure: boolean;
 }
 
 /** A rich-text box (Tiptap JSON body filled in P3.3). */
@@ -73,6 +97,15 @@ export type CanvasElement = StrokeElement | TextBoxElement | ImageElement | Medi
 /** A canvas element's `type` tag. */
 export type CanvasElementType = CanvasElement['type'];
 
+/**
+ * A partial update to an element's mutable fields. Covers the shared transform
+ * box plus the stroke-only geometry a resize bakes in (scaling a stroke rewrites
+ * its sample points + width). The editor merges this onto the element; the
+ * `type` discriminant is never touched.
+ */
+export type ElementPatch = Partial<CanvasElementBase> &
+  Partial<Pick<StrokeElement, 'points' | 'size'>>;
+
 /** The persisted document body: just an ordered list of elements. */
 export interface CanvasScene {
   elements: CanvasElement[];
@@ -97,6 +130,11 @@ const strokeSchema = z.object({
   points: z.array(z.number().finite()),
   color: z.string(),
   size: z.number().finite().positive(),
+  thinning: z.number().finite(),
+  smoothing: z.number().finite(),
+  opacity: z.number().finite().min(0).max(1),
+  blend: z.enum(['normal', 'multiply']),
+  simulatePressure: z.boolean(),
 });
 
 const textBoxSchema = z.object({

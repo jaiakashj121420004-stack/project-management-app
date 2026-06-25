@@ -282,6 +282,164 @@ one-time Supabase step.
 - A free user sees the upgrade CTA; a direct `canvas_notes` insert as free is **rejected** by RLS.
 - The canvas chunk is **lazy-loaded** (verify it's a separate bundle). `npm run typecheck && npm run build` clean.
 
+### P3.1b — Layout: full-width editors + Edit/View toggle (Notes & Canvas)
+
+**Model:** 🔵 **Sonnet 4.6** — layout/markup only, no data changes.
+
+**Prompt**
+```text
+Read CLAUDE.md, plan.md, and memory.md first.
+
+Layout refactor for the per-project Notes and Canvas tabs so each editor uses the FULL width and
+editing vs. viewing is one toggle. Works on phone, tablet, iPad, and desktop. Markup/layout only —
+do NOT touch data, RLS, autosave, or Pro-gating.
+
+SHARED — both src/features/notes/NotesPanel.tsx and src/features/canvas/CanvasPanel.tsx (they mirror each other):
+1. Remove the two-column `grid lg:grid-cols-[18rem_minmax(0,1fr)]` layout and the <aside> side list entirely.
+2. At the top of the tab add one header row: a compact glass dropdown picker (match the existing
+   src/components/forms/GlassSelect.tsx styling) whose button shows the selected item's title + a chevron;
+   opening it shows a glass popover listing every note/canvas (title + a small subtitle — notes: the
+   snippet or "Empty note"; canvas: "Grid page · 2m ago"), click one to switch. Next to the picker keep the
+   count ("Notes · 3") and the "+ New" GradientButton. Close on select, outside-click, and Escape; keyboard-navigable.
+3. Below the header, the selected editor/canvas renders FULL width on every breakpoint.
+4. Keep the loading spinner, error panel, and the empty state (no items → the existing create CTA / viewer copy).
+   Keep "most-recent selected by default" and delete→fall-back-to-next behavior. Since there's no side list now,
+   remove the mobile back-arrow (onBack) from the editors and the swap-list-for-editor logic.
+
+NOTES (NoteEditor.tsx) — single pane + toggle on ALL sizes:
+5. Make the Edit / Preview segmented toggle show on every breakpoint (remove lg:hidden). Labels: "Edit" (Pencil)
+   and "Preview" (Eye); Preview = read-only rendered markdown.
+6. Show only the ACTIVE pane at full width: remove lg:grid-cols-2 and the `hidden lg:block` overrides.
+   Edit = the markdown textarea full-width; Preview = rendered markdown full-width. No side-by-side anywhere.
+7. The active pane fills the available height (grows to fill the tab). Viewers (canEdit=false) keep the single
+   read-only rendered view, no toggle. Default mode = Edit.
+
+CANVAS (CanvasEditor.tsx) — fill the space + view toggle:
+8. Make the Konva stage FILL the available area: remove the fixed `h-[58vh] sm:h-[66vh]` cap and the heavy
+   GlassPanel padding around it; the stage container grows to fill the tab's content height (flex column with the
+   stage area flex-1, min-height ~75vh; stage stays `absolute inset-0`). Keep the floating toolbar overlay +
+   onViewportChange recentring.
+9. Add an Edit / View segmented toggle (same control as notes; only for canEdit users). In View mode render the
+   stage read-only (pan/zoom only, like canEdit=false) and hide the editing controls (add, undo/redo, lock,
+   delete, page-type switcher); keep the zoom controls + zoom/page indicator. Default = Edit.
+
+CONSTRAINTS: TS strict, no any; small focused components. Keep autosave (debounce + flush-on-unmount), the save
+indicator, inline title editing, delete-confirm, and ALL RLS/Pro gating exactly as-is. Match Aurora glass/gradient
++ spring motion; honor prefers-reduced-motion. Canvas module stays lazy-loaded. Touch + stylus + mouse all work.
+
+When finished: `npm run typecheck && npm run lint && npm run build` must be clean; update memory.md (note the
+full-width picker layout + Edit/View toggle) and commit.
+```
+
+**Verification**
+- Desktop **and** a narrow (mobile) width: the dropdown picker switches items; the editor/canvas uses full width; "+ New" and the count are present.
+- Notes toggles Edit ↔ Preview as a single full-width pane (no split anywhere). A viewer sees only the read-only render.
+- Canvas fills the content area; Edit ↔ View hides/shows the edit controls; pan/zoom works in both modes.
+- `npm run typecheck && npm run lint && npm run build` all clean.
+
+### P3.1c — Standalone & shareable canvases
+
+> Canvases become independent of projects: a canvas can belong to a project (shared via project membership,
+> as today) OR be a personal, project-free canvas owned by one user and shared with specific people via its
+> own members list. **Notes stay project-only.** Build AFTER P3.1b (reuses the full-width canvas editor +
+> picker). Two prompts: data model first, then the sharing UI.
+
+#### P3.1c-1 — Data model + standalone canvases + aggregated Canvas page
+
+**Model:** 🟣 **Opus 4.8** — changes the canvas data model + RLS.
+
+**Prompt**
+```text
+Read CLAUDE.md, plan.md, and memory.md first.
+
+Make canvases independent of projects. A canvas may belong to a project (shared via project membership,
+as today) OR be a personal canvas with NO project, owned by one user. Notes are unchanged (project-only).
+This prompt = data model, RLS, and the standalone/aggregated UI. Sharing UI is the NEXT prompt, but create
+the canvas_members table + its RLS now.
+
+MIGRATION supabase/migrations/<ts>_canvas_standalone.sql:
+1. canvas_notes: add `owner_id uuid references auth.users(id) on delete cascade`; BACKFILL existing rows from
+   each canvas's project owner; then `set default auth.uid()` and `set not null`. Make `project_id` NULLABLE.
+   Add index (owner_id, updated_at desc).
+2. New table canvas_members (mirror project_members, for independent-canvas sharing): canvas_id → canvas_notes
+   on delete cascade, user_id → auth.users on delete cascade, role text not null default 'editor'
+   check in ('editor','viewer'), created_at, primary key (canvas_id, user_id), index on (user_id). The OWNER
+   is canvas_notes.owner_id (NOT a member row).
+3. SECURITY DEFINER helpers (sql, stable, `set search_path=''`, grant execute to authenticated) — same style as
+   the existing project helpers (is_project_member / can_edit_project / project_is_pro):
+   - user_is_pro(uuid): profiles.plan='pro' for that user.
+   - canvas_is_pro(uuid): project canvas → project_is_pro(project_id); independent → user_is_pro(owner_id).
+   - is_canvas_owner(uuid): canvas_notes.owner_id = auth.uid().
+   - can_access_canvas(uuid): owner OR (project_id not null AND is_project_member) OR row in canvas_members.
+   - can_edit_canvas(uuid): owner OR (project_id not null AND can_edit_project) OR canvas_members.role='editor'.
+4. Extend touch_canvas_notes() to RAISE if project_id or owner_id changes (immutable — stops moving a canvas
+   between project/independent to dodge the Pro gate or sharing).
+5. Replace canvas_notes RLS:
+   - SELECT: can_access_canvas(id).
+   - INSERT: (project_id not null AND can_edit_project(project_id) AND project_is_pro(project_id))
+             OR (project_id is null AND owner_id = auth.uid() AND user_is_pro(auth.uid())).
+   - UPDATE: using can_edit_canvas(id); with check can_edit_canvas(id) AND canvas_is_pro(id).
+   - DELETE: (project_id not null AND can_edit_project(project_id)) OR is_canvas_owner(id).
+6. canvas_members RLS: SELECT using can_access_canvas(canvas_id); INSERT/UPDATE/DELETE gated by
+   is_canvas_owner(canvas_id).
+
+FRONTEND:
+7. types/database.ts + features/canvas/api.ts + useCanvas.ts: project_id is now string|null; add owner_id. New
+   queries: my independent canvases (project_id is null AND owner_id = me) AND an aggregated list for the
+   top-level page = independent canvases + canvases across all my projects, each labeled with its project name or
+   "Personal". Add create-independent-canvas (project_id null); keep create-project-canvas.
+8. Rewrite CanvasHome (/canvas) from a project PICKER into the real Canvas workspace using the SAME full-width
+   dropdown-picker + editor from P3.1b: the picker lists ALL my canvases grouped/labeled (Personal vs each
+   project); "+ New" creates a PERSONAL canvas; selecting any opens it in the full-width editor inline. Keep it
+   Pro-gated (<ProGate>) and keep the editor lazy-loaded (CanvasHome stays Konva-free; dynamic-import the editor
+   like ProjectPage does).
+9. The per-project Canvas tab (CanvasPanel) is unchanged except its writes now flow through can_edit_canvas RLS.
+
+CONSTRAINTS: TS strict, no any. Double Pro-gate (UI + RLS). Match Aurora styling; canvas editor stays lazy-loaded.
+Note the migration as a one-time Supabase step. Update plan.md (canvas data model + sharing model) and memory.md,
+then commit.
+```
+
+**Verification**
+- A Pro user creates a PERSONAL canvas from /canvas (no project), edits it, reloads — it persists and appears under "Personal".
+- The /canvas picker shows personal canvases AND canvases from every project, each labeled; opening any works.
+- A free user sees the upgrade CTA; a direct insert of an independent canvas as a free user is **rejected** by RLS.
+- Existing project canvases still work (owner_id backfilled). `npm run typecheck && npm run lint && npm run build` clean.
+
+#### P3.1c-2 — Sharing UI for independent canvases
+
+**Model:** 🔵 **Sonnet 4.6**.
+
+**Prompt**
+```text
+Read CLAUDE.md, plan.md, and memory.md first.
+
+Add sharing to INDEPENDENT (project-free) canvases, mirroring the project Share flow. Project canvases keep
+using project membership — only independent canvases get this.
+
+MIGRATION supabase/migrations/<ts>_canvas_sharing_profiles.sql:
+1. shares_a_canvas_with(uuid) SECURITY DEFINER: true if the current user and the given user co-own/co-share any
+   canvas (owner↔member or member↔member). Same style as shares_a_project_with.
+2. Extend the profiles SELECT policy to ALSO allow `public.shares_a_canvas_with(id)` (so the members panel can
+   show shared users' names/avatars). Keep the existing own-row + shares_a_project_with clauses intact.
+
+FRONTEND:
+3. features/canvas members api + hooks: list a canvas's members (join profiles for name/avatar/email), add member
+   by email (look up the profile by email like the project invite does; insert into canvas_members with a role),
+   change role, remove member. Owner-only (RLS enforces it; hide controls for non-owners).
+4. A "Share" control on an INDEPENDENT canvas (owner only) opening a glass modal: current members + roles + remove,
+   plus an invite-by-email row with an editor/viewer GlassSelect. Reuse the project members panel components/styling
+   where possible. Show member avatars on the canvas header.
+5. Shared editors can edit; shared viewers get the read-only (View) canvas; non-members can't load it (RLS).
+
+CONSTRAINTS: TS strict, no any. Owner-only management (UI + RLS). Match Aurora styling. Update memory.md + commit.
+```
+
+**Verification**
+- An owner shares a personal canvas with another user as editor → that user sees it in their /canvas list and can edit; as viewer they can only view.
+- Removing a member revokes access immediately; a non-member gets nothing (RLS).
+- Only the owner sees the Share/manage controls. `npm run typecheck && npm run lint && npm run build` clean.
+
 ### P3.2 — Freehand / stylus
 
 **Model:** 🔵 **Sonnet 4.6**.

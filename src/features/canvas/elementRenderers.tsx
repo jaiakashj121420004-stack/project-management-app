@@ -1,33 +1,47 @@
-import { Group, Rect, Text, Line } from 'react-konva';
+import { useMemo } from 'react';
+import { Group, Path, Rect, Text } from 'react-konva';
 import type Konva from 'konva';
 import { MIN_ELEMENT_SIZE } from './constants';
-import type { CanvasElement, CanvasElementBase } from './elements';
+import type { CanvasElement, ElementPatch, StrokeElement } from './elements';
+import { strokePathData } from './freehand';
 import type { CanvasPalette } from './useCanvasPalette';
 
 /**
- * Element renderers (P3.1 — stubs). Every element is a draggable Konva <Group>
- * positioned/rotated by its transform box, with a type-specific visual sized to
- * width × height. The real bodies (freehand strokes, Tiptap text, images, media
- * players) land in P3.2–P3.5; here we render labelled placeholders so the
- * foundation's selection / move / resize / rotate all work end-to-end.
+ * Element renderers. Every element is a Konva <Group> positioned/rotated by its
+ * transform box; strokes render their real perfect-freehand outline, while
+ * text/image/media are still labelled placeholders (their bodies land in
+ * P3.3–P3.5). The group carries id={element.id} so the stage's <Transformer>
+ * attaches via stage.findOne('#id') and the eraser maps a hit back to its
+ * element via findAncestor('.canvas-element').
  *
- * The group carries id={element.id} so the stage's <Transformer> can attach via
- * stage.findOne('#id'). On drag/transform end we bake Konva's scale back into
- * width/height (resetting scale to 1) — the standard Konva resize pattern.
+ * On drag/transform end we bake Konva's scale back into the model (resetting the
+ * node scale to 1). A stroke has no inner geometry to stretch, so a resize is
+ * baked into its sample points + width instead.
  */
 
-type ElementChange = (id: string, patch: Partial<CanvasElementBase>) => void;
+type ElementChange = (id: string, patch: ElementPatch) => void;
 
 interface ElementNodeProps {
   element: CanvasElement;
+  /** Element can be dragged (select tool, editable, unlocked). */
   draggable: boolean;
+  /** Clicking/tapping selects (select tool + editable) — off while drawing. */
+  selectable: boolean;
   palette: CanvasPalette;
   onSelect: (id: string) => void;
   onChange: ElementChange;
 }
 
-export function ElementNode({ element, draggable, palette, onSelect, onChange }: ElementNodeProps) {
+export function ElementNode({
+  element,
+  draggable,
+  selectable,
+  palette,
+  onSelect,
+  onChange,
+}: ElementNodeProps) {
   const select = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+    if (!selectable) return;
     e.cancelBubble = true; // don't let the stage clear the selection
     onSelect(element.id);
   };
@@ -42,13 +56,28 @@ export function ElementNode({ element, draggable, palette, onSelect, onChange }:
     const scaleY = node.scaleY();
     node.scaleX(1);
     node.scaleY(1);
-    onChange(element.id, {
+
+    const base = {
       x: node.x(),
       y: node.y(),
-      width: Math.max(MIN_ELEMENT_SIZE, element.width * scaleX),
-      height: Math.max(MIN_ELEMENT_SIZE, element.height * scaleY),
+      width: Math.max(MIN_ELEMENT_SIZE, element.width * Math.abs(scaleX)),
+      height: Math.max(MIN_ELEMENT_SIZE, element.height * Math.abs(scaleY)),
       rotation: node.rotation(),
-    });
+    };
+
+    // A stroke has no inner shape to stretch — bake the resize into its sample
+    // points + width so the recomputed outline matches the new box.
+    if (element.type === 'stroke') {
+      const uniform = (Math.abs(scaleX) + Math.abs(scaleY)) / 2;
+      onChange(element.id, {
+        ...base,
+        points: scaleStrokePoints(element.points, scaleX, scaleY),
+        size: Math.max(0.5, element.size * uniform),
+      });
+      return;
+    }
+
+    onChange(element.id, base);
   };
 
   return (
@@ -69,29 +98,22 @@ export function ElementNode({ element, draggable, palette, onSelect, onChange }:
   );
 }
 
-/** The placeholder body for each element type. */
-function ElementVisual({ element, palette }: { element: CanvasElement; palette: CanvasPalette }) {
-  const { width, height } = element;
+/** Scale a stroke's flattened `[x, y, pressure, …]` samples (pure). */
+function scaleStrokePoints(points: number[], scaleX: number, scaleY: number): number[] {
+  const out: number[] = [];
+  for (let i = 0; i + 1 < points.length; i += 3) {
+    out.push((points[i] ?? 0) * scaleX, (points[i + 1] ?? 0) * scaleY, points[i + 2] ?? 0.5);
+  }
+  return out;
+}
 
-  // A real (already-drawn) stroke renders its polyline; an empty one falls
-  // through to the labelled placeholder below.
-  if (element.type === 'stroke' && element.points.length >= 4) {
-    return (
-      <>
-        <Rect width={width} height={height} fill="transparent" />
-        <Line
-          points={element.points}
-          stroke={element.color}
-          strokeWidth={element.size}
-          lineCap="round"
-          lineJoin="round"
-          tension={0.3}
-          listening={false}
-        />
-      </>
-    );
+/** The body for each element type. */
+function ElementVisual({ element, palette }: { element: CanvasElement; palette: CanvasPalette }) {
+  if (element.type === 'stroke') {
+    return <StrokeVisual element={element} />;
   }
 
+  const { width, height } = element;
   const isEmptyText = element.type === 'text' && element.text.trim().length === 0;
   const label = stubLabel(element);
 
@@ -125,7 +147,34 @@ function ElementVisual({ element, palette }: { element: CanvasElement; palette: 
   );
 }
 
-function stubLabel(element: CanvasElement): string {
+/** A committed stroke: its filled perfect-freehand outline, recomputed from the
+ *  stored samples so it stays crisp at any zoom. The filled path is the hit
+ *  target (precise selection + erase); multiply gives the highlighter its look. */
+function StrokeVisual({ element }: { element: StrokeElement }) {
+  const data = useMemo(
+    () =>
+      strokePathData(element.points, {
+        size: element.size,
+        thinning: element.thinning,
+        smoothing: element.smoothing,
+        simulatePressure: element.simulatePressure,
+      }),
+    [element.points, element.size, element.thinning, element.smoothing, element.simulatePressure],
+  );
+  if (!data) return null;
+  return (
+    <Path
+      data={data}
+      fill={element.color}
+      opacity={element.opacity}
+      globalCompositeOperation={element.blend === 'multiply' ? 'multiply' : 'source-over'}
+      perfectDrawEnabled={false}
+      shadowForStrokeEnabled={false}
+    />
+  );
+}
+
+function stubLabel(element: Exclude<CanvasElement, StrokeElement>): string {
   switch (element.type) {
     case 'text':
       return element.text.trim() || 'Text box';
@@ -133,7 +182,5 @@ function stubLabel(element: CanvasElement): string {
       return '🖼  Image';
     case 'media':
       return element.kind === 'audio' ? '🎙  Audio' : '🎬  Video';
-    case 'stroke':
-      return 'Drawing';
   }
 }

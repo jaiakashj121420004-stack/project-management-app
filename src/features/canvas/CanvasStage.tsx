@@ -1,11 +1,13 @@
 import { useEffect, useRef } from 'react';
-import { Stage, Layer, Transformer } from 'react-konva';
+import { Stage, Layer, Path, Transformer } from 'react-konva';
 import type Konva from 'konva';
 import type { PageType } from '@/lib/canvasPages';
 import { useElementSize } from '@/hooks/useElementSize';
 import { ElementNode } from './elementRenderers';
 import { PageBackground } from './PageBackground';
 import { useCanvasPalette } from './useCanvasPalette';
+import { strokePathData, type StrokeStyle } from './freehand';
+import { penStrokeStyle, type PenSettings } from './drawing';
 import {
   MIN_ELEMENT_SIZE,
   ZOOM_STEP,
@@ -13,7 +15,7 @@ import {
   type Camera,
   type CanvasTool,
 } from './constants';
-import type { CanvasElement, CanvasElementBase } from './elements';
+import type { CanvasElement, ElementPatch } from './elements';
 
 interface CanvasStageProps {
   elements: CanvasElement[];
@@ -21,13 +23,24 @@ interface CanvasStageProps {
   selectedId: string | null;
   camera: Camera;
   tool: CanvasTool;
-  /** Editors transform elements; viewers can still pan/zoom/select read-only. */
+  /** Editors transform/draw; viewers can still pan/zoom/select read-only. */
   canEdit: boolean;
+  /** Live pen settings (drives the draw preview + the committed stroke style). */
+  penSettings: PenSettings;
   onSelect: (id: string | null) => void;
-  onChangeElement: (id: string, patch: Partial<CanvasElementBase>) => void;
+  onChangeElement: (id: string, patch: ElementPatch) => void;
   onCameraChange: (camera: Camera) => void;
   onViewportChange: (size: { width: number; height: number }) => void;
+  /** A finished draw gesture: raw WORLD-space samples + the style it used. */
+  onCommitStroke: (worldPoints: number[], style: StrokeStyle) => void;
+  /** A stroke the eraser touched during the current gesture. */
+  onEraseStroke: (id: string) => void;
+  /** The eraser gesture ended — commit the batch as one undo step. */
+  onEraseEnd: () => void;
 }
+
+/** How long after the last pen event we keep rejecting touch (palm rejection). */
+const PEN_ACTIVE_MS = 800;
 
 function distance(a: { x: number; y: number }, b: { x: number; y: number }): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
@@ -35,16 +48,24 @@ function distance(a: { x: number; y: number }, b: { x: number; y: number }): num
 function midpoint(a: { x: number; y: number }, b: { x: number; y: number }) {
   return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
 }
+function pressureOf(evt: PointerEvent, isPen: boolean): number {
+  if (!isPen) return 0.5;
+  return evt.pressure > 0 ? evt.pressure : 0.5;
+}
 
 /**
  * The infinite, pan/zoom Konva stage. The stage transform (x/y/scale) IS the
- * camera; the background + elements live in world space inside it. Interaction:
- *   - wheel → zoom toward the pointer; pinch (2 touches) → zoom + pan;
- *   - drag empty space (mouse or 1 touch) → pan (the stage is draggable; the
- *     background is listening:false so empty hits reach the stage);
- *   - click/tap an element → select; click/tap empty → deselect.
- * Element move/resize/rotate go through the <Transformer> + each element's own
- * drag. Touch + stylus + mouse all share these pointer paths.
+ * camera; the background + elements live in world space inside it.
+ *
+ * Tool modes:
+ *   - select — drag empty space pans (stage draggable); click/tap selects; the
+ *     <Transformer> moves/resizes/rotates the selection.
+ *   - draw   — pointer events build a pressure-sensitive stroke on a dedicated
+ *     preview layer; on pointerup the world samples are committed to the scene.
+ *   - erase  — pointer events hit-test strokes and remove them (batched per
+ *     gesture so one undo restores them all).
+ * Two-finger pan/zoom (pinch) and wheel-zoom work in every mode. Palm rejection:
+ * once a pen is in use, touch is ignored so a resting palm can't draw or pan.
  */
 export function CanvasStage({
   elements,
@@ -53,14 +74,19 @@ export function CanvasStage({
   camera,
   tool,
   canEdit,
+  penSettings,
   onSelect,
   onChangeElement,
   onCameraChange,
   onViewportChange,
+  onCommitStroke,
+  onEraseStroke,
+  onEraseEnd,
 }: CanvasStageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
+  const previewRef = useRef<Konva.Path>(null);
   const size = useElementSize(containerRef);
   const palette = useCanvasPalette(containerRef);
 
@@ -68,32 +94,220 @@ export function CanvasStage({
   const lastDist = useRef(0);
   const lastCenter = useRef<{ x: number; y: number } | null>(null);
 
+  // The in-progress freehand stroke (world samples) and eraser gesture. Kept in
+  // refs so the hot pointer-move path never triggers a React render — the live
+  // stroke is drawn imperatively onto the preview layer instead.
+  const drawing = useRef<{ pointerId: number; points: number[]; style: StrokeStyle } | null>(null);
+  const erasing = useRef(false);
+
+  // Palm rejection: remember that a pen was recently used.
+  const penActive = useRef(false);
+  const penTimer = useRef<number | null>(null);
+
+  const markPen = () => {
+    penActive.current = true;
+    if (penTimer.current !== null) window.clearTimeout(penTimer.current);
+    penTimer.current = window.setTimeout(() => {
+      penActive.current = false;
+    }, PEN_ACTIVE_MS);
+  };
+
+  useEffect(
+    () => () => {
+      if (penTimer.current !== null) window.clearTimeout(penTimer.current);
+    },
+    [],
+  );
+
   // Report the measured viewport up so the editor can place new elements at the
   // visible centre and drive zoom-button math.
   useEffect(() => {
     if (size.width > 0 && size.height > 0) onViewportChange(size);
   }, [size, onViewportChange]);
 
-  // Attach/detach the transformer to the selected, unlocked, editable element.
+  // Attach/detach the transformer to the selected, unlocked, editable element —
+  // only in select mode (no resize handles while drawing/erasing).
   useEffect(() => {
     const transformer = transformerRef.current;
     const stage = stageRef.current;
     if (!transformer || !stage) return;
     const selected = selectedId ? elements.find((el) => el.id === selectedId) : undefined;
-    const node = selected && !selected.locked && canEdit ? stage.findOne(`#${selectedId}`) : null;
+    const attach = selected && !selected.locked && canEdit && tool === 'select';
+    const node = attach ? stage.findOne(`#${selectedId}`) : null;
     transformer.nodes(node ? [node] : []);
     transformer.getLayer()?.batchDraw();
-  }, [selectedId, elements, canEdit]);
+  }, [selectedId, elements, canEdit, tool]);
+
+  // --- coordinate helpers -----------------------------------------------------
+
+  /** Convert client (screen) coordinates to world space via the camera. */
+  function toWorld(clientX: number, clientY: number): { x: number; y: number } | null {
+    const stage = stageRef.current;
+    if (!stage) return null;
+    const rect = stage.container().getBoundingClientRect();
+    return {
+      x: (clientX - rect.left - camera.x) / camera.scale,
+      y: (clientY - rect.top - camera.y) / camera.scale,
+    };
+  }
+
+  function capturePointer(id: number) {
+    try {
+      stageRef.current?.container().setPointerCapture(id);
+    } catch {
+      // A stale/invalid pointer id — safe to ignore.
+    }
+  }
+  function releasePointer(id: number) {
+    try {
+      stageRef.current?.container().releasePointerCapture(id);
+    } catch {
+      // Already released — ignore.
+    }
+  }
+
+  // --- drawing ---------------------------------------------------------------
+
+  function paintPreview() {
+    const node = previewRef.current;
+    const d = drawing.current;
+    if (!node || !d) return;
+    node.data(strokePathData(d.points, d.style));
+    node.getLayer()?.batchDraw();
+  }
+
+  function clearPreview() {
+    const node = previewRef.current;
+    if (!node) return;
+    node.data('');
+    node.getLayer()?.batchDraw();
+  }
+
+  function startStroke(e: Konva.KonvaEventObject<PointerEvent>) {
+    const isPen = e.evt.pointerType === 'pen';
+    const start = toWorld(e.evt.clientX, e.evt.clientY);
+    if (!start) return;
+    const style = penStrokeStyle(penSettings, !isPen);
+    drawing.current = {
+      pointerId: e.evt.pointerId,
+      points: [start.x, start.y, pressureOf(e.evt, isPen)],
+      style,
+    };
+    const node = previewRef.current;
+    if (node) {
+      node.fill(style.color);
+      node.opacity(style.opacity);
+      node.globalCompositeOperation(style.blend === 'multiply' ? 'multiply' : 'source-over');
+    }
+    paintPreview();
+    capturePointer(e.evt.pointerId);
+  }
+
+  function extendStroke(e: Konva.KonvaEventObject<PointerEvent>) {
+    const d = drawing.current;
+    if (!d || e.evt.pointerId !== d.pointerId) return;
+    const isPen = e.evt.pointerType === 'pen';
+    // Coalesced events recover the full-rate samples a high-frequency stylus
+    // produces between animation frames — markedly smoother on a tablet.
+    const native = e.evt;
+    const coalesced =
+      typeof native.getCoalescedEvents === 'function' ? native.getCoalescedEvents() : [];
+    const events = coalesced.length > 0 ? coalesced : [native];
+    for (const ev of events) {
+      const p = toWorld(ev.clientX, ev.clientY);
+      if (!p) continue;
+      d.points.push(p.x, p.y, pressureOf(ev, isPen));
+    }
+    paintPreview();
+  }
+
+  function endStroke(e: Konva.KonvaEventObject<PointerEvent>) {
+    const d = drawing.current;
+    if (!d || e.evt.pointerId !== d.pointerId) return;
+    drawing.current = null;
+    releasePointer(d.pointerId);
+    clearPreview();
+    if (d.points.length >= 3) onCommitStroke(d.points, d.style);
+  }
+
+  function cancelStroke() {
+    if (!drawing.current) return;
+    releasePointer(drawing.current.pointerId);
+    drawing.current = null;
+    clearPreview();
+  }
+
+  // --- erasing ---------------------------------------------------------------
+
+  function eraseAt() {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const pos = stage.getPointerPosition();
+    if (!pos) return;
+    const shape = stage.getIntersection(pos);
+    if (!shape) return;
+    const group = shape.findAncestor('.canvas-element', true) as Konva.Node | undefined;
+    if (group) onEraseStroke(group.id());
+  }
+
+  function endErase(pointerId: number) {
+    if (!erasing.current) return;
+    erasing.current = false;
+    releasePointer(pointerId);
+    onEraseEnd();
+  }
+
+  // --- pointer routing -------------------------------------------------------
+
+  function handlePointerDown(e: Konva.KonvaEventObject<PointerEvent>) {
+    if (!canEdit || (tool !== 'draw' && tool !== 'erase')) return;
+    const type = e.evt.pointerType;
+    if (type === 'pen') markPen();
+    // Palm rejection: ignore touch entirely while a pen is in use.
+    if (type === 'touch' && penActive.current) return;
+    // A second finger means a pinch — hand off to the pan/zoom path.
+    if (type === 'touch' && !e.evt.isPrimary) {
+      cancelStroke();
+      return;
+    }
+    e.evt.preventDefault();
+    if (tool === 'draw') {
+      startStroke(e);
+    } else {
+      erasing.current = true;
+      capturePointer(e.evt.pointerId);
+      eraseAt();
+    }
+  }
+
+  function handlePointerMove(e: Konva.KonvaEventObject<PointerEvent>) {
+    if (tool === 'draw' && drawing.current) {
+      if (e.evt.pointerType === 'pen') markPen();
+      e.evt.preventDefault();
+      extendStroke(e);
+    } else if (tool === 'erase' && erasing.current) {
+      e.evt.preventDefault();
+      eraseAt();
+    }
+  }
+
+  function handlePointerUp(e: Konva.KonvaEventObject<PointerEvent>) {
+    if (tool === 'draw') endStroke(e);
+    else if (tool === 'erase') endErase(e.evt.pointerId);
+  }
+
+  function handlePointerCancel(e: Konva.KonvaEventObject<PointerEvent>) {
+    if (tool === 'draw') cancelStroke();
+    else if (tool === 'erase') endErase(e.evt.pointerId);
+  }
+
+  // --- camera (wheel + pinch) + selection ------------------------------------
 
   function zoomToPoint(pointer: { x: number; y: number }, nextScale: number) {
     const scale = clampScale(nextScale);
     const worldX = (pointer.x - camera.x) / camera.scale;
     const worldY = (pointer.y - camera.y) / camera.scale;
-    onCameraChange({
-      scale,
-      x: pointer.x - worldX * scale,
-      y: pointer.y - worldY * scale,
-    });
+    onCameraChange({ scale, x: pointer.x - worldX * scale, y: pointer.y - worldY * scale });
   }
 
   function handleWheel(e: Konva.KonvaEventObject<WheelEvent>) {
@@ -114,15 +328,18 @@ export function CanvasStage({
   }
 
   function handleMouseDown(e: Konva.KonvaEventObject<MouseEvent>) {
-    if (e.target === stageRef.current) onSelect(null);
+    if (tool === 'select' && e.target === stageRef.current) onSelect(null);
   }
 
   function handleTouchStart(e: Konva.KonvaEventObject<TouchEvent>) {
     if (e.evt.touches.length >= 2) {
+      // A pinch is starting — abandon any in-progress draw/erase gesture.
+      cancelStroke();
+      if (erasing.current) endErase(0);
       stageRef.current?.stopDrag();
       lastDist.current = 0;
       lastCenter.current = null;
-    } else if (e.target === stageRef.current) {
+    } else if (tool === 'select' && e.target === stageRef.current) {
       onSelect(null);
     }
   }
@@ -169,11 +386,13 @@ export function CanvasStage({
     }
   }
 
+  const cursor = tool === 'draw' ? 'crosshair' : tool === 'erase' ? 'cell' : 'default';
+
   return (
     <div
       ref={containerRef}
       className="relative h-full w-full overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-fill)]"
-      style={{ touchAction: 'none' }}
+      style={{ touchAction: 'none', cursor }}
     >
       {size.width > 0 && size.height > 0 && (
         <Stage
@@ -190,6 +409,10 @@ export function CanvasStage({
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerCancel}
           onDragMove={syncStageCamera}
           onDragEnd={syncStageCamera}
         >
@@ -208,12 +431,13 @@ export function CanvasStage({
                 key={element.id}
                 element={element}
                 draggable={canEdit && tool === 'select' && !element.locked}
+                selectable={canEdit && tool === 'select'}
                 palette={palette}
                 onSelect={onSelect}
                 onChange={onChangeElement}
               />
             ))}
-            {canEdit && (
+            {canEdit && tool === 'select' && (
               <Transformer
                 ref={transformerRef}
                 rotateEnabled
@@ -230,6 +454,11 @@ export function CanvasStage({
                 }
               />
             )}
+          </Layer>
+          {/* The in-progress stroke draws here imperatively (no React render per
+              pointer-move). It's listening:false so it never blocks hit-testing. */}
+          <Layer listening={false}>
+            <Path ref={previewRef} perfectDrawEnabled={false} shadowForStrokeEnabled={false} />
           </Layer>
         </Stage>
       )}

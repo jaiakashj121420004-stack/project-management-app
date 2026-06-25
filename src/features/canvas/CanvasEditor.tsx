@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { AlertCircle, Check, Eye, Pencil, Trash2 } from 'lucide-react';
 import { Spinner } from '@/components/feedback/Spinner';
 import { SegmentedToggle } from '@/components/forms/SegmentedToggle';
+import { useTheme } from '@/hooks/useTheme';
 import type { PageType } from '@/lib/canvasPages';
 import type { CanvasNote } from '@/types/database';
 import { canvasTitleSchema } from './schemas';
@@ -11,12 +12,15 @@ import {
   parseScene,
   createPlaceholderTextBox,
   topZ,
-  type CanvasElementBase,
   type CanvasScene,
+  type ElementPatch,
 } from './elements';
+import { buildStroke, type StrokeStyle } from './freehand';
+import { defaultPenSettings, type PenSettings } from './drawing';
 import { CanvasStage } from './CanvasStage';
 import { CanvasToolbar } from './CanvasToolbar';
-import { ZOOM_STEP, clampScale, type Camera } from './constants';
+import { PenToolbar } from './PenToolbar';
+import { ZOOM_STEP, clampScale, type Camera, type CanvasTool } from './constants';
 
 /** One write per ~700ms of idle, matching the notes editor's autosave. */
 const AUTOSAVE_DELAY = 700;
@@ -78,6 +82,7 @@ interface CanvasEditorReadyProps {
 function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditorReadyProps) {
   const { mutate: runSave } = useSaveCanvas(projectId);
   const { mutate: runDelete } = useDeleteCanvas(projectId);
+  const { theme } = useTheme();
 
   // Seed scene/title/page-type once; the component is keyed by note id upstream.
   const [seedScene] = useState<CanvasScene>(() => parseScene(note.scene));
@@ -90,10 +95,31 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
   // stage + toolbar key all their editing affordances off `editing`.
   const [mode, setMode] = useState<'edit' | 'view'>('edit');
   const editing = canEdit && mode === 'edit';
+  const [tool, setTool] = useState<CanvasTool>('select');
+  const [pen, setPen] = useState<PenSettings>(() => defaultPenSettings(theme));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0, scale: 1 });
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const centeredRef = useRef(false);
+
+  // The eraser hides strokes live while dragging, then commits the whole batch as
+  // one undo step on release. We keep the latest set in a ref so the release
+  // handler reads it without re-subscribing.
+  const [erasingIds, setErasingIds] = useState<ReadonlySet<string>>(() => new Set());
+  const erasingRef = useRef<ReadonlySet<string>>(erasingIds);
+  useEffect(() => {
+    erasingRef.current = erasingIds;
+  }, [erasingIds]);
+
+  // Only the select tool is active outside edit mode (viewers / View mode).
+  const effectiveTool: CanvasTool = editing ? tool : 'select';
+  const visibleElements = useMemo(
+    () =>
+      erasingIds.size === 0
+        ? scene.elements
+        : scene.elements.filter((el) => !erasingIds.has(el.id)),
+    [scene.elements, erasingIds],
+  );
 
   const [saved, setSaved] = useState<{ scene: CanvasScene; pageType: PageType; title: string }>(
     () => ({ scene: seedScene, pageType: note.page_type, title: note.title }),
@@ -189,11 +215,50 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
   }, []);
 
   const changeElement = useCallback(
-    (id: string, patch: Partial<CanvasElementBase>) => {
-      commit({ elements: scene.elements.map((el) => (el.id === id ? { ...el, ...patch } : el)) });
+    (id: string, patch: ElementPatch) => {
+      commit({
+        elements: scene.elements.map((el) => (el.id === id ? { ...el, ...patch } : el)),
+      });
     },
     [commit, scene.elements],
   );
+
+  // A finished freehand gesture → a first-class Stroke element on top of the scene.
+  const commitStroke = useCallback(
+    (worldPoints: number[], style: StrokeStyle) => {
+      const stroke = buildStroke(worldPoints, style, scene.elements);
+      if (stroke) commit({ elements: [...scene.elements, stroke] });
+    },
+    [commit, scene.elements],
+  );
+
+  // Stroke-level erase: hide each touched stroke live; commit the batch on release.
+  const eraseStroke = useCallback(
+    (id: string) => {
+      const el = scene.elements.find((element) => element.id === id);
+      if (!el || el.type !== 'stroke') return;
+      setErasingIds((prev) => {
+        if (prev.has(id)) return prev;
+        const next = new Set(prev);
+        next.add(id);
+        return next;
+      });
+    },
+    [scene.elements],
+  );
+
+  const endErase = useCallback(() => {
+    const ids = erasingRef.current;
+    if (ids.size === 0) return;
+    commit({ elements: scene.elements.filter((el) => !ids.has(el.id)) });
+    setErasingIds(new Set());
+  }, [commit, scene.elements]);
+
+  // Switching away from select clears the selection (no stray transformer).
+  const changeTool = useCallback((next: CanvasTool) => {
+    setTool(next);
+    if (next !== 'select') setSelectedId(null);
+  }, []);
 
   function addPlaceholder() {
     const worldCx = (viewport.width / 2 - camera.x) / camera.scale;
@@ -235,9 +300,15 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
 
   // Keyboard: undo/redo + delete. Bound once; reads the latest actions via a ref
   // so it never goes stale and never re-subscribes on every scene change.
-  const actionsRef = useRef({ undo, redo, deleteSelected, hasSelection: false });
+  const actionsRef = useRef({ undo, redo, deleteSelected, changeTool, hasSelection: false });
   useEffect(() => {
-    actionsRef.current = { undo, redo, deleteSelected, hasSelection: Boolean(selectedElement) };
+    actionsRef.current = {
+      undo,
+      redo,
+      deleteSelected,
+      changeTool,
+      hasSelection: Boolean(selectedElement),
+    };
   });
   useEffect(() => {
     if (!editing) return;
@@ -257,12 +328,20 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
       } else if (meta && event.key.toLowerCase() === 'y') {
         event.preventDefault();
         actionsRef.current.redo();
+      } else if (meta) {
+        return;
       } else if (
         (event.key === 'Delete' || event.key === 'Backspace') &&
         actionsRef.current.hasSelection
       ) {
         event.preventDefault();
         actionsRef.current.deleteSelected();
+      } else if (event.key === 'v' || event.key === 'V') {
+        actionsRef.current.changeTool('select');
+      } else if (event.key === 'p' || event.key === 'P' || event.key === 'b' || event.key === 'B') {
+        actionsRef.current.changeTool('draw');
+      } else if (event.key === 'e' || event.key === 'E') {
+        actionsRef.current.changeTool('erase');
       }
     }
     window.addEventListener('keydown', onKeyDown);
@@ -347,22 +426,28 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
       <div className="relative min-h-[75vh] w-full flex-1">
         <div className="absolute inset-0">
           <CanvasStage
-            elements={scene.elements}
+            elements={visibleElements}
             pageType={pageType}
             selectedId={effectiveSelectedId}
             camera={camera}
-            tool="select"
+            tool={effectiveTool}
             canEdit={editing}
+            penSettings={pen}
             onSelect={setSelectedId}
             onChangeElement={changeElement}
             onCameraChange={setCamera}
             onViewportChange={handleViewportChange}
+            onCommitStroke={commitStroke}
+            onEraseStroke={eraseStroke}
+            onEraseEnd={endErase}
           />
         </div>
-        <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center p-2 sm:p-3">
+        <div className="pointer-events-none absolute inset-x-0 top-0 flex flex-col items-center gap-2 p-2 sm:p-3">
           <CanvasToolbar
             className="pointer-events-auto"
             canEdit={editing}
+            tool={tool}
+            onTool={changeTool}
             pageType={pageType}
             onPageType={setPageType}
             scale={camera.scale}
@@ -379,6 +464,9 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
             onToggleLock={toggleLock}
             onDeleteSelected={deleteSelected}
           />
+          {editing && tool === 'draw' && (
+            <PenToolbar className="pointer-events-auto" settings={pen} onChange={setPen} />
+          )}
         </div>
       </div>
     </div>

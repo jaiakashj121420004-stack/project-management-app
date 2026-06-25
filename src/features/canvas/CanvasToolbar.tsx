@@ -1,11 +1,26 @@
 import type { ReactNode } from 'react';
-import { Lock, Plus, Redo2, Trash2, Undo2, Unlock, ZoomIn, ZoomOut } from 'lucide-react';
+import {
+  Eraser,
+  Lock,
+  MousePointer,
+  Pen,
+  Plus,
+  Redo2,
+  Trash2,
+  Undo2,
+  Unlock,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { GlassSelect } from '@/components/forms/GlassSelect';
 import { PAGE_LABELS, PAGE_TYPES, type PageType } from '@/lib/canvasPages';
+import type { CanvasTool } from './constants';
 
 interface CanvasToolbarProps {
   canEdit: boolean;
+  tool: CanvasTool;
+  onTool: (tool: CanvasTool) => void;
   pageType: PageType;
   onPageType: (pageType: PageType) => void;
   scale: number;
@@ -33,6 +48,8 @@ interface CanvasToolbarProps {
  */
 export function CanvasToolbar({
   canEdit,
+  tool,
+  onTool,
   pageType,
   onPageType,
   scale,
@@ -59,6 +76,20 @@ export function CanvasToolbar({
     >
       {canEdit && (
         <>
+          <ToolButton
+            label="Select / move"
+            onClick={() => onTool('select')}
+            active={tool === 'select'}
+          >
+            <MousePointer size={16} />
+          </ToolButton>
+          <ToolButton label="Draw" onClick={() => onTool('draw')} active={tool === 'draw'}>
+            <Pen size={16} />
+          </ToolButton>
+          <ToolButton label="Eraser" onClick={() => onTool('erase')} active={tool === 'erase'}>
+            <Eraser size={16} />
+          </ToolButton>
+          <Divider />
           <ToolButton label="Undo" onClick={onUndo} disabled={!canUndo}>
             <Undo2 size={17} />
           </ToolButton>

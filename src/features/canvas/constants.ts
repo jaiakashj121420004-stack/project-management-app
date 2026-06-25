@@ -9,8 +9,14 @@ export interface Camera {
   scale: number;
 }
 
-/** Active interaction mode. P3.1 has only 'select'; 'draw' arrives in P3.2. */
-export type CanvasTool = 'select';
+/**
+ * Active interaction mode:
+ *   - 'select' — pan (drag empty space), zoom, and select/move/resize elements;
+ *   - 'draw'   — freehand pressure-sensitive strokes;
+ *   - 'erase'  — stroke-level eraser.
+ * Two-finger pan/zoom and wheel-zoom work in every mode.
+ */
+export type CanvasTool = 'select' | 'draw' | 'erase';
 
 /** Zoom bounds — far enough to overview a board, close enough to detail. */
 export const MIN_SCALE = 0.2;
