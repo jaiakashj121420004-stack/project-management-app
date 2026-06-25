@@ -8,6 +8,7 @@ import { EntityPicker } from '@/components/forms/EntityPicker';
 import { PAGE_LABELS } from '@/lib/canvasPages';
 import type { CanvasNoteSummary } from './api';
 import { useCanvasList, useCreateCanvas } from './useCanvas';
+import { canvasCreateErrorMessage } from './errors';
 import { CanvasEditor } from './CanvasEditor';
 
 const DEFAULT_TITLE = 'Untitled canvas';
@@ -99,6 +100,15 @@ export function CanvasPanel({ projectId, canEdit }: { projectId: string; canEdit
           </GradientButton>
         )}
       </div>
+
+      {createCanvas.isError && (
+        <div
+          role="alert"
+          className="rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-fg-muted"
+        >
+          {canvasCreateErrorMessage(createCanvas.error)}
+        </div>
+      )}
 
       {canvases.length === 0 ? (
         <GlassPanel className="grid min-h-[50vh] place-items-center p-10 text-center">

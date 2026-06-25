@@ -11,6 +11,7 @@ import { PAGE_LABELS } from '@/lib/canvasPages';
 import { ProGate } from '@/features/billing';
 import { useMyRole } from '@/features/members';
 import { useAllCanvases, useCreateIndependentCanvas, type AggregatedCanvas } from './useCanvas';
+import { canvasCreateErrorMessage } from './errors';
 
 // The editor (Konva via CanvasStage) is lazy-loaded exactly like ProjectPage does
 // for CanvasPanel, so CanvasHome stays Konva-free and the heavy chunk loads only
@@ -164,6 +165,15 @@ function CanvasWorkspace() {
           New
         </GradientButton>
       </div>
+
+      {createCanvas.isError && (
+        <div
+          role="alert"
+          className="rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-fg-muted"
+        >
+          {canvasCreateErrorMessage(createCanvas.error)}
+        </div>
+      )}
 
       {selected && (
         <Suspense
