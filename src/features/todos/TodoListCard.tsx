@@ -1,5 +1,6 @@
-import { useMemo, useState, type KeyboardEvent } from 'react';
-import { Check, Plus, Trash2, X } from 'lucide-react';
+import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
+import { cn } from '@/lib/cn';
+import { Check, Plus, Repeat, Trash2, X } from 'lucide-react';
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import type { TodoItem, TodoList } from '@/types/database';
 import { todoItemTextSchema, todoListNameSchema } from './schemas';
@@ -8,9 +9,15 @@ import {
   useAddTodoItem,
   useDeleteTodoItem,
   useDeleteTodoList,
+  useMoveTodoItem,
   useRenameTodoList,
   useUpdateTodoItem,
 } from './useTodos';
+import {
+  isRecurring,
+  upsertRecurringTemplate,
+  removeRecurringTemplate,
+} from './recurringTemplates';
 
 interface TodoListCardProps {
   dateKey: string;
@@ -35,15 +42,40 @@ export function TodoListCard({ dateKey, list, items }: TodoListCardProps) {
   const addItem = useAddTodoItem(dateKey);
   const updateItem = useUpdateTodoItem(dateKey);
   const deleteItem = useDeleteTodoItem(dateKey);
+  const moveItem = useMoveTodoItem(dateKey);
   const renameList = useRenameTodoList(dateKey);
   const deleteList = useDeleteTodoList(dateKey);
 
   const [renaming, setRenaming] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [recurring, setRecurring] = useState(() => isRecurring(list.name));
 
   const sorted = useMemo(() => [...items].sort((a, b) => a.position - b.position), [items]);
   const done = sorted.filter((item) => item.is_done).length;
   const total = sorted.length;
+
+  // Sync recurring state if the list name changes (e.g. after a rename).
+  useEffect(() => {
+    setRecurring(isRecurring(list.name));
+  }, [list.name]);
+
+  // Keep the stored template up-to-date whenever items change while recurring is on.
+  useEffect(() => {
+    if (!recurring) return;
+    upsertRecurringTemplate({ name: list.name, items: sorted.map((i) => i.text) });
+    // list.name intentionally excluded — name changes are handled by the rename path below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sorted]);
+
+  function handleToggleRecurring() {
+    if (recurring) {
+      removeRecurringTemplate(list.name);
+      setRecurring(false);
+    } else {
+      upsertRecurringTemplate({ name: list.name, items: sorted.map((i) => i.text) });
+      setRecurring(true);
+    }
+  }
 
   function handleAdd(text: string) {
     addItem.mutate({
@@ -54,6 +86,19 @@ export function TodoListCard({ dateKey, list, items }: TodoListCardProps) {
     });
   }
 
+  /** Swap an item with its neighbour `delta` rows away (-1 up, +1 down). */
+  function move(index: number, delta: number) {
+    const current = sorted[index];
+    const neighbour = sorted[index + delta];
+    if (!current || !neighbour) return;
+    moveItem.mutate({
+      id: current.id,
+      position: current.position,
+      swapId: neighbour.id,
+      swapPosition: neighbour.position,
+    });
+  }
+
   return (
     <GlassPanel className="flex flex-col gap-3 p-4">
       <div className="flex items-start justify-between gap-2">
@@ -61,6 +106,11 @@ export function TodoListCard({ dateKey, list, items }: TodoListCardProps) {
           <ListNameEditor
             initial={list.name}
             onSave={(name) => {
+              // Keep recurring template in sync when the list is renamed.
+              if (recurring && name !== list.name) {
+                removeRecurringTemplate(list.name);
+                upsertRecurringTemplate({ name, items: sorted.map((i) => i.text) });
+              }
               renameList.mutate({ id: list.id, name });
               setRenaming(false);
             }}
@@ -83,6 +133,20 @@ export function TodoListCard({ dateKey, list, items }: TodoListCardProps) {
               {done}/{total}
             </span>
           )}
+          <button
+            type="button"
+            aria-label={recurring ? 'Remove from daily routine' : 'Repeat daily'}
+            title={recurring ? 'Daily routine — click to remove' : 'Repeat this list every day'}
+            onClick={handleToggleRecurring}
+            className={cn(
+              'grid h-7 w-7 shrink-0 place-items-center rounded-lg transition-colors',
+              recurring
+                ? 'text-[var(--accent-from)] hover:bg-[var(--glass-fill)]'
+                : 'text-fg-subtle hover:bg-[var(--glass-fill)] hover:text-fg',
+            )}
+          >
+            <Repeat size={14} />
+          </button>
           <button
             type="button"
             aria-label="Delete list"
@@ -120,12 +184,16 @@ export function TodoListCard({ dateKey, list, items }: TodoListCardProps) {
 
       {total > 0 && (
         <ul className="flex flex-col gap-2">
-          {sorted.map((item) => (
+          {sorted.map((item, index) => (
             <TodoItemRow
               key={item.id}
               item={item}
               onToggle={(isDone) => updateItem.mutate({ id: item.id, is_done: isDone })}
               onDelete={() => deleteItem.mutate({ id: item.id })}
+              onMoveUp={() => move(index, -1)}
+              onMoveDown={() => move(index, 1)}
+              canMoveUp={index > 0}
+              canMoveDown={index < sorted.length - 1}
             />
           ))}
         </ul>

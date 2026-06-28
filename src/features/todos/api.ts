@@ -87,7 +87,7 @@ export async function insertTodoItem(input: {
 
 export async function updateTodoItem(
   id: string,
-  patch: { text?: string; is_done?: boolean },
+  patch: { text?: string; is_done?: boolean; position?: number },
 ): Promise<TodoItem> {
   const { data, error } = await supabase
     .from('todo_items')
@@ -97,6 +97,23 @@ export async function updateTodoItem(
     .single();
   if (error) throw error;
   return data;
+}
+
+/**
+ * Swap the positions of two items so one moves up/down past the other.
+ * Both rows are updated; RLS still scopes each to the current user.
+ */
+export async function swapTodoItemPositions(
+  a: { id: string; position: number },
+  b: { id: string; position: number },
+): Promise<void> {
+  // Give `a` b's slot and `b` a's slot.
+  const [resA, resB] = await Promise.all([
+    supabase.from('todo_items').update({ position: b.position }).eq('id', a.id),
+    supabase.from('todo_items').update({ position: a.position }).eq('id', b.id),
+  ]);
+  if (resA.error) throw resA.error;
+  if (resB.error) throw resB.error;
 }
 
 export async function removeTodoItem(id: string): Promise<void> {

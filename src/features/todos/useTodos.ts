@@ -7,6 +7,7 @@ import {
   removeTodoItem,
   removeTodoList,
   renameTodoList,
+  swapTodoItemPositions,
   updateTodoItem,
   type TodosData,
 } from './api';
@@ -162,6 +163,30 @@ export function useUpdateTodoItem(dateKey: string) {
             }
           : item,
       ),
+    }),
+  );
+}
+
+/**
+ * Move an item up or down within its list by swapping `position` with its
+ * neighbour. Optimistically swaps both positions in the day snapshot so the
+ * reorder is instant, then reconciles on refetch.
+ */
+export function useMoveTodoItem(dateKey: string) {
+  return useTodosMutation<
+    void,
+    { id: string; position: number; swapId: string; swapPosition: number }
+  >(
+    dateKey,
+    ({ id, position, swapId, swapPosition }) =>
+      swapTodoItemPositions({ id, position }, { id: swapId, position: swapPosition }),
+    (data, { id, position, swapId, swapPosition }) => ({
+      ...data,
+      items: data.items.map((item) => {
+        if (item.id === id) return { ...item, position: swapPosition };
+        if (item.id === swapId) return { ...item, position };
+        return item;
+      }),
     }),
   );
 }

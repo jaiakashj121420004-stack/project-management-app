@@ -1,6 +1,7 @@
-import { useMemo, useState, type KeyboardEvent } from 'react';
-import { addDays, format, isToday, startOfToday } from 'date-fns';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { addDays, format, isFuture, isToday, startOfToday } from 'date-fns';
 import { CalendarDays, ChevronLeft, ChevronRight, ListTodo, Plus } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import { Spinner } from '@/components/feedback/Spinner';
 import { Reveal } from '@/components/motion/Reveal';
@@ -10,6 +11,8 @@ import { toDateKey } from '@/features/calendar/dates';
 import { todoListNameSchema } from './schemas';
 import { useAddTodoList, useTodos } from './useTodos';
 import { TodoListCard } from './TodoListCard';
+import { getRecurringTemplates } from './recurringTemplates';
+import { insertTodoItem, insertTodoList } from './api';
 
 const STEP = 1000;
 
@@ -23,6 +26,8 @@ export function TodosPage() {
   const dateKey = toDateKey(cursor);
   const { data, isLoading, isError } = useTodos(dateKey);
   const addList = useAddTodoList(dateKey);
+  const queryClient = useQueryClient();
+  const seededRef = useRef<Set<string>>(new Set());
 
   const lists = useMemo(
     () => [...(data?.lists ?? [])].sort((a, b) => a.position - b.position),
@@ -38,6 +43,53 @@ export function TodosPage() {
     }
     return map;
   }, [data?.items]);
+
+  // Auto-seed recurring lists for today and future days.
+  useEffect(() => {
+    // Only seed today and future days — don't touch past days.
+    if (!isToday(cursor) && !isFuture(cursor)) return;
+    // Wait until data has loaded and only seed once per dateKey.
+    if (isLoading || isError || seededRef.current.has(dateKey)) return;
+
+    const templates = getRecurringTemplates();
+    if (templates.length === 0) {
+      seededRef.current.add(dateKey);
+      return;
+    }
+
+    const existingNames = new Set(lists.map((l) => l.name));
+    const missing = templates.filter((t) => !existingNames.has(t.name));
+
+    seededRef.current.add(dateKey);
+
+    if (missing.length === 0) return;
+
+    const basePosition = lists.reduce((max, l) => Math.max(max, l.position), 0);
+
+    void (async () => {
+      let offset = 1;
+      for (const template of missing) {
+        try {
+          const newList = await insertTodoList({
+            dateKey,
+            name: template.name,
+            position: basePosition + offset * STEP,
+          });
+          let itemPos = 1;
+          for (const text of template.items) {
+            await insertTodoItem({ listId: newList.id, text, position: itemPos * STEP });
+            itemPos++;
+          }
+          offset++;
+        } catch (err) {
+          console.error('[recurring] failed to seed list:', template.name, err);
+          // Remove from seeded so it can retry on next render.
+          seededRef.current.delete(dateKey);
+        }
+      }
+      void queryClient.invalidateQueries({ queryKey: ['todos', dateKey] });
+    })();
+  }, [cursor, dateKey, isLoading, isError, lists, queryClient]);
 
   function handleAddList(name: string) {
     const position = lists.reduce((max, list) => Math.max(max, list.position), 0) + STEP;
