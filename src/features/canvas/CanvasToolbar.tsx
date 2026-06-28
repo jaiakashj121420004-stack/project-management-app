@@ -7,6 +7,7 @@ import {
   Plus,
   Redo2,
   Trash2,
+  Type,
   Undo2,
   Unlock,
   ZoomIn,
@@ -85,6 +86,13 @@ export function CanvasToolbar({
           </ToolButton>
           <ToolButton label="Draw" onClick={() => onTool('draw')} active={tool === 'draw'}>
             <Pen size={16} />
+          </ToolButton>
+          <ToolButton
+            label="Text — click anywhere to type"
+            onClick={() => onTool('text')}
+            active={tool === 'text'}
+          >
+            <Type size={16} />
           </ToolButton>
           <ToolButton label="Eraser" onClick={() => onTool('erase')} active={tool === 'erase'}>
             <Eraser size={16} />

@@ -212,13 +212,27 @@ export function createPlaceholderTextBox(
 ): TextBoxElement {
   const width = 220;
   const height = 120;
+  return createTextBoxAt(cx - width / 2, cy - height / 2, z, { width, height });
+}
+
+/**
+ * A text box anchored by its TOP-LEFT corner at (x, y) in world coordinates —
+ * used by the click-to-place text tool so typing begins exactly where the user
+ * clicked. Defaults to the same size as the toolbar placeholder.
+ */
+export function createTextBoxAt(
+  x: number,
+  y: number,
+  z: number,
+  opts?: { width?: number; height?: number },
+): TextBoxElement {
   return {
     id: crypto.randomUUID(),
     type: 'text',
-    x: cx - width / 2,
-    y: cy - height / 2,
-    width,
-    height,
+    x,
+    y,
+    width: opts?.width ?? 220,
+    height: opts?.height ?? 120,
     rotation: 0,
     z,
     locked: false,

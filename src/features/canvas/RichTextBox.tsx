@@ -12,6 +12,8 @@ interface RichTextBoxProps {
   toolbarStyle: CSSProperties;
   /** Resolved ink colour for the text. */
   color: string;
+  /** Ruled page: align each line to the rule spacing so text sits on the lines. */
+  ruled?: boolean;
   /** Persist the edited content (debounced while typing + flushed on exit). */
   onCommit: (body: Record<string, unknown>, text: string) => void;
   /** Leave edit mode (Escape). */
@@ -33,6 +35,7 @@ export function RichTextBox({
   boxStyle,
   toolbarStyle,
   color,
+  ruled = false,
   onCommit,
   onExit,
 }: RichTextBoxProps) {
@@ -65,7 +68,11 @@ export function RichTextBox({
     content: body ?? emptyTextDoc(),
     autofocus: 'end',
     editorProps: {
-      attributes: { class: 'canvas-rich canvas-rich-edit' },
+      attributes: {
+        class: ruled
+          ? 'canvas-rich canvas-rich-edit canvas-rich--ruled'
+          : 'canvas-rich canvas-rich-edit',
+      },
     },
     onUpdate: ({ editor: ed }) => {
       latestRef.current = { body: ed.getJSON() as Record<string, unknown>, text: ed.getText() };

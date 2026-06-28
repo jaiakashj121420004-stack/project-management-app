@@ -1,4 +1,6 @@
 import { type CSSProperties } from 'react';
+import { cn } from '@/lib/cn';
+import type { PageType } from '@/lib/canvasPages';
 import type { Camera, ElementBox } from './constants';
 import type { CanvasElement, TextBoxElement } from './elements';
 import { isEmptyDoc, renderTextHtml } from './richText';
@@ -9,6 +11,8 @@ interface TextLayerProps {
   elements: CanvasElement[];
   camera: Camera;
   palette: CanvasPalette;
+  /** Drives ruled-line text alignment (text sits on the rules). */
+  pageType: PageType;
   /** The text box currently being edited, or null. */
   editingId: string | null;
   /** Live transform of a text box mid drag/resize (follows the Konva node). */
@@ -29,6 +33,7 @@ export function TextLayer({
   elements,
   camera,
   palette,
+  pageType,
   editingId,
   liveBox,
   onCommit,
@@ -36,6 +41,7 @@ export function TextLayer({
 }: TextLayerProps) {
   const texts = elements.filter((el): el is TextBoxElement => el.type === 'text');
   const scale = camera.scale;
+  const ruled = pageType === 'ruled';
 
   return (
     <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
@@ -72,6 +78,7 @@ export function TextLayer({
               boxStyle={boxStyle}
               toolbarStyle={toolbarStyle}
               color={palette.text}
+              ruled={ruled}
               onCommit={(body, text) => onCommit(el.id, body, text)}
               onExit={onExitEdit}
             />
@@ -86,12 +93,15 @@ export function TextLayer({
             className="pointer-events-none select-none overflow-hidden rounded-2xl"
           >
             {empty ? (
-              <div className="canvas-rich canvas-rich-empty" style={{ color: palette.muted }}>
+              <div
+                className={cn('canvas-rich canvas-rich-empty', ruled && 'canvas-rich--ruled')}
+                style={{ color: palette.muted }}
+              >
                 Double-click to type
               </div>
             ) : (
               <div
-                className="canvas-rich"
+                className={cn('canvas-rich', ruled && 'canvas-rich--ruled')}
                 style={{ color: palette.text }}
                 dangerouslySetInnerHTML={{ __html: renderTextHtml(el.body) }}
               />

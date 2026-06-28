@@ -13,10 +13,11 @@ export interface Camera {
  * Active interaction mode:
  *   - 'select' — pan (drag empty space), zoom, and select/move/resize elements;
  *   - 'draw'   — freehand pressure-sensitive strokes;
- *   - 'erase'  — stroke-level eraser.
+ *   - 'erase'  — eraser (removes whatever it touches);
+ *   - 'text'   — click anywhere to drop a text box there and start typing.
  * Two-finger pan/zoom and wheel-zoom work in every mode.
  */
-export type CanvasTool = 'select' | 'draw' | 'erase';
+export type CanvasTool = 'select' | 'draw' | 'erase' | 'text';
 
 /** Zoom bounds — far enough to overview a board, close enough to detail. */
 export const MIN_SCALE = 0.2;

@@ -3,7 +3,7 @@ import { AlertCircle, Check, Eye, Pencil, Trash2 } from 'lucide-react';
 import { Spinner } from '@/components/feedback/Spinner';
 import { SegmentedToggle } from '@/components/forms/SegmentedToggle';
 import { useTheme } from '@/hooks/useTheme';
-import type { PageType } from '@/lib/canvasPages';
+import { PAGE_PATTERN_SPACING, type PageType } from '@/lib/canvasPages';
 import type { CanvasNote } from '@/types/database';
 import { canvasTitleSchema } from './schemas';
 import { useCanvas, useDeleteCanvas, useSaveCanvas } from './useCanvas';
@@ -11,6 +11,7 @@ import { useSceneHistory } from './history';
 import {
   parseScene,
   createPlaceholderTextBox,
+  createTextBoxAt,
   topZ,
   type CanvasScene,
   type ElementPatch,
@@ -21,6 +22,7 @@ import { CanvasStage } from './CanvasStage';
 import { CanvasToolbar } from './CanvasToolbar';
 import { PenToolbar } from './PenToolbar';
 import { ZOOM_STEP, clampScale, type Camera, type CanvasTool } from './constants';
+import './canvasText.css';
 
 /** One write per ~700ms of idle, matching the notes editor's autosave. */
 const AUTOSAVE_DELAY = 700;
@@ -243,11 +245,13 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
     [commit, scene.elements],
   );
 
-  // Stroke-level erase: hide each touched stroke live; commit the batch on release.
+  // Erase: hide each touched element live; commit the batch on release. Works on
+  // any element type (strokes, text, …) so the eraser "just removes" what it
+  // touches; one undo restores the whole batch.
   const eraseStroke = useCallback(
     (id: string) => {
       const el = scene.elements.find((element) => element.id === id);
-      if (!el || el.type !== 'stroke') return;
+      if (!el) return;
       setErasingIds((prev) => {
         if (prev.has(id)) return prev;
         const next = new Set(prev);
@@ -300,6 +304,23 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
     setEditingTextId(element.id);
   }
 
+  // Text tool: drop a box where the user clicked and open it for typing. On a
+  // ruled page, snap the top edge to a rule line so the text sits on the lines.
+  const placeText = useCallback(
+    (worldX: number, worldY: number) => {
+      const y =
+        pageType === 'ruled'
+          ? Math.round(worldY / PAGE_PATTERN_SPACING) * PAGE_PATTERN_SPACING
+          : worldY;
+      const element = createTextBoxAt(worldX, y, topZ(scene.elements));
+      commit({ elements: [...scene.elements, element] });
+      setTool('select');
+      setSelectedId(element.id);
+      setEditingTextId(element.id);
+    },
+    [commit, scene.elements, pageType],
+  );
+
   function deleteSelected() {
     if (!selectedId) return;
     commit({ elements: scene.elements.filter((el) => el.id !== selectedId) });
@@ -345,6 +366,10 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
   useEffect(() => {
     if (!editing) return;
     function onKeyDown(event: KeyboardEvent) {
+      // While a text box is open, ALL canvas shortcuts are off — every keystroke
+      // belongs to the editor (a stray 'e'/'p'/'v' must never switch tools and
+      // close the box, which looked like "typing vanishes").
+      if (editingTextId !== null) return;
       const target = event.target as HTMLElement | null;
       if (
         target &&
@@ -374,11 +399,13 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
         actionsRef.current.changeTool('draw');
       } else if (event.key === 'e' || event.key === 'E') {
         actionsRef.current.changeTool('erase');
+      } else if (event.key === 't' || event.key === 'T') {
+        actionsRef.current.changeTool('text');
       }
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [editing]);
+  }, [editing, editingTextId]);
 
   function handleDelete() {
     runDelete({ id: note.id });
@@ -476,6 +503,7 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
             onCommitStroke={commitStroke}
             onEraseStroke={eraseStroke}
             onEraseEnd={endErase}
+            onPlaceText={placeText}
             onEditText={editText}
             onEndTextEdit={endTextEdit}
           />

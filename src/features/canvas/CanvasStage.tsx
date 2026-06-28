@@ -35,10 +35,12 @@ interface CanvasStageProps {
   onViewportChange: (size: { width: number; height: number }) => void;
   /** A finished draw gesture: raw WORLD-space samples + the style it used. */
   onCommitStroke: (worldPoints: number[], style: StrokeStyle) => void;
-  /** A stroke the eraser touched during the current gesture. */
+  /** An element the eraser touched during the current gesture. */
   onEraseStroke: (id: string) => void;
   /** The eraser gesture ended — commit the batch as one undo step. */
   onEraseEnd: () => void;
+  /** The text tool was clicked at a world point — drop a text box there. */
+  onPlaceText: (worldX: number, worldY: number) => void;
   /** The text box currently open for editing (null = none). */
   editingTextId: string | null;
   /** Double-click/tap on a text box requests editing it. */
@@ -90,6 +92,7 @@ export function CanvasStage({
   onCommitStroke,
   onEraseStroke,
   onEraseEnd,
+  onPlaceText,
   editingTextId,
   onEditText,
   onEndTextEdit,
@@ -169,20 +172,39 @@ export function CanvasStage({
     };
   }
 
-  function capturePointer(id: number) {
-    try {
-      stageRef.current?.container().setPointerCapture(id);
-    } catch {
-      // A stale/invalid pointer id — safe to ignore.
-    }
+  // Active draw/erase gestures listen on WINDOW for move/up/cancel rather than
+  // relying on Konva's stage pointer events. Konva can miss `pointerup` on some
+  // touchpads/styluses (which left strokes uncommitted — they'd vanish on the
+  // next action). Window listeners always fire, so a gesture always ends and
+  // commits. We keep a single teardown so a new gesture can't leak listeners.
+  const gestureCleanup = useRef<(() => void) | null>(null);
+
+  function endGestureListeners() {
+    gestureCleanup.current?.();
+    gestureCleanup.current = null;
   }
-  function releasePointer(id: number) {
-    try {
-      stageRef.current?.container().releasePointerCapture(id);
-    } catch {
-      // Already released — ignore.
-    }
+
+  function startGestureListeners(
+    onMove: (evt: PointerEvent) => void,
+    onUp: (evt: PointerEvent) => void,
+    onCancel: (evt: PointerEvent) => void,
+  ) {
+    endGestureListeners();
+    const move = (evt: PointerEvent) => onMove(evt);
+    const up = (evt: PointerEvent) => onUp(evt);
+    const cancel = (evt: PointerEvent) => onCancel(evt);
+    window.addEventListener('pointermove', move, { passive: false });
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', cancel);
+    gestureCleanup.current = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', cancel);
+    };
   }
+
+  // Clean up any dangling gesture listeners on unmount.
+  useEffect(() => () => endGestureListeners(), []);
 
   // --- drawing ---------------------------------------------------------------
 
@@ -218,19 +240,22 @@ export function CanvasStage({
       node.globalCompositeOperation(style.blend === 'multiply' ? 'multiply' : 'source-over');
     }
     paintPreview();
-    capturePointer(e.evt.pointerId);
+    // Track the rest of the gesture on window so a missed Konva pointerup can't
+    // strand the stroke as an uncommitted preview.
+    startGestureListeners(extendStroke, endStroke, cancelStroke);
   }
 
-  function extendStroke(e: Konva.KonvaEventObject<PointerEvent>) {
+  function extendStroke(evt: PointerEvent) {
     const d = drawing.current;
-    if (!d || e.evt.pointerId !== d.pointerId) return;
-    const isPen = e.evt.pointerType === 'pen';
+    if (!d || evt.pointerId !== d.pointerId) return;
+    if (evt.pointerType === 'pen') markPen();
+    if (evt.cancelable) evt.preventDefault();
+    const isPen = evt.pointerType === 'pen';
     // Coalesced events recover the full-rate samples a high-frequency stylus
     // produces between animation frames — markedly smoother on a tablet.
-    const native = e.evt;
     const coalesced =
-      typeof native.getCoalescedEvents === 'function' ? native.getCoalescedEvents() : [];
-    const events = coalesced.length > 0 ? coalesced : [native];
+      typeof evt.getCoalescedEvents === 'function' ? evt.getCoalescedEvents() : [];
+    const events = coalesced.length > 0 ? coalesced : [evt];
     for (const ev of events) {
       const p = toWorld(ev.clientX, ev.clientY);
       if (!p) continue;
@@ -239,84 +264,97 @@ export function CanvasStage({
     paintPreview();
   }
 
-  function endStroke(e: Konva.KonvaEventObject<PointerEvent>) {
+  function endStroke(evt: PointerEvent) {
     const d = drawing.current;
-    if (!d || e.evt.pointerId !== d.pointerId) return;
+    if (!d || evt.pointerId !== d.pointerId) return;
     drawing.current = null;
-    releasePointer(d.pointerId);
+    endGestureListeners();
     clearPreview();
     if (d.points.length >= 3) onCommitStroke(d.points, d.style);
   }
 
   function cancelStroke() {
     if (!drawing.current) return;
-    releasePointer(drawing.current.pointerId);
     drawing.current = null;
+    endGestureListeners();
     clearPreview();
   }
 
   // --- erasing ---------------------------------------------------------------
 
-  function eraseAt() {
+  /** Hit-test the element under a screen point (relative to the stage container)
+   *  and queue it for erasing. Tries a few offsets so thin strokes are easy to
+   *  hit even when the pointer isn't dead-centre on them. */
+  function eraseAtScreen(screenX: number, screenY: number) {
     const stage = stageRef.current;
     if (!stage) return;
-    const pos = stage.getPointerPosition();
-    if (!pos) return;
-    const shape = stage.getIntersection(pos);
-    if (!shape) return;
-    const group = shape.findAncestor('.canvas-element', true) as Konva.Node | undefined;
-    if (group) onEraseStroke(group.id());
+    const rect = stage.container().getBoundingClientRect();
+    const base = { x: screenX - rect.left, y: screenY - rect.top };
+    const r = 6; // forgiving hit radius (screen px)
+    const probes = [
+      base,
+      { x: base.x - r, y: base.y },
+      { x: base.x + r, y: base.y },
+      { x: base.x, y: base.y - r },
+      { x: base.x, y: base.y + r },
+    ];
+    for (const pos of probes) {
+      const shape = stage.getIntersection(pos);
+      const group = shape?.findAncestor('.canvas-element', true) as Konva.Node | undefined;
+      if (group) {
+        onEraseStroke(group.id());
+        return;
+      }
+    }
   }
 
-  function endErase(pointerId: number) {
+  function extendErase(evt: PointerEvent) {
+    if (!erasing.current) return;
+    if (evt.cancelable) evt.preventDefault();
+    eraseAtScreen(evt.clientX, evt.clientY);
+  }
+
+  function endErase() {
     if (!erasing.current) return;
     erasing.current = false;
-    releasePointer(pointerId);
+    endGestureListeners();
     onEraseEnd();
   }
 
   // --- pointer routing -------------------------------------------------------
+  // Only the gesture START is read from Konva; move/up/cancel are tracked on
+  // window (see startGestureListeners) so a gesture can never be stranded.
 
   function handlePointerDown(e: Konva.KonvaEventObject<PointerEvent>) {
-    if (!canEdit || (tool !== 'draw' && tool !== 'erase')) return;
+    if (!canEdit) return;
     const type = e.evt.pointerType;
     if (type === 'pen') markPen();
+
+    // Text tool: a single click/tap drops a new text box at that world point.
+    if (tool === 'text') {
+      const p = toWorld(e.evt.clientX, e.evt.clientY);
+      if (p) onPlaceText(p.x, p.y);
+      return;
+    }
+
+    if (tool !== 'draw' && tool !== 'erase') return;
     // Palm rejection: ignore touch entirely while a pen is in use.
     if (type === 'touch' && penActive.current) return;
     // A second finger means a pinch — hand off to the pan/zoom path.
     if (type === 'touch' && !e.evt.isPrimary) {
       cancelStroke();
+      endErase();
       return;
     }
-    e.evt.preventDefault();
+    if (e.evt.cancelable) e.evt.preventDefault();
+
     if (tool === 'draw') {
       startStroke(e);
     } else {
       erasing.current = true;
-      capturePointer(e.evt.pointerId);
-      eraseAt();
+      startGestureListeners(extendErase, endErase, endErase);
+      eraseAtScreen(e.evt.clientX, e.evt.clientY);
     }
-  }
-
-  function handlePointerMove(e: Konva.KonvaEventObject<PointerEvent>) {
-    if (tool === 'draw' && drawing.current) {
-      if (e.evt.pointerType === 'pen') markPen();
-      e.evt.preventDefault();
-      extendStroke(e);
-    } else if (tool === 'erase' && erasing.current) {
-      e.evt.preventDefault();
-      eraseAt();
-    }
-  }
-
-  function handlePointerUp(e: Konva.KonvaEventObject<PointerEvent>) {
-    if (tool === 'draw') endStroke(e);
-    else if (tool === 'erase') endErase(e.evt.pointerId);
-  }
-
-  function handlePointerCancel(e: Konva.KonvaEventObject<PointerEvent>) {
-    if (tool === 'draw') cancelStroke();
-    else if (tool === 'erase') endErase(e.evt.pointerId);
   }
 
   // --- camera (wheel + pinch) + selection ------------------------------------
@@ -353,7 +391,7 @@ export function CanvasStage({
     if (e.evt.touches.length >= 2) {
       // A pinch is starting — abandon any in-progress draw/erase gesture.
       cancelStroke();
-      if (erasing.current) endErase(0);
+      endErase();
       stageRef.current?.stopDrag();
       lastDist.current = 0;
       lastCenter.current = null;
@@ -404,7 +442,14 @@ export function CanvasStage({
     }
   }
 
-  const cursor = tool === 'draw' ? 'crosshair' : tool === 'erase' ? 'cell' : 'default';
+  const cursor =
+    tool === 'draw'
+      ? 'crosshair'
+      : tool === 'erase'
+        ? 'cell'
+        : tool === 'text'
+          ? 'text'
+          : 'default';
 
   return (
     <div
@@ -428,9 +473,6 @@ export function CanvasStage({
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerCancel}
           onDragMove={syncStageCamera}
           onDragEnd={syncStageCamera}
         >
@@ -495,6 +537,7 @@ export function CanvasStage({
           elements={elements}
           camera={camera}
           palette={palette}
+          pageType={pageType}
           editingId={editingTextId}
           liveBox={liveBox}
           onCommit={(id, body, text) => onChangeElement(id, { body, text })}
