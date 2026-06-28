@@ -32,3 +32,18 @@ export const MIN_ELEMENT_SIZE = 24;
 export function clampScale(scale: number): number {
   return Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale));
 }
+
+/**
+ * An element's live transform box, in world units. Reported by a Konva element
+ * during a drag/resize gesture so the HTML text overlay can follow the node in
+ * real time (element state only updates on gesture end). `id` ties it to the
+ * element it describes.
+ */
+export interface ElementBox {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+}

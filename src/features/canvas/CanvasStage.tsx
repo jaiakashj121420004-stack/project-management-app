@@ -1,10 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Stage, Layer, Path, Transformer } from 'react-konva';
 import type Konva from 'konva';
 import type { PageType } from '@/lib/canvasPages';
 import { useElementSize } from '@/hooks/useElementSize';
 import { ElementNode } from './elementRenderers';
 import { PageBackground } from './PageBackground';
+import { TextLayer } from './TextLayer';
 import { useCanvasPalette } from './useCanvasPalette';
 import { strokePathData, type StrokeStyle } from './freehand';
 import { penStrokeStyle, type PenSettings } from './drawing';
@@ -14,6 +15,7 @@ import {
   clampScale,
   type Camera,
   type CanvasTool,
+  type ElementBox,
 } from './constants';
 import type { CanvasElement, ElementPatch } from './elements';
 
@@ -37,6 +39,12 @@ interface CanvasStageProps {
   onEraseStroke: (id: string) => void;
   /** The eraser gesture ended — commit the batch as one undo step. */
   onEraseEnd: () => void;
+  /** The text box currently open for editing (null = none). */
+  editingTextId: string | null;
+  /** Double-click/tap on a text box requests editing it. */
+  onEditText: (id: string) => void;
+  /** Leave text-edit mode (e.g. Escape inside the editor). */
+  onEndTextEdit: () => void;
 }
 
 /** How long after the last pen event we keep rejecting touch (palm rejection). */
@@ -82,6 +90,9 @@ export function CanvasStage({
   onCommitStroke,
   onEraseStroke,
   onEraseEnd,
+  editingTextId,
+  onEditText,
+  onEndTextEdit,
 }: CanvasStageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
@@ -89,6 +100,11 @@ export function CanvasStage({
   const previewRef = useRef<Konva.Path>(null);
   const size = useElementSize(containerRef);
   const palette = useCanvasPalette(containerRef);
+
+  // Live transform of the text box being dragged/resized, so the HTML overlay
+  // tracks the Konva node in real time (element state only updates on gesture
+  // end). Null when no text box is mid-gesture.
+  const [liveBox, setLiveBox] = useState<ElementBox | null>(null);
 
   // Pinch bookkeeping (two-finger zoom/pan).
   const lastDist = useRef(0);
@@ -132,11 +148,13 @@ export function CanvasStage({
     const stage = stageRef.current;
     if (!transformer || !stage) return;
     const selected = selectedId ? elements.find((el) => el.id === selectedId) : undefined;
-    const attach = selected && !selected.locked && canEdit && tool === 'select';
+    // No resize handles while a text box is being edited (the editor owns it).
+    const attach =
+      selected && !selected.locked && canEdit && tool === 'select' && editingTextId === null;
     const node = attach ? stage.findOne(`#${selectedId}`) : null;
     transformer.nodes(node ? [node] : []);
     transformer.getLayer()?.batchDraw();
-  }, [selectedId, elements, canEdit, tool]);
+  }, [selectedId, elements, canEdit, tool, editingTextId]);
 
   // --- coordinate helpers -----------------------------------------------------
 
@@ -430,11 +448,19 @@ export function CanvasStage({
               <ElementNode
                 key={element.id}
                 element={element}
-                draggable={canEdit && tool === 'select' && !element.locked}
+                draggable={
+                  canEdit && tool === 'select' && !element.locked && element.id !== editingTextId
+                }
                 selectable={canEdit && tool === 'select'}
                 palette={palette}
                 onSelect={onSelect}
                 onChange={onChangeElement}
+                onRequestEdit={
+                  element.type === 'text' && canEdit && tool === 'select' && !element.locked
+                    ? onEditText
+                    : undefined
+                }
+                onLiveChange={element.type === 'text' ? setLiveBox : undefined}
               />
             ))}
             {canEdit && tool === 'select' && (
@@ -461,6 +487,19 @@ export function CanvasStage({
             <Path ref={previewRef} perfectDrawEnabled={false} shadowForStrokeEnabled={false} />
           </Layer>
         </Stage>
+      )}
+      {/* Rich text lives in an HTML overlay above the Konva canvas — Konva can't
+          render formatted text. It's click-through except the box being edited. */}
+      {size.width > 0 && size.height > 0 && (
+        <TextLayer
+          elements={elements}
+          camera={camera}
+          palette={palette}
+          editingId={editingTextId}
+          liveBox={liveBox}
+          onCommit={(id, body, text) => onChangeElement(id, { body, text })}
+          onExitEdit={onEndTextEdit}
+        />
       )}
     </div>
   );

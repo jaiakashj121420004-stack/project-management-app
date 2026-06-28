@@ -99,12 +99,14 @@ export type CanvasElementType = CanvasElement['type'];
 
 /**
  * A partial update to an element's mutable fields. Covers the shared transform
- * box plus the stroke-only geometry a resize bakes in (scaling a stroke rewrites
- * its sample points + width). The editor merges this onto the element; the
- * `type` discriminant is never touched.
+ * box, the stroke-only geometry a resize bakes in (scaling a stroke rewrites its
+ * sample points + width), and the text-only rich-text body + its plain-text
+ * mirror. The editor merges this onto the element; the `type` discriminant is
+ * never touched.
  */
 export type ElementPatch = Partial<CanvasElementBase> &
-  Partial<Pick<StrokeElement, 'points' | 'size'>>;
+  Partial<Pick<StrokeElement, 'points' | 'size'>> &
+  Partial<Pick<TextBoxElement, 'body' | 'text'>>;
 
 /** The persisted document body: just an ordered list of elements. */
 export interface CanvasScene {

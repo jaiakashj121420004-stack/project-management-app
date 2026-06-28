@@ -98,6 +98,8 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
   const [tool, setTool] = useState<CanvasTool>('select');
   const [pen, setPen] = useState<PenSettings>(() => defaultPenSettings(theme));
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // The text box open for inline rich-text editing (null = none).
+  const [editingTextId, setEditingTextId] = useState<string | null>(null);
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0, scale: 1 });
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const centeredRef = useRef(false);
@@ -151,6 +153,15 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
     ? scene.elements.find((el) => el.id === selectedId)
     : undefined;
   const effectiveSelectedId = selectedElement ? selectedId : null;
+
+  // Edit a text box only while it still exists, is unlocked, and we're in edit
+  // mode — derived (never stored), mirroring effectiveSelectedId, so a removed /
+  // locked box or a flip to View simply reads as "not editing", no effect needed.
+  const editingElement = editingTextId
+    ? scene.elements.find((el) => el.id === editingTextId)
+    : undefined;
+  const effectiveEditingId =
+    editing && editingElement && !editingElement.locked ? editingTextId : null;
 
   // Build the patch for the changed fields, or null if nothing (valid) changed.
   const buildPatch = useCallback((): {
@@ -254,18 +265,39 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
     setErasingIds(new Set());
   }, [commit, scene.elements]);
 
-  // Switching away from select clears the selection (no stray transformer).
+  // Switching away from select clears the selection (no stray transformer) and
+  // always ends any text edit.
   const changeTool = useCallback((next: CanvasTool) => {
     setTool(next);
+    setEditingTextId(null);
     if (next !== 'select') setSelectedId(null);
   }, []);
 
-  function addPlaceholder() {
+  // Selecting an element (click/tap via the stage) ends any open text edit — the
+  // editing box itself swallows its own clicks, so this only fires for OTHER
+  // elements or an empty-canvas click.
+  const selectElement = useCallback((id: string | null) => {
+    setSelectedId(id);
+    setEditingTextId(null);
+  }, []);
+
+  // Double-click a text box → select + open it for inline editing.
+  const editText = useCallback((id: string) => {
+    setSelectedId(id);
+    setEditingTextId(id);
+  }, []);
+
+  const endTextEdit = useCallback(() => setEditingTextId(null), []);
+
+  function addText() {
     const worldCx = (viewport.width / 2 - camera.x) / camera.scale;
     const worldCy = (viewport.height / 2 - camera.y) / camera.scale;
     const element = createPlaceholderTextBox(worldCx, worldCy, topZ(scene.elements));
     commit({ elements: [...scene.elements, element] });
+    // Open the new box straight into edit mode so the user can just start typing.
+    setTool('select');
     setSelectedId(element.id);
+    setEditingTextId(element.id);
   }
 
   function deleteSelected() {
@@ -415,7 +447,10 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
         <SegmentedToggle
           label="Canvas mode"
           value={mode}
-          onChange={setMode}
+          onChange={(next) => {
+            setMode(next);
+            setEditingTextId(null);
+          }}
           options={[
             { value: 'edit', label: 'Edit', icon: <Pencil size={14} /> },
             { value: 'view', label: 'View', icon: <Eye size={14} /> },
@@ -433,13 +468,16 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
             tool={effectiveTool}
             canEdit={editing}
             penSettings={pen}
-            onSelect={setSelectedId}
+            editingTextId={effectiveEditingId}
+            onSelect={selectElement}
             onChangeElement={changeElement}
             onCameraChange={setCamera}
             onViewportChange={handleViewportChange}
             onCommitStroke={commitStroke}
             onEraseStroke={eraseStroke}
             onEraseEnd={endErase}
+            onEditText={editText}
+            onEndTextEdit={endTextEdit}
           />
         </div>
         <div className="pointer-events-none absolute inset-x-0 top-0 flex flex-col items-center gap-2 p-2 sm:p-3">
@@ -458,7 +496,7 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
             canRedo={canRedo}
             onUndo={undo}
             onRedo={redo}
-            onAdd={addPlaceholder}
+            onAdd={addText}
             hasSelection={Boolean(selectedElement)}
             selectedLocked={selectedElement?.locked ?? false}
             onToggleLock={toggleLock}
