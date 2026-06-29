@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import {
+  Clapperboard,
   Eraser,
   ImagePlus,
   Lock,
@@ -37,6 +38,9 @@ interface CanvasToolbarProps {
   /** Called when the user wants to add an image. `undefined` on personal canvases
    *  (no projectId → Storage RLS would reject the upload). */
   onAddImage: (() => void) | undefined;
+  /** Called when the user wants to add audio/video (record / upload / embed).
+   *  `undefined` on personal canvases (Storage RLS is keyed by projectId). */
+  onAddMedia: (() => void) | undefined;
   hasSelection: boolean;
   selectedLocked: boolean;
   onToggleLock: () => void;
@@ -67,6 +71,7 @@ export function CanvasToolbar({
   onRedo,
   onAdd,
   onAddImage,
+  onAddMedia,
   hasSelection,
   selectedLocked,
   onToggleLock,
@@ -116,6 +121,11 @@ export function CanvasToolbar({
           {onAddImage && (
             <ToolButton label="Add image — or paste / drag-drop" onClick={onAddImage}>
               <ImagePlus size={17} />
+            </ToolButton>
+          )}
+          {onAddMedia && (
+            <ToolButton label="Add audio / video — record, upload or embed" onClick={onAddMedia}>
+              <Clapperboard size={17} />
             </ToolButton>
           )}
           <Divider />

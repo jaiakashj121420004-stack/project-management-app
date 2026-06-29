@@ -1,10 +1,19 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from 'react';
 import { AlertCircle, Check, Eye, Pencil, Trash2, X } from 'lucide-react';
 import { Spinner } from '@/components/feedback/Spinner';
 import { SegmentedToggle } from '@/components/forms/SegmentedToggle';
 import { useTheme } from '@/hooks/useTheme';
 import { PAGE_PATTERN_SPACING, type PageType } from '@/lib/canvasPages';
-import { MEDIA_CAPS } from '@/lib/proFeatures';
+import { MEDIA_CAPS, mediaKindForMime } from '@/lib/proFeatures';
 import { MediaUploadError, uploadCanvasMedia } from '@/lib/storage';
 import type { CanvasNote } from '@/types/database';
 import { canvasTitleSchema } from './schemas';
@@ -15,10 +24,13 @@ import {
   createPlaceholderTextBox,
   createTextBoxAt,
   createImageElement,
+  createMediaFileElement,
+  createMediaEmbedElement,
   topZ,
   type CanvasScene,
   type ElementPatch,
 } from './elements';
+import type { ParsedEmbed } from './embeds';
 import { buildStroke, type StrokeStyle } from './freehand';
 import { defaultPenSettings, type PenSettings } from './drawing';
 import { CanvasStage } from './CanvasStage';
@@ -26,6 +38,42 @@ import { CanvasToolbar } from './CanvasToolbar';
 import { PenToolbar } from './PenToolbar';
 import { ZOOM_STEP, clampScale, type Camera, type CanvasTool } from './constants';
 import './canvasText.css';
+
+// The add-media modal pulls in the MediaRecorder/getUserMedia machinery; load it
+// lazily so none of that ships in the canvas chunk until the user opens it.
+const AddMediaModal = lazy(() =>
+  import('./AddMediaModal').then((m) => ({ default: m.AddMediaModal })),
+);
+
+/** Default element sizes for newly placed media (world px). */
+const AUDIO_SIZE = { width: 320, height: 64 };
+const VIDEO_SIZE = { width: 480, height: 270 };
+
+/**
+ * Read an uploaded video's natural dimensions (capped) so it lands at the right
+ * aspect ratio. Falls back to the 16:9 default on error so the upload is never
+ * blocked.
+ */
+function getVideoDimensions(file: File): Promise<{ width: number; height: number }> {
+  return new Promise((resolve) => {
+    const objectUrl = URL.createObjectURL(file);
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    video.onloadedmetadata = () => {
+      const MAX_W = 600;
+      const ratio = video.videoWidth > 0 ? video.videoWidth / video.videoHeight : 16 / 9;
+      const width = Math.min(MAX_W, video.videoWidth || MAX_W);
+      const height = Math.max(1, Math.round(width / ratio));
+      URL.revokeObjectURL(objectUrl);
+      resolve({ width, height });
+    };
+    video.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(VIDEO_SIZE);
+    };
+    video.src = objectUrl;
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Image upload helpers (canvas-editor-local, not exported)
@@ -121,10 +169,11 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
   const { mutate: runDelete } = useDeleteCanvas(projectId);
   const { theme } = useTheme();
 
-  // Image upload state.
+  // Image/media upload state.
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [mediaModalOpen, setMediaModalOpen] = useState(false);
 
   // Seed scene/title/page-type once; the component is keyed by note id upstream.
   const [seedScene] = useState<CanvasScene>(() => parseScene(note.scene));
@@ -453,11 +502,78 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
     }
   }
 
+  // --- audio/video media -----------------------------------------------------
+
+  /**
+   * Upload a recorded/uploaded audio or video file to canvas-media, then place a
+   * MediaElement at (`worldX`, `worldY`) — or the viewport centre when omitted.
+   * Mirrors handleImageFile; video reads its natural aspect ratio first.
+   */
+  async function handleMediaFile(file: File, worldX?: number, worldY?: number) {
+    if (!projectId) return; // personal canvases can't use the project-keyed bucket
+    const kind = mediaKindForMime(file.type);
+    if (kind !== 'audio' && kind !== 'video') {
+      setUploadError('That file type isn’t supported. Add an audio or video file.');
+      return;
+    }
+    setUploadError(null);
+    setIsUploading(true);
+    try {
+      const dims =
+        kind === 'video' ? await getVideoDimensions(file) : AUDIO_SIZE;
+      const { path } = await uploadCanvasMedia(projectId, note.id, file);
+      const cx = worldX ?? (viewport.width / 2 - camera.x) / camera.scale;
+      const cy = worldY ?? (viewport.height / 2 - camera.y) / camera.scale;
+      const element = createMediaFileElement(
+        cx,
+        cy,
+        topZ(scene.elements),
+        kind,
+        path,
+        dims.width,
+        dims.height,
+      );
+      commit({ elements: [...scene.elements, element] });
+      setSelectedId(element.id);
+    } catch (err) {
+      const msg =
+        err instanceof MediaUploadError
+          ? err.message
+          : 'Something went wrong adding that media. Please try again.';
+      setUploadError(msg);
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
+  /** Place an allow-listed embed (no upload) at the viewport centre. */
+  function handleAddEmbed(embed: ParsedEmbed) {
+    const cx = (viewport.width / 2 - camera.x) / camera.scale;
+    const cy = (viewport.height / 2 - camera.y) / camera.scale;
+    const element = createMediaEmbedElement(
+      cx,
+      cy,
+      topZ(scene.elements),
+      embed.kind,
+      embed.embedUrl,
+      embed.width,
+      embed.height,
+    );
+    commit({ elements: [...scene.elements, element] });
+    setSelectedId(element.id);
+  }
+
   /** Called by CanvasStage when the user drops files onto the Konva surface. */
   function handleDropFiles(worldX: number, worldY: number, files: File[]) {
     if (!editing || !projectId) return;
     const file = files[0];
-    if (file) void handleImageFile(file, worldX, worldY);
+    if (!file) return;
+    const kind = mediaKindForMime(file.type);
+    if (kind === 'audio' || kind === 'video') {
+      void handleMediaFile(file, worldX, worldY);
+    } else {
+      void handleImageFile(file, worldX, worldY);
+    }
   }
 
   function zoomBy(factor: number) {
@@ -686,6 +802,7 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
             onRedo={redo}
             onAdd={addText}
             onAddImage={projectId !== null ? addImage : undefined}
+            onAddMedia={projectId !== null ? () => setMediaModalOpen(true) : undefined}
             hasSelection={Boolean(selectedElement)}
             selectedLocked={selectedElement?.locked ?? false}
             onToggleLock={toggleLock}
@@ -696,6 +813,25 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
           )}
         </div>
       </div>
+
+      {/* Add-media modal (lazy). Recording uploads/places via handleMediaFile;
+          embeds place via handleAddEmbed. Both close the modal first. */}
+      {mediaModalOpen && projectId !== null && (
+        <Suspense fallback={null}>
+          <AddMediaModal
+            open={mediaModalOpen}
+            onClose={() => setMediaModalOpen(false)}
+            onSubmitFile={(file) => {
+              setMediaModalOpen(false);
+              void handleMediaFile(file);
+            }}
+            onSubmitEmbed={(embed) => {
+              setMediaModalOpen(false);
+              handleAddEmbed(embed);
+            }}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

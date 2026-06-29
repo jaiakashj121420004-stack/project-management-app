@@ -1,88 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Group, Image as KonvaImage, Path, Rect, Text } from 'react-konva';
 import type Konva from 'konva';
-import { signedUrl } from '@/lib/storage';
 import { MIN_ELEMENT_SIZE, type ElementBox } from './constants';
-import type {
-  CanvasElement,
-  ElementPatch,
-  ImageElement,
-  MediaElement,
-  StrokeElement,
-} from './elements';
+import type { CanvasElement, ElementPatch, ImageElement, StrokeElement } from './elements';
 import { strokePathData } from './freehand';
+import { useSignedUrl } from './useSignedUrl';
 import type { CanvasPalette } from './useCanvasPalette';
-
-// ---------------------------------------------------------------------------
-// Signed URL cache — module-level so URLs survive re-renders and component
-// remounts. URLs are valid for 1 hour (the default); we don't expire them
-// within a session — the worst case is a stale URL after 1h and a page reload.
-// ---------------------------------------------------------------------------
-
-const urlCache = new Map<string, string>();
-// In-flight fetches keyed by path — prevents duplicate network requests when
-// multiple renderers ask for the same path at the same time.
-const inFlight = new Map<string, Promise<string>>();
-
-function fetchCachedSignedUrl(path: string): Promise<string> {
-  const cached = urlCache.get(path);
-  if (cached) return Promise.resolve(cached);
-  const existing = inFlight.get(path);
-  if (existing) return existing;
-  const promise = signedUrl(path)
-    .then((url) => {
-      urlCache.set(path, url);
-      inFlight.delete(path);
-      return url;
-    })
-    .catch((err: unknown) => {
-      inFlight.delete(path);
-      throw err;
-    });
-  inFlight.set(path, promise);
-  return promise;
-}
-
-/** Resolves a canvas-media storage path to a signed URL and caches it. */
-function useSignedUrl(path: string | null): {
-  url: string | null;
-  loading: boolean;
-  error: boolean;
-} {
-  const [url, setUrl] = useState<string | null>(() =>
-    path ? (urlCache.get(path) ?? null) : null,
-  );
-  const [loading, setLoading] = useState<boolean>(path !== null && !urlCache.has(path));
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    if (!path) return;
-    if (urlCache.has(path)) {
-      setUrl(urlCache.get(path)!);
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    fetchCachedSignedUrl(path)
-      .then((u) => {
-        if (!cancelled) {
-          setUrl(u);
-          setLoading(false);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setError(true);
-          setLoading(false);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [path]);
-
-  return { url, loading, error };
-}
 
 /**
  * Element renderers. Every element is a Konva <Group> positioned/rotated by its
@@ -256,33 +179,20 @@ function ElementVisual({ element, palette }: { element: CanvasElement; palette: 
     return <ImageVisual element={element} palette={palette} />;
   }
 
-  // Media (audio/video) remains a labelled stub (body lands in P3.5).
+  // Media (audio/video): Konva renders ONLY the background rect — the hit /
+  // transform / drag target. The actual <audio>/<video> player or embed <iframe>
+  // is drawn by the HTML MediaLayer overlay (Konva can't host them), layered on
+  // top via the same camera transform.
   return (
-    <>
-      <Rect
-        width={width}
-        height={height}
-        cornerRadius={16}
-        fill={palette.surface}
-        stroke={palette.border}
-        strokeWidth={1}
-        perfectDrawEnabled={false}
-      />
-      <Text
-        text={stubLabel(element)}
-        width={width}
-        height={height}
-        padding={12}
-        fontSize={15}
-        fontFamily="Inter, system-ui, sans-serif"
-        fill={palette.text}
-        align="center"
-        verticalAlign="middle"
-        wrap="word"
-        ellipsis
-        listening={false}
-      />
-    </>
+    <Rect
+      width={width}
+      height={height}
+      cornerRadius={16}
+      fill={palette.surface}
+      stroke={palette.border}
+      strokeWidth={1}
+      perfectDrawEnabled={false}
+    />
   );
 }
 
@@ -311,10 +221,6 @@ function StrokeVisual({ element }: { element: StrokeElement }) {
       shadowForStrokeEnabled={false}
     />
   );
-}
-
-function stubLabel(element: MediaElement): string {
-  return element.kind === 'audio' ? '🎙  Audio' : '🎬  Video';
 }
 
 /**

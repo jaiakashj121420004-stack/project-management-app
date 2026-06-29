@@ -6,6 +6,7 @@ import { useElementSize } from '@/hooks/useElementSize';
 import { ElementNode } from './elementRenderers';
 import { PageBackground } from './PageBackground';
 import { TextLayer } from './TextLayer';
+import { MediaLayer } from './MediaLayer';
 import { useCanvasPalette } from './useCanvasPalette';
 import { strokePathData, type StrokeStyle } from './freehand';
 import { penStrokeStyle, type PenSettings } from './drawing';
@@ -449,11 +450,17 @@ export function CanvasStage({
     }
   }
 
-  // Keep the aspect ratio when transforming an image element (corner handles
-  // maintain it by default; Shift allows free resize — standard image editor UX).
-  // All other element types remain freely resizable.
+  // Keep the aspect ratio when transforming an image or video element (corner
+  // handles maintain it by default; Shift allows free resize — standard editor
+  // UX). Audio + all other types remain freely resizable.
   const selectedElement = selectedId ? elements.find((el) => el.id === selectedId) : null;
-  const keepRatio = selectedElement?.type === 'image';
+  const keepRatio =
+    selectedElement?.type === 'image' ||
+    (selectedElement?.type === 'media' && selectedElement.kind === 'video');
+  // Media players render in an HTML overlay ABOVE the Konva layer, so the
+  // Transformer's resize/rotate handles would be hidden under the (interactive)
+  // selected player. Offset them outward with padding so they stay grabbable.
+  const transformerPadding = selectedElement?.type === 'media' ? 6 : 0;
 
   const cursor =
     tool === 'draw'
@@ -479,8 +486,11 @@ export function CanvasStage({
   function handleDrop(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault();
     if (!onDropFiles || !containerRef.current) return;
-    const files = Array.from(e.dataTransfer.files).filter((f) =>
-      f.type.startsWith('image/'),
+    const files = Array.from(e.dataTransfer.files).filter(
+      (f) =>
+        f.type.startsWith('image/') ||
+        f.type.startsWith('audio/') ||
+        f.type.startsWith('video/'),
     );
     if (files.length === 0) return;
     const rect = containerRef.current.getBoundingClientRect();
@@ -542,7 +552,9 @@ export function CanvasStage({
                     ? onEditText
                     : undefined
                 }
-                onLiveChange={element.type === 'text' ? setLiveBox : undefined}
+                onLiveChange={
+                  element.type === 'text' || element.type === 'media' ? setLiveBox : undefined
+                }
               />
             ))}
             {canEdit && tool === 'select' && (
@@ -550,6 +562,7 @@ export function CanvasStage({
                 ref={transformerRef}
                 rotateEnabled
                 keepRatio={keepRatio}
+                padding={transformerPadding}
                 ignoreStroke
                 anchorCornerRadius={4}
                 borderStroke={palette.accent}
@@ -582,6 +595,19 @@ export function CanvasStage({
           liveBox={liveBox}
           onCommit={(id, body, text) => onChangeElement(id, { body, text })}
           onExitEdit={onEndTextEdit}
+        />
+      )}
+      {/* Audio/video players + allow-listed embeds live in their own HTML overlay
+          (Konva can't host them). Interactive only when selected (edit mode) or
+          always in read-only/View mode, so Konva keeps select/drag/resize. */}
+      {size.width > 0 && size.height > 0 && (
+        <MediaLayer
+          elements={elements}
+          camera={camera}
+          palette={palette}
+          selectedId={selectedId}
+          editing={canEdit}
+          liveBox={liveBox}
         />
       )}
     </div>

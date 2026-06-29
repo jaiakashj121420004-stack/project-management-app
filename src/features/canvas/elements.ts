@@ -229,6 +229,68 @@ export function createImageElement(
 }
 
 /**
+ * A media element backed by a recorded/uploaded canvas-media object (P3.5). The
+ * element is committed once the upload completes; `path` references the storage
+ * object (never a data URL). Centred on (cx, cy) in world coordinates.
+ */
+export function createMediaFileElement(
+  cx: number,
+  cy: number,
+  z: number,
+  kind: 'audio' | 'video',
+  path: string,
+  width: number,
+  height: number,
+): MediaElement {
+  return {
+    id: crypto.randomUUID(),
+    type: 'media',
+    x: cx - width / 2,
+    y: cy - height / 2,
+    width,
+    height,
+    rotation: 0,
+    z,
+    locked: false,
+    kind,
+    source: 'file',
+    path,
+    embedUrl: null,
+  };
+}
+
+/**
+ * A media element backed by an allow-listed embed (YouTube/Vimeo/Loom/
+ * SoundCloud). `embedUrl` is the CANONICAL provider embed URL we built ourselves
+ * (see embeds.ts) — never the raw pasted string. Centred on (cx, cy).
+ */
+export function createMediaEmbedElement(
+  cx: number,
+  cy: number,
+  z: number,
+  kind: 'audio' | 'video',
+  embedUrl: string,
+  width: number,
+  height: number,
+): MediaElement {
+  return {
+    id: crypto.randomUUID(),
+    type: 'media',
+    x: cx - width / 2,
+    y: cy - height / 2,
+    width,
+    height,
+    rotation: 0,
+    z,
+    locked: false,
+    kind,
+    source: 'embed',
+    path: null,
+    embedUrl,
+  };
+}
+
+/**
  * A text-box placeholder dropped by the foundation toolbar's "Add" action. It is
  * a fully real, persisted element (selectable / movable / resizable / rotatable);
  * the rich-text body it shows is filled in P3.3. Centred on (cx, cy) in world

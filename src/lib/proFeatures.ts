@@ -63,7 +63,8 @@ export const PRO_FEATURES: Record<ProFeatureKey, ProFeature> = {
   media: {
     key: 'media',
     label: 'Canvas media',
-    description: 'Add images (upload, paste or drag-drop) to any canvas.',
+    description:
+      'Add images, audio & video — record in-app, upload, or embed YouTube/Vimeo/Loom/SoundCloud.',
     shipped: true,
   },
 };
