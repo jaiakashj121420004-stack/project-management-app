@@ -123,6 +123,7 @@ export function buildStroke(
     rotation: 0,
     z: topZ(existing),
     locked: false,
+    visible: true,
     points: localPoints,
     color: style.color,
     size: style.size,
@@ -130,6 +131,4 @@ export function buildStroke(
     smoothing: style.smoothing,
     opacity: style.opacity,
     blend: style.blend,
-    simulatePressure: style.simulatePressure,
-  };
-}
+    simulatePressure: style.simula
