@@ -34,6 +34,13 @@ export function clampScale(scale: number): number {
   return Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale));
 }
 
+/** Arrow-key nudge step in world pixels (Shift multiplies by NUDGE_LARGE_STEP). */
+export const NUDGE_STEP = 1;
+export const NUDGE_LARGE_STEP = 10;
+
+/** Long-press duration for context menu on touch (ms). */
+export const LONG_PRESS_MS = 600;
+
 /**
  * An element's live transform box, in world units. Reported by a Konva element
  * during a drag/resize gesture so the HTML text overlay can follow the node in

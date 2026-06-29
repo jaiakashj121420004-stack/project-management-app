@@ -49,15 +49,19 @@ export function TodoListCard({ dateKey, list, items }: TodoListCardProps) {
   const [renaming, setRenaming] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [recurring, setRecurring] = useState(() => isRecurring(list.name));
+  const [prevListName, setPrevListName] = useState(list.name);
 
   const sorted = useMemo(() => [...items].sort((a, b) => a.position - b.position), [items]);
   const done = sorted.filter((item) => item.is_done).length;
   const total = sorted.length;
 
-  // Sync recurring state if the list name changes (e.g. after a rename).
-  useEffect(() => {
+  // Re-derive recurring when the list is renamed by adjusting state DURING render
+  // (React's recommended pattern) instead of in an effect — avoids the cascading
+  // render that react-hooks/set-state-in-effect warns about.
+  if (list.name !== prevListName) {
+    setPrevListName(list.name);
     setRecurring(isRecurring(list.name));
-  }, [list.name]);
+  }
 
   // Keep the stored template up-to-date whenever items change while recurring is on.
   useEffect(() => {

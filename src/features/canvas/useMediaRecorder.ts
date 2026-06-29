@@ -79,8 +79,6 @@ export function useMediaRecorder(kind: 'audio' | 'video'): UseMediaRecorder {
   const bytesRef = useRef(0);
 
   const capBytes = MEDIA_CAPS[kind].maxBytes;
-  const capRef = useRef(capBytes);
-  capRef.current = capBytes;
 
   const stopTracks = useCallback((s: MediaStream | null) => {
     s?.getTracks().forEach((t) => t.stop());
@@ -119,6 +117,9 @@ export function useMediaRecorder(kind: 'audio' | 'video'): UseMediaRecorder {
     bytesRef.current = 0;
     chunksRef.current = [];
 
+    // Captured once per record session; `kind` is fixed for this start() closure.
+    const cap = MEDIA_CAPS[kind].maxBytes;
+
     const constraints: MediaStreamConstraints =
       kind === 'audio' ? { audio: true } : { audio: true, video: true };
 
@@ -140,7 +141,7 @@ export function useMediaRecorder(kind: 'audio' | 'video'): UseMediaRecorder {
             setRecordedBytes(bytesRef.current);
             // Auto-stop the moment we exceed the cap (one extra ~1s chunk is
             // tolerated; the file is still validated again before upload).
-            if (bytesRef.current > capRef.current && recorder.state !== 'inactive') {
+            if (bytesRef.current > cap && recorder.state !== 'inactive') {
               recorder.stop();
             }
           }

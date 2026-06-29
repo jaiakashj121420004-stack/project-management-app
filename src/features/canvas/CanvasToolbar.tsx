@@ -1,8 +1,14 @@
 import type { ReactNode } from 'react';
 import {
   Clapperboard,
+  ChevronDown,
+  ChevronUp,
+  ChevronsDown,
+  ChevronsUp,
   Eraser,
+  Files,
   ImagePlus,
+  Layers,
   Lock,
   MousePointer,
   Pen,
@@ -45,6 +51,13 @@ interface CanvasToolbarProps {
   selectedLocked: boolean;
   onToggleLock: () => void;
   onDeleteSelected: () => void;
+  onDuplicate: () => void;
+  onBringToFront: () => void;
+  onBringForward: () => void;
+  onSendBackward: () => void;
+  onSendToBack: () => void;
+  showLayers: boolean;
+  onToggleLayers: () => void;
   className?: string;
 }
 
@@ -76,6 +89,13 @@ export function CanvasToolbar({
   selectedLocked,
   onToggleLock,
   onDeleteSelected,
+  onDuplicate,
+  onBringToFront,
+  onBringForward,
+  onSendBackward,
+  onSendToBack,
+  showLayers,
+  onToggleLayers,
   className,
 }: CanvasToolbarProps) {
   return (
@@ -161,6 +181,23 @@ export function CanvasToolbar({
       {canEdit && hasSelection && (
         <>
           <Divider />
+          {/* Z-order group */}
+          <ToolButton label="Bring to front (Ctrl+Shift+])" onClick={onBringToFront}>
+            <ChevronsUp size={16} />
+          </ToolButton>
+          <ToolButton label="Bring forward (Ctrl+])" onClick={onBringForward}>
+            <ChevronUp size={16} />
+          </ToolButton>
+          <ToolButton label="Send backward (Ctrl+[)" onClick={onSendBackward}>
+            <ChevronDown size={16} />
+          </ToolButton>
+          <ToolButton label="Send to back (Ctrl+Shift+[)" onClick={onSendToBack}>
+            <ChevronsDown size={16} />
+          </ToolButton>
+          <Divider />
+          <ToolButton label="Duplicate (Ctrl+D)" onClick={onDuplicate}>
+            <Files size={16} />
+          </ToolButton>
           <ToolButton
             label={selectedLocked ? 'Unlock element' : 'Lock element'}
             onClick={onToggleLock}
@@ -168,8 +205,17 @@ export function CanvasToolbar({
           >
             {selectedLocked ? <Lock size={16} /> : <Unlock size={16} />}
           </ToolButton>
-          <ToolButton label="Delete element" onClick={onDeleteSelected}>
+          <ToolButton label="Delete (Backspace)" onClick={onDeleteSelected}>
             <Trash2 size={16} />
+          </ToolButton>
+        </>
+      )}
+
+      {canEdit && (
+        <>
+          <Divider />
+          <ToolButton label="Toggle layers panel" onClick={onToggleLayers} active={showLayers}>
+            <Layers size={16} />
           </ToolButton>
         </>
       )}

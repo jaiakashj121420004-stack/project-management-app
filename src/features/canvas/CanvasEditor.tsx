@@ -26,7 +26,13 @@ import {
   createImageElement,
   createMediaFileElement,
   createMediaEmbedElement,
+  bringToFront,
+  bringForward,
+  sendBackward,
+  sendToBack,
+  duplicateElements,
   topZ,
+  type CanvasElement,
   type CanvasScene,
   type ElementPatch,
 } from './elements';
@@ -35,8 +41,10 @@ import { buildStroke, type StrokeStyle } from './freehand';
 import { defaultPenSettings, type PenSettings } from './drawing';
 import { CanvasStage } from './CanvasStage';
 import { CanvasToolbar } from './CanvasToolbar';
+import { ContextMenu } from './ContextMenu';
+import { LayersPanel } from './LayersPanel';
 import { PenToolbar } from './PenToolbar';
-import { ZOOM_STEP, clampScale, type Camera, type CanvasTool } from './constants';
+import { NUDGE_STEP, NUDGE_LARGE_STEP, ZOOM_STEP, clampScale, type Camera, type CanvasTool } from './constants';
 import './canvasText.css';
 
 // The add-media modal pulls in the MediaRecorder/getUserMedia machinery; load it
@@ -76,17 +84,12 @@ function getVideoDimensions(file: File): Promise<{ width: number; height: number
 }
 
 // ---------------------------------------------------------------------------
-// Image upload helpers (canvas-editor-local, not exported)
+// Image upload helpers
 // ---------------------------------------------------------------------------
 
 /** Accept string for the hidden file input — mirrors MEDIA_CAPS.image.mimeTypes. */
 const IMAGE_ACCEPT = MEDIA_CAPS.image.mimeTypes.join(',');
 
-/**
- * Read a File's natural pixel dimensions before uploading it. We create an
- * object URL, load it into a temporary Image, then revoke. Falls back to a
- * sensible 400×300 default on error so the upload is never blocked.
- */
 function getFileDimensions(file: File): Promise<{ width: number; height: number }> {
   return new Promise((resolve) => {
     const objectUrl = URL.createObjectURL(file);
@@ -114,22 +117,14 @@ type SaveStatus = 'saved' | 'unsaved' | 'saving' | 'error';
 
 interface CanvasEditorProps {
   noteId: string;
-  /** The canvas's project, or null for a personal canvas (drives which list
-   *  caches save/delete reconcile). */
   projectId: string | null;
-  /** Editors/owners can edit; viewers get a read-only, pan/zoom-only canvas. */
   canEdit: boolean;
-  /** Clear the parent's selection after a delete (falls back to the next one). */
   onDeleted: () => void;
 }
 
-/** Loads the full canvas (with its scene) then hands a concrete note to the
- *  stateful editor, keyed by id so it re-seeds when the canvas changes. */
 export function CanvasEditor({ noteId, projectId, canEdit, onDeleted }: CanvasEditorProps) {
   const { data: note, isLoading } = useCanvas(noteId);
 
-  // Prefer any cached doc (incl. the optimistic one a just-created canvas seeds)
-  // over the error state, so creating a canvas never flashes a load failure.
   if (!note) {
     return isLoading ? (
       <div className="grid h-full place-items-center py-24">
@@ -175,36 +170,38 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mediaModalOpen, setMediaModalOpen] = useState(false);
 
-  // Seed scene/title/page-type once; the component is keyed by note id upstream.
   const [seedScene] = useState<CanvasScene>(() => parseScene(note.scene));
   const history = useSceneHistory(seedScene);
   const { scene, commit, undo, redo, canUndo, canRedo } = history;
 
   const [title, setTitle] = useState(note.title);
   const [pageType, setPageType] = useState<PageType>(note.page_type);
-  // Editors can flip to a read-only View; viewers are always read-only. The
-  // stage + toolbar key all their editing affordances off `editing`.
   const [mode, setMode] = useState<'edit' | 'view'>('edit');
   const editing = canEdit && mode === 'edit';
   const [tool, setTool] = useState<CanvasTool>('select');
   const [pen, setPen] = useState<PenSettings>(() => defaultPenSettings(theme));
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  // The text box open for inline rich-text editing (null = none).
+
+  // Multi-select: array of selected element ids.
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  // Element clipboard (copy/paste).
+  const [clipboard, setClipboard] = useState<CanvasElement[]>([]);
+  // Context menu state.
+  const [contextMenu, setContextMenu] = useState<{
+    x: number; y: number; elementId: string | null;
+  } | null>(null);
+  // Layers panel visibility.
+  const [showLayers, setShowLayers] = useState(false);
+
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0, scale: 1 });
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const centeredRef = useRef(false);
 
-  // The eraser hides strokes live while dragging, then commits the whole batch as
-  // one undo step on release. We keep the latest set in a ref so the release
-  // handler reads it without re-subscribing.
+  // Eraser: hide live during gesture, commit on release.
   const [erasingIds, setErasingIds] = useState<ReadonlySet<string>>(() => new Set());
   const erasingRef = useRef<ReadonlySet<string>>(erasingIds);
-  useEffect(() => {
-    erasingRef.current = erasingIds;
-  }, [erasingIds]);
+  useEffect(() => { erasingRef.current = erasingIds; }, [erasingIds]);
 
-  // Only the select tool is active outside edit mode (viewers / View mode).
   const effectiveTool: CanvasTool = editing ? tool : 'select';
   const visibleElements = useMemo(
     () =>
@@ -237,24 +234,70 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
           ? 'unsaved'
           : 'saved';
 
-  // Resolve the selection against the live scene so a stale id (e.g. after undo
-  // removes the selected element) simply reads as "nothing selected" — derived,
-  // never stored, so no selection-clearing effect is needed.
-  const selectedElement = selectedId
-    ? scene.elements.find((el) => el.id === selectedId)
-    : undefined;
-  const effectiveSelectedId = selectedElement ? selectedId : null;
+  // Keep a ref to the latest elements so batched changeElement can always apply
+  // against the newest state without depending on a stale closure over scene.elements.
+  const sceneElementsRef = useRef(scene.elements);
+  useEffect(() => { sceneElementsRef.current = scene.elements; }, [scene.elements]);
 
-  // Edit a text box only while it still exists, is unlocked, and we're in edit
-  // mode — derived (never stored), mirroring effectiveSelectedId, so a removed /
-  // locked box or a flip to View simply reads as "not editing", no effect needed.
-  const editingElement = editingTextId
+  // Filter selectedIds to only those that still exist in the scene.
+  const validSelectedIds = useMemo(
+    () => selectedIds.filter((id) => scene.elements.some((el) => el.id === id)),
+    [selectedIds, scene.elements],
+  );
+
+  const primaryElement = validSelectedIds[0]
+    ? scene.elements.find((el) => el.id === validSelectedIds[0])
+    : undefined;
+
+  // Text-edit mode: only when editing, element exists, and isn't locked.
+  const editingElementRaw = editingTextId
     ? scene.elements.find((el) => el.id === editingTextId)
     : undefined;
   const effectiveEditingId =
-    editing && editingElement && !editingElement.locked ? editingTextId : null;
+    editing && editingElementRaw && !editingElementRaw.locked ? editingTextId : null;
 
-  // Build the patch for the changed fields, or null if nothing (valid) changed.
+  // ── batched changeElement ────────────────────────────────────────────────────
+  // Multiple calls within the same JS microtask (e.g. Transformer firing once
+  // per selected node on transformend) are coalesced into a single commit so
+  // they appear as one undo step.
+
+  const pendingPatches = useRef(new Map<string, ElementPatch>());
+  const batchTimer = useRef<number | null>(null);
+
+  const changeElement = useCallback(
+    (id: string, patch: ElementPatch) => {
+      const existing = pendingPatches.current.get(id) ?? {};
+      pendingPatches.current.set(id, { ...existing, ...patch });
+      if (batchTimer.current !== null) return;
+      batchTimer.current = window.setTimeout(() => {
+        batchTimer.current = null;
+        const patches = pendingPatches.current;
+        pendingPatches.current = new Map();
+        const updated = sceneElementsRef.current.map((el) => {
+          const p = patches.get(el.id);
+          return p ? { ...el, ...p } : el;
+        });
+        commit({ elements: updated });
+      }, 0);
+    },
+    [commit],
+  );
+
+  // ── group move (from CanvasStage multi-drag) ─────────────────────────────────
+
+  const handleGroupMove = useCallback(
+    (moves: Array<{ id: string; x: number; y: number }>) => {
+      const moveMap = new Map(moves.map((m) => [m.id, { x: m.x, y: m.y }]));
+      commit({
+        elements: sceneElementsRef.current.map((el) => {
+          const m = moveMap.get(el.id);
+          return m ? { ...el, ...m } : el;
+        }),
+      });
+    },
+    [commit],
+  );
+
   const buildPatch = useCallback((): {
     title?: string;
     page_type?: PageType;
@@ -269,7 +312,7 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
     return Object.keys(patch).length > 0 ? patch : null;
   }, [title, pageType, scene, saved]);
 
-  // Debounced autosave (scene + page type + title).
+  // Debounced autosave.
   useEffect(() => {
     if (!canEdit) return;
     const patch = buildPatch();
@@ -294,7 +337,6 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
     return () => clearTimeout(timer);
   }, [buildPatch, note.id, runSave, canEdit]);
 
-  // Flush an in-flight edit on unmount so switching canvases never drops it.
   const flushRef = useRef<() => void>(() => {});
   useEffect(() => {
     flushRef.current = () => {
@@ -305,27 +347,33 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
   });
   useEffect(() => () => flushRef.current(), []);
 
-  // --- element + camera actions ---------------------------------------------
+  // ── viewport / camera ────────────────────────────────────────────────────────
 
   const handleViewportChange = useCallback((size: { width: number; height: number }) => {
     setViewport(size);
     if (!centeredRef.current && size.width > 0 && size.height > 0) {
       centeredRef.current = true;
-      // Place the world origin at the viewport centre.
       setCamera({ x: size.width / 2, y: size.height / 2, scale: 1 });
     }
   }, []);
 
-  const changeElement = useCallback(
-    (id: string, patch: ElementPatch) => {
-      commit({
-        elements: scene.elements.map((el) => (el.id === id ? { ...el, ...patch } : el)),
-      });
-    },
-    [commit, scene.elements],
-  );
+  function zoomBy(factor: number) {
+    setCamera((current) => {
+      const scale = clampScale(current.scale * factor);
+      const cx = viewport.width / 2;
+      const cy = viewport.height / 2;
+      const worldX = (cx - current.x) / current.scale;
+      const worldY = (cy - current.y) / current.scale;
+      return { scale, x: cx - worldX * scale, y: cy - worldY * scale };
+    });
+  }
 
-  // A finished freehand gesture → a first-class Stroke element on top of the scene.
+  function resetZoom() {
+    setCamera({ x: viewport.width / 2, y: viewport.height / 2, scale: 1 });
+  }
+
+  // ── stroke / erase ───────────────────────────────────────────────────────────
+
   const commitStroke = useCallback(
     (worldPoints: number[], style: StrokeStyle) => {
       const stroke = buildStroke(worldPoints, style, scene.elements);
@@ -334,9 +382,6 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
     [commit, scene.elements],
   );
 
-  // Erase: hide each touched element live; commit the batch on release. Works on
-  // any element type (strokes, text, …) so the eraser "just removes" what it
-  // touches; one undo restores the whole batch.
   const eraseStroke = useCallback(
     (id: string) => {
       const el = scene.elements.find((element) => element.id === id);
@@ -358,43 +403,38 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
     setErasingIds(new Set());
   }, [commit, scene.elements]);
 
-  // Switching away from select clears the selection (no stray transformer) and
-  // always ends any text edit.
+  // ── tool / selection / text edit ─────────────────────────────────────────────
+
   const changeTool = useCallback((next: CanvasTool) => {
     setTool(next);
     setEditingTextId(null);
-    if (next !== 'select') setSelectedId(null);
+    if (next !== 'select') setSelectedIds([]);
   }, []);
 
-  // Selecting an element (click/tap via the stage) ends any open text edit — the
-  // editing box itself swallows its own clicks, so this only fires for OTHER
-  // elements or an empty-canvas click.
-  const selectElement = useCallback((id: string | null) => {
-    setSelectedId(id);
+  const selectElements = useCallback((ids: string[]) => {
+    setSelectedIds(ids);
     setEditingTextId(null);
   }, []);
 
-  // Double-click a text box → select + open it for inline editing.
   const editText = useCallback((id: string) => {
-    setSelectedId(id);
+    setSelectedIds([id]);
     setEditingTextId(id);
   }, []);
 
   const endTextEdit = useCallback(() => setEditingTextId(null), []);
+
+  // ── element actions ──────────────────────────────────────────────────────────
 
   function addText() {
     const worldCx = (viewport.width / 2 - camera.x) / camera.scale;
     const worldCy = (viewport.height / 2 - camera.y) / camera.scale;
     const element = createPlaceholderTextBox(worldCx, worldCy, topZ(scene.elements));
     commit({ elements: [...scene.elements, element] });
-    // Open the new box straight into edit mode so the user can just start typing.
     setTool('select');
-    setSelectedId(element.id);
+    setSelectedIds([element.id]);
     setEditingTextId(element.id);
   }
 
-  // Text tool: drop a box where the user clicked and open it for typing. On a
-  // ruled page, snap the top edge to a rule line so the text sits on the lines.
   const placeText = useCallback(
     (worldX: number, worldY: number) => {
       const y =
@@ -404,38 +444,120 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
       const element = createTextBoxAt(worldX, y, topZ(scene.elements));
       commit({ elements: [...scene.elements, element] });
       setTool('select');
-      setSelectedId(element.id);
+      setSelectedIds([element.id]);
       setEditingTextId(element.id);
     },
     [commit, scene.elements, pageType],
   );
 
   function deleteSelected() {
-    if (!selectedId) return;
-    commit({ elements: scene.elements.filter((el) => el.id !== selectedId) });
-    setSelectedId(null);
+    if (!validSelectedIds.length) return;
+    const idSet = new Set(validSelectedIds);
+    commit({ elements: scene.elements.filter((el) => !idSet.has(el.id)) });
+    setSelectedIds([]);
   }
 
   function toggleLock() {
-    if (!selectedId) return;
+    if (!validSelectedIds.length) return;
+    const idSet = new Set(validSelectedIds);
+    // Flip based on the primary element's current lock state.
+    const targetLocked = !(primaryElement?.locked ?? false);
     commit({
       elements: scene.elements.map((el) =>
-        el.id === selectedId ? { ...el, locked: !el.locked } : el,
+        idSet.has(el.id) ? { ...el, locked: targetLocked } : el,
       ),
     });
   }
 
-  // --- image upload ----------------------------------------------------------
+  function toggleVisibility(id: string) {
+    commit({
+      elements: scene.elements.map((el) =>
+        el.id === id ? { ...el, visible: el.visible === false ? true : false } : el,
+      ),
+    });
+  }
 
-  /**
-   * Upload a single image file to canvas-media, then place an ImageElement at
-   * (`worldX`, `worldY`) — or at the viewport centre when coordinates are
-   * omitted (file picker / paste paths).
-   */
+  // ── z-order ──────────────────────────────────────────────────────────────────
+
+  function bringToFrontAction() {
+    if (!validSelectedIds.length) return;
+    commit({ elements: bringToFront(scene.elements, new Set(validSelectedIds)) });
+  }
+  function bringForwardAction() {
+    if (!validSelectedIds.length) return;
+    commit({ elements: bringForward(scene.elements, new Set(validSelectedIds)) });
+  }
+  function sendBackwardAction() {
+    if (!validSelectedIds.length) return;
+    commit({ elements: sendBackward(scene.elements, new Set(validSelectedIds)) });
+  }
+  function sendToBackAction() {
+    if (!validSelectedIds.length) return;
+    commit({ elements: sendToBack(scene.elements, new Set(validSelectedIds)) });
+  }
+
+  // ── copy / paste / duplicate ─────────────────────────────────────────────────
+
+  const copySelected = useCallback(() => {
+    const copies = scene.elements.filter((el) => validSelectedIds.includes(el.id));
+    if (copies.length > 0) setClipboard(copies);
+  }, [scene.elements, validSelectedIds]);
+
+  const pasteClipboard = useCallback(() => {
+    if (clipboard.length === 0) return;
+    const maxZ = topZ(scene.elements);
+    const copies = clipboard.map((el, i) => ({
+      ...el,
+      id: crypto.randomUUID(),
+      x: el.x + 20,
+      y: el.y + 20,
+      z: maxZ + i + 1,
+    }));
+    commit({ elements: [...scene.elements, ...copies] });
+    setSelectedIds(copies.map((c) => c.id));
+  }, [clipboard, scene.elements, commit]);
+
+  function duplicateSelected() {
+    if (!validSelectedIds.length) return;
+    const next = duplicateElements(scene.elements, new Set(validSelectedIds));
+    const newIds = next.slice(scene.elements.length).map((el) => el.id);
+    commit({ elements: next });
+    setSelectedIds(newIds);
+  }
+
+  // ── nudge (arrow keys) ───────────────────────────────────────────────────────
+
+  const nudgeSelected = useCallback(
+    (dx: number, dy: number) => {
+      if (!validSelectedIds.length) return;
+      const idSet = new Set(validSelectedIds);
+      commit({
+        elements: scene.elements.map((el) =>
+          idSet.has(el.id) ? { ...el, x: el.x + dx, y: el.y + dy } : el,
+        ),
+      });
+    },
+    [validSelectedIds, scene.elements, commit],
+  );
+
+  // ── context menu ─────────────────────────────────────────────────────────────
+
+  const handleContextMenu = useCallback(
+    (x: number, y: number, elementId: string | null) => {
+      // If right-clicked on an unselected element, select it first.
+      if (elementId && !selectedIds.includes(elementId)) {
+        setSelectedIds([elementId]);
+      }
+      setContextMenu({ x, y, elementId });
+    },
+    [selectedIds],
+  );
+
+  const closeContextMenu = useCallback(() => setContextMenu(null), []);
+
+  // ── image upload ─────────────────────────────────────────────────────────────
+
   async function handleImageFile(file: File, worldX?: number, worldY?: number) {
-    // Personal canvases (projectId === null) cannot use the canvas-media bucket
-    // with the current Storage RLS, which is keyed by projectId. Skip silently —
-    // the toolbar button is hidden for personal canvases anyway.
     if (!projectId) return;
     setUploadError(null);
     setIsUploading(true);
@@ -455,7 +577,7 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
         dims.height,
       );
       commit({ elements: [...scene.elements, element] });
-      setSelectedId(element.id);
+      setSelectedIds([element.id]);
     } catch (err) {
       const msg =
         err instanceof MediaUploadError
@@ -467,27 +589,19 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
     }
   }
 
-  /** Open the OS file picker (accepts images only). */
   function addImage() {
-    if (!projectId) return; // hidden for personal canvases
+    if (!projectId) return;
     fileInputRef.current?.click();
   }
 
   function handleFileInputChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    // Reset so re-selecting the same file fires the event again.
     e.target.value = '';
     if (file) void handleImageFile(file);
   }
 
-  /**
-   * Handle paste from clipboard — picks the first image item if one exists.
-   * Text items are ignored so normal copy-paste in text boxes still works when
-   * the user isn't inside the Tiptap editor (the outer div captures first).
-   */
   function handlePaste(e: React.ClipboardEvent<HTMLDivElement>) {
     if (!editing || !projectId) return;
-    // If a text box is being edited, let the event fall through to Tiptap.
     if (editingTextId !== null) return;
     const items = Array.from(e.clipboardData.items);
     for (const item of items) {
@@ -502,39 +616,23 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
     }
   }
 
-  // --- audio/video media -----------------------------------------------------
-
-  /**
-   * Upload a recorded/uploaded audio or video file to canvas-media, then place a
-   * MediaElement at (`worldX`, `worldY`) — or the viewport centre when omitted.
-   * Mirrors handleImageFile; video reads its natural aspect ratio first.
-   */
   async function handleMediaFile(file: File, worldX?: number, worldY?: number) {
-    if (!projectId) return; // personal canvases can't use the project-keyed bucket
+    if (!projectId) return;
     const kind = mediaKindForMime(file.type);
     if (kind !== 'audio' && kind !== 'video') {
-      setUploadError('That file type isn’t supported. Add an audio or video file.');
+      setUploadError("That file type isn't supported. Add an audio or video file.");
       return;
     }
     setUploadError(null);
     setIsUploading(true);
     try {
-      const dims =
-        kind === 'video' ? await getVideoDimensions(file) : AUDIO_SIZE;
+      const dims = kind === 'video' ? await getVideoDimensions(file) : AUDIO_SIZE;
       const { path } = await uploadCanvasMedia(projectId, note.id, file);
       const cx = worldX ?? (viewport.width / 2 - camera.x) / camera.scale;
       const cy = worldY ?? (viewport.height / 2 - camera.y) / camera.scale;
-      const element = createMediaFileElement(
-        cx,
-        cy,
-        topZ(scene.elements),
-        kind,
-        path,
-        dims.width,
-        dims.height,
-      );
+      const element = createMediaFileElement(cx, cy, topZ(scene.elements), kind, path, dims.width, dims.height);
       commit({ elements: [...scene.elements, element] });
-      setSelectedId(element.id);
+      setSelectedIds([element.id]);
     } catch (err) {
       const msg =
         err instanceof MediaUploadError
@@ -546,24 +644,16 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
     }
   }
 
-  /** Place an allow-listed embed (no upload) at the viewport centre. */
   function handleAddEmbed(embed: ParsedEmbed) {
     const cx = (viewport.width / 2 - camera.x) / camera.scale;
     const cy = (viewport.height / 2 - camera.y) / camera.scale;
     const element = createMediaEmbedElement(
-      cx,
-      cy,
-      topZ(scene.elements),
-      embed.kind,
-      embed.embedUrl,
-      embed.width,
-      embed.height,
+      cx, cy, topZ(scene.elements), embed.kind, embed.embedUrl, embed.width, embed.height,
     );
     commit({ elements: [...scene.elements, element] });
-    setSelectedId(element.id);
+    setSelectedIds([element.id]);
   }
 
-  /** Called by CanvasStage when the user drops files onto the Konva surface. */
   function handleDropFiles(worldX: number, worldY: number, files: File[]) {
     if (!editing || !projectId) return;
     const file = files[0];
@@ -576,72 +666,57 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
     }
   }
 
-  function zoomBy(factor: number) {
-    setCamera((current) => {
-      const scale = clampScale(current.scale * factor);
-      const cx = viewport.width / 2;
-      const cy = viewport.height / 2;
-      const worldX = (cx - current.x) / current.scale;
-      const worldY = (cy - current.y) / current.scale;
-      return { scale, x: cx - worldX * scale, y: cy - worldY * scale };
-    });
-  }
+  // keyboard shortcuts
+  const actionsRef = useRef({
+    undo, redo, deleteSelected, changeTool,
+    copySelected, pasteClipboard, duplicateSelected,
+    bringToFrontAction, bringForwardAction, sendBackwardAction, sendToBackAction,
+    nudgeSelected,
+    hasSelection: false,
+    hasClipboard: false,
+  });
 
-  function resetZoom() {
-    setCamera({ x: viewport.width / 2, y: viewport.height / 2, scale: 1 });
-  }
-
-  // Keyboard: undo/redo + delete. Bound once; reads the latest actions via a ref
-  // so it never goes stale and never re-subscribes on every scene change.
-  const actionsRef = useRef({ undo, redo, deleteSelected, changeTool, hasSelection: false });
   useEffect(() => {
     actionsRef.current = {
-      undo,
-      redo,
-      deleteSelected,
-      changeTool,
-      hasSelection: Boolean(selectedElement),
+      undo, redo, deleteSelected, changeTool,
+      copySelected, pasteClipboard, duplicateSelected,
+      bringToFrontAction, bringForwardAction, sendBackwardAction, sendToBackAction,
+      nudgeSelected,
+      hasSelection: validSelectedIds.length > 0,
+      hasClipboard: clipboard.length > 0,
     };
   });
+
   useEffect(() => {
     if (!editing) return;
     function onKeyDown(event: KeyboardEvent) {
-      // While a text box is open, ALL canvas shortcuts are off — every keystroke
-      // belongs to the editor (a stray 'e'/'p'/'v' must never switch tools and
-      // close the box, which looked like "typing vanishes").
       if (editingTextId !== null) return;
       const target = event.target as HTMLElement | null;
-      if (
-        target &&
-        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
-      ) {
-        return;
-      }
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
       const meta = event.ctrlKey || event.metaKey;
-      if (meta && event.key.toLowerCase() === 'z') {
-        event.preventDefault();
-        if (event.shiftKey) actionsRef.current.redo();
-        else actionsRef.current.undo();
-      } else if (meta && event.key.toLowerCase() === 'y') {
-        event.preventDefault();
-        actionsRef.current.redo();
-      } else if (meta) {
+      if (meta) {
+        const key = event.key.toLowerCase();
+        if (key === 'z') { event.preventDefault(); event.shiftKey ? actionsRef.current.redo() : actionsRef.current.undo(); return; }
+        if (key === 'y') { event.preventDefault(); actionsRef.current.redo(); return; }
+        if (key === 'c') { event.preventDefault(); actionsRef.current.copySelected(); return; }
+        if (key === 'v') { event.preventDefault(); actionsRef.current.pasteClipboard(); return; }
+        if (key === 'd') { event.preventDefault(); actionsRef.current.duplicateSelected(); return; }
+        if (key === ']') { event.preventDefault(); event.shiftKey ? actionsRef.current.bringToFrontAction() : actionsRef.current.bringForwardAction(); return; }
+        if (key === '[') { event.preventDefault(); event.shiftKey ? actionsRef.current.sendToBackAction() : actionsRef.current.sendBackwardAction(); return; }
         return;
-      } else if (
-        (event.key === 'Delete' || event.key === 'Backspace') &&
-        actionsRef.current.hasSelection
-      ) {
-        event.preventDefault();
-        actionsRef.current.deleteSelected();
-      } else if (event.key === 'v' || event.key === 'V') {
-        actionsRef.current.changeTool('select');
-      } else if (event.key === 'p' || event.key === 'P' || event.key === 'b' || event.key === 'B') {
-        actionsRef.current.changeTool('draw');
-      } else if (event.key === 'e' || event.key === 'E') {
-        actionsRef.current.changeTool('erase');
-      } else if (event.key === 't' || event.key === 'T') {
-        actionsRef.current.changeTool('text');
       }
+      if ((event.key === 'Delete' || event.key === 'Backspace') && actionsRef.current.hasSelection) {
+        event.preventDefault(); actionsRef.current.deleteSelected(); return;
+      }
+      const step = event.shiftKey ? NUDGE_LARGE_STEP : NUDGE_STEP;
+      if (event.key === 'ArrowLeft')  { event.preventDefault(); actionsRef.current.nudgeSelected(-step, 0); return; }
+      if (event.key === 'ArrowRight') { event.preventDefault(); actionsRef.current.nudgeSelected(step, 0); return; }
+      if (event.key === 'ArrowUp')    { event.preventDefault(); actionsRef.current.nudgeSelected(0, -step); return; }
+      if (event.key === 'ArrowDown')  { event.preventDefault(); actionsRef.current.nudgeSelected(0, step); return; }
+      if (event.key === 'v' || event.key === 'V') actionsRef.current.changeTool('select');
+      else if (event.key === 'p' || event.key === 'P' || event.key === 'b' || event.key === 'B') actionsRef.current.changeTool('draw');
+      else if (event.key === 'e' || event.key === 'E') actionsRef.current.changeTool('erase');
+      else if (event.key === 't' || event.key === 'T') actionsRef.current.changeTool('text');
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
@@ -652,18 +727,12 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
     onDeleted();
   }
 
+  const hasSelection = validSelectedIds.length > 0;
+  const selectedLocked = primaryElement?.locked ?? false;
+
   return (
     <div className="flex flex-col gap-3" onPaste={handlePaste}>
-      {/* Hidden file input — triggered by the toolbar's "Add image" button. */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept={IMAGE_ACCEPT}
-        aria-hidden
-        tabIndex={-1}
-        className="sr-only"
-        onChange={handleFileInputChange}
-      />
+      <input ref={fileInputRef} type="file" accept={IMAGE_ACCEPT} aria-hidden tabIndex={-1} className="sr-only" onChange={handleFileInputChange} />
 
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
@@ -672,27 +741,22 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
             maxLength={120}
             readOnly={!canEdit}
             onChange={(event: ChangeEvent<HTMLInputElement>) => setTitle(event.target.value)}
-            placeholder="Canvas title…"
+            placeholder="Canvas title..."
             aria-label="Canvas title"
             className="w-full truncate bg-transparent font-display text-xl font-bold text-fg placeholder:text-fg-subtle focus:outline-none sm:text-2xl"
           />
           {canEdit && titleError && <p className="mt-1 text-xs text-danger">{titleError}</p>}
         </div>
-
         {canEdit && (
           <div className="flex shrink-0 items-center gap-2">
             {isUploading && (
               <span className="inline-flex items-center gap-1.5 text-xs text-fg-subtle">
-                <Spinner size={12} className="text-current" /> Uploading…
+                <Spinner size={12} className="text-current" /> Uploading...
               </span>
             )}
             <SaveIndicator status={status} />
-            <button
-              type="button"
-              aria-label="Delete canvas"
-              onClick={() => setConfirmingDelete((open) => !open)}
-              className="grid h-9 w-9 place-items-center rounded-xl text-fg-subtle transition-colors hover:bg-danger/10 hover:text-danger"
-            >
+            <button type="button" aria-label="Delete canvas" onClick={() => setConfirmingDelete((open) => !open)}
+              className="grid h-9 w-9 place-items-center rounded-xl text-fg-subtle transition-colors hover:bg-danger/10 hover:text-danger">
               <Trash2 size={16} />
             </button>
           </div>
@@ -701,58 +765,29 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
 
       {confirmingDelete && canEdit && (
         <div className="flex items-center justify-between gap-2 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-fg-muted">
-          <span>
-            Delete <span className="font-semibold text-fg">{note.title}</span>? This can&apos;t be
-            undone.
-          </span>
+          <span>Delete <span className="font-semibold text-fg">{note.title}</span>? This cannot be undone.</span>
           <div className="flex shrink-0 items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setConfirmingDelete(false)}
-              className="rounded-lg px-2 py-1 text-xs font-medium text-fg-muted hover:bg-[var(--glass-fill)]"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleDelete}
-              className="rounded-lg bg-danger/20 px-2 py-1 text-xs font-semibold text-danger hover:bg-danger/30"
-            >
-              Delete
-            </button>
+            <button type="button" onClick={() => setConfirmingDelete(false)} className="rounded-lg px-2 py-1 text-xs font-medium text-fg-muted hover:bg-[var(--glass-fill)]">Cancel</button>
+            <button type="button" onClick={handleDelete} className="rounded-lg bg-danger/20 px-2 py-1 text-xs font-semibold text-danger hover:bg-danger/30">Delete</button>
           </div>
         </div>
       )}
 
-      {/* Image upload error — dismissible inline alert. */}
       {uploadError && (
-        <div
-          role="alert"
-          className="flex items-start gap-2 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger"
-        >
+        <div role="alert" className="flex items-start gap-2 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
           <AlertCircle size={15} className="mt-0.5 shrink-0" />
           <span className="min-w-0 flex-1">{uploadError}</span>
-          <button
-            type="button"
-            aria-label="Dismiss error"
-            onClick={() => setUploadError(null)}
-            className="shrink-0 rounded p-0.5 hover:bg-danger/20"
-          >
+          <button type="button" aria-label="Dismiss error" onClick={() => setUploadError(null)} className="shrink-0 rounded p-0.5 hover:bg-danger/20">
             <X size={13} />
           </button>
         </div>
       )}
 
-      {/* Edit / View toggle on every breakpoint — View renders the stage
-          read-only (pan/zoom only). Viewers are always read-only (no toggle). */}
       {canEdit && (
         <SegmentedToggle
           label="Canvas mode"
           value={mode}
-          onChange={(next) => {
-            setMode(next);
-            setEditingTextId(null);
-          }}
+          onChange={(next) => { setMode(next); setEditingTextId(null); }}
           options={[
             { value: 'edit', label: 'Edit', icon: <Pencil size={14} /> },
             { value: 'view', label: 'View', icon: <Eye size={14} /> },
@@ -765,14 +800,15 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
           <CanvasStage
             elements={visibleElements}
             pageType={pageType}
-            selectedId={effectiveSelectedId}
+            selectedIds={validSelectedIds}
             camera={camera}
             tool={effectiveTool}
             canEdit={editing}
             penSettings={pen}
             editingTextId={effectiveEditingId}
-            onSelect={selectElement}
+            onSelect={selectElements}
             onChangeElement={changeElement}
+            onGroupMove={handleGroupMove}
             onCameraChange={setCamera}
             onViewportChange={handleViewportChange}
             onCommitStroke={commitStroke}
@@ -782,8 +818,10 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
             onEditText={editText}
             onEndTextEdit={endTextEdit}
             onDropFiles={editing && projectId !== null ? handleDropFiles : undefined}
+            onContextMenu={handleContextMenu}
           />
         </div>
+
         <div className="pointer-events-none absolute inset-x-0 top-0 flex flex-col items-center gap-2 p-2 sm:p-3">
           <CanvasToolbar
             className="pointer-events-auto"
@@ -803,32 +841,66 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
             onAdd={addText}
             onAddImage={projectId !== null ? addImage : undefined}
             onAddMedia={projectId !== null ? () => setMediaModalOpen(true) : undefined}
-            hasSelection={Boolean(selectedElement)}
-            selectedLocked={selectedElement?.locked ?? false}
+            hasSelection={hasSelection}
+            selectedLocked={selectedLocked}
             onToggleLock={toggleLock}
             onDeleteSelected={deleteSelected}
+            onDuplicate={duplicateSelected}
+            onBringToFront={bringToFrontAction}
+            onBringForward={bringForwardAction}
+            onSendBackward={sendBackwardAction}
+            onSendToBack={sendToBackAction}
+            showLayers={showLayers}
+            onToggleLayers={() => setShowLayers((v) => !v)}
           />
           {editing && tool === 'draw' && (
             <PenToolbar className="pointer-events-auto" settings={pen} onChange={setPen} />
           )}
         </div>
+
+        {editing && showLayers && (
+          <LayersPanel
+            elements={visibleElements}
+            selectedIds={validSelectedIds}
+            onSelect={selectElements}
+            onToggleVisibility={toggleVisibility}
+            onToggleLock={(id) => {
+              const el = scene.elements.find((e) => e.id === id);
+              if (el) commit({ elements: scene.elements.map((e) => e.id === id ? { ...e, locked: !e.locked } : e) });
+            }}
+          />
+        )}
+
+        {contextMenu && (
+          <ContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            elementId={contextMenu.elementId}
+            selectionCount={validSelectedIds.length}
+            hasClipboard={clipboard.length > 0}
+            selectedLocked={selectedLocked}
+            canEdit={editing}
+            onBringToFront={() => { bringToFrontAction(); closeContextMenu(); }}
+            onBringForward={() => { bringForwardAction(); closeContextMenu(); }}
+            onSendBackward={() => { sendBackwardAction(); closeContextMenu(); }}
+            onSendToBack={() => { sendToBackAction(); closeContextMenu(); }}
+            onDuplicate={() => { duplicateSelected(); closeContextMenu(); }}
+            onCopy={() => { copySelected(); closeContextMenu(); }}
+            onPaste={() => { pasteClipboard(); closeContextMenu(); }}
+            onToggleLock={() => { toggleLock(); closeContextMenu(); }}
+            onDeleteSelected={() => { deleteSelected(); closeContextMenu(); }}
+            onClose={closeContextMenu}
+          />
+        )}
       </div>
 
-      {/* Add-media modal (lazy). Recording uploads/places via handleMediaFile;
-          embeds place via handleAddEmbed. Both close the modal first. */}
       {mediaModalOpen && projectId !== null && (
         <Suspense fallback={null}>
           <AddMediaModal
             open={mediaModalOpen}
             onClose={() => setMediaModalOpen(false)}
-            onSubmitFile={(file) => {
-              setMediaModalOpen(false);
-              void handleMediaFile(file);
-            }}
-            onSubmitEmbed={(embed) => {
-              setMediaModalOpen(false);
-              handleAddEmbed(embed);
-            }}
+            onSubmitFile={(file) => { setMediaModalOpen(false); void handleMediaFile(file); }}
+            onSubmitEmbed={(embed) => { setMediaModalOpen(false); handleAddEmbed(embed); }}
           />
         </Suspense>
       )}
@@ -836,29 +908,22 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
   );
 }
 
-/** A subtle, non-shouting indicator of the autosave state. */
 function SaveIndicator({ status }: { status: SaveStatus }) {
-  if (status === 'saving') {
-    return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-fg-subtle">
-        <Spinner size={12} className="text-current" /> Saving…
-      </span>
-    );
-  }
-  if (status === 'unsaved') {
-    return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-fg-subtle">
-        <span className="h-1.5 w-1.5 rounded-full bg-warning" /> Unsaved
-      </span>
-    );
-  }
-  if (status === 'error') {
-    return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-danger">
-        <AlertCircle size={13} /> Couldn&apos;t save
-      </span>
-    );
-  }
+  if (status === 'saving') return (
+    <span className="inline-flex items-center gap-1.5 text-xs text-fg-subtle">
+      <Spinner size={12} className="text-current" /> Saving...
+    </span>
+  );
+  if (status === 'unsaved') return (
+    <span className="inline-flex items-center gap-1.5 text-xs text-fg-subtle">
+      <span className="h-1.5 w-1.5 rounded-full bg-warning" /> Unsaved
+    </span>
+  );
+  if (status === 'error') return (
+    <span className="inline-flex items-center gap-1.5 text-xs text-danger">
+      <AlertCircle size={13} /> Could not save
+    </span>
+  );
   return (
     <span className="inline-flex items-center gap-1.5 text-xs text-fg-subtle">
       <Check size={13} className="text-success" /> Saved

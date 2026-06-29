@@ -29,13 +29,24 @@ interface ElementNodeProps {
   /** Clicking/tapping selects (select tool + editable) — off while drawing. */
   selectable: boolean;
   palette: CanvasPalette;
-  onSelect: (id: string) => void;
+  /**
+   * Called on click/tap. `addToSelection` is true when the user held Shift,
+   * signalling that this element should be toggled in/out of a multi-selection
+   * rather than replacing the current selection.
+   */
+  onSelect: (id: string, addToSelection: boolean) => void;
   onChange: ElementChange;
   /** Double-click/tap to edit (text boxes only); undefined for other types. */
   onRequestEdit?: (id: string) => void;
   /** Report the live transform box mid drag/resize so an HTML overlay can follow
    *  (text boxes only); null on gesture end. */
   onLiveChange?: (box: ElementBox | null) => void;
+  /**
+   * When provided, called instead of `onChange` on drag end. Used by the
+   * canvas stage to batch all selected-element positions into one history commit
+   * during a group drag (avoids one commit per element).
+   */
+  onGroupDragEnd?: (id: string, x: number, y: number) => void;
 }
 
 /** The element's current transform box, reading any in-flight Konva scale. */
@@ -59,11 +70,17 @@ export function ElementNode({
   onChange,
   onRequestEdit,
   onLiveChange,
+  onGroupDragEnd,
 }: ElementNodeProps) {
+  // Hidden elements are completely absent from the Konva tree (no hit region,
+  // no transformer handle, no render cost beyond the React reconciler check).
+  if (element.visible === false) return null;
+
   const select = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
     if (!selectable) return;
     e.cancelBubble = true; // don't let the stage clear the selection
-    onSelect(element.id);
+    const addToSelection = 'shiftKey' in e.evt && (e.evt as MouseEvent).shiftKey;
+    onSelect(element.id, addToSelection);
   };
 
   const requestEdit = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
@@ -81,7 +98,13 @@ export function ElementNode({
   };
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
-    onChange(element.id, { x: e.target.x(), y: e.target.y() });
+    if (onGroupDragEnd) {
+      // Group drag: the canvas stage accumulates all deltas and commits in one
+      // history step. We report our final position and skip onChange.
+      onGroupDragEnd(element.id, e.target.x(), e.target.y());
+    } else {
+      onChange(element.id, { x: e.target.x(), y: e.target.y() });
+    }
     onLiveChange?.(null);
   };
 
@@ -129,7 +152,7 @@ export function ElementNode({
       onTap={select}
       onDblClick={requestEdit}
       onDblTap={requestEdit}
-      onDragMove={handleDragMove}
+      onDragMove={onGroupDragEnd ? undefined : handleDragMove}
       onTransform={handleTransform}
       onDragEnd={handleDragEnd}
       onTransformEnd={handleTransformEnd}
@@ -245,10 +268,10 @@ function ImageVisual({
   const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
-    if (!url) {
-      setHtmlImg(null);
-      return;
-    }
+    // No synchronous setState in the effect body (react-hooks/set-state-in-effect):
+    // htmlImg is only ever set from the async load callbacks below. A committed
+    // image always has a path → url, so the null case is just "nothing to load yet".
+    if (!url) return;
     let cancelled = false;
     const img = new window.Image();
     img.crossOrigin = 'anonymous';

@@ -199,11 +199,9 @@ function RecordedPreview({ kind, file }: { kind: 'audio' | 'video'; file: File }
   useEffect(() => () => URL.revokeObjectURL(url), [url]);
   return kind === 'audio' ? (
     <div className="w-full px-4">
-      {/* eslint-disable-next-line jsx-a11y/media-has-caption -- local recording preview */}
       <audio src={url} controls className="w-full" />
     </div>
   ) : (
-    // eslint-disable-next-line jsx-a11y/media-has-caption -- local recording preview
     <video src={url} controls playsInline className="h-[200px] w-full bg-black object-contain" />
   );
 }

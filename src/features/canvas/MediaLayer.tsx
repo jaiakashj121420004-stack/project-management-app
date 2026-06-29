@@ -106,13 +106,11 @@ function FilePlayer({ element, palette }: { element: MediaElement; palette: Canv
   if (element.kind === 'audio') {
     return (
       <div className="grid h-full w-full place-items-center px-3">
-        {/* eslint-disable-next-line jsx-a11y/media-has-caption -- user-recorded clip, no caption track available */}
         <audio src={url} controls className="w-full" preload="metadata" />
       </div>
     );
   }
   return (
-    // eslint-disable-next-line jsx-a11y/media-has-caption -- user-recorded clip, no caption track available
     <video src={url} controls playsInline preload="metadata" className="h-full w-full bg-black" />
   );
 }

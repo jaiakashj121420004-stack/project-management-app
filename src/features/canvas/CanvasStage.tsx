@@ -11,6 +11,7 @@ import { useCanvasPalette } from './useCanvasPalette';
 import { strokePathData, type StrokeStyle } from './freehand';
 import { penStrokeStyle, type PenSettings } from './drawing';
 import {
+  LONG_PRESS_MS,
   MIN_ELEMENT_SIZE,
   ZOOM_STEP,
   clampScale,
@@ -23,15 +24,18 @@ import type { CanvasElement, ElementPatch } from './elements';
 interface CanvasStageProps {
   elements: CanvasElement[];
   pageType: PageType;
-  selectedId: string | null;
+  /** Currently selected element ids (multi-select). */
+  selectedIds: string[];
   camera: Camera;
   tool: CanvasTool;
   /** Editors transform/draw; viewers can still pan/zoom/select read-only. */
   canEdit: boolean;
   /** Live pen settings (drives the draw preview + the committed stroke style). */
   penSettings: PenSettings;
-  onSelect: (id: string | null) => void;
+  onSelect: (ids: string[]) => void;
   onChangeElement: (id: string, patch: ElementPatch) => void;
+  /** Batch-commit positions for all elements after a group drag. */
+  onGroupMove: (moves: Array<{ id: string; x: number; y: number }>) => void;
   onCameraChange: (camera: Camera) => void;
   onViewportChange: (size: { width: number; height: number }) => void;
   /** A finished draw gesture: raw WORLD-space samples + the style it used. */
@@ -49,11 +53,15 @@ interface CanvasStageProps {
   /** Leave text-edit mode (e.g. Escape inside the editor). */
   onEndTextEdit: () => void;
   /**
-   * One or more image files were dropped onto the canvas. The world coordinates
-   * are computed from the drop position using the current camera so the caller
-   * can place the element exactly where the user dropped it.
+   * One or more image/media files were dropped onto the canvas. World
+   * coordinates are computed from the drop position using the current camera.
    */
   onDropFiles?: (worldX: number, worldY: number, files: File[]) => void;
+  /**
+   * Right-click or long-press at screen position (x, y) relative to the
+   * canvas container. `elementId` is the hit element, or null for background.
+   */
+  onContextMenu: (x: number, y: number, elementId: string | null) => void;
 }
 
 /** How long after the last pen event we keep rejecting touch (palm rejection). */
@@ -75,25 +83,30 @@ function pressureOf(evt: PointerEvent, isPen: boolean): number {
  * camera; the background + elements live in world space inside it.
  *
  * Tool modes:
- *   - select — drag empty space pans (stage draggable); click/tap selects; the
- *     <Transformer> moves/resizes/rotates the selection.
- *   - draw   — pointer events build a pressure-sensitive stroke on a dedicated
- *     preview layer; on pointerup the world samples are committed to the scene.
- *   - erase  — pointer events hit-test strokes and remove them (batched per
- *     gesture so one undo restores them all).
- * Two-finger pan/zoom (pinch) and wheel-zoom work in every mode. Palm rejection:
- * once a pen is in use, touch is ignored so a resting palm can't draw or pan.
+ *   - select — drag empty space pans (stage draggable); click/tap selects;
+ *     the <Transformer> moves/resizes/rotates the selection (supports multi).
+ *     Shift+click adds/removes from the selection; Shift+drag on empty canvas
+ *     draws a marquee and selects all intersecting elements.
+ *   - draw   — pressure-sensitive strokes.
+ *   - erase  — eraser removes strokes.
+ *   - text   — click drops a text box.
+ *
+ * Two-finger pan/zoom and wheel-zoom work in every mode.
+ * Palm rejection: once a pen is in use, touch is ignored for 800 ms.
+ * Right-click anywhere fires onContextMenu.
+ * Long-press (600 ms) on touch fires onContextMenu.
  */
 export function CanvasStage({
   elements,
   pageType,
-  selectedId,
+  selectedIds,
   camera,
   tool,
   canEdit,
   penSettings,
   onSelect,
   onChangeElement,
+  onGroupMove,
   onCameraChange,
   onViewportChange,
   onCommitStroke,
@@ -104,6 +117,7 @@ export function CanvasStage({
   onEditText,
   onEndTextEdit,
   onDropFiles,
+  onContextMenu,
 }: CanvasStageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
@@ -112,64 +126,81 @@ export function CanvasStage({
   const size = useElementSize(containerRef);
   const palette = useCanvasPalette(containerRef);
 
-  // Live transform of the text box being dragged/resized, so the HTML overlay
-  // tracks the Konva node in real time (element state only updates on gesture
-  // end). Null when no text box is mid-gesture.
+  // Live transform of the text/media box being dragged/resized so HTML overlays track it.
   const [liveBox, setLiveBox] = useState<ElementBox | null>(null);
 
   // Pinch bookkeeping (two-finger zoom/pan).
   const lastDist = useRef(0);
   const lastCenter = useRef<{ x: number; y: number } | null>(null);
 
-  // The in-progress freehand stroke (world samples) and eraser gesture. Kept in
-  // refs so the hot pointer-move path never triggers a React render — the live
-  // stroke is drawn imperatively onto the preview layer instead.
+  // Freehand stroke (world samples) and eraser gesture — refs to avoid
+  // React renders on every pointer-move.
   const drawing = useRef<{ pointerId: number; points: number[]; style: StrokeStyle } | null>(null);
   const erasing = useRef(false);
 
-  // Palm rejection: remember that a pen was recently used.
+  // Palm rejection.
   const penActive = useRef(false);
   const penTimer = useRef<number | null>(null);
+
+  // Group drag: when multiple elements are selected and the user drags one of
+  // them, we move all selected elements by the same delta and batch-commit on end.
+  const groupDragOrigins = useRef<Map<string, { x: number; y: number }> | null>(null);
+  const groupDragPendingMoves = useRef<Map<string, { x: number; y: number }>>(new Map());
+
+  // Marquee selection (shift+drag on empty canvas).
+  const [marquee, setMarquee] = useState<{
+    x1: number; y1: number; x2: number; y2: number;
+  } | null>(null);
+  const marqueeStartScreen = useRef<{ x: number; y: number } | null>(null);
+  /** True while a marquee drag is in progress — suppresses the stage pan. */
+  const preventPan = useRef(false);
+
+  // Long-press context menu on touch.
+  const longPressTimer = useRef<number | null>(null);
+  const longPressPos = useRef<{ clientX: number; clientY: number } | null>(null);
+  const longPressElementId = useRef<string | null>(null);
 
   const markPen = () => {
     penActive.current = true;
     if (penTimer.current !== null) window.clearTimeout(penTimer.current);
-    penTimer.current = window.setTimeout(() => {
-      penActive.current = false;
-    }, PEN_ACTIVE_MS);
+    penTimer.current = window.setTimeout(() => { penActive.current = false; }, PEN_ACTIVE_MS);
   };
 
-  useEffect(
-    () => () => {
-      if (penTimer.current !== null) window.clearTimeout(penTimer.current);
-    },
-    [],
-  );
+  useEffect(() => () => {
+    if (penTimer.current !== null) window.clearTimeout(penTimer.current);
+    if (longPressTimer.current !== null) window.clearTimeout(longPressTimer.current);
+  }, []);
 
-  // Report the measured viewport up so the editor can place new elements at the
-  // visible centre and drive zoom-button math.
   useEffect(() => {
     if (size.width > 0 && size.height > 0) onViewportChange(size);
   }, [size, onViewportChange]);
 
-  // Attach/detach the transformer to the selected, unlocked, editable element —
-  // only in select mode (no resize handles while drawing/erasing).
+  // Attach the Transformer to ALL selected, unlocked, editable elements.
+  // In select mode only; drawing/erasing hides handles to keep things clean.
   useEffect(() => {
     const transformer = transformerRef.current;
     const stage = stageRef.current;
     if (!transformer || !stage) return;
-    const selected = selectedId ? elements.find((el) => el.id === selectedId) : undefined;
-    // No resize handles while a text box is being edited (the editor owns it).
-    const attach =
-      selected && !selected.locked && canEdit && tool === 'select' && editingTextId === null;
-    const node = attach ? stage.findOne(`#${selectedId}`) : null;
-    transformer.nodes(node ? [node] : []);
+
+    if (!canEdit || tool !== 'select' || editingTextId !== null) {
+      transformer.nodes([]);
+      transformer.getLayer()?.batchDraw();
+      return;
+    }
+
+    const nodes: Konva.Node[] = [];
+    for (const id of selectedIds) {
+      const el = elements.find((e) => e.id === id);
+      if (!el || el.locked || el.visible === false) continue;
+      const node = stage.findOne(`#${id}`);
+      if (node) nodes.push(node);
+    }
+    transformer.nodes(nodes);
     transformer.getLayer()?.batchDraw();
-  }, [selectedId, elements, canEdit, tool, editingTextId]);
+  }, [selectedIds, elements, canEdit, tool, editingTextId]);
 
-  // --- coordinate helpers -----------------------------------------------------
+  // ── coordinate helpers ──────────────────────────────────────────────────────
 
-  /** Convert client (screen) coordinates to world space via the camera. */
   function toWorld(clientX: number, clientY: number): { x: number; y: number } | null {
     const stage = stageRef.current;
     if (!stage) return null;
@@ -180,11 +211,14 @@ export function CanvasStage({
     };
   }
 
-  // Active draw/erase gestures listen on WINDOW for move/up/cancel rather than
-  // relying on Konva's stage pointer events. Konva can miss `pointerup` on some
-  // touchpads/styluses (which left strokes uncommitted — they'd vanish on the
-  // next action). Window listeners always fire, so a gesture always ends and
-  // commits. We keep a single teardown so a new gesture can't leak listeners.
+  /** Convert a client coordinate to a position relative to the canvas container. */
+  function toContainer(clientX: number, clientY: number): { x: number; y: number } {
+    const rect = containerRef.current?.getBoundingClientRect() ?? { left: 0, top: 0 };
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  }
+
+  // ── gesture listener management ─────────────────────────────────────────────
+
   const gestureCleanup = useRef<(() => void) | null>(null);
 
   function endGestureListeners() {
@@ -211,10 +245,9 @@ export function CanvasStage({
     };
   }
 
-  // Clean up any dangling gesture listeners on unmount.
   useEffect(() => () => endGestureListeners(), []);
 
-  // --- drawing ---------------------------------------------------------------
+  // ── drawing ─────────────────────────────────────────────────────────────────
 
   function paintPreview() {
     const node = previewRef.current;
@@ -236,11 +269,7 @@ export function CanvasStage({
     const start = toWorld(e.evt.clientX, e.evt.clientY);
     if (!start) return;
     const style = penStrokeStyle(penSettings, !isPen);
-    drawing.current = {
-      pointerId: e.evt.pointerId,
-      points: [start.x, start.y, pressureOf(e.evt, isPen)],
-      style,
-    };
+    drawing.current = { pointerId: e.evt.pointerId, points: [start.x, start.y, pressureOf(e.evt, isPen)], style };
     const node = previewRef.current;
     if (node) {
       node.fill(style.color);
@@ -248,8 +277,6 @@ export function CanvasStage({
       node.globalCompositeOperation(style.blend === 'multiply' ? 'multiply' : 'source-over');
     }
     paintPreview();
-    // Track the rest of the gesture on window so a missed Konva pointerup can't
-    // strand the stroke as an uncommitted preview.
     startGestureListeners(extendStroke, endStroke, cancelStroke);
   }
 
@@ -259,10 +286,7 @@ export function CanvasStage({
     if (evt.pointerType === 'pen') markPen();
     if (evt.cancelable) evt.preventDefault();
     const isPen = evt.pointerType === 'pen';
-    // Coalesced events recover the full-rate samples a high-frequency stylus
-    // produces between animation frames — markedly smoother on a tablet.
-    const coalesced =
-      typeof evt.getCoalescedEvents === 'function' ? evt.getCoalescedEvents() : [];
+    const coalesced = typeof evt.getCoalescedEvents === 'function' ? evt.getCoalescedEvents() : [];
     const events = coalesced.length > 0 ? coalesced : [evt];
     for (const ev of events) {
       const p = toWorld(ev.clientX, ev.clientY);
@@ -288,17 +312,14 @@ export function CanvasStage({
     clearPreview();
   }
 
-  // --- erasing ---------------------------------------------------------------
+  // ── erasing ─────────────────────────────────────────────────────────────────
 
-  /** Hit-test the element under a screen point (relative to the stage container)
-   *  and queue it for erasing. Tries a few offsets so thin strokes are easy to
-   *  hit even when the pointer isn't dead-centre on them. */
   function eraseAtScreen(screenX: number, screenY: number) {
     const stage = stageRef.current;
     if (!stage) return;
     const rect = stage.container().getBoundingClientRect();
     const base = { x: screenX - rect.left, y: screenY - rect.top };
-    const r = 6; // forgiving hit radius (screen px)
+    const r = 6;
     const probes = [
       base,
       { x: base.x - r, y: base.y },
@@ -309,10 +330,7 @@ export function CanvasStage({
     for (const pos of probes) {
       const shape = stage.getIntersection(pos);
       const group = shape?.findAncestor('.canvas-element', true) as Konva.Node | undefined;
-      if (group) {
-        onEraseStroke(group.id());
-        return;
-      }
+      if (group) { onEraseStroke(group.id()); return; }
     }
   }
 
@@ -329,16 +347,91 @@ export function CanvasStage({
     onEraseEnd();
   }
 
-  // --- pointer routing -------------------------------------------------------
-  // Only the gesture START is read from Konva; move/up/cancel are tracked on
-  // window (see startGestureListeners) so a gesture can never be stranded.
+  // ── marquee selection ────────────────────────────────────────────────────────
+  // Shift+drag on the stage background draws a selection rect; on release, all
+  // elements whose screen-projected bounding box intersects the rect are selected.
+
+  function startMarquee(clientX: number, clientY: number) {
+    preventPan.current = true;
+    marqueeStartScreen.current = { x: clientX, y: clientY };
+    const cp = toContainer(clientX, clientY);
+    setMarquee({ x1: cp.x, y1: cp.y, x2: cp.x, y2: cp.y });
+    startGestureListeners(
+      (evt) => {
+        const start = marqueeStartScreen.current;
+        if (!start) return;
+        const cp2 = toContainer(evt.clientX, evt.clientY);
+        const startCp = toContainer(start.x, start.y);
+        setMarquee({ x1: startCp.x, y1: startCp.y, x2: cp2.x, y2: cp2.y });
+      },
+      (evt) => {
+        const start = marqueeStartScreen.current;
+        preventPan.current = false;
+        marqueeStartScreen.current = null;
+        setMarquee(null);
+        endGestureListeners();
+        if (!start) return;
+        const c1 = toContainer(start.x, start.y);
+        const c2 = toContainer(evt.clientX, evt.clientY);
+        const minX = Math.min(c1.x, c2.x);
+        const minY = Math.min(c1.y, c2.y);
+        const maxX = Math.max(c1.x, c2.x);
+        const maxY = Math.max(c1.y, c2.y);
+        if (maxX - minX < 4 && maxY - minY < 4) return; // too small — no-op
+        // Project each element bounding box to container coords and check intersection.
+        const hit: string[] = [];
+        for (const el of elements) {
+          if (el.visible === false) continue;
+          const sl = el.x * camera.scale + camera.x;
+          const st = el.y * camera.scale + camera.y;
+          const sr = (el.x + el.width) * camera.scale + camera.x;
+          const sb = (el.y + el.height) * camera.scale + camera.y;
+          if (sl < maxX && sr > minX && st < maxY && sb > minY) {
+            hit.push(el.id);
+          }
+        }
+        if (hit.length > 0) onSelect(hit);
+      },
+      () => {
+        preventPan.current = false;
+        marqueeStartScreen.current = null;
+        setMarquee(null);
+        endGestureListeners();
+      },
+    );
+  }
+
+  // ── long-press (touch context menu) ─────────────────────────────────────────
+
+  function cancelLongPress() {
+    if (longPressTimer.current !== null) {
+      window.clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    longPressPos.current = null;
+    longPressElementId.current = null;
+  }
+
+  function startLongPress(clientX: number, clientY: number, elementId: string | null) {
+    cancelLongPress();
+    longPressPos.current = { clientX, clientY };
+    longPressElementId.current = elementId;
+    longPressTimer.current = window.setTimeout(() => {
+      longPressTimer.current = null;
+      const pos = longPressPos.current;
+      if (!pos) return;
+      const cp = toContainer(pos.clientX, pos.clientY);
+      onContextMenu(cp.x, cp.y, longPressElementId.current);
+    }, LONG_PRESS_MS);
+  }
+
+  // ── pointer routing ──────────────────────────────────────────────────────────
 
   function handlePointerDown(e: Konva.KonvaEventObject<PointerEvent>) {
     if (!canEdit) return;
     const type = e.evt.pointerType;
     if (type === 'pen') markPen();
 
-    // Text tool: a single click/tap drops a new text box at that world point.
     if (tool === 'text') {
       const p = toWorld(e.evt.clientX, e.evt.clientY);
       if (p) onPlaceText(p.x, p.y);
@@ -346,9 +439,7 @@ export function CanvasStage({
     }
 
     if (tool !== 'draw' && tool !== 'erase') return;
-    // Palm rejection: ignore touch entirely while a pen is in use.
     if (type === 'touch' && penActive.current) return;
-    // A second finger means a pinch — hand off to the pan/zoom path.
     if (type === 'touch' && !e.evt.isPrimary) {
       cancelStroke();
       endErase();
@@ -365,7 +456,7 @@ export function CanvasStage({
     }
   }
 
-  // --- camera (wheel + pinch) + selection ------------------------------------
+  // ── camera (wheel + pinch) + selection ──────────────────────────────────────
 
   function zoomToPoint(pointer: { x: number; y: number }, nextScale: number) {
     const scale = clampScale(nextScale);
@@ -383,32 +474,53 @@ export function CanvasStage({
     zoomToPoint(pointer, zoomingIn ? camera.scale * ZOOM_STEP : camera.scale / ZOOM_STEP);
   }
 
-  // Pan: only react when the STAGE itself is the drag target (an element drag has
-  // the element as target). We read the live node so the camera never goes stale.
   function syncStageCamera(e: Konva.KonvaEventObject<DragEvent>) {
     const stage = stageRef.current;
     if (!stage || e.target !== stage) return;
+    if (preventPan.current) {
+      stage.stopDrag();
+      return;
+    }
     onCameraChange({ x: stage.x(), y: stage.y(), scale: stage.scaleX() });
   }
 
   function handleMouseDown(e: Konva.KonvaEventObject<MouseEvent>) {
-    if (tool === 'select' && e.target === stageRef.current) onSelect(null);
+    if (tool !== 'select') return;
+    if (e.target !== stageRef.current) return;
+    if (e.evt.shiftKey) {
+      // Shift+drag on empty canvas = marquee selection.
+      // Stop the stage pan that Konva starts on mousedown before we intercept.
+      stageRef.current?.stopDrag();
+      startMarquee(e.evt.clientX, e.evt.clientY);
+    } else {
+      onSelect([]);
+    }
   }
 
   function handleTouchStart(e: Konva.KonvaEventObject<TouchEvent>) {
     if (e.evt.touches.length >= 2) {
-      // A pinch is starting — abandon any in-progress draw/erase gesture.
       cancelStroke();
       endErase();
+      cancelLongPress();
       stageRef.current?.stopDrag();
       lastDist.current = 0;
       lastCenter.current = null;
-    } else if (tool === 'select' && e.target === stageRef.current) {
-      onSelect(null);
+    } else if (tool === 'select') {
+      if (e.target === stageRef.current) {
+        onSelect([]);
+      } else {
+        // Hit on an element — start long-press timer.
+        const shape = e.target as Konva.Node;
+        const group = shape.findAncestor?.('.canvas-element', true) as Konva.Node | undefined;
+        const id = group?.id() ?? null;
+        startLongPress(e.evt.touches[0]!.clientX, e.evt.touches[0]!.clientY, id);
+      }
     }
   }
 
   function handleTouchMove(e: Konva.KonvaEventObject<TouchEvent>) {
+    cancelLongPress();
+
     const touches = e.evt.touches;
     if (touches.length < 2) return;
     e.evt.preventDefault();
@@ -444,38 +556,111 @@ export function CanvasStage({
   }
 
   function handleTouchEnd(e: Konva.KonvaEventObject<TouchEvent>) {
+    cancelLongPress();
     if (e.evt.touches.length < 2) {
       lastDist.current = 0;
       lastCenter.current = null;
     }
   }
 
-  // Keep the aspect ratio when transforming an image or video element (corner
-  // handles maintain it by default; Shift allows free resize — standard editor
-  // UX). Audio + all other types remain freely resizable.
-  const selectedElement = selectedId ? elements.find((el) => el.id === selectedId) : null;
+  // right-click context menu
+  function handleContextMenu(e: Konva.KonvaEventObject<MouseEvent>) {
+    e.evt.preventDefault();
+    const stage = stageRef.current;
+    if (!stage) return;
+    const rect = stage.container().getBoundingClientRect();
+    const pos = { x: e.evt.clientX - rect.left, y: e.evt.clientY - rect.top };
+    const shape = stage.getIntersection(pos);
+    const group = shape?.findAncestor('.canvas-element', true) as Konva.Node | undefined;
+    const id = group?.id() ?? null;
+    const cp = toContainer(e.evt.clientX, e.evt.clientY);
+    onContextMenu(cp.x, cp.y, id);
+  }
+
+  function handleElementSelect(id: string, addToSelection: boolean) {
+    if (addToSelection) {
+      const next = selectedIds.includes(id)
+        ? selectedIds.filter((sid) => sid !== id)
+        : [...selectedIds, id];
+      onSelect(next);
+    } else {
+      onSelect([id]);
+    }
+  }
+
+  // group drag
+  function handleGroupDragEnd(id: string, x: number, y: number) {
+    groupDragPendingMoves.current.set(id, { x, y });
+    window.setTimeout(() => {
+      const moves = groupDragPendingMoves.current;
+      if (moves.size === 0) return;
+      groupDragPendingMoves.current = new Map();
+      groupDragOrigins.current = null;
+      onGroupMove(Array.from(moves.entries()).map(([eid, pos]) => ({ id: eid, ...pos })));
+    }, 0);
+  }
+
+  function handleStageDragStart(e: Konva.KonvaEventObject<DragEvent>) {
+    if (e.target === stageRef.current) return;
+    if (selectedIds.length <= 1) return;
+    const stage = stageRef.current;
+    if (!stage) return;
+    const origins = new Map<string, { x: number; y: number }>();
+    for (const sid of selectedIds) {
+      const node = stage.findOne(`#${sid}`);
+      if (node) origins.set(sid, { x: node.x(), y: node.y() });
+    }
+    groupDragOrigins.current = origins;
+    groupDragPendingMoves.current = new Map();
+  }
+
+  function handleStageDragMove(e: Konva.KonvaEventObject<DragEvent>) {
+    if (e.target === stageRef.current) {
+      syncStageCamera(e);
+      return;
+    }
+    const origins = groupDragOrigins.current;
+    if (!origins || selectedIds.length <= 1) return;
+    const draggedId = (e.target as Konva.Node).id?.() ?? '';
+    if (!selectedIds.includes(draggedId)) return;
+    const origin = origins.get(draggedId);
+    const node = e.target as Konva.Node;
+    if (!origin) return;
+    const dx = node.x() - origin.x;
+    const dy = node.y() - origin.y;
+    const stage = stageRef.current;
+    if (!stage) return;
+    for (const [sid, spos] of origins) {
+      if (sid === draggedId) continue;
+      const snode = stage.findOne(`#${sid}`);
+      if (snode) {
+        snode.x(spos.x + dx);
+        snode.y(spos.y + dy);
+      }
+    }
+  }
+
+  // derived state
+  const primaryId = selectedIds[0] ?? null;
+  const primaryElement = primaryId ? elements.find((el) => el.id === primaryId) : null;
+
   const keepRatio =
-    selectedElement?.type === 'image' ||
-    (selectedElement?.type === 'media' && selectedElement.kind === 'video');
-  // Media players render in an HTML overlay ABOVE the Konva layer, so the
-  // Transformer's resize/rotate handles would be hidden under the (interactive)
-  // selected player. Offset them outward with padding so they stay grabbable.
-  const transformerPadding = selectedElement?.type === 'media' ? 6 : 0;
+    primaryElement?.type === 'image' ||
+    (primaryElement?.type === 'media' && primaryElement.kind === 'video');
+
+  const transformerPadding = selectedIds.some(
+    (id) => elements.find((el) => el.id === id)?.type === 'media',
+  ) ? 6 : 0;
 
   const cursor =
-    tool === 'draw'
-      ? 'crosshair'
-      : tool === 'erase'
-        ? 'cell'
-        : tool === 'text'
-          ? 'text'
-          : 'default';
+    tool === 'draw' ? 'crosshair'
+    : tool === 'erase' ? 'cell'
+    : tool === 'text' ? 'text'
+    : 'default';
 
-  // ── HTML drag-drop (external files, e.g. from the file manager) ────────────
-  // These are native DOM events, not Konva's own element-drag events.
+  const isGroupDrag = selectedIds.length > 1;
 
   function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
-    // Allow the drop only when we have a file handler and there are image files.
     if (!onDropFiles) return;
     if (Array.from(e.dataTransfer.types).includes('Files')) {
       e.preventDefault();
@@ -487,10 +672,7 @@ export function CanvasStage({
     e.preventDefault();
     if (!onDropFiles || !containerRef.current) return;
     const files = Array.from(e.dataTransfer.files).filter(
-      (f) =>
-        f.type.startsWith('image/') ||
-        f.type.startsWith('audio/') ||
-        f.type.startsWith('video/'),
+      (f) => f.type.startsWith('image/') || f.type.startsWith('audio/') || f.type.startsWith('video/'),
     );
     if (files.length === 0) return;
     const rect = containerRef.current.getBoundingClientRect();
@@ -498,6 +680,15 @@ export function CanvasStage({
     const worldY = (e.clientY - rect.top - camera.y) / camera.scale;
     onDropFiles(worldX, worldY, files);
   }
+
+  const marqueeStyle: React.CSSProperties | null = marquee
+    ? {
+        left: Math.min(marquee.x1, marquee.x2),
+        top: Math.min(marquee.y1, marquee.y2),
+        width: Math.abs(marquee.x2 - marquee.x1),
+        height: Math.abs(marquee.y2 - marquee.y1),
+      }
+    : null;
 
   return (
     <div
@@ -523,8 +714,10 @@ export function CanvasStage({
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onPointerDown={handlePointerDown}
-          onDragMove={syncStageCamera}
+          onDragStart={handleStageDragStart}
+          onDragMove={handleStageDragMove}
           onDragEnd={syncStageCamera}
+          onContextMenu={handleContextMenu}
         >
           <Layer listening={false}>
             <PageBackground
@@ -545,7 +738,7 @@ export function CanvasStage({
                 }
                 selectable={canEdit && tool === 'select'}
                 palette={palette}
-                onSelect={onSelect}
+                onSelect={handleElementSelect}
                 onChange={onChangeElement}
                 onRequestEdit={
                   element.type === 'text' && canEdit && tool === 'select' && !element.locked
@@ -554,6 +747,9 @@ export function CanvasStage({
                 }
                 onLiveChange={
                   element.type === 'text' || element.type === 'media' ? setLiveBox : undefined
+                }
+                onGroupDragEnd={
+                  isGroupDrag && selectedIds.includes(element.id) ? handleGroupDragEnd : undefined
                 }
               />
             ))}
@@ -576,15 +772,20 @@ export function CanvasStage({
               />
             )}
           </Layer>
-          {/* The in-progress stroke draws here imperatively (no React render per
-              pointer-move). It's listening:false so it never blocks hit-testing. */}
           <Layer listening={false}>
             <Path ref={previewRef} perfectDrawEnabled={false} shadowForStrokeEnabled={false} />
           </Layer>
         </Stage>
       )}
-      {/* Rich text lives in an HTML overlay above the Konva canvas — Konva can't
-          render formatted text. It's click-through except the box being edited. */}
+
+      {marqueeStyle && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute rounded border border-[var(--accent-from)] bg-[rgba(var(--accent-from-rgb),0.08)]"
+          style={marqueeStyle}
+        />
+      )}
+
       {size.width > 0 && size.height > 0 && (
         <TextLayer
           elements={elements}
@@ -597,15 +798,13 @@ export function CanvasStage({
           onExitEdit={onEndTextEdit}
         />
       )}
-      {/* Audio/video players + allow-listed embeds live in their own HTML overlay
-          (Konva can't host them). Interactive only when selected (edit mode) or
-          always in read-only/View mode, so Konva keeps select/drag/resize. */}
+
       {size.width > 0 && size.height > 0 && (
         <MediaLayer
           elements={elements}
           camera={camera}
           palette={palette}
-          selectedId={selectedId}
+          selectedId={primaryId}
           editing={canEdit}
           liveBox={liveBox}
         />

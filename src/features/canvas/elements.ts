@@ -15,7 +15,7 @@
  */
 import { z } from 'zod';
 
-/** Fields every element carries: a transform box + stacking + lock state. */
+/** Fields every element carries: a transform box + stacking + lock + visibility. */
 export interface CanvasElementBase {
   id: string;
   x: number;
@@ -26,8 +26,10 @@ export interface CanvasElementBase {
   rotation: number;
   /** Stacking order; higher renders on top. */
   z: number;
-  /** Locked elements can't be moved/resized/selected by normal drag (P3.6). */
+  /** Locked elements can't be moved/resized/selected by normal drag. */
   locked: boolean;
+  /** Hidden elements aren't rendered but stay in the scene. Default true. */
+  visible: boolean;
 }
 
 /** Compositing for a stroke: 'multiply' gives the highlighter its see-through,
@@ -124,6 +126,9 @@ const baseSchema = {
   rotation: z.number().finite(),
   z: z.number().finite(),
   locked: z.boolean(),
+  // Default true for backward compat — existing persisted elements without this
+  // field parse as visible.
+  visible: z.boolean().default(true),
 };
 
 const strokeSchema = z.object({
@@ -223,6 +228,7 @@ export function createImageElement(
     rotation: 0,
     z,
     locked: false,
+    visible: true,
     path,
     alt: '',
   };
@@ -252,6 +258,7 @@ export function createMediaFileElement(
     rotation: 0,
     z,
     locked: false,
+    visible: true,
     kind,
     source: 'file',
     path,
@@ -283,11 +290,106 @@ export function createMediaEmbedElement(
     rotation: 0,
     z,
     locked: false,
+    visible: true,
     kind,
     source: 'embed',
     path: null,
     embedUrl,
   };
+}
+
+// ── Z-order helpers ──────────────────────────────────────────────────────────
+// All helpers return a NEW elements array (immutable). After reordering, z
+// values are re-numbered 1..N so they stay contiguous with no gaps or floats.
+
+/** Re-number elements' z values 1..N to keep them contiguous after reordering. */
+function reindexZ(elements: CanvasElement[]): CanvasElement[] {
+  return elements.map((el, i) => ({ ...el, z: i + 1 }));
+}
+
+/**
+ * Move the identified elements to the top of the stack (rendered last = on top).
+ * All other elements stay in their relative order below.
+ */
+export function bringToFront(
+  elements: CanvasElement[],
+  ids: ReadonlySet<string>,
+): CanvasElement[] {
+  const sorted = [...elements].sort((a, b) => a.z - b.z);
+  return reindexZ([...sorted.filter((el) => !ids.has(el.id)), ...sorted.filter((el) => ids.has(el.id))]);
+}
+
+/**
+ * Move the identified elements to the bottom of the stack (rendered first =
+ * behind everything else).
+ */
+export function sendToBack(
+  elements: CanvasElement[],
+  ids: ReadonlySet<string>,
+): CanvasElement[] {
+  const sorted = [...elements].sort((a, b) => a.z - b.z);
+  return reindexZ([...sorted.filter((el) => ids.has(el.id)), ...sorted.filter((el) => !ids.has(el.id))]);
+}
+
+/**
+ * Move each identified element one step higher in the stack (swap with the
+ * immediately overlapping non-selected element). Processes from top to bottom
+ * so a contiguous block of selected elements moves together.
+ */
+export function bringForward(
+  elements: CanvasElement[],
+  ids: ReadonlySet<string>,
+): CanvasElement[] {
+  const sorted = [...elements].sort((a, b) => a.z - b.z);
+  // Walk from top–1 downward; swap selected with the unselected element above.
+  for (let i = sorted.length - 2; i >= 0; i--) {
+    if (ids.has(sorted[i]!.id) && !ids.has(sorted[i + 1]!.id)) {
+      [sorted[i], sorted[i + 1]] = [sorted[i + 1]!, sorted[i]!];
+    }
+  }
+  return reindexZ(sorted);
+}
+
+/**
+ * Move each identified element one step lower in the stack (swap with the
+ * immediately underlying non-selected element). Processes from bottom to top.
+ */
+export function sendBackward(
+  elements: CanvasElement[],
+  ids: ReadonlySet<string>,
+): CanvasElement[] {
+  const sorted = [...elements].sort((a, b) => a.z - b.z);
+  // Walk from 1 upward; swap selected with the unselected element below.
+  for (let i = 1; i < sorted.length; i++) {
+    if (ids.has(sorted[i]!.id) && !ids.has(sorted[i - 1]!.id)) {
+      [sorted[i], sorted[i - 1]] = [sorted[i - 1]!, sorted[i]!];
+    }
+  }
+  return reindexZ(sorted);
+}
+
+/**
+ * Duplicate the identified elements: each copy gets a new id, is offset by
+ * `offset` world pixels (both axes), and is placed on top of everything else.
+ * Returns the full elements array including the new copies.
+ */
+export function duplicateElements(
+  elements: CanvasElement[],
+  ids: ReadonlySet<string>,
+  offset = 20,
+): CanvasElement[] {
+  const maxZ = topZ(elements);
+  const copies = elements
+    .filter((el) => ids.has(el.id))
+    .sort((a, b) => a.z - b.z)
+    .map((el, i) => ({
+      ...el,
+      id: crypto.randomUUID(),
+      x: el.x + offset,
+      y: el.y + offset,
+      z: maxZ + i + 1,
+    }));
+  return [...elements, ...copies];
 }
 
 /**
@@ -327,6 +429,7 @@ export function createTextBoxAt(
     rotation: 0,
     z,
     locked: false,
+    visible: true,
     body: null,
     text: '',
   };
