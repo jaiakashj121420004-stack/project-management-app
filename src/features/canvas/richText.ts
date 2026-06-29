@@ -10,18 +10,72 @@
 import { generateHTML, type JSONContent } from '@tiptap/core';
 import { StarterKit } from '@tiptap/starter-kit';
 import { Highlight } from '@tiptap/extension-highlight';
+import { Color, TextStyle } from '@tiptap/extension-text-style';
+import { Link } from '@tiptap/extension-link';
+
+/**
+ * Allow only safe link targets, mirroring the notes markdown allow-list. Returns
+ * the trimmed URL for http/https/mailto, else null. A `javascript:`, `data:` or
+ * any other scheme is rejected — this is the single source of truth for link
+ * safety, used both by the toolbar (before setting a link) and by the schema
+ * below (on parse + render), so an XSS href can never reach the DOM.
+ */
+export function safeLinkHref(raw: string): string | null {
+  const url = raw.trim();
+  return /^(https?:\/\/|mailto:)/i.test(url) ? url : null;
+}
+
+/**
+ * Link, hardened. The body is untrusted jsonb from the DB and the static
+ * renderer feeds generateHTML output straight into dangerouslySetInnerHTML, so
+ * the href is sanitised on BOTH parse and render: a stored `javascript:`/`data:`
+ * URL is dropped to no href rather than emitted. Opens in a new tab with
+ * `rel="noopener noreferrer nofollow"`, and never navigates on click while
+ * editing.
+ */
+const SafeLink = Link.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      href: {
+        default: null,
+        parseHTML: (el: HTMLElement) => safeLinkHref(el.getAttribute('href') ?? ''),
+        renderHTML: (attrs: Record<string, unknown>) => {
+          const safe = safeLinkHref(typeof attrs.href === 'string' ? attrs.href : '');
+          return safe ? { href: safe } : {};
+        },
+      },
+    };
+  },
+}).configure({
+  openOnClick: false,
+  autolink: true,
+  protocols: ['http', 'https', 'mailto'],
+  HTMLAttributes: { rel: 'noopener noreferrer nofollow', target: '_blank' },
+});
 
 /**
  * The canvas rich-text feature set. StarterKit v3 already bundles bold, italic,
  * underline, strike, code, headings, bullet/ordered lists, blockquote and
- * horizontal rule; Highlight adds the marker. Heading is capped at two levels so
- * a text box stays a text box, not a document.
+ * horizontal rule; Highlight adds the marker; TextStyle + Color add per-range
+ * text colour. StarterKit's own Link is disabled in favour of the sanitising
+ * SafeLink above. Heading is capped at two levels so a text box stays a text
+ * box, not a document.
+ *
+ * Both the live editor (RichTextBox) and the static renderer (TextLayer) import
+ * this same list, so a box looks identical whether or not it's being edited. In
+ * P3.7 the body becomes a Yjs fragment for collaborative editing; this stays a
+ * plain extension list so that swap is isolated to RichTextBox.
  */
 export const textExtensions = [
   StarterKit.configure({
     heading: { levels: [1, 2] },
+    link: false,
   }),
   Highlight,
+  TextStyle,
+  Color,
+  SafeLink,
 ];
 
 /** An empty Tiptap document (a single empty paragraph) for a brand-new box. */

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { Editor } from '@tiptap/react';
 import {
   Bold,
@@ -6,28 +6,119 @@ import {
   Heading2,
   Highlighter,
   Italic,
+  Link2,
   List,
   ListOrdered,
+  Palette,
   Quote,
   Strikethrough,
   Underline,
+  Unlink,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { safeLinkHref } from './richText';
 
 interface TextFormatToolbarProps {
   editor: Editor;
   className?: string;
 }
 
+/** Aurora-aligned text colours offered by the colour popover. */
+const TEXT_COLORS: readonly { label: string; value: string }[] = [
+  { label: 'Violet', value: '#7C3AED' },
+  { label: 'Cyan', value: '#06B6D4' },
+  { label: 'Pink', value: '#EC4899' },
+  { label: 'Emerald', value: '#10B981' },
+  { label: 'Amber', value: '#F59E0B' },
+  { label: 'Red', value: '#EF4444' },
+];
+
+type OpenPopover = 'color' | 'link' | null;
+
 /**
  * The floating rich-text toolbar shown above a text box while it's being edited.
  * Buttons run Tiptap chain commands; `onMouseDown` is prevented so clicking a
- * button never steals the selection from the editor. Active state reflects the
- * mark/node under the caret (the parent re-renders on every editor transaction).
+ * control never steals the selection from the editor (the editor keeps its
+ * selection in state, and each command re-`focus()`es to reapply it). Active
+ * state reflects the mark/node under the caret (the parent re-renders on every
+ * editor transaction). Colour + link open small popovers; links are sanitised to
+ * http/https/mailto before they're ever set.
  */
 export function TextFormatToolbar({ editor, className }: TextFormatToolbarProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState<OpenPopover>(null);
+  const [linkValue, setLinkValue] = useState('');
+
+  // Close any popover when the user interacts outside the toolbar.
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (rootRef.current && !rootRef.current.contains(event.target as Node)) setOpen(null);
+    };
+    document.addEventListener('pointerdown', onPointerDown, true);
+    return () => document.removeEventListener('pointerdown', onPointerDown, true);
+  }, [open]);
+
+  const linkAttrs: Record<string, unknown> = editor.getAttributes('link');
+  const currentHref = typeof linkAttrs.href === 'string' ? linkAttrs.href : '';
+  const styleAttrs: Record<string, unknown> = editor.getAttributes('textStyle');
+  const currentColor = typeof styleAttrs.color === 'string' ? styleAttrs.color : null;
+  const linkActive = editor.isActive('link');
+
+  const toggleColor = useCallback(() => setOpen((o) => (o === 'color' ? null : 'color')), []);
+
+  const openLink = useCallback(() => {
+    setLinkValue(currentHref);
+    setOpen((o) => (o === 'link' ? null : 'link'));
+  }, [currentHref]);
+
+  const setColor = useCallback(
+    (hex: string) => {
+      editor.chain().focus().setColor(hex).run();
+      setOpen(null);
+    },
+    [editor],
+  );
+
+  const clearColor = useCallback(() => {
+    editor.chain().focus().unsetColor().run();
+    setOpen(null);
+  }, [editor]);
+
+  const applyLink = useCallback(() => {
+    const trimmed = linkValue.trim();
+    if (trimmed === '') {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+      setOpen(null);
+      return;
+    }
+    const safe = safeLinkHref(trimmed);
+    if (!safe) return; // invalid scheme — keep the popover open, input shows the error
+    editor.chain().focus().extendMarkRange('link').setLink({ href: safe }).run();
+    setOpen(null);
+  }, [editor, linkValue]);
+
+  const removeLink = useCallback(() => {
+    editor.chain().focus().extendMarkRange('link').unsetLink().run();
+    setOpen(null);
+  }, [editor]);
+
+  const onLinkKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    event.stopPropagation();
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      applyLink();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      setOpen(null);
+    }
+  };
+
+  const linkInvalid = linkValue.trim() !== '' && safeLinkHref(linkValue) === null;
+
   return (
     <div
+      ref={rootRef}
       role="toolbar"
       aria-label="Text formatting"
       className={cn(
@@ -70,6 +161,108 @@ export function TextFormatToolbar({ editor, className }: TextFormatToolbarProps)
       >
         <Highlighter size={15} />
       </FmtButton>
+
+      <Divider />
+
+      <Popover
+        open={open === 'color'}
+        trigger={
+          <FmtButton label="Text colour" active={open === 'color'} onRun={toggleColor}>
+            <span className="relative grid place-items-center">
+              <Palette size={16} />
+              <span
+                aria-hidden
+                className="absolute -bottom-1 h-0.5 w-4 rounded-full"
+                style={{ background: currentColor ?? 'currentColor' }}
+              />
+            </span>
+          </FmtButton>
+        }
+      >
+        <div className="flex items-center gap-1">
+          {TEXT_COLORS.map((c) => (
+            <button
+              key={c.value}
+              type="button"
+              aria-label={c.label}
+              title={c.label}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => setColor(c.value)}
+              className="h-6 w-6 rounded-full ring-1 ring-[var(--glass-border)] transition-transform hover:scale-110"
+              style={{
+                background: c.value,
+                boxShadow:
+                  currentColor?.toLowerCase() === c.value.toLowerCase()
+                    ? '0 0 0 2px rgb(var(--bg)), 0 0 0 4px ' + c.value
+                    : undefined,
+              }}
+            />
+          ))}
+        </div>
+        <button
+          type="button"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={clearColor}
+          className="mt-2 w-full rounded-lg px-2 py-1 text-xs text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+        >
+          Default colour
+        </button>
+      </Popover>
+
+      <Popover
+        open={open === 'link'}
+        trigger={
+          <FmtButton label="Link" active={linkActive || open === 'link'} onRun={openLink}>
+            <Link2 size={16} />
+          </FmtButton>
+        }
+      >
+        <div className="flex items-center gap-1">
+          <input
+            type="url"
+            inputMode="url"
+            autoFocus
+            value={linkValue}
+            placeholder="https://example.com"
+            aria-label="Link URL"
+            aria-invalid={linkInvalid}
+            onChange={(event) => setLinkValue(event.target.value)}
+            onKeyDown={onLinkKeyDown}
+            className={cn(
+              'w-52 rounded-lg border bg-[var(--glass-fill)] px-2 py-1 text-sm text-fg outline-none placeholder:text-fg-subtle',
+              linkInvalid ? 'border-[var(--danger,#EF4444)]' : 'border-[var(--glass-border)]',
+            )}
+          />
+          <button
+            type="button"
+            aria-label="Apply link"
+            title="Apply link"
+            disabled={linkInvalid}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={applyLink}
+            className="grid h-8 w-8 place-items-center rounded-lg bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-white transition-opacity disabled:opacity-40"
+          >
+            <Link2 size={15} />
+          </button>
+          {linkActive && (
+            <button
+              type="button"
+              aria-label="Remove link"
+              title="Remove link"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={removeLink}
+              className="grid h-8 w-8 place-items-center rounded-lg text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+            >
+              <Unlink size={15} />
+            </button>
+          )}
+        </div>
+        {linkInvalid && (
+          <p className="mt-1 text-xs text-[var(--danger,#EF4444)]">
+            Only http, https and mailto links are allowed.
+          </p>
+        )}
+      </Popover>
 
       <Divider />
 
@@ -117,6 +310,28 @@ export function TextFormatToolbar({ editor, className }: TextFormatToolbarProps)
 
 function Divider() {
   return <span className="mx-0.5 h-5 w-px bg-[var(--glass-border)]" aria-hidden />;
+}
+
+/** A toolbar control with an anchored popover panel below it. */
+function Popover({
+  open,
+  trigger,
+  children,
+}: {
+  open: boolean;
+  trigger: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <span className="relative">
+      {trigger}
+      {open && (
+        <div className="glass-menu absolute left-0 top-full z-20 mt-1 rounded-xl border border-[var(--glass-border)] p-2 shadow-[0_14px_34px_-18px_rgba(0,0,0,0.7)]">
+          {children}
+        </div>
+      )}
+    </span>
+  );
 }
 
 function FmtButton({
