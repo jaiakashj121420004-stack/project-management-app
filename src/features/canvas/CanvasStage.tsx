@@ -329,7 +329,7 @@ export function CanvasStage({
     ];
     for (const pos of probes) {
       const shape = stage.getIntersection(pos);
-      const group = shape?.findAncestor('.canvas-element', true) as Konva.Node | undefined;
+      const group = shape?.findAncestor('.canvas-element', true);
       if (group) { onEraseStroke(group.id()); return; }
     }
   }
@@ -511,7 +511,7 @@ export function CanvasStage({
       } else {
         // Hit on an element — start long-press timer.
         const shape = e.target as Konva.Node;
-        const group = shape.findAncestor?.('.canvas-element', true) as Konva.Node | undefined;
+        const group = shape.findAncestor?.('.canvas-element', true);
         const id = group?.id() ?? null;
         startLongPress(e.evt.touches[0]!.clientX, e.evt.touches[0]!.clientY, id);
       }
@@ -571,7 +571,7 @@ export function CanvasStage({
     const rect = stage.container().getBoundingClientRect();
     const pos = { x: e.evt.clientX - rect.left, y: e.evt.clientY - rect.top };
     const shape = stage.getIntersection(pos);
-    const group = shape?.findAncestor('.canvas-element', true) as Konva.Node | undefined;
+    const group = shape?.findAncestor('.canvas-element', true);
     const id = group?.id() ?? null;
     const cp = toContainer(e.evt.clientX, e.evt.clientY);
     onContextMenu(cp.x, cp.y, id);

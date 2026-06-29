@@ -696,13 +696,13 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
       const meta = event.ctrlKey || event.metaKey;
       if (meta) {
         const key = event.key.toLowerCase();
-        if (key === 'z') { event.preventDefault(); event.shiftKey ? actionsRef.current.redo() : actionsRef.current.undo(); return; }
+        if (key === 'z') { event.preventDefault(); if (event.shiftKey) actionsRef.current.redo(); else actionsRef.current.undo(); return; }
         if (key === 'y') { event.preventDefault(); actionsRef.current.redo(); return; }
         if (key === 'c') { event.preventDefault(); actionsRef.current.copySelected(); return; }
         if (key === 'v') { event.preventDefault(); actionsRef.current.pasteClipboard(); return; }
         if (key === 'd') { event.preventDefault(); actionsRef.current.duplicateSelected(); return; }
-        if (key === ']') { event.preventDefault(); event.shiftKey ? actionsRef.current.bringToFrontAction() : actionsRef.current.bringForwardAction(); return; }
-        if (key === '[') { event.preventDefault(); event.shiftKey ? actionsRef.current.sendToBackAction() : actionsRef.current.sendBackwardAction(); return; }
+        if (key === ']') { event.preventDefault(); if (event.shiftKey) actionsRef.current.bringToFrontAction(); else actionsRef.current.bringForwardAction(); return; }
+        if (key === '[') { event.preventDefault(); if (event.shiftKey) actionsRef.current.sendToBackAction(); else actionsRef.current.sendBackwardAction(); return; }
         return;
       }
       if ((event.key === 'Delete' || event.key === 'Backspace') && actionsRef.current.hasSelection) {
