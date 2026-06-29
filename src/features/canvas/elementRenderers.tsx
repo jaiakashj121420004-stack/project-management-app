@@ -236,4 +236,199 @@ function ElementVisual({ element, palette }: { element: CanvasElement; palette: 
   // A text box renders ONLY its background rect here — the rect is the hit /
   // transform target, while the formatted text itself is drawn by the HTML
   // TextLayer overlay (Konva can't render rich text). Dashed while empty.
-  if (element.type === 'te
+  if (element.type === 'text') {
+    const isEmpty = element.text.trim().length === 0;
+    return (
+      <Rect
+        width={width}
+        height={height}
+        cornerRadius={16}
+        fill={palette.surface}
+        stroke={palette.border}
+        strokeWidth={1}
+        dash={isEmpty ? [6, 5] : undefined}
+        perfectDrawEnabled={false}
+      />
+    );
+  }
+
+  if (element.type === 'image') {
+    return <ImageVisual element={element} palette={palette} />;
+  }
+
+  // Media (audio/video) remains a labelled stub (body lands in P3.5).
+  return (
+    <>
+      <Rect
+        width={width}
+        height={height}
+        cornerRadius={16}
+        fill={palette.surface}
+        stroke={palette.border}
+        strokeWidth={1}
+        perfectDrawEnabled={false}
+      />
+      <Text
+        text={stubLabel(element)}
+        width={width}
+        height={height}
+        padding={12}
+        fontSize={15}
+        fontFamily="Inter, system-ui, sans-serif"
+        fill={palette.text}
+        align="center"
+        verticalAlign="middle"
+        wrap="word"
+        ellipsis
+        listening={false}
+      />
+    </>
+  );
+}
+
+/** A committed stroke: its filled perfect-freehand outline, recomputed from the
+ *  stored samples so it stays crisp at any zoom. The filled path is the hit
+ *  target (precise selection + erase); multiply gives the highlighter its look. */
+function StrokeVisual({ element }: { element: StrokeElement }) {
+  const data = useMemo(
+    () =>
+      strokePathData(element.points, {
+        size: element.size,
+        thinning: element.thinning,
+        smoothing: element.smoothing,
+        simulatePressure: element.simulatePressure,
+      }),
+    [element.points, element.size, element.thinning, element.smoothing, element.simulatePressure],
+  );
+  if (!data) return null;
+  return (
+    <Path
+      data={data}
+      fill={element.color}
+      opacity={element.opacity}
+      globalCompositeOperation={element.blend === 'multiply' ? 'multiply' : 'source-over'}
+      perfectDrawEnabled={false}
+      shadowForStrokeEnabled={false}
+    />
+  );
+}
+
+function stubLabel(element: MediaElement): string {
+  return element.kind === 'audio' ? '🎙  Audio' : '🎬  Video';
+}
+
+/**
+ * Renders an ImageElement as a real Konva Image node. While the signed URL is
+ * being fetched (or the HTMLImageElement is loading), a skeleton placeholder is
+ * shown so the bounding box / transformer remain in place. On error it falls
+ * back to a labelled placeholder rather than disappearing.
+ */
+function ImageVisual({
+  element,
+  palette,
+}: {
+  element: ImageElement;
+  palette: CanvasPalette;
+}) {
+  const { url, loading: urlLoading, error: urlError } = useSignedUrl(element.path);
+
+  // Load the HTMLImageElement once the signed URL is ready. We keep it in state
+  // so Konva can use it as its `image` prop — Konva requires the DOM object, not
+  // just the src string.
+  const [htmlImg, setHtmlImg] = useState<HTMLImageElement | null>(null);
+  const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    if (!url) {
+      setHtmlImg(null);
+      return;
+    }
+    let cancelled = false;
+    const img = new window.Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      if (!cancelled) setHtmlImg(img);
+    };
+    img.onerror = () => {
+      if (!cancelled) setImgError(true);
+    };
+    img.src = url;
+    return () => {
+      cancelled = true;
+      img.onload = null;
+      img.onerror = null;
+    };
+  }, [url]);
+
+  const { width, height } = element;
+
+  // ── Skeleton (URL loading or HTMLImage loading) ───────────────────────────
+  if (urlLoading || (url && !htmlImg && !imgError)) {
+    return (
+      <>
+        <Rect
+          width={width}
+          height={height}
+          cornerRadius={16}
+          fill={palette.surface}
+          stroke={palette.border}
+          strokeWidth={1}
+          dash={[8, 6]}
+          perfectDrawEnabled={false}
+        />
+        <Text
+          text="Loading…"
+          width={width}
+          height={height}
+          padding={12}
+          fontSize={13}
+          fontFamily="Inter, system-ui, sans-serif"
+          fill={palette.text}
+          align="center"
+          verticalAlign="middle"
+          listening={false}
+        />
+      </>
+    );
+  }
+
+  // ── Error fallback ────────────────────────────────────────────────────────
+  if (urlError || imgError || !htmlImg) {
+    return (
+      <>
+        <Rect
+          width={width}
+          height={height}
+          cornerRadius={16}
+          fill={palette.surface}
+          stroke={palette.border}
+          strokeWidth={1}
+          perfectDrawEnabled={false}
+        />
+        <Text
+          text="⚠️  Image unavailable"
+          width={width}
+          height={height}
+          padding={12}
+          fontSize={14}
+          fontFamily="Inter, system-ui, sans-serif"
+          fill={palette.text}
+          align="center"
+          verticalAlign="middle"
+          listening={false}
+        />
+      </>
+    );
+  }
+
+  // ── Loaded ────────────────────────────────────────────────────────────────
+  return (
+    <KonvaImage
+      image={htmlImg}
+      width={width}
+      height={height}
+      cornerRadius={16}
+      perfectDrawEnabled={false}
+    />
+  );
+}

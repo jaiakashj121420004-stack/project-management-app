@@ -191,4 +191,16 @@ function ToolButton({
       disabled={disabled}
       aria-label={label}
       title={label}
-      aria-p
+      aria-pressed={active}
+      className={cn(
+        'grid h-9 w-9 shrink-0 place-items-center rounded-xl transition-colors',
+        'hover:bg-[var(--glass-fill)] hover:text-fg disabled:pointer-events-none disabled:opacity-40',
+        active
+          ? 'bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-white'
+          : 'text-fg-muted',
+      )}
+    >
+      {children}
+    </button>
+  );
+}

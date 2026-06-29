@@ -538,4 +538,52 @@ export function CanvasStage({
                 onSelect={onSelect}
                 onChange={onChangeElement}
                 onRequestEdit={
-                  element.type === 'text' && canEdit && too
+                  element.type === 'text' && canEdit && tool === 'select' && !element.locked
+                    ? onEditText
+                    : undefined
+                }
+                onLiveChange={element.type === 'text' ? setLiveBox : undefined}
+              />
+            ))}
+            {canEdit && tool === 'select' && (
+              <Transformer
+                ref={transformerRef}
+                rotateEnabled
+                keepRatio={keepRatio}
+                ignoreStroke
+                anchorCornerRadius={4}
+                borderStroke={palette.accent}
+                anchorStroke={palette.accent}
+                anchorFill="#ffffff"
+                boundBoxFunc={(oldBox, newBox) =>
+                  newBox.width < MIN_ELEMENT_SIZE || newBox.height < MIN_ELEMENT_SIZE
+                    ? oldBox
+                    : newBox
+                }
+              />
+            )}
+          </Layer>
+          {/* The in-progress stroke draws here imperatively (no React render per
+              pointer-move). It's listening:false so it never blocks hit-testing. */}
+          <Layer listening={false}>
+            <Path ref={previewRef} perfectDrawEnabled={false} shadowForStrokeEnabled={false} />
+          </Layer>
+        </Stage>
+      )}
+      {/* Rich text lives in an HTML overlay above the Konva canvas — Konva can't
+          render formatted text. It's click-through except the box being edited. */}
+      {size.width > 0 && size.height > 0 && (
+        <TextLayer
+          elements={elements}
+          camera={camera}
+          palette={palette}
+          pageType={pageType}
+          editingId={editingTextId}
+          liveBox={liveBox}
+          onCommit={(id, body, text) => onChangeElement(id, { body, text })}
+          onExitEdit={onEndTextEdit}
+        />
+      )}
+    </div>
+  );
+}

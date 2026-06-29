@@ -560,4 +560,172 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
             aria-label="Canvas title"
             className="w-full truncate bg-transparent font-display text-xl font-bold text-fg placeholder:text-fg-subtle focus:outline-none sm:text-2xl"
           />
-          {c
+          {canEdit && titleError && <p className="mt-1 text-xs text-danger">{titleError}</p>}
+        </div>
+
+        {canEdit && (
+          <div className="flex shrink-0 items-center gap-2">
+            {isUploading && (
+              <span className="inline-flex items-center gap-1.5 text-xs text-fg-subtle">
+                <Spinner size={12} className="text-current" /> Uploading…
+              </span>
+            )}
+            <SaveIndicator status={status} />
+            <button
+              type="button"
+              aria-label="Delete canvas"
+              onClick={() => setConfirmingDelete((open) => !open)}
+              className="grid h-9 w-9 place-items-center rounded-xl text-fg-subtle transition-colors hover:bg-danger/10 hover:text-danger"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {confirmingDelete && canEdit && (
+        <div className="flex items-center justify-between gap-2 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-fg-muted">
+          <span>
+            Delete <span className="font-semibold text-fg">{note.title}</span>? This can&apos;t be
+            undone.
+          </span>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setConfirmingDelete(false)}
+              className="rounded-lg px-2 py-1 text-xs font-medium text-fg-muted hover:bg-[var(--glass-fill)]"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="rounded-lg bg-danger/20 px-2 py-1 text-xs font-semibold text-danger hover:bg-danger/30"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Image upload error — dismissible inline alert. */}
+      {uploadError && (
+        <div
+          role="alert"
+          className="flex items-start gap-2 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger"
+        >
+          <AlertCircle size={15} className="mt-0.5 shrink-0" />
+          <span className="min-w-0 flex-1">{uploadError}</span>
+          <button
+            type="button"
+            aria-label="Dismiss error"
+            onClick={() => setUploadError(null)}
+            className="shrink-0 rounded p-0.5 hover:bg-danger/20"
+          >
+            <X size={13} />
+          </button>
+        </div>
+      )}
+
+      {/* Edit / View toggle on every breakpoint — View renders the stage
+          read-only (pan/zoom only). Viewers are always read-only (no toggle). */}
+      {canEdit && (
+        <SegmentedToggle
+          label="Canvas mode"
+          value={mode}
+          onChange={(next) => {
+            setMode(next);
+            setEditingTextId(null);
+          }}
+          options={[
+            { value: 'edit', label: 'Edit', icon: <Pencil size={14} /> },
+            { value: 'view', label: 'View', icon: <Eye size={14} /> },
+          ]}
+        />
+      )}
+
+      <div className="relative min-h-[75vh] w-full flex-1">
+        <div className="absolute inset-0">
+          <CanvasStage
+            elements={visibleElements}
+            pageType={pageType}
+            selectedId={effectiveSelectedId}
+            camera={camera}
+            tool={effectiveTool}
+            canEdit={editing}
+            penSettings={pen}
+            editingTextId={effectiveEditingId}
+            onSelect={selectElement}
+            onChangeElement={changeElement}
+            onCameraChange={setCamera}
+            onViewportChange={handleViewportChange}
+            onCommitStroke={commitStroke}
+            onEraseStroke={eraseStroke}
+            onEraseEnd={endErase}
+            onPlaceText={placeText}
+            onEditText={editText}
+            onEndTextEdit={endTextEdit}
+            onDropFiles={editing && projectId !== null ? handleDropFiles : undefined}
+          />
+        </div>
+        <div className="pointer-events-none absolute inset-x-0 top-0 flex flex-col items-center gap-2 p-2 sm:p-3">
+          <CanvasToolbar
+            className="pointer-events-auto"
+            canEdit={editing}
+            tool={tool}
+            onTool={changeTool}
+            pageType={pageType}
+            onPageType={setPageType}
+            scale={camera.scale}
+            onZoomIn={() => zoomBy(ZOOM_STEP)}
+            onZoomOut={() => zoomBy(1 / ZOOM_STEP)}
+            onZoomReset={resetZoom}
+            canUndo={canUndo}
+            canRedo={canRedo}
+            onUndo={undo}
+            onRedo={redo}
+            onAdd={addText}
+            onAddImage={projectId !== null ? addImage : undefined}
+            hasSelection={Boolean(selectedElement)}
+            selectedLocked={selectedElement?.locked ?? false}
+            onToggleLock={toggleLock}
+            onDeleteSelected={deleteSelected}
+          />
+          {editing && tool === 'draw' && (
+            <PenToolbar className="pointer-events-auto" settings={pen} onChange={setPen} />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** A subtle, non-shouting indicator of the autosave state. */
+function SaveIndicator({ status }: { status: SaveStatus }) {
+  if (status === 'saving') {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-fg-subtle">
+        <Spinner size={12} className="text-current" /> Saving…
+      </span>
+    );
+  }
+  if (status === 'unsaved') {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-fg-subtle">
+        <span className="h-1.5 w-1.5 rounded-full bg-warning" /> Unsaved
+      </span>
+    );
+  }
+  if (status === 'error') {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-danger">
+        <AlertCircle size={13} /> Couldn&apos;t save
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs text-fg-subtle">
+      <Check size={13} className="text-success" /> Saved
+    </span>
+  );
+}
