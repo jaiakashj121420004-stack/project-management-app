@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
-import { AlertCircle, Check, Eye, Pencil, Trash2 } from 'lucide-react';
+import { AlertCircle, Check, Eye, Pencil, Trash2, X } from 'lucide-react';
 import { Spinner } from '@/components/feedback/Spinner';
 import { SegmentedToggle } from '@/components/forms/SegmentedToggle';
 import { useTheme } from '@/hooks/useTheme';
 import { PAGE_PATTERN_SPACING, type PageType } from '@/lib/canvasPages';
+import { MEDIA_CAPS } from '@/lib/proFeatures';
+import { MediaUploadError, uploadCanvasMedia } from '@/lib/storage';
 import type { CanvasNote } from '@/types/database';
 import { canvasTitleSchema } from './schemas';
 import { useCanvas, useDeleteCanvas, useSaveCanvas } from './useCanvas';
@@ -12,6 +14,7 @@ import {
   parseScene,
   createPlaceholderTextBox,
   createTextBoxAt,
+  createImageElement,
   topZ,
   type CanvasScene,
   type ElementPatch,
@@ -23,6 +26,38 @@ import { CanvasToolbar } from './CanvasToolbar';
 import { PenToolbar } from './PenToolbar';
 import { ZOOM_STEP, clampScale, type Camera, type CanvasTool } from './constants';
 import './canvasText.css';
+
+// ---------------------------------------------------------------------------
+// Image upload helpers (canvas-editor-local, not exported)
+// ---------------------------------------------------------------------------
+
+/** Accept string for the hidden file input — mirrors MEDIA_CAPS.image.mimeTypes. */
+const IMAGE_ACCEPT = MEDIA_CAPS.image.mimeTypes.join(',');
+
+/**
+ * Read a File's natural pixel dimensions before uploading it. We create an
+ * object URL, load it into a temporary Image, then revoke. Falls back to a
+ * sensible 400×300 default on error so the upload is never blocked.
+ */
+function getFileDimensions(file: File): Promise<{ width: number; height: number }> {
+  return new Promise((resolve) => {
+    const objectUrl = URL.createObjectURL(file);
+    const img = new window.Image();
+    img.onload = () => {
+      const MAX_W = 600;
+      const ratio = img.naturalWidth > 0 ? img.naturalWidth / img.naturalHeight : 4 / 3;
+      const width = Math.min(MAX_W, img.naturalWidth || MAX_W);
+      const height = Math.max(1, Math.round(width / ratio));
+      URL.revokeObjectURL(objectUrl);
+      resolve({ width, height });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve({ width: 400, height: 300 });
+    };
+    img.src = objectUrl;
+  });
+}
 
 /** One write per ~700ms of idle, matching the notes editor's autosave. */
 const AUTOSAVE_DELAY = 700;
@@ -85,6 +120,11 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
   const { mutate: runSave } = useSaveCanvas(projectId);
   const { mutate: runDelete } = useDeleteCanvas(projectId);
   const { theme } = useTheme();
+
+  // Image upload state.
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Seed scene/title/page-type once; the component is keyed by note id upstream.
   const [seedScene] = useState<CanvasScene>(() => parseScene(note.scene));
@@ -336,6 +376,90 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
     });
   }
 
+  // --- image upload ----------------------------------------------------------
+
+  /**
+   * Upload a single image file to canvas-media, then place an ImageElement at
+   * (`worldX`, `worldY`) — or at the viewport centre when coordinates are
+   * omitted (file picker / paste paths).
+   */
+  async function handleImageFile(file: File, worldX?: number, worldY?: number) {
+    // Personal canvases (projectId === null) cannot use the canvas-media bucket
+    // with the current Storage RLS, which is keyed by projectId. Skip silently —
+    // the toolbar button is hidden for personal canvases anyway.
+    if (!projectId) return;
+    setUploadError(null);
+    setIsUploading(true);
+    try {
+      const [dims, { path }] = await Promise.all([
+        getFileDimensions(file),
+        uploadCanvasMedia(projectId, note.id, file),
+      ]);
+      const cx = worldX ?? (viewport.width / 2 - camera.x) / camera.scale;
+      const cy = worldY ?? (viewport.height / 2 - camera.y) / camera.scale;
+      const element = createImageElement(
+        cx - dims.width / 2,
+        cy - dims.height / 2,
+        topZ(scene.elements),
+        path,
+        dims.width,
+        dims.height,
+      );
+      commit({ elements: [...scene.elements, element] });
+      setSelectedId(element.id);
+    } catch (err) {
+      const msg =
+        err instanceof MediaUploadError
+          ? err.message
+          : 'Something went wrong uploading the image. Please try again.';
+      setUploadError(msg);
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
+  /** Open the OS file picker (accepts images only). */
+  function addImage() {
+    if (!projectId) return; // hidden for personal canvases
+    fileInputRef.current?.click();
+  }
+
+  function handleFileInputChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    // Reset so re-selecting the same file fires the event again.
+    e.target.value = '';
+    if (file) void handleImageFile(file);
+  }
+
+  /**
+   * Handle paste from clipboard — picks the first image item if one exists.
+   * Text items are ignored so normal copy-paste in text boxes still works when
+   * the user isn't inside the Tiptap editor (the outer div captures first).
+   */
+  function handlePaste(e: React.ClipboardEvent<HTMLDivElement>) {
+    if (!editing || !projectId) return;
+    // If a text box is being edited, let the event fall through to Tiptap.
+    if (editingTextId !== null) return;
+    const items = Array.from(e.clipboardData.items);
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) {
+          e.preventDefault();
+          void handleImageFile(file);
+          break;
+        }
+      }
+    }
+  }
+
+  /** Called by CanvasStage when the user drops files onto the Konva surface. */
+  function handleDropFiles(worldX: number, worldY: number, files: File[]) {
+    if (!editing || !projectId) return;
+    const file = files[0];
+    if (file) void handleImageFile(file, worldX, worldY);
+  }
+
   function zoomBy(factor: number) {
     setCamera((current) => {
       const scale = clampScale(current.scale * factor);
@@ -413,7 +537,18 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3" onPaste={handlePaste}>
+      {/* Hidden file input — triggered by the toolbar's "Add image" button. */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={IMAGE_ACCEPT}
+        aria-hidden
+        tabIndex={-1}
+        className="sr-only"
+        onChange={handleFileInputChange}
+      />
+
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <input
@@ -425,146 +560,4 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
             aria-label="Canvas title"
             className="w-full truncate bg-transparent font-display text-xl font-bold text-fg placeholder:text-fg-subtle focus:outline-none sm:text-2xl"
           />
-          {canEdit && titleError && <p className="mt-1 text-xs text-danger">{titleError}</p>}
-        </div>
-
-        {canEdit && (
-          <div className="flex shrink-0 items-center gap-2">
-            <SaveIndicator status={status} />
-            <button
-              type="button"
-              aria-label="Delete canvas"
-              onClick={() => setConfirmingDelete((open) => !open)}
-              className="grid h-9 w-9 place-items-center rounded-xl text-fg-subtle transition-colors hover:bg-danger/10 hover:text-danger"
-            >
-              <Trash2 size={16} />
-            </button>
-          </div>
-        )}
-      </div>
-
-      {confirmingDelete && canEdit && (
-        <div className="flex items-center justify-between gap-2 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-fg-muted">
-          <span>
-            Delete <span className="font-semibold text-fg">{note.title}</span>? This can&apos;t be
-            undone.
-          </span>
-          <div className="flex shrink-0 items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setConfirmingDelete(false)}
-              className="rounded-lg px-2 py-1 text-xs font-medium text-fg-muted hover:bg-[var(--glass-fill)]"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleDelete}
-              className="rounded-lg bg-danger/20 px-2 py-1 text-xs font-semibold text-danger hover:bg-danger/30"
-            >
-              Delete
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Edit / View toggle on every breakpoint — View renders the stage
-          read-only (pan/zoom only). Viewers are always read-only (no toggle). */}
-      {canEdit && (
-        <SegmentedToggle
-          label="Canvas mode"
-          value={mode}
-          onChange={(next) => {
-            setMode(next);
-            setEditingTextId(null);
-          }}
-          options={[
-            { value: 'edit', label: 'Edit', icon: <Pencil size={14} /> },
-            { value: 'view', label: 'View', icon: <Eye size={14} /> },
-          ]}
-        />
-      )}
-
-      <div className="relative min-h-[75vh] w-full flex-1">
-        <div className="absolute inset-0">
-          <CanvasStage
-            elements={visibleElements}
-            pageType={pageType}
-            selectedId={effectiveSelectedId}
-            camera={camera}
-            tool={effectiveTool}
-            canEdit={editing}
-            penSettings={pen}
-            editingTextId={effectiveEditingId}
-            onSelect={selectElement}
-            onChangeElement={changeElement}
-            onCameraChange={setCamera}
-            onViewportChange={handleViewportChange}
-            onCommitStroke={commitStroke}
-            onEraseStroke={eraseStroke}
-            onEraseEnd={endErase}
-            onPlaceText={placeText}
-            onEditText={editText}
-            onEndTextEdit={endTextEdit}
-          />
-        </div>
-        <div className="pointer-events-none absolute inset-x-0 top-0 flex flex-col items-center gap-2 p-2 sm:p-3">
-          <CanvasToolbar
-            className="pointer-events-auto"
-            canEdit={editing}
-            tool={tool}
-            onTool={changeTool}
-            pageType={pageType}
-            onPageType={setPageType}
-            scale={camera.scale}
-            onZoomIn={() => zoomBy(ZOOM_STEP)}
-            onZoomOut={() => zoomBy(1 / ZOOM_STEP)}
-            onZoomReset={resetZoom}
-            canUndo={canUndo}
-            canRedo={canRedo}
-            onUndo={undo}
-            onRedo={redo}
-            onAdd={addText}
-            hasSelection={Boolean(selectedElement)}
-            selectedLocked={selectedElement?.locked ?? false}
-            onToggleLock={toggleLock}
-            onDeleteSelected={deleteSelected}
-          />
-          {editing && tool === 'draw' && (
-            <PenToolbar className="pointer-events-auto" settings={pen} onChange={setPen} />
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/** A subtle, non-shouting indicator of the autosave state. */
-function SaveIndicator({ status }: { status: SaveStatus }) {
-  if (status === 'saving') {
-    return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-fg-subtle">
-        <Spinner size={12} className="text-current" /> Saving…
-      </span>
-    );
-  }
-  if (status === 'unsaved') {
-    return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-fg-subtle">
-        <span className="h-1.5 w-1.5 rounded-full bg-warning" /> Unsaved
-      </span>
-    );
-  }
-  if (status === 'error') {
-    return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-danger">
-        <AlertCircle size={13} /> Couldn&apos;t save
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-fg-subtle">
-      <Check size={13} className="text-success" /> Saved
-    </span>
-  );
-}
+          {c

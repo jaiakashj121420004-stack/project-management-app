@@ -200,6 +200,35 @@ export function topZ(elements: readonly CanvasElement[]): number {
 }
 
 /**
+ * An image element placed on the canvas. The element is committed to the scene
+ * once the upload is complete; `path` references the `canvas-media` Storage
+ * object (never a data URL). Width/height come from the file's natural dimensions
+ * (capped to a sensible max so it doesn't flood the canvas).
+ */
+export function createImageElement(
+  x: number,
+  y: number,
+  z: number,
+  path: string,
+  width = 400,
+  height = 300,
+): ImageElement {
+  return {
+    id: crypto.randomUUID(),
+    type: 'image',
+    x,
+    y,
+    width,
+    height,
+    rotation: 0,
+    z,
+    locked: false,
+    path,
+    alt: '',
+  };
+}
+
+/**
  * A text-box placeholder dropped by the foundation toolbar's "Add" action. It is
  * a fully real, persisted element (selectable / movable / resizable / rotatable);
  * the rich-text body it shows is filled in P3.3. Centred on (cx, cy) in world
@@ -212,31 +241,4 @@ export function createPlaceholderTextBox(
 ): TextBoxElement {
   const width = 220;
   const height = 120;
-  return createTextBoxAt(cx - width / 2, cy - height / 2, z, { width, height });
-}
-
-/**
- * A text box anchored by its TOP-LEFT corner at (x, y) in world coordinates —
- * used by the click-to-place text tool so typing begins exactly where the user
- * clicked. Defaults to the same size as the toolbar placeholder.
- */
-export function createTextBoxAt(
-  x: number,
-  y: number,
-  z: number,
-  opts?: { width?: number; height?: number },
-): TextBoxElement {
-  return {
-    id: crypto.randomUUID(),
-    type: 'text',
-    x,
-    y,
-    width: opts?.width ?? 220,
-    height: opts?.height ?? 120,
-    rotation: 0,
-    z,
-    locked: false,
-    body: null,
-    text: '',
-  };
-}
+  return createTextBoxAt(cx - width / 2, cy - height 

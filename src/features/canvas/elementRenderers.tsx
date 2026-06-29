@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
-import { Group, Path, Rect, Text } from 'react-konva';
+import { useEffect, useMemo, useState } from 'react';
+import { Group, Image as KonvaImage, Path, Rect, Text } from 'react-konva';
 import type Konva from 'konva';
+import { signedUrl } from '@/lib/storage';
 import { MIN_ELEMENT_SIZE, type ElementBox } from './constants';
 import type {
   CanvasElement,
@@ -11,6 +12,77 @@ import type {
 } from './elements';
 import { strokePathData } from './freehand';
 import type { CanvasPalette } from './useCanvasPalette';
+
+// ---------------------------------------------------------------------------
+// Signed URL cache — module-level so URLs survive re-renders and component
+// remounts. URLs are valid for 1 hour (the default); we don't expire them
+// within a session — the worst case is a stale URL after 1h and a page reload.
+// ---------------------------------------------------------------------------
+
+const urlCache = new Map<string, string>();
+// In-flight fetches keyed by path — prevents duplicate network requests when
+// multiple renderers ask for the same path at the same time.
+const inFlight = new Map<string, Promise<string>>();
+
+function fetchCachedSignedUrl(path: string): Promise<string> {
+  const cached = urlCache.get(path);
+  if (cached) return Promise.resolve(cached);
+  const existing = inFlight.get(path);
+  if (existing) return existing;
+  const promise = signedUrl(path)
+    .then((url) => {
+      urlCache.set(path, url);
+      inFlight.delete(path);
+      return url;
+    })
+    .catch((err: unknown) => {
+      inFlight.delete(path);
+      throw err;
+    });
+  inFlight.set(path, promise);
+  return promise;
+}
+
+/** Resolves a canvas-media storage path to a signed URL and caches it. */
+function useSignedUrl(path: string | null): {
+  url: string | null;
+  loading: boolean;
+  error: boolean;
+} {
+  const [url, setUrl] = useState<string | null>(() =>
+    path ? (urlCache.get(path) ?? null) : null,
+  );
+  const [loading, setLoading] = useState<boolean>(path !== null && !urlCache.has(path));
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    if (!path) return;
+    if (urlCache.has(path)) {
+      setUrl(urlCache.get(path)!);
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    fetchCachedSignedUrl(path)
+      .then((u) => {
+        if (!cancelled) {
+          setUrl(u);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setError(true);
+          setLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [path]);
+
+  return { url, loading, error };
+}
 
 /**
  * Element renderers. Every element is a Konva <Group> positioned/rotated by its
@@ -164,84 +236,4 @@ function ElementVisual({ element, palette }: { element: CanvasElement; palette: 
   // A text box renders ONLY its background rect here — the rect is the hit /
   // transform target, while the formatted text itself is drawn by the HTML
   // TextLayer overlay (Konva can't render rich text). Dashed while empty.
-  if (element.type === 'text') {
-    const isEmpty = element.text.trim().length === 0;
-    return (
-      <Rect
-        width={width}
-        height={height}
-        cornerRadius={16}
-        fill={palette.surface}
-        stroke={palette.border}
-        strokeWidth={1}
-        dash={isEmpty ? [6, 5] : undefined}
-        perfectDrawEnabled={false}
-      />
-    );
-  }
-
-  // Image / media remain labelled stubs (their bodies land in P3.4–P3.5).
-  return (
-    <>
-      <Rect
-        width={width}
-        height={height}
-        cornerRadius={16}
-        fill={palette.surface}
-        stroke={palette.border}
-        strokeWidth={1}
-        perfectDrawEnabled={false}
-      />
-      <Text
-        text={stubLabel(element)}
-        width={width}
-        height={height}
-        padding={12}
-        fontSize={15}
-        fontFamily="Inter, system-ui, sans-serif"
-        fill={palette.text}
-        align="center"
-        verticalAlign="middle"
-        wrap="word"
-        ellipsis
-        listening={false}
-      />
-    </>
-  );
-}
-
-/** A committed stroke: its filled perfect-freehand outline, recomputed from the
- *  stored samples so it stays crisp at any zoom. The filled path is the hit
- *  target (precise selection + erase); multiply gives the highlighter its look. */
-function StrokeVisual({ element }: { element: StrokeElement }) {
-  const data = useMemo(
-    () =>
-      strokePathData(element.points, {
-        size: element.size,
-        thinning: element.thinning,
-        smoothing: element.smoothing,
-        simulatePressure: element.simulatePressure,
-      }),
-    [element.points, element.size, element.thinning, element.smoothing, element.simulatePressure],
-  );
-  if (!data) return null;
-  return (
-    <Path
-      data={data}
-      fill={element.color}
-      opacity={element.opacity}
-      globalCompositeOperation={element.blend === 'multiply' ? 'multiply' : 'source-over'}
-      perfectDrawEnabled={false}
-      shadowForStrokeEnabled={false}
-    />
-  );
-}
-
-function stubLabel(element: ImageElement | MediaElement): string {
-  switch (element.type) {
-    case 'image':
-      return '🖼  Image';
-    case 'media':
-      return element.kind === 'audio' ? '🎙  Audio' : '🎬  Video';
-  }
-}
+  if (element.type === 'te

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import {
   Eraser,
+  ImagePlus,
   Lock,
   MousePointer,
   Pen,
@@ -33,6 +34,9 @@ interface CanvasToolbarProps {
   onUndo: () => void;
   onRedo: () => void;
   onAdd: () => void;
+  /** Called when the user wants to add an image. `undefined` on personal canvases
+   *  (no projectId → Storage RLS would reject the upload). */
+  onAddImage: (() => void) | undefined;
   hasSelection: boolean;
   selectedLocked: boolean;
   onToggleLock: () => void;
@@ -62,6 +66,7 @@ export function CanvasToolbar({
   onUndo,
   onRedo,
   onAdd,
+  onAddImage,
   hasSelection,
   selectedLocked,
   onToggleLock,
@@ -108,6 +113,11 @@ export function CanvasToolbar({
           <ToolButton label="Add text box" onClick={onAdd}>
             <Plus size={18} />
           </ToolButton>
+          {onAddImage && (
+            <ToolButton label="Add image — or paste / drag-drop" onClick={onAddImage}>
+              <ImagePlus size={17} />
+            </ToolButton>
+          )}
           <Divider />
         </>
       )}
@@ -181,16 +191,4 @@ function ToolButton({
       disabled={disabled}
       aria-label={label}
       title={label}
-      aria-pressed={active}
-      className={cn(
-        'grid h-9 w-9 shrink-0 place-items-center rounded-xl transition-colors',
-        'hover:bg-[var(--glass-fill)] hover:text-fg disabled:pointer-events-none disabled:opacity-40',
-        active
-          ? 'bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-white'
-          : 'text-fg-muted',
-      )}
-    >
-      {children}
-    </button>
-  );
-}
+      aria-p

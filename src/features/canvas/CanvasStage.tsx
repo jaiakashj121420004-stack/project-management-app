@@ -47,6 +47,12 @@ interface CanvasStageProps {
   onEditText: (id: string) => void;
   /** Leave text-edit mode (e.g. Escape inside the editor). */
   onEndTextEdit: () => void;
+  /**
+   * One or more image files were dropped onto the canvas. The world coordinates
+   * are computed from the drop position using the current camera so the caller
+   * can place the element exactly where the user dropped it.
+   */
+  onDropFiles?: (worldX: number, worldY: number, files: File[]) => void;
 }
 
 /** How long after the last pen event we keep rejecting touch (palm rejection). */
@@ -96,6 +102,7 @@ export function CanvasStage({
   editingTextId,
   onEditText,
   onEndTextEdit,
+  onDropFiles,
 }: CanvasStageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
@@ -442,6 +449,12 @@ export function CanvasStage({
     }
   }
 
+  // Keep the aspect ratio when transforming an image element (corner handles
+  // maintain it by default; Shift allows free resize — standard image editor UX).
+  // All other element types remain freely resizable.
+  const selectedElement = selectedId ? elements.find((el) => el.id === selectedId) : null;
+  const keepRatio = selectedElement?.type === 'image';
+
   const cursor =
     tool === 'draw'
       ? 'crosshair'
@@ -451,11 +464,38 @@ export function CanvasStage({
           ? 'text'
           : 'default';
 
+  // ── HTML drag-drop (external files, e.g. from the file manager) ────────────
+  // These are native DOM events, not Konva's own element-drag events.
+
+  function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
+    // Allow the drop only when we have a file handler and there are image files.
+    if (!onDropFiles) return;
+    if (Array.from(e.dataTransfer.types).includes('Files')) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+    }
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    if (!onDropFiles || !containerRef.current) return;
+    const files = Array.from(e.dataTransfer.files).filter((f) =>
+      f.type.startsWith('image/'),
+    );
+    if (files.length === 0) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const worldX = (e.clientX - rect.left - camera.x) / camera.scale;
+    const worldY = (e.clientY - rect.top - camera.y) / camera.scale;
+    onDropFiles(worldX, worldY, files);
+  }
+
   return (
     <div
       ref={containerRef}
       className="relative h-full w-full overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-fill)]"
       style={{ touchAction: 'none', cursor }}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
     >
       {size.width > 0 && size.height > 0 && (
         <Stage
@@ -498,52 +538,4 @@ export function CanvasStage({
                 onSelect={onSelect}
                 onChange={onChangeElement}
                 onRequestEdit={
-                  element.type === 'text' && canEdit && tool === 'select' && !element.locked
-                    ? onEditText
-                    : undefined
-                }
-                onLiveChange={element.type === 'text' ? setLiveBox : undefined}
-              />
-            ))}
-            {canEdit && tool === 'select' && (
-              <Transformer
-                ref={transformerRef}
-                rotateEnabled
-                keepRatio={false}
-                ignoreStroke
-                anchorCornerRadius={4}
-                borderStroke={palette.accent}
-                anchorStroke={palette.accent}
-                anchorFill="#ffffff"
-                boundBoxFunc={(oldBox, newBox) =>
-                  newBox.width < MIN_ELEMENT_SIZE || newBox.height < MIN_ELEMENT_SIZE
-                    ? oldBox
-                    : newBox
-                }
-              />
-            )}
-          </Layer>
-          {/* The in-progress stroke draws here imperatively (no React render per
-              pointer-move). It's listening:false so it never blocks hit-testing. */}
-          <Layer listening={false}>
-            <Path ref={previewRef} perfectDrawEnabled={false} shadowForStrokeEnabled={false} />
-          </Layer>
-        </Stage>
-      )}
-      {/* Rich text lives in an HTML overlay above the Konva canvas — Konva can't
-          render formatted text. It's click-through except the box being edited. */}
-      {size.width > 0 && size.height > 0 && (
-        <TextLayer
-          elements={elements}
-          camera={camera}
-          palette={palette}
-          pageType={pageType}
-          editingId={editingTextId}
-          liveBox={liveBox}
-          onCommit={(id, body, text) => onChangeElement(id, { body, text })}
-          onExitEdit={onEndTextEdit}
-        />
-      )}
-    </div>
-  );
-}
+                  element.type === 'text' && canEdit && too

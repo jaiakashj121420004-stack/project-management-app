@@ -1,0 +1,454 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================================================
+   Aurora design system — theme tokens (plan.md §4).
+   Dark is the default (:root); .light overrides. Both are first-class.
+   Channel vars (--bg, --fg…) are "r g b" triplets so Tailwind can apply alpha.
+   Glass/shadow vars hold finished values because their alpha differs per theme.
+   ========================================================================= */
+:root,
+.dark {
+  color-scheme: dark;
+
+  --bg: 11 7 16; /* #0B0710 deep aubergine-black, not navy */
+  --fg: 245 243 255;
+  --fg-muted: 198 192 224;
+  --fg-subtle: 150 144 178;
+
+  --glass-fill: rgba(255, 255, 255, 0.06);
+  --glass-fill-strong: rgba(255, 255, 255, 0.1);
+  /* Opaque surface for dropdown menus/popovers (no content bleed-through). */
+  --menu-fill: linear-gradient(0deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08)), rgb(var(--bg));
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-highlight: rgba(255, 255, 255, 0.22);
+  --glass-shadow:
+    0 1px 0 0 var(--glass-highlight) inset, 0 18px 40px -16px rgba(0, 0, 0, 0.65),
+    0 6px 16px -8px rgba(0, 0, 0, 0.5);
+  --glass-shadow-lift:
+    0 1px 0 0 var(--glass-highlight) inset, 0 32px 60px -20px rgba(0, 0, 0, 0.7),
+    0 12px 28px -10px rgba(0, 0, 0, 0.55);
+  --hairline: rgba(255, 255, 255, 0.1);
+  --field-bg: rgba(255, 255, 255, 0.05);
+
+  /* Aurora background blob tints (violet / cyan / magenta). */
+  --blob-1: rgba(124, 58, 237, 0.5);
+  --blob-2: rgba(6, 182, 212, 0.42);
+  --blob-3: rgba(236, 72, 153, 0.4);
+  --blob-opacity: 0.55;
+
+  /* Default app accent = Aurora (violet → cyan). Overridable per element. */
+  --accent-from: #7c3aed;
+  --accent-to: #06b6d4;
+  --accent-glow: rgba(124, 58, 237, 0.45);
+  --accent-fg: #ffffff;
+}
+
+.light {
+  color-scheme: light;
+
+  --bg: 250 247 255; /* #FAF7FF warm off-white */
+  --fg: 26 20 48; /* deep plum, not navy */
+  --fg-muted: 86 74 122;
+  --fg-subtle: 130 120 160;
+
+  --glass-fill: rgba(255, 255, 255, 0.55);
+  --glass-fill-strong: rgba(255, 255, 255, 0.72);
+  --menu-fill: linear-gradient(0deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)), rgb(var(--bg));
+  --glass-border: rgba(255, 255, 255, 0.7);
+  --glass-highlight: rgba(255, 255, 255, 0.9);
+  --glass-shadow:
+    0 1px 0 0 var(--glass-highlight) inset, 0 20px 44px -20px rgba(80, 40, 120, 0.28),
+    0 6px 16px -10px rgba(80, 40, 120, 0.18);
+  --glass-shadow-lift:
+    0 1px 0 0 var(--glass-highlight) inset, 0 34px 64px -24px rgba(80, 40, 120, 0.34),
+    0 12px 28px -12px rgba(80, 40, 120, 0.22);
+  --hairline: rgba(40, 20, 70, 0.08);
+  --field-bg: rgba(255, 255, 255, 0.6);
+
+  /* Pastel aurora blobs (soft violet / peach / mint) at low opacity. */
+  --blob-1: rgba(167, 139, 250, 0.5);
+  --blob-2: rgba(253, 186, 140, 0.45);
+  --blob-3: rgba(110, 231, 183, 0.45);
+  --blob-opacity: 0.7;
+
+  --accent-glow: rgba(124, 58, 237, 0.3);
+}
+
+@layer base {
+  * {
+    border-color: var(--hairline);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    font-family: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+    color: rgb(var(--fg));
+    background-color: rgb(var(--bg));
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    /* Cross-fade the theme switch when View Transitions are unavailable. */
+    transition:
+      background-color 0.5s ease,
+      color 0.5s ease;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: 'Space Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
+  }
+
+  /* Accessible, on-brand focus ring. */
+  :focus-visible {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow:
+      0 0 0 2px rgb(var(--bg)),
+      0 0 0 4px var(--accent-from);
+    border-radius: 0.5rem;
+  }
+}
+
+@layer components {
+  /* Frosted glass surface (plan.md §4.2). */
+  .glass {
+    background: var(--glass-fill);
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+  }
+
+  .glass-strong {
+    background: var(--glass-fill-strong);
+    backdrop-filter: blur(24px) saturate(1.5);
+    -webkit-backdrop-filter: blur(24px) saturate(1.5);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+  }
+
+  /* Opaque surface for dropdown menus/popovers so content underneath never
+     bleeds through and overlaps the menu text. */
+  .glass-menu {
+    background: var(--menu-fill);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow-lift);
+  }
+
+  /* Flowing accent gradient as text (plan.md §4.4). */
+  .gradient-text {
+    background-image: linear-gradient(
+      110deg,
+      var(--accent-from),
+      var(--accent-to),
+      var(--accent-from)
+    );
+    background-size: 220% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: gradient-flow 6s ease-in-out infinite;
+  }
+
+  /* Layered, tactile button elevation (plan.md §4.4). Hover intensifies the
+     glow + shadow; :active collapses it for a real "press". Translate/scale are
+     applied via Tailwind utilities on the button. */
+  .btn-3d {
+    box-shadow:
+      inset 0 1.5px 0 rgba(255, 255, 255, 0.65),
+      inset 0 -4px 9px rgba(0, 0, 0, 0.28),
+      0 16px 30px -8px var(--accent-glow),
+      0 10px 20px -6px rgba(0, 0, 0, 0.55);
+  }
+  .btn-3d:hover {
+    box-shadow:
+      inset 0 1.5px 0 rgba(255, 255, 255, 0.7),
+      inset 0 -4px 9px rgba(0, 0, 0, 0.28),
+      0 26px 46px -10px var(--accent-glow),
+      0 14px 26px -8px rgba(0, 0, 0, 0.6);
+  }
+  .btn-3d:active {
+    box-shadow:
+      inset 0 3px 7px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25),
+      0 3px 8px -6px var(--accent-glow);
+  }
+
+  .btn-3d-soft {
+    box-shadow:
+      inset 0 1.5px 0 var(--glass-highlight),
+      0 12px 24px -10px rgba(0, 0, 0, 0.5),
+      0 6px 12px -6px rgba(0, 0, 0, 0.4);
+  }
+  .btn-3d-soft:hover {
+    box-shadow:
+      inset 0 1.5px 0 var(--glass-highlight),
+      0 22px 38px -12px var(--accent-glow),
+      0 10px 18px -8px rgba(0, 0, 0, 0.45);
+  }
+  .btn-3d-soft:active {
+    box-shadow: inset 0 3px 7px rgba(0, 0, 0, 0.25);
+  }
+
+  /* Rotating conic gradient border for key surfaces (plan.md §4.4). */
+  .gradient-border {
+    position: relative;
+    isolation: isolate;
+  }
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    padding: 1.5px;
+    border-radius: inherit;
+    background: conic-gradient(
+      from var(--angle, 0deg),
+      var(--accent-from),
+      var(--accent-to),
+      var(--accent-from)
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: spin-slow 8s linear infinite;
+  }
+}
+
+/* @property enables the conic gradient angle to animate smoothly. */
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* Aurora background blobs (plan.md §4.3) — drift continuously; JS adds pointer
+   parallax on top. Kept in CSS so the component JSX stays clean. */
+.aurora-field {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.aurora-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(72px);
+  opacity: var(--blob-opacity);
+  will-change: transform;
+}
+/* Subtle film grain for premium texture (plan.md §4.4 micro-details). */
+.aurora-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.4;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+}
+.aurora-blob--1 {
+  width: 46vmax;
+  height: 46vmax;
+  top: -14vmax;
+  left: -8vmax;
+  background: var(--blob-1);
+  animation: aurora-drift-1 26s ease-in-out infinite alternate;
+}
+.aurora-blob--2 {
+  width: 40vmax;
+  height: 40vmax;
+  bottom: -16vmax;
+  right: -10vmax;
+  background: var(--blob-2);
+  animation: aurora-drift-2 32s ease-in-out infinite alternate;
+}
+.aurora-blob--3 {
+  width: 34vmax;
+  height: 34vmax;
+  top: 28%;
+  left: 36%;
+  background: var(--blob-3);
+  animation: aurora-drift-3 38s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-drift-1 {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(8vmax, 6vmax, 0) scale(1.12);
+  }
+}
+@keyframes aurora-drift-2 {
+  from {
+    transform: translate3d(0, 0, 0) scale(1.05);
+  }
+  to {
+    transform: translate3d(-10vmax, -5vmax, 0) scale(0.92);
+  }
+}
+@keyframes aurora-drift-3 {
+  from {
+    transform: translate3d(0, 0, 0) scale(0.95);
+  }
+  to {
+    transform: translate3d(-6vmax, 8vmax, 0) scale(1.1);
+  }
+}
+
+/* View Transitions cross-fade for theme toggle (Chromium). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.5s;
+}
+
+/* =========================================================================
+   Canvas rich text (P3.3). `.canvas-rich` styles BOTH the static rendered HTML
+   (TextLayer) and the live Tiptap editor (`.ProseMirror.canvas-rich-edit`) so a
+   box looks identical whether or not it's being edited. Tailwind's base resets
+   lists/headings, so these restore them inside the canvas only.
+   ========================================================================= */
+.canvas-rich {
+  box-sizing: border-box;
+  height: 100%;
+  padding: 12px;
+  font-family: 'Inter Variable', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+.canvas-rich > :first-child {
+  margin-top: 0;
+}
+.canvas-rich > :last-child {
+  margin-bottom: 0;
+}
+.canvas-rich p {
+  margin: 0.25em 0;
+}
+.canvas-rich h1 {
+  font-family: 'Space Grotesk Variable', system-ui, sans-serif;
+  font-size: 1.6em;
+  font-weight: 800;
+  line-height: 1.15;
+  margin: 0.2em 0 0.3em;
+}
+.canvas-rich h2 {
+  font-family: 'Space Grotesk Variable', system-ui, sans-serif;
+  font-size: 1.3em;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0.2em 0 0.25em;
+}
+.canvas-rich strong {
+  font-weight: 700;
+}
+.canvas-rich em {
+  font-style: italic;
+}
+.canvas-rich u {
+  text-decoration: underline;
+}
+.canvas-rich s {
+  text-decoration: line-through;
+}
+.canvas-rich ul {
+  list-style: disc;
+  padding-left: 1.4em;
+  margin: 0.25em 0;
+}
+.canvas-rich ol {
+  list-style: decimal;
+  padding-left: 1.5em;
+  margin: 0.25em 0;
+}
+.canvas-rich li {
+  margin: 0.1em 0;
+}
+.canvas-rich li > p {
+  margin: 0;
+}
+.canvas-rich blockquote {
+  border-left: 3px solid var(--glass-border);
+  padding-left: 0.75em;
+  margin: 0.4em 0;
+  color: rgb(var(--fg-muted));
+  font-style: italic;
+}
+.canvas-rich code {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  background: var(--glass-fill);
+  padding: 0.1em 0.3em;
+  border-radius: 0.3em;
+  font-size: 0.9em;
+}
+.canvas-rich pre {
+  background: var(--glass-fill);
+  padding: 0.6em 0.8em;
+  border-radius: 0.5em;
+  margin: 0.4em 0;
+  overflow-x: auto;
+}
+.canvas-rich pre code {
+  background: none;
+  padding: 0;
+}
+.canvas-rich mark {
+  background: rgba(250, 204, 21, 0.4);
+  color: inherit;
+  border-radius: 0.2em;
+  padding: 0 0.1em;
+}
+.canvas-rich a {
+  color: rgb(var(--fg));
+  text-decoration: underline;
+}
+.canvas-rich hr {
+  border: none;
+  border-top: 1px solid var(--glass-border);
+  margin: 0.5em 0;
+}
+.canvas-rich-empty {
+  font-style: italic;
+}
+/* The live editor: fill the box, scroll long content, no focus ring (the box
+   itself carries the accent ring). */
+.canvas-rich-edit {
+  height: 100%;
+  overflow-y: auto;
+  outline: none;
+  caret-color: rgb(var(--fg));
+}
+.ProseMirror,
+.ProseMirror:focus {
+  outline: none;
+}
+
+/* Honor prefers-reduced-motion: calm all heavy motion (plan.md §4.4). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .aurora-blob {
+    animation: none !important;
+  }
+}
