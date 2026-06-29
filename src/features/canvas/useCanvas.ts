@@ -294,7 +294,7 @@ export function useSaveCanvas(projectId: string | null) {
   return useMutation<
     CanvasNote,
     Error,
-    { id: string; title?: string; page_type?: PageType; scene?: CanvasScene }
+    { id: string; title?: string; page_type?: PageType; scene?: CanvasScene; doc_state?: string }
   >({
     mutationFn: ({ id, ...patch }) => patchCanvas(id, patch),
     onSuccess: (saved) => {

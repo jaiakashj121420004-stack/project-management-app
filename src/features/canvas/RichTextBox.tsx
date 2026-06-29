@@ -1,11 +1,16 @@
-import { useCallback, useEffect, useRef, type CSSProperties, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, type CSSProperties, type KeyboardEvent } from 'react';
+import type { XmlFragment } from 'yjs';
 import { EditorContent, useEditor } from '@tiptap/react';
-import { emptyTextDoc, textExtensions } from './richText';
+import { collabTextExtensions, type CaretUser } from './richText';
 import { TextFormatToolbar } from './TextFormatToolbar';
 
 interface RichTextBoxProps {
-  /** Initial Tiptap document (null → a fresh empty paragraph). */
-  body: Record<string, unknown> | null;
+  /** This box's collaborative Y.XmlFragment (the live source of truth). */
+  fragment: XmlFragment;
+  /** Awareness-bearing provider for the remote-caret extension. */
+  caretProvider: { awareness: unknown };
+  /** Identity shown on this editor's caret to other participants. */
+  user: CaretUser;
   /** Transform/size for the content box (world units, camera-scaled). */
   boxStyle: CSSProperties;
   /** Screen-space position for the floating format toolbar. */
@@ -14,37 +19,39 @@ interface RichTextBoxProps {
   color: string;
   /** Ruled page: align each line to the rule spacing so text sits on the lines. */
   ruled?: boolean;
-  /** Persist the edited content (debounced while typing + flushed on exit). */
-  onCommit: (body: Record<string, unknown>, text: string) => void;
+  /** Mirror the edited content into the element's body/text cache (debounced). */
+  onBodyChange: (body: Record<string, unknown>, text: string) => void;
   /** Leave edit mode (Escape). */
   onExit: () => void;
 }
 
-/** Commit at most one history step per this idle gap while typing. */
+/** Refresh the derived body/text cache at most once per this idle gap. */
 const COMMIT_DEBOUNCE = 400;
 
 /**
- * The live Tiptap editor for the one text box being edited. Mounted only while
- * editing; it owns the editor instance and renders both the in-canvas editable
- * content (aligned to the box) and the screen-space formatting toolbar. Edits are
- * debounced into a single scene commit so typing doesn't flood undo history, and
- * the latest content is flushed on unmount so switching away never drops it.
+ * The live Tiptap editor for the one text box being edited (P3.7: collaborative).
+ * It binds to this box's `Y.XmlFragment` via @tiptap/extension-collaboration, so
+ * concurrent typing from multiple people merges, and shows remote carets via
+ * @tiptap/extension-collaboration-caret. The fragment is the source of truth;
+ * `onBodyChange` keeps the element's denormalised `body`/`text` cache (used by
+ * the static renderer + previews + duplicate/paste) in step, debounced.
  */
 export function RichTextBox({
-  body,
+  fragment,
+  caretProvider,
+  user,
   boxStyle,
   toolbarStyle,
   color,
   ruled = false,
-  onCommit,
+  onBodyChange,
   onExit,
 }: RichTextBoxProps) {
-  // Keep callbacks in refs so the flush helpers stay identity-stable (the unmount
-  // flush must not re-run every time the parent passes a new closure).
-  const onCommitRef = useRef(onCommit);
+  // Keep callbacks in refs so the flush helpers stay identity-stable.
+  const onBodyChangeRef = useRef(onBodyChange);
   const onExitRef = useRef(onExit);
   useEffect(() => {
-    onCommitRef.current = onCommit;
+    onBodyChangeRef.current = onBodyChange;
     onExitRef.current = onExit;
   });
 
@@ -58,31 +65,41 @@ export function RichTextBox({
       timerRef.current = null;
     }
     if (dirtyRef.current && latestRef.current) {
-      onCommitRef.current(latestRef.current.body, latestRef.current.text);
+      onBodyChangeRef.current(latestRef.current.body, latestRef.current.text);
       dirtyRef.current = false;
     }
   }, []);
 
-  const editor = useEditor({
-    extensions: textExtensions,
-    content: body ?? emptyTextDoc(),
-    autofocus: 'end',
-    editorProps: {
-      attributes: {
-        class: ruled
-          ? 'canvas-rich canvas-rich-edit canvas-rich--ruled'
-          : 'canvas-rich canvas-rich-edit',
+  // Collaborative extensions are built once for this fragment/box.
+  const extensions = useMemo(
+    () => collabTextExtensions({ fragment, provider: caretProvider, user }),
+    [fragment, caretProvider, user],
+  );
+
+  const editor = useEditor(
+    {
+      extensions,
+      // NO `content`: a collaborative editor takes its content from the fragment
+      // (pre-seeded from `body` when the doc was built), never from a prop.
+      autofocus: 'end',
+      editorProps: {
+        attributes: {
+          class: ruled
+            ? 'canvas-rich canvas-rich-edit canvas-rich--ruled'
+            : 'canvas-rich canvas-rich-edit',
+        },
+      },
+      onUpdate: ({ editor: ed }) => {
+        latestRef.current = { body: ed.getJSON() as Record<string, unknown>, text: ed.getText() };
+        dirtyRef.current = true;
+        if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+        timerRef.current = window.setTimeout(flush, COMMIT_DEBOUNCE);
       },
     },
-    onUpdate: ({ editor: ed }) => {
-      latestRef.current = { body: ed.getJSON() as Record<string, unknown>, text: ed.getText() };
-      dirtyRef.current = true;
-      if (timerRef.current !== null) window.clearTimeout(timerRef.current);
-      timerRef.current = window.setTimeout(flush, COMMIT_DEBOUNCE);
-    },
-  });
+    [extensions],
+  );
 
-  // Flush any pending edit when the editor unmounts (exit / canvas switch).
+  // Flush any pending cache update when the editor unmounts (exit / canvas switch).
   useEffect(() => () => flush(), [flush]);
 
   const handleKeyDown = (event: KeyboardEvent) => {

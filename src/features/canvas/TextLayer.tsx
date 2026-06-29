@@ -1,9 +1,10 @@
 import { type CSSProperties } from 'react';
+import type { XmlFragment } from 'yjs';
 import { cn } from '@/lib/cn';
 import type { PageType } from '@/lib/canvasPages';
 import type { Camera, ElementBox } from './constants';
 import type { CanvasElement, TextBoxElement } from './elements';
-import { isEmptyDoc, renderTextHtml } from './richText';
+import { isEmptyDoc, renderTextHtml, type CaretUser } from './richText';
 import { RichTextBox } from './RichTextBox';
 import type { CanvasPalette } from './useCanvasPalette';
 
@@ -17,7 +18,14 @@ interface TextLayerProps {
   editingId: string | null;
   /** Live transform of a text box mid drag/resize (follows the Konva node). */
   liveBox: ElementBox | null;
-  onCommit: (id: string, body: Record<string, unknown>, text: string) => void;
+  /** This box's collaborative fragment (the live rich-text source of truth). */
+  fragmentFor: (elementId: string) => XmlFragment;
+  /** Awareness-bearing provider for remote carets. */
+  caretProvider: { awareness: unknown };
+  /** Local identity shown on the caret to other participants. */
+  caretUser: CaretUser;
+  /** Mirror the edited content into the element body/text cache (debounced). */
+  onBodyChange: (id: string, body: Record<string, unknown>, text: string) => void;
   onExitEdit: () => void;
 }
 
@@ -36,7 +44,10 @@ export function TextLayer({
   pageType,
   editingId,
   liveBox,
-  onCommit,
+  fragmentFor,
+  caretProvider,
+  caretUser,
+  onBodyChange,
   onExitEdit,
 }: TextLayerProps) {
   const texts = elements.filter((el): el is TextBoxElement => el.type === 'text');
@@ -74,12 +85,14 @@ export function TextLayer({
           return (
             <RichTextBox
               key={el.id}
-              body={el.body}
+              fragment={fragmentFor(el.id)}
+              caretProvider={caretProvider}
+              user={caretUser}
               boxStyle={boxStyle}
               toolbarStyle={toolbarStyle}
               color={palette.text}
               ruled={ruled}
-              onCommit={(body, text) => onCommit(el.id, body, text)}
+              onBodyChange={(body, text) => onBodyChange(el.id, body, text)}
               onExit={onExitEdit}
             />
           );

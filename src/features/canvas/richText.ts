@@ -7,11 +7,14 @@
  * the static renderer (TextLayer) must use the SAME extension list, so it lives
  * here once. Konva-free — safe to import from the lazy canvas chunk.
  */
-import { generateHTML, type JSONContent } from '@tiptap/core';
+import { generateHTML, type AnyExtension, type JSONContent } from '@tiptap/core';
 import { StarterKit } from '@tiptap/starter-kit';
 import { Highlight } from '@tiptap/extension-highlight';
 import { Color, TextStyle } from '@tiptap/extension-text-style';
 import { Link } from '@tiptap/extension-link';
+import { Collaboration } from '@tiptap/extension-collaboration';
+import { CollaborationCaret } from '@tiptap/extension-collaboration-caret';
+import type { XmlFragment } from 'yjs';
 
 /**
  * Allow only safe link targets, mirroring the notes markdown allow-list. Returns
@@ -77,6 +80,40 @@ export const textExtensions = [
   Color,
   SafeLink,
 ];
+
+/** The participant shown by the collaborative caret (name + cursor colour). */
+export interface CaretUser {
+  name: string;
+  color: string;
+}
+
+/**
+ * The COLLABORATIVE extension list for the live editor (P3.7). Identical schema
+ * to `textExtensions` (so fragment ⇄ JSON conversion stays consistent), but:
+ *   - StarterKit's local undo/redo is disabled — Yjs owns history, and a local
+ *     ProseMirror history would fight the CRDT;
+ *   - `Collaboration` binds the editor to this box's `Y.XmlFragment`, so two
+ *     people typing in the same box merge keystroke-by-keystroke;
+ *   - `CollaborationCaret` shows each remote editor's caret + name inside the box.
+ *
+ * `content` must NOT be passed to a collaborative editor (the fragment is the
+ * source of truth) — the fragment is pre-seeded from `body` when the doc is built.
+ */
+export function collabTextExtensions(opts: {
+  fragment: XmlFragment;
+  provider: { awareness: unknown };
+  user: CaretUser;
+}): AnyExtension[] {
+  return [
+    StarterKit.configure({ heading: { levels: [1, 2] }, link: false, undoRedo: false }),
+    Highlight,
+    TextStyle,
+    Color,
+    SafeLink,
+    Collaboration.configure({ fragment: opts.fragment }),
+    CollaborationCaret.configure({ provider: opts.provider, user: opts.user }),
+  ];
+}
 
 /** An empty Tiptap document (a single empty paragraph) for a brand-new box. */
 export function emptyTextDoc(): JSONContent {

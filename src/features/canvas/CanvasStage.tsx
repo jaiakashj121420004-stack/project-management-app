@@ -7,6 +7,10 @@ import { ElementNode } from './elementRenderers';
 import { PageBackground } from './PageBackground';
 import { TextLayer } from './TextLayer';
 import { MediaLayer } from './MediaLayer';
+import { RemotePresenceLayer } from './RemotePresenceLayer';
+import type { CaretUser } from './richText';
+import type { RemotePeer } from './collab/awareness';
+import type { XmlFragment } from 'yjs';
 import { useCanvasPalette } from './useCanvasPalette';
 import { strokePathData, type StrokeStyle } from './freehand';
 import { penStrokeStyle, type PenSettings } from './drawing';
@@ -62,6 +66,19 @@ interface CanvasStageProps {
    * canvas container. `elementId` is the hit element, or null for background.
    */
   onContextMenu: (x: number, y: number, elementId: string | null) => void;
+  // ── collaboration (P3.7) ──
+  /** This box's collaborative fragment (rich-text source of truth). */
+  fragmentFor: (elementId: string) => XmlFragment;
+  /** Awareness-bearing provider for remote carets. */
+  caretProvider: { awareness: unknown };
+  /** Local identity shown on the caret to other participants. */
+  caretUser: CaretUser;
+  /** Mirror an edited text box's body/text into the element cache. */
+  onTextBodyChange: (id: string, body: Record<string, unknown>, text: string) => void;
+  /** Remote participants to draw (cursors + selection halos). */
+  remotePeers: RemotePeer[];
+  /** Report the local pointer's WORLD position for awareness (null = off-canvas). */
+  onPointerWorldMove?: (world: { x: number; y: number } | null) => void;
 }
 
 /** How long after the last pen event we keep rejecting touch (palm rejection). */
@@ -118,6 +135,12 @@ export function CanvasStage({
   onEndTextEdit,
   onDropFiles,
   onContextMenu,
+  fragmentFor,
+  caretProvider,
+  caretUser,
+  onTextBodyChange,
+  remotePeers,
+  onPointerWorldMove,
 }: CanvasStageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
@@ -681,6 +704,19 @@ export function CanvasStage({
     onDropFiles(worldX, worldY, files);
   }
 
+  // ── cursor reporting (awareness) ──────────────────────────────────────────
+  // Throttle to one report per animation frame so a fast pointer doesn't flood
+  // awareness; the provider additionally throttles the network broadcast.
+  const cursorRaf = useRef<number | null>(null);
+  useEffect(() => () => { if (cursorRaf.current !== null) cancelAnimationFrame(cursorRaf.current); }, []);
+  function reportCursor(clientX: number, clientY: number) {
+    if (!onPointerWorldMove || cursorRaf.current !== null) return;
+    cursorRaf.current = requestAnimationFrame(() => {
+      cursorRaf.current = null;
+      onPointerWorldMove(toWorld(clientX, clientY));
+    });
+  }
+
   const marqueeStyle: React.CSSProperties | null = marquee
     ? {
         left: Math.min(marquee.x1, marquee.x2),
@@ -697,6 +733,8 @@ export function CanvasStage({
       style={{ touchAction: 'none', cursor }}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
+      onPointerMove={(e) => reportCursor(e.clientX, e.clientY)}
+      onPointerLeave={() => onPointerWorldMove?.(null)}
     >
       {size.width > 0 && size.height > 0 && (
         <Stage
@@ -794,7 +832,10 @@ export function CanvasStage({
           pageType={pageType}
           editingId={editingTextId}
           liveBox={liveBox}
-          onCommit={(id, body, text) => onChangeElement(id, { body, text })}
+          fragmentFor={fragmentFor}
+          caretProvider={caretProvider}
+          caretUser={caretUser}
+          onBodyChange={onTextBodyChange}
           onExitEdit={onEndTextEdit}
         />
       )}
@@ -808,6 +849,10 @@ export function CanvasStage({
           editing={canEdit}
           liveBox={liveBox}
         />
+      )}
+
+      {size.width > 0 && size.height > 0 && (
+        <RemotePresenceLayer peers={remotePeers} camera={camera} elements={elements} />
       )}
     </div>
   );

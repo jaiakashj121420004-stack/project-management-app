@@ -12,13 +12,18 @@ import { AlertCircle, Check, Eye, Pencil, Trash2, X } from 'lucide-react';
 import { Spinner } from '@/components/feedback/Spinner';
 import { SegmentedToggle } from '@/components/forms/SegmentedToggle';
 import { useTheme } from '@/hooks/useTheme';
+import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/features/auth/useProfile';
+import { useIsPro } from '@/features/billing';
+import { useProjectIsPro } from '@/features/collaboration';
 import { PAGE_PATTERN_SPACING, type PageType } from '@/lib/canvasPages';
 import { MEDIA_CAPS, mediaKindForMime } from '@/lib/proFeatures';
 import { MediaUploadError, uploadCanvasMedia } from '@/lib/storage';
 import type { CanvasNote } from '@/types/database';
 import { canvasTitleSchema } from './schemas';
 import { useCanvas, useDeleteCanvas, useSaveCanvas } from './useCanvas';
-import { useSceneHistory } from './history';
+import { useYjsCanvas } from './collab/useYjsCanvas';
+import { cursorColor, type CanvasUser } from './collab/awareness';
 import {
   parseScene,
   createPlaceholderTextBox,
@@ -170,12 +175,50 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mediaModalOpen, setMediaModalOpen] = useState(false);
 
-  const [seedScene] = useState<CanvasScene>(() => parseScene(note.scene));
-  const history = useSceneHistory(seedScene);
-  const { scene, commit, undo, redo, canUndo, canRedo } = history;
+  // ── identity + realtime gating ───────────────────────────────────────────────
+  const { user } = useAuth();
+  const { data: profile } = useProfile();
+  const isPro = useIsPro();
+  const { data: isProBoard } = useProjectIsPro(projectId ?? undefined);
+
+  const me = useMemo<CanvasUser | null>(() => {
+    if (!user) return null;
+    const name = profile?.display_name?.trim() || user.email?.split('@')[0] || 'You';
+    return { id: user.id, name, color: cursorColor(user.id), avatarUrl: profile?.avatar_url ?? null };
+  }, [user, profile?.display_name, profile?.avatar_url]);
+
+  // Join the live channel only for a Pro canvas: the board owner's plan governs a
+  // project canvas; the owner's own plan a personal one. A shared member of a
+  // personal canvas joins too (the channel's RLS is the real gate either way).
+  const isOwner = note.owner_id === user?.id;
+  const realtimeEnabled =
+    Boolean(me) && (projectId ? Boolean(isProBoard) : isOwner ? isPro : true);
+
+  // ── collaborative document (replaces the old local useSceneHistory) ──────────
+  const {
+    scene,
+    commit,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    pageType,
+    setPageType,
+    encodeStateHex,
+    fragmentFor,
+    syncTextBody,
+    caretProvider,
+    remotePeers,
+    setLocalCursor,
+    setLocalSelection,
+  } = useYjsCanvas({ note, realtimeEnabled, me });
+
+  const caretUser = useMemo(
+    () => ({ name: me?.name ?? 'You', color: me?.color ?? '#7C3AED' }),
+    [me],
+  );
 
   const [title, setTitle] = useState(note.title);
-  const [pageType, setPageType] = useState<PageType>(note.page_type);
   const [mode, setMode] = useState<'edit' | 'view'>('edit');
   const editing = canEdit && mode === 'edit';
   const [tool, setTool] = useState<CanvasTool>('select');
@@ -212,7 +255,7 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
   );
 
   const [saved, setSaved] = useState<{ scene: CanvasScene; pageType: PageType; title: string }>(
-    () => ({ scene: seedScene, pageType: note.page_type, title: note.title }),
+    () => ({ scene, pageType, title: note.title }),
   );
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'error'>('idle');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -248,6 +291,14 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
   const primaryElement = validSelectedIds[0]
     ? scene.elements.find((el) => el.id === validSelectedIds[0])
     : undefined;
+
+  // Publish the local selection to collaborators (drives their selection halos).
+  const selectionKey = validSelectedIds.join(',');
+  useEffect(() => {
+    setLocalSelection(validSelectedIds);
+    // selectionKey captures the meaningful change; validSelectedIds identity churns.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectionKey, setLocalSelection]);
 
   // Text-edit mode: only when editing, element exists, and isn't locked.
   const editingElementRaw = editingTextId
@@ -302,15 +353,27 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
     title?: string;
     page_type?: PageType;
     scene?: CanvasScene;
+    doc_state?: string;
   } | null => {
     const parsed = canvasTitleSchema.safeParse(title);
     if (!parsed.success) return null;
-    const patch: { title?: string; page_type?: PageType; scene?: CanvasScene } = {};
+    const patch: {
+      title?: string;
+      page_type?: PageType;
+      scene?: CanvasScene;
+      doc_state?: string;
+    } = {};
     if (parsed.data !== saved.title) patch.title = parsed.data;
     if (pageType !== saved.pageType) patch.page_type = pageType;
-    if (!sceneEquals(scene, saved.scene)) patch.scene = scene;
+    if (!sceneEquals(scene, saved.scene)) {
+      // The denormalised scene jsonb (fast non-realtime reads/thumbnails) AND the
+      // authoritative Yjs binary snapshot are persisted together; Yjs merges make
+      // last-write safe even with several editors saving concurrently.
+      patch.scene = scene;
+      patch.doc_state = encodeStateHex();
+    }
     return Object.keys(patch).length > 0 ? patch : null;
-  }, [title, pageType, scene, saved]);
+  }, [title, pageType, scene, saved, encodeStateHex]);
 
   // Debounced autosave.
   useEffect(() => {
@@ -819,6 +882,12 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
             onEndTextEdit={endTextEdit}
             onDropFiles={editing && projectId !== null ? handleDropFiles : undefined}
             onContextMenu={handleContextMenu}
+            fragmentFor={fragmentFor}
+            caretProvider={caretProvider}
+            caretUser={caretUser}
+            onTextBodyChange={syncTextBody}
+            remotePeers={remotePeers}
+            onPointerWorldMove={editing ? setLocalCursor : undefined}
           />
         </div>
 

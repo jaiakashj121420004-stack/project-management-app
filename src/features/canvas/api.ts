@@ -97,18 +97,25 @@ export async function insertIndependentCanvas(input: {
   return data;
 }
 
-/** Patch a canvas's title, page type and/or scene. The trigger refreshes
- *  updated_at + updated_by. The scene is plain JSON, cast to the jsonb column. */
+/** Patch a canvas's title, page type, scene and/or Yjs doc_state. The trigger
+ *  refreshes updated_at + updated_by. The scene is plain JSON, cast to the jsonb
+ *  column; doc_state is a Postgres bytea hex literal (`\x…`) for the BYTEA column. */
 export async function patchCanvas(
   id: string,
-  patch: { title?: string; page_type?: PageType; scene?: CanvasScene },
+  patch: { title?: string; page_type?: PageType; scene?: CanvasScene; doc_state?: string },
 ): Promise<CanvasNote> {
-  const update: { title?: string; page_type?: PageType; scene?: Record<string, unknown> } = {
+  const update: {
+    title?: string;
+    page_type?: PageType;
+    scene?: Record<string, unknown>;
+    doc_state?: string;
+  } = {
     ...(patch.title !== undefined ? { title: patch.title } : {}),
     ...(patch.page_type !== undefined ? { page_type: patch.page_type } : {}),
     ...(patch.scene !== undefined
       ? { scene: patch.scene as unknown as Record<string, unknown> }
       : {}),
+    ...(patch.doc_state !== undefined ? { doc_state: patch.doc_state } : {}),
   };
   const { data, error } = await supabase
     .from('canvas_notes')
