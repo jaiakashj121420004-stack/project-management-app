@@ -131,4 +131,6 @@ export function buildStroke(
     smoothing: style.smoothing,
     opacity: style.opacity,
     blend: style.blend,
-    simulatePressure: style.simula
+    simulatePressure: style.simulatePressure,
+  };
+}
