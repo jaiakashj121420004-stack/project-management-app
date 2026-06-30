@@ -12,7 +12,7 @@ import type { CaretUser } from './richText';
 import type { RemotePeer } from './collab/awareness';
 import type { XmlFragment } from 'yjs';
 import { useCanvasPalette } from './useCanvasPalette';
-import { strokePathData, type StrokeStyle } from './freehand';
+import { strokePathData, type ErasePoint, type StrokeStyle } from './freehand';
 import { penStrokeStyle, type PenSettings } from './drawing';
 import {
   LONG_PRESS_MS,
@@ -21,6 +21,7 @@ import {
   clampScale,
   type Camera,
   type CanvasTool,
+  type EraserMode,
   type ElementBox,
 } from './constants';
 import type { CanvasElement, ElementPatch } from './elements';
@@ -48,6 +49,12 @@ interface CanvasStageProps {
   onEraseStroke: (id: string) => void;
   /** The eraser gesture ended — commit the batch as one undo step. */
   onEraseEnd: () => void;
+  /** Eraser behaviour: whole-stroke ('object') vs partial ('precision'). */
+  eraserMode: EraserMode;
+  /** Precision-eraser nib radius in SCREEN px (converted to world via camera). */
+  eraserSize: number;
+  /** A finished precision-erase gesture: the world path + world radius it covered. */
+  onPrecisionErase: (path: ErasePoint[], radius: number) => void;
   /** The text tool was clicked at a world point — drop a text box there. */
   onPlaceText: (worldX: number, worldY: number) => void;
   /** The text box currently open for editing (null = none). */
@@ -75,6 +82,8 @@ interface CanvasStageProps {
   caretUser: CaretUser;
   /** Mirror an edited text box's body/text into the element cache. */
   onTextBodyChange: (id: string, body: Record<string, unknown>, text: string) => void;
+  /** Report a text box's auto-grown height (world units). */
+  onTextResize: (id: string, height: number) => void;
   /** Remote participants to draw (cursors + selection halos). */
   remotePeers: RemotePeer[];
   /** Report the local pointer's WORLD position for awareness (null = off-canvas). */
@@ -129,6 +138,9 @@ export function CanvasStage({
   onCommitStroke,
   onEraseStroke,
   onEraseEnd,
+  eraserMode,
+  eraserSize,
+  onPrecisionErase,
   onPlaceText,
   editingTextId,
   onEditText,
@@ -139,6 +151,7 @@ export function CanvasStage({
   caretProvider,
   caretUser,
   onTextBodyChange,
+  onTextResize,
   remotePeers,
   onPointerWorldMove,
 }: CanvasStageProps) {
@@ -357,17 +370,32 @@ export function CanvasStage({
     }
   }
 
+  // Precision eraser: collect the world-space path the nib travels.
+  const erasePath = useRef<ErasePoint[]>([]);
+
+  function recordErase(clientX: number, clientY: number) {
+    const p = toWorld(clientX, clientY);
+    if (p) erasePath.current.push(p);
+  }
+
   function extendErase(evt: PointerEvent) {
     if (!erasing.current) return;
     if (evt.cancelable) evt.preventDefault();
-    eraseAtScreen(evt.clientX, evt.clientY);
+    if (eraserMode === 'precision') recordErase(evt.clientX, evt.clientY);
+    else eraseAtScreen(evt.clientX, evt.clientY);
   }
 
   function endErase() {
     if (!erasing.current) return;
     erasing.current = false;
     endGestureListeners();
-    onEraseEnd();
+    if (eraserMode === 'precision') {
+      const path = erasePath.current;
+      erasePath.current = [];
+      if (path.length > 0) onPrecisionErase(path, eraserSize / camera.scale);
+    } else {
+      onEraseEnd();
+    }
   }
 
   // ── marquee selection ────────────────────────────────────────────────────────
@@ -475,7 +503,12 @@ export function CanvasStage({
     } else {
       erasing.current = true;
       startGestureListeners(extendErase, endErase, endErase);
-      eraseAtScreen(e.evt.clientX, e.evt.clientY);
+      if (eraserMode === 'precision') {
+        erasePath.current = [];
+        recordErase(e.evt.clientX, e.evt.clientY);
+      } else {
+        eraseAtScreen(e.evt.clientX, e.evt.clientY);
+      }
     }
   }
 
@@ -836,6 +869,7 @@ export function CanvasStage({
           caretProvider={caretProvider}
           caretUser={caretUser}
           onBodyChange={onTextBodyChange}
+          onResize={onTextResize}
           onExitEdit={onEndTextEdit}
         />
       )}

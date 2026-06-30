@@ -12,6 +12,12 @@ import { getStroke } from 'perfect-freehand';
 import { topZ } from './elements';
 import type { CanvasElement, StrokeBlend, StrokeElement } from './elements';
 
+/** A point the precision eraser passed over (world coordinates). */
+export interface ErasePoint {
+  x: number;
+  y: number;
+}
+
 /** Light input smoothing — tracks the pen closely without the jitter of raw
  *  device samples. Shared by the live preview and the committed render. */
 const STREAMLINE = 0.5;
@@ -133,4 +139,90 @@ export function buildStroke(
     blend: style.blend,
     simulatePressure: style.simulatePressure,
   };
+}
+
+// ── precision (partial) eraser ───────────────────────────────────────────────
+
+/** The pen style a stroke was drawn with (to rebuild its surviving pieces). */
+function styleOf(stroke: StrokeElement): StrokeStyle {
+  return {
+    color: stroke.color,
+    size: stroke.size,
+    thinning: stroke.thinning,
+    smoothing: stroke.smoothing,
+    opacity: stroke.opacity,
+    blend: stroke.blend,
+    simulatePressure: stroke.simulatePressure,
+  };
+}
+
+/** Map a stroke's LOCAL sample to WORLD space, honouring its transform box. */
+function localToWorld(stroke: StrokeElement, lx: number, ly: number): [number, number] {
+  const rad = (stroke.rotation * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  return [stroke.x + lx * cos - ly * sin, stroke.y + lx * sin + ly * cos];
+}
+
+/** True if (x,y) is within `radius` of any eraser point (squared-distance test). */
+function nearEraser(x: number, y: number, eraser: readonly ErasePoint[], radius: number): boolean {
+  const r2 = radius * radius;
+  for (const p of eraser) {
+    const dx = x - p.x;
+    const dy = y - p.y;
+    if (dx * dx + dy * dy <= r2) return true;
+  }
+  return false;
+}
+
+/**
+ * Precision-erase a single stroke: remove the sample points the eraser passed
+ * over (within `radius`, world units) and split the surviving runs into separate
+ * strokes. Returns `null` when the eraser never touched this stroke (so the caller
+ * keeps the original untouched), or the list of surviving pieces (possibly empty
+ * if the whole stroke was erased). Each piece is rebuilt from world points, so it
+ * gets a fresh bounding box but renders identically to the part that remained.
+ */
+export function erasePartialStroke(
+  stroke: StrokeElement,
+  eraser: readonly ErasePoint[],
+  radius: number,
+  existing: readonly CanvasElement[],
+): StrokeElement[] | null {
+  const style = styleOf(stroke);
+  // A run is a contiguous list of surviving world samples [x, y, pressure, …].
+  const runs: number[][] = [];
+  let current: number[] = [];
+  let erasedAny = false;
+
+  for (let i = 0; i + 1 < stroke.points.length; i += 3) {
+    const lx = stroke.points[i]!;
+    const ly = stroke.points[i + 1]!;
+    const pressure = stroke.points[i + 2] ?? 0.5;
+    const [wx, wy] = localToWorld(stroke, lx, ly);
+    if (nearEraser(wx, wy, eraser, radius)) {
+      erasedAny = true;
+      if (current.length > 0) {
+        runs.push(current);
+        current = [];
+      }
+    } else {
+      current.push(wx, wy, pressure);
+    }
+  }
+  if (current.length > 0) runs.push(current);
+
+  if (!erasedAny) return null; // untouched — caller keeps the original stroke
+
+  const pieces: StrokeElement[] = [];
+  let pool = existing;
+  for (const run of runs) {
+    if (run.length < 6) continue; // need ≥2 samples to be a visible stroke
+    const piece = buildStroke(run, style, pool);
+    if (piece) {
+      pieces.push(piece);
+      pool = [...pool, piece]; // keep z values climbing for subsequent pieces
+    }
+  }
+  return pieces;
 }

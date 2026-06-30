@@ -16,6 +16,7 @@ import {
   Unlink,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { ColorPicker } from './ColorPicker';
 import { safeLinkHref } from './richText';
 
 interface TextFormatToolbarProps {
@@ -72,10 +73,11 @@ export function TextFormatToolbar({ editor, className }: TextFormatToolbarProps)
     setOpen((o) => (o === 'link' ? null : 'link'));
   }, [currentHref]);
 
-  const setColor = useCallback(
+  // Live colour changes from the spectrum/hex picker keep the popover open and
+  // re-focus the editor so the colour applies to the remembered selection.
+  const setColorNoClose = useCallback(
     (hex: string) => {
       editor.chain().focus().setColor(hex).run();
-      setOpen(null);
     },
     [editor],
   );
@@ -179,26 +181,11 @@ export function TextFormatToolbar({ editor, className }: TextFormatToolbarProps)
           </FmtButton>
         }
       >
-        <div className="flex items-center gap-1">
-          {TEXT_COLORS.map((c) => (
-            <button
-              key={c.value}
-              type="button"
-              aria-label={c.label}
-              title={c.label}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => setColor(c.value)}
-              className="h-6 w-6 rounded-full ring-1 ring-[var(--glass-border)] transition-transform hover:scale-110"
-              style={{
-                background: c.value,
-                boxShadow:
-                  currentColor?.toLowerCase() === c.value.toLowerCase()
-                    ? '0 0 0 2px rgb(var(--bg)), 0 0 0 4px ' + c.value
-                    : undefined,
-              }}
-            />
-          ))}
-        </div>
+        <ColorPicker
+          color={currentColor ?? '#7C3AED'}
+          presets={TEXT_COLORS.map((c) => c.value)}
+          onChange={setColorNoClose}
+        />
         <button
           type="button"
           onMouseDown={(event) => event.preventDefault()}

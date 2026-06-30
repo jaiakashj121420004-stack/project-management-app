@@ -111,11 +111,10 @@
 .canvas-rich-empty {
   font-style: italic;
 }
-/* The live editor: fill the box, scroll long content, no focus ring (the box
-   itself carries the accent ring). */
+/* The live editor: borderless + auto-growing (the box height tracks the content
+   via a ResizeObserver), so it reads like plain document text, not a widget. */
 .canvas-rich-edit {
-  height: 100%;
-  overflow-y: auto;
+  min-height: 100%;
   outline: none;
   caret-color: rgb(var(--fg));
 }
@@ -135,7 +134,19 @@
   padding-top: 0;
   padding-bottom: 0;
 }
+/* Keep EVERY block on the 28px rhythm so wrapped lines land on the rules and
+   headings/lists/quotes don't drift the baseline off the lines. */
 .canvas-rich--ruled p,
-.canvas-rich--ruled li {
+.canvas-rich--ruled li,
+.canvas-rich--ruled h1,
+.canvas-rich--ruled h2,
+.canvas-rich--ruled blockquote {
   margin: 0;
+  line-height: 28px;
+}
+.canvas-rich--ruled h1 {
+  font-size: 1.4em;
+}
+.canvas-rich--ruled h2 {
+  font-size: 1.2em;
 }

@@ -424,8 +424,8 @@ export function createTextBoxAt(
     type: 'text',
     x,
     y,
-    width: opts?.width ?? 220,
-    height: opts?.height ?? 120,
+    width: opts?.width ?? 320,
+    height: opts?.height ?? 40,
     rotation: 0,
     z,
     locked: false,
@@ -433,4 +433,11 @@ export function createTextBoxAt(
     body: null,
     text: '',
   };
+}
+
+/** A document-width page-writing column (Google-Docs-style long-form writing).
+ *  Anchored by its TOP-LEFT at (x, y); height auto-grows as the user types. */
+export const PAGE_TEXT_WIDTH = 720;
+export function createPageTextAt(x: number, y: number, z: number): TextBoxElement {
+  return createTextBoxAt(x, y, z, { width: PAGE_TEXT_WIDTH, height: 56 });
 }

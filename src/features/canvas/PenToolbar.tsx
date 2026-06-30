@@ -1,6 +1,8 @@
-import { Brush, Highlighter, Pen } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Brush, Highlighter, Pen, Pipette } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { ColorPicker } from './ColorPicker';
 import {
   PEN_COLORS,
   PEN_PRESETS,
@@ -29,6 +31,19 @@ const PRESET_ICONS: Record<PenPreset, LucideIcon> = {
  */
 export function PenToolbar({ settings, onChange, className }: PenToolbarProps) {
   const spec = PEN_PRESETS[settings.preset];
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!pickerOpen) return;
+    const onDown = (e: PointerEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) setPickerOpen(false);
+    };
+    document.addEventListener('pointerdown', onDown, true);
+    return () => document.removeEventListener('pointerdown', onDown, true);
+  }, [pickerOpen]);
+
+  const customActive = !PEN_COLORS.some((c) => c.toLowerCase() === settings.color.toLowerCase());
 
   return (
     <div
@@ -90,6 +105,35 @@ export function PenToolbar({ settings, onChange, className }: PenToolbarProps) {
             />
           );
         })}
+
+        {/* Custom colour (spectrum + hex) */}
+        <div ref={pickerRef} className="relative">
+          <button
+            type="button"
+            aria-label="Custom colour"
+            title="Custom colour"
+            aria-pressed={pickerOpen}
+            onClick={() => setPickerOpen((o) => !o)}
+            className={cn(
+              'grid h-6 w-6 place-items-center rounded-full border transition-transform',
+              customActive
+                ? 'scale-110 border-white ring-2 ring-[var(--accent-from)]'
+                : 'border-black/10 hover:scale-105 dark:border-white/20',
+            )}
+            style={customActive ? { backgroundColor: settings.color } : undefined}
+          >
+            {!customActive && <Pipette size={13} className="text-fg-muted" />}
+          </button>
+          {pickerOpen && (
+            <div className="glass-menu absolute left-1/2 top-full z-30 mt-2 -translate-x-1/2 rounded-xl border border-[var(--glass-border)] p-2 shadow-[0_14px_34px_-18px_rgba(0,0,0,0.7)]">
+              <ColorPicker
+                color={settings.color}
+                presets={PEN_COLORS}
+                onChange={(hex) => onChange({ ...settings, color: hex })}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       <Divider />

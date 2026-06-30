@@ -229,6 +229,32 @@ export function syncTextBody(
   );
 }
 
+/**
+ * Set layout fields (e.g. a text box's auto-grown `height`) WITHOUT pushing an
+ * undo step — like the body cache, these are derived from typing, not a discrete
+ * user gesture, so they ride TEXT_SYNC_ORIGIN (persisted + synced, not undoable).
+ */
+export function syncElementLayout(
+  doc: Y.Doc,
+  elementId: string,
+  patch: Partial<{ width: number; height: number }>,
+): void {
+  const elements = getElementsArray(doc);
+  Y.transact(
+    doc,
+    () => {
+      for (let i = 0; i < elements.length; i++) {
+        const map = elements.get(i);
+        if (map.get('id') === elementId) {
+          for (const [key, value] of Object.entries(patch)) map.set(key, value);
+          return;
+        }
+      }
+    },
+    TEXT_SYNC_ORIGIN,
+  );
+}
+
 // ── snapshot (Y.Doc → scene) ─────────────────────────────────────────────────
 
 /**

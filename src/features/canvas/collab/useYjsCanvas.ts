@@ -34,6 +34,7 @@ import {
   getTextFragment,
   setDocPageType,
   syncTextBody as syncTextBodyOp,
+  syncElementLayout as syncElementLayoutOp,
   LOCAL_ORIGIN,
 } from './yCanvasDoc';
 import { bytesToPgHex, pgHexToBytes } from './encoding';
@@ -69,6 +70,8 @@ export interface YjsCanvas {
   // ── rich-text binding ──
   fragmentFor: (elementId: string) => Y.XmlFragment;
   syncTextBody: (elementId: string, body: Record<string, unknown>, text: string) => void;
+  /** Persist a text box's auto-grown layout without an undo step. */
+  syncElementLayout: (elementId: string, patch: Partial<{ width: number; height: number }>) => void;
   caretProvider: CaretProvider;
   // ── presence ──
   remotePeers: RemotePeer[];
@@ -215,6 +218,11 @@ export function useYjsCanvas({ note, realtimeEnabled, me }: UseYjsCanvasOptions)
     (id: string, body: Record<string, unknown>, text: string) => syncTextBodyOp(doc, id, body, text),
     [doc],
   );
+  const syncElementLayout = useCallback(
+    (id: string, patch: Partial<{ width: number; height: number }>) =>
+      syncElementLayoutOp(doc, id, patch),
+    [doc],
+  );
   const setLocalCursor = useCallback(
     (world: { x: number; y: number } | null) =>
       awareness.setLocalStateField(CANVAS_CURSOR_FIELD, world),
@@ -241,6 +249,7 @@ export function useYjsCanvas({ note, realtimeEnabled, me }: UseYjsCanvasOptions)
     encodeStateHex,
     fragmentFor,
     syncTextBody,
+    syncElementLayout,
     caretProvider,
     remotePeers,
     setLocalCursor,

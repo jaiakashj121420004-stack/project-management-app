@@ -38,6 +38,19 @@ export function clampScale(scale: number): number {
 export const NUDGE_STEP = 1;
 export const NUDGE_LARGE_STEP = 10;
 
+/**
+ * Eraser modes:
+ *   - 'object'    — touching a stroke removes the WHOLE stroke (one undo step);
+ *   - 'precision' — removes only the ink the eraser passes over, splitting a
+ *     stroke into surviving pieces.
+ */
+export type EraserMode = 'object' | 'precision';
+
+/** Precision-eraser nib radius (screen px); converted to world via the camera. */
+export const ERASER_MIN_SIZE = 6;
+export const ERASER_MAX_SIZE = 48;
+export const ERASER_DEFAULT_SIZE = 16;
+
 /** Long-press duration for context menu on touch (ms). */
 export const LONG_PRESS_MS = 600;
 

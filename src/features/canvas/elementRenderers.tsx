@@ -184,14 +184,18 @@ function ElementVisual({ element, palette }: { element: CanvasElement; palette: 
   // TextLayer overlay (Konva can't render rich text). Dashed while empty.
   if (element.type === 'text') {
     const isEmpty = element.text.trim().length === 0;
+    // Borderless: the box itself is invisible (a transparent-but-hittable rect so
+    // it can still be selected / moved / transformed); only an EMPTY box shows a
+    // faint dashed hint so you can find where to type. The text reads as plain
+    // document text drawn by the HTML overlay.
     return (
       <Rect
         width={width}
         height={height}
-        cornerRadius={16}
-        fill={palette.surface}
-        stroke={palette.border}
-        strokeWidth={1}
+        cornerRadius={8}
+        fill="transparent"
+        stroke={isEmpty ? palette.border : undefined}
+        strokeWidth={isEmpty ? 1 : 0}
         dash={isEmpty ? [6, 5] : undefined}
         perfectDrawEnabled={false}
       />

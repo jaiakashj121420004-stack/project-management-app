@@ -26,6 +26,8 @@ interface TextLayerProps {
   caretUser: CaretUser;
   /** Mirror the edited content into the element body/text cache (debounced). */
   onBodyChange: (id: string, body: Record<string, unknown>, text: string) => void;
+  /** Report a box's auto-grown content height (world units). */
+  onResize: (id: string, height: number) => void;
   onExitEdit: () => void;
 }
 
@@ -48,6 +50,7 @@ export function TextLayer({
   caretProvider,
   caretUser,
   onBodyChange,
+  onResize,
   onExitEdit,
 }: TextLayerProps) {
   const texts = elements.filter((el): el is TextBoxElement => el.type === 'text');
@@ -93,6 +96,7 @@ export function TextLayer({
               color={palette.text}
               ruled={ruled}
               onBodyChange={(body, text) => onBodyChange(el.id, body, text)}
+              onResize={(height) => onResize(el.id, height)}
               onExit={onExitEdit}
             />
           );

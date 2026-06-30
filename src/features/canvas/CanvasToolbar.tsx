@@ -7,6 +7,7 @@ import {
   ChevronsUp,
   Eraser,
   Files,
+  FileText,
   ImagePlus,
   Layers,
   Lock,
@@ -41,6 +42,8 @@ interface CanvasToolbarProps {
   onUndo: () => void;
   onRedo: () => void;
   onAdd: () => void;
+  /** Add a document-width page-writing column (Google-Docs-style). */
+  onAddPage: () => void;
   /** Called when the user wants to add an image. `undefined` on personal canvases
    *  (no projectId → Storage RLS would reject the upload). */
   onAddImage: (() => void) | undefined;
@@ -83,6 +86,7 @@ export function CanvasToolbar({
   onUndo,
   onRedo,
   onAdd,
+  onAddPage,
   onAddImage,
   onAddMedia,
   hasSelection,
@@ -135,8 +139,11 @@ export function CanvasToolbar({
             <Redo2 size={17} />
           </ToolButton>
           <Divider />
-          <ToolButton label="Add text box" onClick={onAdd}>
+          <ToolButton label="Add text" onClick={onAdd}>
             <Plus size={18} />
+          </ToolButton>
+          <ToolButton label="Add a page to write on (long-form)" onClick={onAddPage}>
+            <FileText size={17} />
           </ToolButton>
           {onAddImage && (
             <ToolButton label="Add image — or paste / drag-drop" onClick={onAddImage}>

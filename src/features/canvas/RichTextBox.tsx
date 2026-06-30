@@ -21,6 +21,8 @@ interface RichTextBoxProps {
   ruled?: boolean;
   /** Mirror the edited content into the element's body/text cache (debounced). */
   onBodyChange: (body: Record<string, unknown>, text: string) => void;
+  /** Report the content's measured height (world units) so the box auto-grows. */
+  onResize: (height: number) => void;
   /** Leave edit mode (Escape). */
   onExit: () => void;
 }
@@ -45,15 +47,39 @@ export function RichTextBox({
   color,
   ruled = false,
   onBodyChange,
+  onResize,
   onExit,
 }: RichTextBoxProps) {
   // Keep callbacks in refs so the flush helpers stay identity-stable.
   const onBodyChangeRef = useRef(onBodyChange);
+  const onResizeRef = useRef(onResize);
   const onExitRef = useRef(onExit);
   useEffect(() => {
     onBodyChangeRef.current = onBodyChange;
+    onResizeRef.current = onResize;
     onExitRef.current = onExit;
   });
+
+  // Auto-grow: report the content's natural (unscaled) height to the parent so
+  // the box height tracks the text, document-style. offsetHeight is pre-transform
+  // (the box is camera-scaled), so it's already in world units.
+  const boxRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const node = boxRef.current;
+    if (!node) return;
+    let last = 0;
+    const report = () => {
+      const h = node.offsetHeight;
+      if (Math.abs(h - last) > 0.5) {
+        last = h;
+        onResizeRef.current(h);
+      }
+    };
+    const observer = new ResizeObserver(report);
+    observer.observe(node);
+    report();
+    return () => observer.disconnect();
+  }, []);
 
   const latestRef = useRef<{ body: Record<string, unknown>; text: string } | null>(null);
   const dirtyRef = useRef(false);
@@ -119,8 +145,9 @@ export function RichTextBox({
         </div>
       )}
       <div
-        style={{ ...boxStyle, color }}
-        className="pointer-events-auto overflow-hidden rounded-2xl bg-[var(--glass-fill)] ring-2 ring-[var(--accent-from)]"
+        ref={boxRef}
+        style={{ ...boxStyle, height: 'auto', color }}
+        className="pointer-events-auto rounded-md"
         onKeyDownCapture={handleKeyDown}
       >
         {editor && <EditorContent editor={editor} className="h-full w-full" />}

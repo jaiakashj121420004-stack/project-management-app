@@ -28,6 +28,7 @@ import {
   parseScene,
   createPlaceholderTextBox,
   createTextBoxAt,
+  createPageTextAt,
   createImageElement,
   createMediaFileElement,
   createMediaEmbedElement,
@@ -42,14 +43,24 @@ import {
   type ElementPatch,
 } from './elements';
 import type { ParsedEmbed } from './embeds';
-import { buildStroke, type StrokeStyle } from './freehand';
+import { buildStroke, erasePartialStroke, type ErasePoint, type StrokeStyle } from './freehand';
 import { defaultPenSettings, type PenSettings } from './drawing';
 import { CanvasStage } from './CanvasStage';
 import { CanvasToolbar } from './CanvasToolbar';
 import { ContextMenu } from './ContextMenu';
 import { LayersPanel } from './LayersPanel';
 import { PenToolbar } from './PenToolbar';
-import { NUDGE_STEP, NUDGE_LARGE_STEP, ZOOM_STEP, clampScale, type Camera, type CanvasTool } from './constants';
+import { EraserToolbar } from './EraserToolbar';
+import {
+  NUDGE_STEP,
+  NUDGE_LARGE_STEP,
+  ZOOM_STEP,
+  ERASER_DEFAULT_SIZE,
+  clampScale,
+  type Camera,
+  type CanvasTool,
+  type EraserMode,
+} from './constants';
 import './canvasText.css';
 
 // The add-media modal pulls in the MediaRecorder/getUserMedia machinery; load it
@@ -207,6 +218,7 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
     encodeStateHex,
     fragmentFor,
     syncTextBody,
+    syncElementLayout,
     caretProvider,
     remotePeers,
     setLocalCursor,
@@ -223,6 +235,8 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
   const editing = canEdit && mode === 'edit';
   const [tool, setTool] = useState<CanvasTool>('select');
   const [pen, setPen] = useState<PenSettings>(() => defaultPenSettings(theme));
+  const [eraserMode, setEraserMode] = useState<EraserMode>('object');
+  const [eraserSize, setEraserSize] = useState(ERASER_DEFAULT_SIZE);
 
   // Multi-select: array of selected element ids.
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -466,6 +480,29 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
     setErasingIds(new Set());
   }, [commit, scene.elements]);
 
+  // Precision eraser: split each stroke the nib passed over into surviving
+  // pieces (keeping their original z), committed as one undo step.
+  const handlePrecisionErase = useCallback(
+    (path: ErasePoint[], radius: number) => {
+      const elements = sceneElementsRef.current;
+      let changed = false;
+      const next: CanvasElement[] = [];
+      for (const el of elements) {
+        if (el.type === 'stroke') {
+          const pieces = erasePartialStroke(el, path, radius, elements);
+          if (pieces !== null) {
+            changed = true;
+            for (const piece of pieces) next.push({ ...piece, z: el.z });
+            continue;
+          }
+        }
+        next.push(el);
+      }
+      if (changed) commit({ elements: next });
+    },
+    [commit],
+  );
+
   // ── tool / selection / text edit ─────────────────────────────────────────────
 
   const changeTool = useCallback((next: CanvasTool) => {
@@ -488,15 +525,43 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
 
   // ── element actions ──────────────────────────────────────────────────────────
 
+  /** Snap a world-Y to the nearest ruled line (so text sits on the rules). */
+  function snapRuledY(worldY: number): number {
+    return pageType === 'ruled'
+      ? Math.round(worldY / PAGE_PATTERN_SPACING) * PAGE_PATTERN_SPACING
+      : worldY;
+  }
+
   function addText() {
     const worldCx = (viewport.width / 2 - camera.x) / camera.scale;
-    const worldCy = (viewport.height / 2 - camera.y) / camera.scale;
+    const worldCy = snapRuledY((viewport.height / 2 - camera.y) / camera.scale);
     const element = createPlaceholderTextBox(worldCx, worldCy, topZ(scene.elements));
     commit({ elements: [...scene.elements, element] });
     setTool('select');
     setSelectedIds([element.id]);
     setEditingTextId(element.id);
   }
+
+  /** Drop a document-width writing column near the top-left of the view and start
+   *  typing — Google-Docs-style long-form writing on the canvas. */
+  function addPageText() {
+    const left = (24 - camera.x) / camera.scale;
+    const top = snapRuledY((24 - camera.y) / camera.scale);
+    const element = createPageTextAt(left, top, topZ(scene.elements));
+    commit({ elements: [...scene.elements, element] });
+    setTool('select');
+    setSelectedIds([element.id]);
+    setEditingTextId(element.id);
+  }
+
+  // Persist a text box's auto-grown height without an undo step.
+  const handleTextResize = useCallback(
+    (id: string, height: number) => {
+      const el = sceneElementsRef.current.find((e) => e.id === id);
+      if (el && Math.abs(el.height - height) > 0.5) syncElementLayout(id, { height });
+    },
+    [syncElementLayout],
+  );
 
   const placeText = useCallback(
     (worldX: number, worldY: number) => {
@@ -877,6 +942,9 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
             onCommitStroke={commitStroke}
             onEraseStroke={eraseStroke}
             onEraseEnd={endErase}
+            eraserMode={eraserMode}
+            eraserSize={eraserSize}
+            onPrecisionErase={handlePrecisionErase}
             onPlaceText={placeText}
             onEditText={editText}
             onEndTextEdit={endTextEdit}
@@ -886,6 +954,7 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
             caretProvider={caretProvider}
             caretUser={caretUser}
             onTextBodyChange={syncTextBody}
+            onTextResize={handleTextResize}
             remotePeers={remotePeers}
             onPointerWorldMove={editing ? setLocalCursor : undefined}
           />
@@ -908,6 +977,7 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
             onUndo={undo}
             onRedo={redo}
             onAdd={addText}
+            onAddPage={addPageText}
             onAddImage={projectId !== null ? addImage : undefined}
             onAddMedia={projectId !== null ? () => setMediaModalOpen(true) : undefined}
             hasSelection={hasSelection}
@@ -924,6 +994,15 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
           />
           {editing && tool === 'draw' && (
             <PenToolbar className="pointer-events-auto" settings={pen} onChange={setPen} />
+          )}
+          {editing && tool === 'erase' && (
+            <EraserToolbar
+              className="pointer-events-auto"
+              mode={eraserMode}
+              onMode={setEraserMode}
+              size={eraserSize}
+              onSize={setEraserSize}
+            />
           )}
         </div>
 
