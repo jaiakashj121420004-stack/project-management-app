@@ -8,6 +8,18 @@
  */
 import type { Awareness } from 'y-protocols/awareness';
 
+/**
+ * Awareness field keys for the CANVAS presence. These are deliberately
+ * namespaced (`canvas*`) so they never collide with the keys
+ * @tiptap/extension-collaboration-caret reserves on the SAME awareness instance:
+ * it owns `user` (the in-text caret label) and `cursor` (the in-text ProseMirror
+ * selection). Writing our pointer `{x,y}` into `cursor` made the caret plugin
+ * read it as a text position and crash, so we keep our fields separate.
+ */
+export const CANVAS_USER_FIELD = 'canvasUser';
+export const CANVAS_CURSOR_FIELD = 'canvasCursor';
+export const CANVAS_SELECTION_FIELD = 'canvasSelection';
+
 /** The identity + colour shown for a participant's cursor and selection halo. */
 export interface CanvasUser {
   id: string;
@@ -58,7 +70,7 @@ export function cursorColor(userId: string): string {
 function isCanvasState(value: unknown): value is CanvasAwarenessState {
   if (!value || typeof value !== 'object') return false;
   const state = value as Record<string, unknown>;
-  const user = state.user as Record<string, unknown> | undefined;
+  const user = state[CANVAS_USER_FIELD] as Record<string, unknown> | undefined;
   return Boolean(user && typeof user.id === 'string' && typeof user.name === 'string');
 }
 
@@ -70,14 +82,18 @@ function isCanvasState(value: unknown): value is CanvasAwarenessState {
 export function readRemotePeers(awareness: Awareness): RemotePeer[] {
   const peers: RemotePeer[] = [];
   const localId = awareness.clientID;
-  awareness.getStates().forEach((state, clientId) => {
+  awareness.getStates().forEach((rawState, clientId) => {
     if (clientId === localId) return;
-    if (!isCanvasState(state)) return;
+    if (!isCanvasState(rawState)) return;
+    const state = rawState as unknown as Record<string, unknown>;
+    const user = state[CANVAS_USER_FIELD] as CanvasUser;
+    const cursor = state[CANVAS_CURSOR_FIELD] as { x: number; y: number } | null | undefined;
+    const selection = state[CANVAS_SELECTION_FIELD];
     peers.push({
       clientId,
-      user: state.user,
-      cursor: state.cursor ?? null,
-      selection: Array.isArray(state.selection) ? state.selection : [],
+      user,
+      cursor: cursor ?? null,
+      selection: Array.isArray(selection) ? (selection as string[]) : [],
     });
   });
   peers.sort((a, b) => a.clientId - b.clientId);

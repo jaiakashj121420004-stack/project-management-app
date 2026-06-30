@@ -37,7 +37,14 @@ import {
   LOCAL_ORIGIN,
 } from './yCanvasDoc';
 import { bytesToPgHex, pgHexToBytes } from './encoding';
-import { readRemotePeers, type CanvasUser, type RemotePeer } from './awareness';
+import {
+  readRemotePeers,
+  CANVAS_USER_FIELD,
+  CANVAS_CURSOR_FIELD,
+  CANVAS_SELECTION_FIELD,
+  type CanvasUser,
+  type RemotePeer,
+} from './awareness';
 import { SupabaseYjsProvider, type ProviderStatus } from './SupabaseYjsProvider';
 
 /** What CollaborationCaret needs: just an object exposing `.awareness`. */
@@ -169,17 +176,20 @@ export function useYjsCanvas({ note, realtimeEnabled, me }: UseYjsCanvasOptions)
   // ── publish our identity ──────────────────────────────────────────────────
   useEffect(() => {
     if (!me) return;
-    awareness.setLocalStateField('user', me);
-    return () => {
-      // Clear identity but keep the awareness instance alive across me changes.
-    };
+    // Namespaced field (NOT `user`, which collaboration-caret owns on this same
+    // awareness instance) → drives the canvas presence cursors/halos.
+    awareness.setLocalStateField(CANVAS_USER_FIELD, me);
   }, [awareness, me]);
 
   // ── transport provider (Pro-gated; RLS is the real gate) ──────────────────
   useEffect(() => {
     if (!realtimeEnabled || !me) return;
     // Seed our presence before connecting so the first awareness broadcast has it.
-    awareness.setLocalState({ user: me, cursor: null, selection: [] });
+    // Use per-field sets (NOT setLocalState, which would replace the whole state
+    // and wipe the fields collaboration-caret manages on this awareness instance).
+    awareness.setLocalStateField(CANVAS_USER_FIELD, me);
+    awareness.setLocalStateField(CANVAS_CURSOR_FIELD, null);
+    awareness.setLocalStateField(CANVAS_SELECTION_FIELD, []);
     const provider = new SupabaseYjsProvider({
       supabase,
       noteId: note.id,
@@ -206,11 +216,12 @@ export function useYjsCanvas({ note, realtimeEnabled, me }: UseYjsCanvasOptions)
     [doc],
   );
   const setLocalCursor = useCallback(
-    (world: { x: number; y: number } | null) => awareness.setLocalStateField('cursor', world),
+    (world: { x: number; y: number } | null) =>
+      awareness.setLocalStateField(CANVAS_CURSOR_FIELD, world),
     [awareness],
   );
   const setLocalSelection = useCallback(
-    (ids: string[]) => awareness.setLocalStateField('selection', ids),
+    (ids: string[]) => awareness.setLocalStateField(CANVAS_SELECTION_FIELD, ids),
     [awareness],
   );
   const caretProvider = useMemo<CaretProvider>(() => ({ awareness }), [awareness]);
