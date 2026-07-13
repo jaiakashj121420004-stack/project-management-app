@@ -14,7 +14,7 @@
 
 If these three are read, you have complete context. Do not duplicate their content elsewhere — link to it.
 
-**Active multi-phase upgrade:** the Nvexis rebrand + notes/canvas expansion is tracked in **[NVEXIS-UPGRADE-PLAN.md](./NVEXIS-UPGRADE-PLAN.md)** (locked decisions, Phase 1 done, Phases 2–6 specs, and session/environment quirks). Read it before continuing that work. **Currently: Phases 1–2 done (Phase 2 = Library + unified folder tree + standalone notes; migration + build/commit pending on Windows); Phase 3 (Notion-style block editor + custom colours) is next.**
+**Active multi-phase upgrade:** the Nvexis rebrand + notes/canvas expansion is tracked in **[NVEXIS-UPGRADE-PLAN.md](./NVEXIS-UPGRADE-PLAN.md)** (locked decisions, Phase 1 done, Phases 2–6 specs, and session/environment quirks). Read it before continuing that work. **Currently: Phases 1–2 shipped + live (Phase 2 = Library + unified folder tree + standalone notes; migration applied, deployed, verified); Phase 3 (Notion-style block editor + custom colours) is next.**
 
 **First-time environment setup** (accounts, keys, git remote, Cloudflare) lives in [SETUP.md](./SETUP.md) — a one-time human checklist, separate from the build prompts.
 

@@ -46,9 +46,9 @@ Shipped (all committed + deployed):
 
 Still open in Phase 1 (do opportunistically or fold into later phases): folio/eyebrow/rule/fleuron editorial flourishes; light-mode contrast spot-checks; soften confetti/priority status colours; canvas top-header tightness on mobile. **NOT Phase 1:** the marketing/landing re-skin (deferred to the end).
 
-## 4. Phase 2 — Library + unified folder tree + standalone notes — ✅ DONE (2026-07-13)
+## 4. Phase 2 — Library + unified folder tree + standalone notes — ✅ SHIPPED + VERIFIED LIVE (2026-07-13)
 
-Built (see memory.md for the full record; migration `20260713120000_library_folders.sql` + `features/library`). Decisions taken this phase: global **Notes + Canvas nav entries replaced by one "Library"** (old routes redirect; per-project tabs kept); **standalone notes are FREE** (canvases keep their Pro gate); standalone notes reuse the **markdown editor** until the Phase 3 block editor; **move via a "Move to…" menu** on all platforms (drag-and-drop deferred to a polish pass). ⚠️ Apply the migration + build/commit on Windows.
+Built, deployed, and confirmed working (migration `20260713120000_library_folders.sql` applied; commit `dc2864a`; `features/library`; see memory.md for the full record). Decisions taken this phase: global **Notes + Canvas nav entries replaced by one "Library"** (old routes redirect; per-project tabs kept); **standalone notes are FREE** (canvases keep their Pro gate); standalone notes reuse the **markdown editor** until the Phase 3 block editor; **move via a "Move to…" menu** on all platforms (drag-and-drop deferred to a polish pass). Post-ship fix: canvas pen-panel collapse hooks-order crash (`PenToolbar`). **Deferred backlog** (fold into a later polish pass): desktop drag-and-drop moves; delete the orphaned `NotesHome`/`CanvasHome` (routes now live in the Library).
 
 Make notes independent of projects (canvases already can be personal) and add a file-explorer Library.
 
@@ -109,7 +109,7 @@ Every new screen must be built mobile-first and verified on a phone viewport: pr
 ## 12. Phase checklist
 
 - [x] Phase 1 — Nvexis rebrand + mobile pass (core done; minor polish optional)
-- [x] Phase 2 — Library + unified folder tree + standalone notes (2026-07-13; ⚠️ migration + build/commit pending on Windows)
+- [x] Phase 2 — Library + unified folder tree + standalone notes (2026-07-13; shipped, migration applied, deployed, verified live)
 - [ ] Phase 3 — Notion-style block editor + custom colours
 - [ ] Phase 4 — Collaboration for notes + canvas sharing UI
 - [ ] Phase 5 — Canvas navigation: minimap, frames, outline
