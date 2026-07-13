@@ -30,7 +30,7 @@ export function SidebarNav({
               'text-sm font-medium transition-colors duration-200',
               collapsed && 'justify-center px-0',
               isActive
-                ? 'text-white'
+                ? 'text-[var(--accent-fg)]'
                 : 'text-fg-muted hover:bg-[var(--glass-fill)] hover:text-fg',
             )
           }

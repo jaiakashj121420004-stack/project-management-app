@@ -314,7 +314,7 @@ export function DatePicker({
                     className={cn(
                       'mx-auto grid h-9 w-9 place-items-center rounded-xl text-sm transition-colors',
                       selected
-                        ? 'bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] font-semibold text-white shadow-[0_8px_18px_-10px_var(--accent-glow)]'
+                        ? 'bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] font-semibold text-[var(--accent-fg)] shadow-[0_8px_18px_-10px_var(--accent-glow)]'
                         : isTodayCell
                           ? 'font-bold text-[color:var(--accent-from)] hover:bg-[var(--glass-fill)]'
                           : inMonth

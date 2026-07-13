@@ -98,7 +98,7 @@ export function CardLabelsSection({
                       <span
                         className={cn(
                           'grid h-4 w-4 shrink-0 place-items-center rounded border',
-                          isOn ? 'border-transparent text-white' : 'border-[var(--glass-border)] text-transparent',
+                          isOn ? 'border-transparent text-[var(--accent-fg)]' : 'border-[var(--glass-border)] text-transparent',
                         )}
                         style={isOn ? { backgroundColor: labelHex(label.color) } : undefined}
                       >
@@ -173,7 +173,7 @@ function LabelCreator({ onCreate }: { onCreate: (name: string, color: LabelColor
           type="button"
           onClick={() => void submit()}
           aria-label="Create label"
-          className="btn-3d grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-white"
+          className="btn-3d grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)]"
         >
           <Plus size={16} />
         </button>
@@ -196,7 +196,7 @@ function LabelCreator({ onCreate }: { onCreate: (name: string, color: LabelColor
               )}
               style={{ backgroundColor: hex, boxShadow: selected ? `0 0 0 2px ${withAlpha(hex, 0.4)}` : undefined }}
             >
-              {selected && <Check size={13} strokeWidth={3} className="text-white" aria-hidden />}
+              {selected && <Check size={13} strokeWidth={3} className="text-[var(--accent-fg)]" aria-hidden />}
             </button>
           );
         })}

@@ -56,7 +56,7 @@ export function DayCell({
           className={cn(
             'grid h-6 min-w-[1.5rem] place-items-center rounded-full px-1 text-xs font-semibold',
             today
-              ? 'bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-white shadow-[0_6px_14px_-8px_var(--accent-glow)]'
+              ? 'bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)] shadow-[0_6px_14px_-8px_var(--accent-glow)]'
               : 'text-fg-muted',
           )}
         >

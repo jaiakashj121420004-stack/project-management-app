@@ -99,7 +99,7 @@ export function RemotePresenceLayer({ peers, camera, elements }: RemotePresenceL
               />
             </svg>
             <span
-              className="absolute left-4 top-3 inline-flex items-center gap-1 whitespace-nowrap rounded-full py-0.5 pl-0.5 pr-2 text-[11px] font-semibold text-white shadow-md"
+              className="absolute left-4 top-3 inline-flex items-center gap-1 whitespace-nowrap rounded-full py-0.5 pl-0.5 pr-2 text-[11px] font-semibold text-[var(--accent-fg)] shadow-md"
               style={{ backgroundColor: peer.user.color }}
             >
               <Avatar name={peer.user.name} src={peer.user.avatarUrl} size={16} />

@@ -48,7 +48,7 @@ export function ProGate({ children, title, reason, fallback, isPro }: ProGatePro
         glow
         className="flex flex-col items-center gap-4 p-8 text-center sm:p-10"
       >
-        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-white shadow-[0_10px_30px_-10px_var(--accent-glow)]">
+        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)] shadow-[0_10px_30px_-10px_var(--accent-glow)]">
           <Sparkles size={22} />
         </span>
         <div className="flex flex-col gap-1.5">

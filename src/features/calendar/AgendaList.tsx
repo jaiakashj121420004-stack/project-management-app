@@ -40,7 +40,7 @@ export function AgendaList({ days, cardsByDate, accentFor, onOpenCard, emptyLabe
           <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-fg">
             {format(date, 'EEE, MMM d')}
             {isToday(date) && (
-              <span className="rounded-full bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-white">
+              <span className="rounded-full bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-[var(--accent-fg)]">
                 Today
               </span>
             )}

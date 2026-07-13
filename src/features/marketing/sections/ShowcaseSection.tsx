@@ -71,7 +71,7 @@ export function ShowcaseSection() {
               <ul className="mt-6 flex flex-col gap-3">
                 {row.points.map((point) => (
                   <li key={point} className="flex items-center gap-3 text-fg">
-                    <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-white">
+                    <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)]">
                       <Check size={14} strokeWidth={3} />
                     </span>
                     {point}

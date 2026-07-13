@@ -27,7 +27,7 @@ export function ProjectCard({ project, isOwner, onEdit, onDelete }: ProjectCardP
 
       <div className="relative flex items-start justify-between gap-3">
         <span
-          className="grid h-11 w-11 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-white shadow-[0_10px_22px_-10px_var(--accent-glow)]"
+          className="grid h-11 w-11 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)] shadow-[0_10px_22px_-10px_var(--accent-glow)]"
           aria-hidden
         >
           <Layers size={20} />

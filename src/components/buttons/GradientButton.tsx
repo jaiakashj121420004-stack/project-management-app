@@ -15,15 +15,15 @@ interface GradientButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const SIZES: Record<Size, string> = {
-  sm: 'h-9 px-3.5 text-sm rounded-xl gap-1.5',
-  md: 'h-11 px-5 text-[0.95rem] rounded-2xl gap-2',
-  lg: 'h-12 px-7 text-base rounded-2xl gap-2.5',
+  sm: 'h-9 px-3.5 text-sm rounded-lg gap-1.5',
+  md: 'h-11 px-5 text-[0.95rem] rounded-xl gap-2',
+  lg: 'h-12 px-7 text-base rounded-xl gap-2.5',
 };
 
 const BASE =
   'relative inline-flex select-none items-center justify-center font-medium ' +
   'transition-[transform,box-shadow] duration-200 ease-spring ' +
-  'hover:-translate-y-1 active:translate-y-0.5 active:scale-[0.97] ' +
+  'hover:-translate-y-0.5 active:translate-y-0.5 active:scale-[0.98] ' +
   'disabled:pointer-events-none disabled:opacity-55';
 
 /**
@@ -56,13 +56,13 @@ export function GradientButton({
         BASE,
         SIZES[size],
         variant === 'primary' && [
-          'btn-3d overflow-hidden text-white',
+          'btn-3d overflow-hidden text-[var(--accent-fg)]',
           'bg-[length:220%_auto] bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to),var(--accent-from))]',
           'motion-safe:animate-gradient-flow',
         ],
         variant === 'secondary' && 'btn-3d-soft glass-strong text-fg',
         variant === 'ghost' &&
-          'rounded-2xl text-fg-muted hover:bg-[var(--glass-fill)] hover:text-fg active:scale-100',
+          'rounded-xl text-fg-muted hover:bg-[var(--glass-fill)] hover:text-fg active:scale-100',
         className,
       )}
       {...rest}
@@ -71,7 +71,7 @@ export function GradientButton({
       {isPrimary && (
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-1/2 rounded-t-[inherit] bg-gradient-to-b from-white/30 to-transparent"
+          className="pointer-events-none absolute inset-x-0 top-0 h-1/2 rounded-t-[inherit] bg-gradient-to-b from-white/18 to-transparent"
         />
       )}
       {isLoading ? <Spinner size={16} className="text-current" /> : leftIcon}

@@ -57,7 +57,7 @@ export function UpgradeModal({ open, onClose, reason }: UpgradeModalProps) {
         <ul className="flex flex-col gap-2.5">
           {pro.features.map((feature) => (
             <li key={feature} className="flex items-start gap-2.5 text-sm text-fg">
-              <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-white">
+              <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)]">
                 <Check size={13} strokeWidth={3} />
               </span>
               {feature}

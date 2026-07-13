@@ -24,7 +24,7 @@ export function BottomNav() {
                 className={cn(
                   'grid h-9 w-9 place-items-center rounded-2xl transition-all',
                   isActive &&
-                    'bg-[linear-gradient(120deg,var(--accent-from),var(--accent-to))] text-white shadow-[0_8px_18px_-8px_var(--accent-glow)]',
+                    'bg-[linear-gradient(120deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)] shadow-[0_8px_18px_-8px_var(--accent-glow)]',
                 )}
               >
                 <Icon size={19} strokeWidth={2.1} />

@@ -209,7 +209,7 @@ function TabButton({
       className={cn(
         'inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-sm font-semibold transition-colors',
         active
-          ? 'bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-white shadow-[0_8px_18px_-10px_var(--accent-glow)]'
+          ? 'bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)] shadow-[0_8px_18px_-10px_var(--accent-glow)]'
           : 'text-fg-muted hover:text-fg',
       )}
     >

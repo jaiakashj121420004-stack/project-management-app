@@ -49,7 +49,7 @@ export function ChecklistItemRow({ item, onToggle, onRename, onDelete }: Checkli
         className={cn(
           'grid h-5 w-5 shrink-0 place-items-center rounded-md border transition-colors',
           item.is_done
-            ? 'border-transparent bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-white'
+            ? 'border-transparent bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)]'
             : 'border-[var(--glass-border)] text-transparent hover:border-[var(--accent-from)]',
         )}
       >

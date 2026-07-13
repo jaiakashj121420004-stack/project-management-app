@@ -259,7 +259,7 @@ function ToolButton({
         'grid h-9 w-9 shrink-0 place-items-center rounded-xl transition-colors',
         'hover:bg-[var(--glass-fill)] hover:text-fg disabled:pointer-events-none disabled:opacity-40',
         active
-          ? 'bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-white'
+          ? 'bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)]'
           : 'text-fg-muted',
       )}
     >

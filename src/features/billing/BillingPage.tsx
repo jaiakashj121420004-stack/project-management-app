@@ -79,7 +79,7 @@ export function BillingPage() {
           <>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-white shadow-[0_10px_22px_-12px_var(--accent-glow)]">
+                <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)] shadow-[0_10px_22px_-12px_var(--accent-glow)]">
                   <CreditCard size={20} />
                 </span>
                 <div>

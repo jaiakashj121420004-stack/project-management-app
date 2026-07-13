@@ -227,7 +227,7 @@ export function TextFormatToolbar({ editor, className }: TextFormatToolbarProps)
             disabled={linkInvalid}
             onMouseDown={(event) => event.preventDefault()}
             onClick={applyLink}
-            className="grid h-8 w-8 place-items-center rounded-lg bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-white transition-opacity disabled:opacity-40"
+            className="grid h-8 w-8 place-items-center rounded-lg bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)] transition-opacity disabled:opacity-40"
           >
             <Link2 size={15} />
           </button>
@@ -343,7 +343,7 @@ function FmtButton({
       className={cn(
         'grid h-8 w-8 place-items-center rounded-lg transition-colors',
         active
-          ? 'bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-white'
+          ? 'bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)]'
           : 'text-fg-muted hover:bg-[var(--glass-fill)] hover:text-fg',
       )}
     >

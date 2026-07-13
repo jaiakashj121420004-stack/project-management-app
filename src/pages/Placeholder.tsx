@@ -7,7 +7,7 @@ export function Placeholder({ title, phase }: { title: string; phase: string }) 
   return (
     <Reveal>
       <GlassPanel className="mx-auto mt-8 flex max-w-xl flex-col items-center gap-4 p-10 text-center">
-        <span className="grid h-14 w-14 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-white shadow-[0_12px_26px_-12px_var(--accent-glow)]">
+        <span className="grid h-14 w-14 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)] shadow-[0_12px_26px_-12px_var(--accent-glow)]">
           <Construction size={26} />
         </span>
         <h1 className="font-display text-title font-semibold text-fg">{title}</h1>

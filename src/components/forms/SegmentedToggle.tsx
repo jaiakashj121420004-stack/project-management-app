@@ -49,7 +49,7 @@ export function SegmentedToggle<T extends string>({
             className={cn(
               'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
               active
-                ? 'bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-white'
+                ? 'bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)]'
                 : 'text-fg-muted hover:text-fg',
             )}
           >

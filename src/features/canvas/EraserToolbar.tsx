@@ -80,7 +80,7 @@ function ModeButton({
       className={cn(
         'flex h-9 items-center gap-1.5 rounded-xl px-2.5 text-xs font-semibold transition-colors',
         active
-          ? 'bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-white'
+          ? 'bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)]'
           : 'text-fg-muted hover:bg-[var(--glass-fill)] hover:text-fg',
       )}
     >

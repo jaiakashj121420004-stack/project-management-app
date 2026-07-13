@@ -172,7 +172,7 @@ function ChecklistComposer({ onAdd }: { onAdd: (text: string) => void }) {
           type="button"
           onClick={submit}
           aria-label="Add item"
-          className="btn-3d grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-white"
+          className="btn-3d grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)]"
         >
           <Plus size={16} />
         </button>

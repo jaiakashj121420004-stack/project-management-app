@@ -297,7 +297,7 @@ function EmbedTab({ onSubmitEmbed }: { onSubmitEmbed: (embed: ParsedEmbed) => vo
 
       {parsed && (
         <div className="flex items-center gap-2 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-fill)] px-3 py-2 text-sm text-fg">
-          <span className="rounded-md bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] px-2 py-0.5 text-xs font-semibold text-white">
+          <span className="rounded-md bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] px-2 py-0.5 text-xs font-semibold text-[var(--accent-fg)]">
             {parsed.label}
           </span>
           <span className="text-fg-muted">{parsed.kind === 'audio' ? 'Audio' : 'Video'} embed ready</span>

@@ -101,7 +101,7 @@ export function TodosPage() {
       <Reveal>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-white shadow-[0_10px_24px_-12px_var(--accent-glow)]">
+            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)] shadow-[0_10px_24px_-12px_var(--accent-glow)]">
               <ListTodo size={22} />
             </span>
             <div>
@@ -216,7 +216,7 @@ function AddListCard({ onAdd, hasLists }: { onAdd: (name: string) => void; hasLi
           type="button"
           onClick={submit}
           aria-label="Add list"
-          className="btn-3d grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-white"
+          className="btn-3d grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)]"
         >
           <Plus size={16} />
         </button>

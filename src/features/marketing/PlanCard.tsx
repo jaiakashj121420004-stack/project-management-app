@@ -34,7 +34,7 @@ export function PlanCard({ plan, accent, featured = false, ctaLabel, note }: Pla
       <div className="flex items-center justify-between gap-3">
         <h3 className="font-display text-xl font-bold text-fg">{plan.name}</h3>
         {featured && (
-          <span className="rounded-full bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] px-3 py-1 text-xs font-semibold text-white">
+          <span className="rounded-full bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] px-3 py-1 text-xs font-semibold text-[var(--accent-fg)]">
             Most popular
           </span>
         )}
@@ -55,7 +55,7 @@ export function PlanCard({ plan, accent, featured = false, ctaLabel, note }: Pla
       <ul className="mt-6 flex flex-1 flex-col gap-3">
         {plan.features.map((feature) => (
           <li key={feature} className="flex items-start gap-3 text-sm text-fg">
-            <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-white">
+            <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)]">
               <Check size={12} strokeWidth={3} />
             </span>
             {feature}

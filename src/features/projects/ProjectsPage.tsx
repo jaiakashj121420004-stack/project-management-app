@@ -218,7 +218,7 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
         className="mx-auto mt-4 flex max-w-xl flex-col items-center gap-4 p-10 text-center"
       >
         <span
-          className="grid h-14 w-14 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-white shadow-[0_12px_26px_-12px_var(--accent-glow)]"
+          className="grid h-14 w-14 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)] shadow-[0_12px_26px_-12px_var(--accent-glow)]"
           aria-hidden
         >
           <FolderPlus size={26} />

@@ -471,7 +471,7 @@ function CardReadOnlyView({
                   className={cn(
                     'grid h-4 w-4 shrink-0 place-items-center rounded border',
                     item.is_done
-                      ? 'border-transparent bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-white'
+                      ? 'border-transparent bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)]'
                       : 'border-[var(--glass-border)] text-transparent',
                   )}
                 >

@@ -28,7 +28,7 @@ export function AccentPicker({ value, onChange, label = 'Accent' }: AccentPicker
               onClick={() => onChange(name)}
               style={{ ...accentVars(name), background: accentGradient(name) }}
               className={cn(
-                'relative grid h-12 place-items-center rounded-2xl text-white',
+                'relative grid h-12 place-items-center rounded-2xl text-[var(--accent-fg)]',
                 'ring-2 ring-offset-2 ring-offset-transparent transition-transform duration-200',
                 'hover:-translate-y-0.5 focus:outline-none focus-visible:ring-white',
                 selected

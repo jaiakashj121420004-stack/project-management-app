@@ -117,7 +117,7 @@ function Chip({
         'rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors',
         selected
           ? (selectedClass ??
-            'border-transparent bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-white')
+            'border-transparent bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)]')
           : 'border-[var(--glass-border)] text-fg-muted hover:bg-[var(--glass-fill)] hover:text-fg',
       )}
     >

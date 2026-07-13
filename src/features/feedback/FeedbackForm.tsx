@@ -65,7 +65,7 @@ export function FeedbackForm({ onCancel, onDone }: FeedbackFormProps) {
   if (sent) {
     return (
       <div className="flex flex-col items-center gap-4 py-6 text-center">
-        <span className="grid h-16 w-16 place-items-center rounded-full bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-white shadow-[0_14px_30px_-12px_var(--accent-glow)]">
+        <span className="grid h-16 w-16 place-items-center rounded-full bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)] shadow-[0_14px_30px_-12px_var(--accent-glow)]">
           <Sparkles size={28} />
         </span>
         <div>
@@ -111,7 +111,7 @@ export function FeedbackForm({ onCancel, onDone }: FeedbackFormProps) {
                   'inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl px-3.5 py-2',
                   'text-sm font-medium transition-colors',
                   active
-                    ? 'bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-white shadow-[0_8px_18px_-10px_var(--accent-glow)]'
+                    ? 'bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)] shadow-[0_8px_18px_-10px_var(--accent-glow)]'
                     : 'text-fg-muted hover:text-fg',
                 )}
               >

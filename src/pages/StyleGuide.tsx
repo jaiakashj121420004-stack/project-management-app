@@ -68,7 +68,7 @@ export function StyleGuide() {
               aria-pressed={accent === name}
             >
               <span className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-              <span className="relative text-sm font-semibold text-white drop-shadow">
+              <span className="relative text-sm font-semibold text-[var(--accent-fg)] drop-shadow">
                 {ACCENTS[name].label}
               </span>
             </button>

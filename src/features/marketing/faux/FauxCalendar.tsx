@@ -54,7 +54,7 @@ export function FauxCalendar() {
                   {(EVENTS[day] ?? []).map((event) => (
                     <span
                       key={event.label}
-                      className="truncate rounded px-1 py-px text-[0.6rem] font-medium text-white"
+                      className="truncate rounded px-1 py-px text-[0.6rem] font-medium text-[var(--accent-fg)]"
                       style={{ backgroundColor: event.color }}
                     >
                       {event.label}

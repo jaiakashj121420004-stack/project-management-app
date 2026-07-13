@@ -68,7 +68,7 @@ export function AddColumn({ onAdd }: AddColumnProps) {
         <div className="flex items-center gap-2">
           <button
             type="submit"
-            className="btn-3d inline-flex h-8 items-center gap-1.5 rounded-xl bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] px-3 text-sm font-medium text-white"
+            className="btn-3d inline-flex h-8 items-center gap-1.5 rounded-xl bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] px-3 text-sm font-medium text-[var(--accent-fg)]"
           >
             <Plus size={15} /> Add
           </button>

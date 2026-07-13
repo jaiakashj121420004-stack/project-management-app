@@ -11,7 +11,7 @@ interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
 const TONES: Record<Tone, string> = {
   neutral: 'bg-[var(--glass-fill)] text-fg-muted border-[var(--glass-border)]',
   accent:
-    'text-white border-transparent bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))]',
+    'text-[var(--accent-fg)] border-transparent bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))]',
   success: 'bg-success/15 text-success border-success/30',
   warning: 'bg-warning/15 text-warning border-warning/30',
   danger: 'bg-danger/15 text-danger border-danger/30',
@@ -20,7 +20,7 @@ const TONES: Record<Tone, string> = {
 
 const DOT: Record<Tone, string> = {
   neutral: 'bg-fg-subtle',
-  accent: 'bg-white',
+  accent: 'bg-[var(--accent-fg)]',
   success: 'bg-success',
   warning: 'bg-warning',
   danger: 'bg-danger',

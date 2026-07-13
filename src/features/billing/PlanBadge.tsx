@@ -10,7 +10,7 @@ export function PlanBadge({ plan, className }: { plan: PlanId; className?: strin
       className={cn(
         'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold',
         isPro
-          ? 'bg-[length:200%_auto] bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to),var(--accent-from))] text-white shadow-[0_6px_16px_-10px_var(--accent-glow)] motion-safe:animate-gradient-flow'
+          ? 'bg-[length:200%_auto] bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to),var(--accent-from))] text-[var(--accent-fg)] shadow-[0_6px_16px_-10px_var(--accent-glow)] motion-safe:animate-gradient-flow'
           : 'border border-[var(--glass-border)] text-fg-muted',
         className,
       )}

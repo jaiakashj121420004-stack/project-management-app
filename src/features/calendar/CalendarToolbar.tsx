@@ -44,7 +44,7 @@ export function CalendarToolbar({
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-white shadow-[0_12px_26px_-12px_var(--accent-glow)]">
+          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)] shadow-[0_12px_26px_-12px_var(--accent-glow)]">
             <CalendarDays size={22} />
           </span>
           <div>
@@ -97,7 +97,7 @@ function Segmented({ value, onChange }: { value: CalendarView; onChange: (view: 
           className={cn(
             'rounded-xl px-3.5 py-1.5 text-sm font-medium capitalize transition-colors',
             value === option
-              ? 'bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-white shadow-[0_8px_18px_-10px_var(--accent-glow)]'
+              ? 'bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)] shadow-[0_8px_18px_-10px_var(--accent-glow)]'
               : 'text-fg-muted hover:text-fg',
           )}
         >

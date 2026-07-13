@@ -88,7 +88,7 @@ export function FeaturesSection() {
           <Reveal key={feature.title} delay={(i % 4) * 0.06}>
             <GlassCard accent={feature.accent} className="h-full p-5">
               <span
-                className="grid h-11 w-11 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-white shadow-[0_10px_22px_-10px_var(--accent-glow)]"
+                className="grid h-11 w-11 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)] shadow-[0_10px_22px_-10px_var(--accent-glow)]"
                 aria-hidden
               >
                 <feature.icon size={20} />

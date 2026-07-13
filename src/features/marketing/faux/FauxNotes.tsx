@@ -12,7 +12,7 @@ export function FauxNotes() {
   return (
     <GlassPanel strong glow accent="galaxy" className="p-5 sm:p-6" style={accentVars('galaxy')}>
       <div className="mb-4 flex items-center gap-2.5">
-        <span className="grid h-9 w-9 place-items-center rounded-xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-white shadow-[0_8px_18px_-8px_var(--accent-glow)]">
+        <span className="grid h-9 w-9 place-items-center rounded-xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)] shadow-[0_8px_18px_-8px_var(--accent-glow)]">
           <FileText size={17} />
         </span>
         <div>

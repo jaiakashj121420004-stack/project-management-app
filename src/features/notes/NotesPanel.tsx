@@ -106,7 +106,7 @@ export function NotesPanel({ projectId, canEdit }: { projectId: string; canEdit:
       {notes.length === 0 ? (
         <GlassPanel className="grid min-h-[50vh] place-items-center p-10 text-center">
           <div className="flex flex-col items-center gap-3">
-            <span className="grid h-14 w-14 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-white shadow-[0_12px_26px_-12px_var(--accent-glow)]">
+            <span className="grid h-14 w-14 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)] shadow-[0_12px_26px_-12px_var(--accent-glow)]">
               <NotebookPen size={26} />
             </span>
             <p className="max-w-xs text-fg-muted">

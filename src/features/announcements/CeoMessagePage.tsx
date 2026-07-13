@@ -27,7 +27,7 @@ export function CeoMessagePage() {
   return (
     <Reveal className="mx-auto w-full max-w-2xl">
       <header className="flex items-center gap-3 pb-6 pt-2">
-        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-white shadow-[0_12px_26px_-12px_var(--accent-glow)]">
+        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)] shadow-[0_12px_26px_-12px_var(--accent-glow)]">
           <Sparkles size={22} />
         </span>
         <div>

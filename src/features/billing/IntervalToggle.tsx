@@ -28,7 +28,7 @@ export function IntervalToggle({
             className={cn(
               'inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-sm font-medium transition-colors',
               active
-                ? 'bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-white shadow-[0_8px_18px_-10px_var(--accent-glow)]'
+                ? 'bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)] shadow-[0_8px_18px_-10px_var(--accent-glow)]'
                 : 'text-fg-muted hover:text-fg',
             )}
           >
@@ -38,7 +38,7 @@ export function IntervalToggle({
                 className={cn(
                   'rounded-full px-1.5 py-0.5 text-[0.65rem] font-semibold leading-none',
                   active
-                    ? 'bg-white/20 text-white'
+                    ? 'bg-white/20 text-[var(--accent-fg)]'
                     : 'bg-[var(--accent-from)]/15 text-[var(--accent-from)]',
                 )}
               >

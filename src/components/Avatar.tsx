@@ -32,7 +32,7 @@ export function Avatar({ name, src, size = 40, className }: AvatarProps) {
     <span
       className={cn(
         'inline-grid place-items-center overflow-hidden rounded-full',
-        'font-display font-semibold text-white ring-1 ring-white/20',
+        'font-display font-semibold text-[var(--accent-fg)] ring-1 ring-white/20',
         className,
       )}
       style={{
