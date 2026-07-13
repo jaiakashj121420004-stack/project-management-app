@@ -79,9 +79,11 @@ Postgres database, Auth (email/password + Google OAuth), Row Level Security for 
 
 ---
 
-## 4. Aurora Design System 🎨
+## 4. Design System 🎨
 
-The signature look. The goal is a *premium, luminous, colorful* feel — frosted glass floating over living gradient light. Implement these as Tailwind theme tokens + CSS variables so the whole app is consistent.
+> **⚠️ SUPERSEDED by the Nvexis rebrand (2026-07-13).** The colorful "Aurora" system described in this section is historical. The app now uses the **Nvexis "Almanac"** look — hybrid *glass-over-parchment*, oxblood on parchment/ink, Fraunces/Spectral/IBM Plex Mono. **Source of truth = `DESIGN-GUIDELINES.md`**; live tokens = `src/styles/index.css` + `tailwind.config.ts`; rationale + status = `NVEXIS-UPGRADE-PLAN.md`. Keep the glass, motion, and depth described below, but with Nvexis colours/type — do not use the violet/cyan gradients, rainbow accents, Inter, or Space Grotesk below.
+
+The original signature look (historical). The goal was a *premium, luminous, colorful* feel — frosted glass floating over living gradient light. Implement these as Tailwind theme tokens + CSS variables so the whole app is consistent.
 
 ### 4.1 Concept
 
@@ -172,6 +174,8 @@ Kept deliberately tight. Postgres tables:
 | `canvas_members` | Per-canvas sharing (for personal canvases) | `canvas_id`, `user_id`, `role` (`editor`/`viewer`) |
 | `comments` | Discussion on a card (collab) | `id`, `card_id`, `user_id`, `body`, `created_at` |
 
+**Nvexis upgrade — Phase 2 additions (planned, see `NVEXIS-UPGRADE-PLAN.md` §4):** a new **`folders`** table (self-referential `parent_id` for a nested "Library" tree, `owner_id`), **`notes` becomes standalone** (nullable `project_id` + new `owner_id` + `folder_id`), and `canvas_notes` gains `folder_id`. Later phases add `note_members` (Phase 4 collaboration) and canvas **Frame** elements (Phase 5).
+
 **Feature → data mapping:** Multiple projects → `projects`. Kanban → `columns` + `cards` (`position` for ordering). To-do lists → `checklist_items`. Due dates & reminders → `cards.due_date` (+ reminders in Phase 9). Calendar → query cards with a `due_date`. Notes → `notes`. Canvas → `canvas_notes`. Collaboration → `project_members` + Realtime.
 
 **Canvas data + sharing model (Pro).** A canvas is decoupled from a project. `canvas_notes.project_id` is **nullable**: a **project canvas** carries a `project_id` and is shared via project membership (as today); a **personal canvas** has `project_id = NULL` and is owned by one user via `owner_id` (defaulted to `auth.uid()`, immutable — a canvas never re-parents). Notes remain project-only. A canvas is reachable three ways — **owner** (`owner_id`), **project membership** (if it has a project), or a **`canvas_members`** row — and the owner alone manages `canvas_members`. Sharing roles mirror projects (`editor`/`viewer`); the owner is `owner_id`, never a member row.
@@ -212,6 +216,8 @@ Phases are sequenced so Phase 1 is a thin vertical slice through the whole stack
 8. **Collaboration** — invite members, roles, realtime live updates.
 9. **PWA & reminders** — installable, offline, due-date reminders.
 10. **Polish & launch** — landing page, Dodo Payments billing, plan limits, ToS/privacy.
+
+**Nvexis upgrade (2026-07-13, in progress) — see [NVEXIS-UPGRADE-PLAN.md](./NVEXIS-UPGRADE-PLAN.md):** P1 Nvexis rebrand + mobile pass ✅ · P2 Library + unified folder tree + **standalone notes** · P3 Notion-style block editor + custom colours · P4 collaboration for notes + canvas sharing UI · P5 canvas minimap/frames/outline · P6 extras · then the marketing re-skin + go-live (last).
 
 ---
 

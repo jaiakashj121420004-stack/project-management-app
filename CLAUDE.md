@@ -14,6 +14,8 @@
 
 If these three are read, you have complete context. Do not duplicate their content elsewhere — link to it.
 
+**Active multi-phase upgrade:** the Nvexis rebrand + notes/canvas expansion is tracked in **[NVEXIS-UPGRADE-PLAN.md](./NVEXIS-UPGRADE-PLAN.md)** (locked decisions, Phase 1 done, Phases 2–6 specs, and session/environment quirks). Read it before continuing that work. **Currently: Phase 1 done; Phase 2 (Library + folder tree + standalone notes) is next.**
+
 **First-time environment setup** (accounts, keys, git remote, Cloudflare) lives in [SETUP.md](./SETUP.md) — a one-time human checklist, separate from the build prompts.
 
 ## 🔴 Golden workflow rules (non-negotiable)
@@ -45,13 +47,17 @@ If these three are read, you have complete context. Do not duplicate their conte
 - Secrets live in `.env` (gitignored) locally and in Cloudflare/Supabase dashboards in production. **Never commit secrets.**
 - Validate input on the client (Zod) *and* rely on DB constraints + RLS on the server. Treat the frontend as untrusted.
 
-## Design rules (this app must look stunning — see `plan.md` → Aurora Design System)
+## Design rules — **Nvexis "The Almanac"** (rebranded 2026-07-13; see `DESIGN-GUIDELINES.md` + `NVEXIS-UPGRADE-PLAN.md`)
 
-- This is **not** a plain flat app and **never** a generic dark-blue dashboard. Honor the **Aurora** aesthetic: animated multi-color gradient backgrounds, frosted glassmorphism surfaces, vivid per-project accent gradients, bold display typography, and smooth spring motion.
-- Every screen should feel premium and alive. Motion (Framer Motion) on drag, hover, and state changes is part of the spec, not a nice-to-have.
-- **Depth & motion are defining features, not decoration:** flowing/animated gradients, 3D tactile buttons (raised, with hover-lift and a press state), pointer-reactive card tilt, and layered shadows/glows. See `plan.md` §4.4. Gate heavy motion behind `prefers-reduced-motion`.
-- Full light **and** dark themes — both first-class, luminous and colorful, neither a muddy navy. Persist the choice; cross-fade on toggle.
+> The app was rebranded from the old colorful "Aurora" look to the **Nvexis** brand. The name stays *Aurora* (a Nvexis product line); only the look is Nvexis. Do **not** reintroduce the old violet/cyan gradients, rainbow accents, Inter, or Space Grotesk.
+
+- **Aesthetic = hybrid "glass over parchment."** Warm two-ink palette — **oxblood** (`#7A2A26` Day / `#C24A40` Night) on **parchment** `#ECE4D6` (Day) / **ink** `#181210` (Night). We KEEP frosted glassmorphism surfaces (warmed onto paper, not white frost) and a subtle **paper-grain** noise. Oxblood is the single accent ("one chroma in the room").
+- **Type:** Fraunces (display/headings) · Spectral (body) · IBM Plex Mono (figures/eyebrows). **Never Inter.** Loaded via Google Fonts `<link>` in `index.html`.
+- **Tokens** live in `src/styles/index.css` (CSS vars: Night = `:root/.dark`, Day = `.light`) + `tailwind.config.ts`. Per-project accents are an earthy family in `src/lib/accents.ts`. Logo = the **Nvexis prism** (`public/brand/*`, sidebar `Brand` mark, `favicon`/PWA icons).
+- **Motion & depth stay** (Framer Motion, 3D tactile buttons, card tilt, spring) but calmer/editorial; gate heavy motion behind `prefers-reduced-motion`.
+- Full light **and** dark themes, both first-class (Day is the hero). Persist the choice; cross-fade on toggle.
+- **Every screen is mobile-first** and verified on a phone (see `NVEXIS-UPGRADE-PLAN.md` §10).
 
 ## Stack at a glance (full version in `plan.md`)
 
-React + TypeScript + Vite · Tailwind CSS + Framer Motion · dnd-kit (Kanban) · Supabase (Postgres + Auth + RLS + Realtime) · Cloudflare Pages (hosting) · Stripe (payments, later). **No Docker** — see `plan.md` for why.
+React + TypeScript + Vite · Tailwind CSS + Framer Motion · dnd-kit (Kanban) · Tiptap + Yjs (rich text + realtime canvas) · Konva (canvas) · Supabase (Postgres + Auth + RLS + Realtime) · Cloudflare Pages (hosting) · **Dodo Payments** (Merchant of Record; replaced Stripe). **No Docker** — see `plan.md` for why.
