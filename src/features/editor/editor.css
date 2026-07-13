@@ -202,3 +202,13 @@
 .block-editor .ProseMirror ::selection {
   background: color-mix(in srgb, var(--accent-from) 24%, transparent);
 }
+
+/* Drag handle gutter — leave room on the left so the floating handle (rendered
+   by @tiptap/extension-drag-handle-react) doesn't overlap the text. */
+.block-editor .ProseMirror {
+  padding-left: 1.25rem;
+}
+.tiptap-drag-handle,
+.block-editor + .tiptap-drag-handle {
+  z-index: 5;
+}

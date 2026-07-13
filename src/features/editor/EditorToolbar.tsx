@@ -24,6 +24,7 @@ import {
   Minus,
   Palette,
   Quote,
+  Smile,
   Strikethrough,
   Underline,
   Unlink,
@@ -77,7 +78,16 @@ const HIGHLIGHT_COLORS: readonly string[] = [
   '#E5E7EB',
 ];
 
-type OpenPopover = 'color' | 'highlight' | 'link' | 'liststyle' | null;
+/** A quick-pick set for the toolbar emoji button (`: ` autocomplete has the rest). */
+const COMMON_EMOJIS: readonly string[] = [
+  '😀', '😄', '😅', '😂', '🙂', '😉', '😍', '🤔',
+  '😎', '😴', '🥳', '😳', '😭', '😡', '👍', '👎',
+  '👏', '🙌', '🙏', '💪', '🔥', '✨', '⭐', '💡',
+  '✅', '❌', '⚠️', '📌', '📝', '📎', '🚀', '🎯',
+  '❤️', '💯', '🎉', '🥲', '👀', '🤝', '⏰', '📅',
+];
+
+type OpenPopover = 'color' | 'highlight' | 'link' | 'liststyle' | 'emoji' | null;
 
 /**
  * The block editor's formatting toolbar. Buttons run Tiptap chain commands;
@@ -385,6 +395,35 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
       <Btn label="Divider" active={false} onRun={() => editor.chain().focus().setHorizontalRule().run()}>
         <Minus size={16} />
       </Btn>
+
+      <Divider />
+
+      <Popover
+        open={open === 'emoji'}
+        trigger={
+          <Btn label="Emoji" active={open === 'emoji'} onRun={() => setOpen((o) => (o === 'emoji' ? null : 'emoji'))}>
+            <Smile size={16} />
+          </Btn>
+        }
+      >
+        <div className="grid w-56 grid-cols-8 gap-0.5">
+          {COMMON_EMOJIS.map((emoji) => (
+            <button
+              key={emoji}
+              type="button"
+              aria-label={`Insert ${emoji}`}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                editor.chain().focus().insertContent(emoji).run();
+                setOpen(null);
+              }}
+              className="grid h-7 w-7 place-items-center rounded-md text-lg transition-colors hover:bg-[var(--glass-fill)]"
+            >
+              {emoji}
+            </button>
+          ))}
+        </div>
+      </Popover>
     </div>
   );
 }
