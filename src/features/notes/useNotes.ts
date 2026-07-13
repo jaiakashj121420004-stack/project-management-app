@@ -73,6 +73,7 @@ export function useAddNote(projectId: string) {
           folder_id: null,
           title: title.trim(),
           content: '',
+          content_json: null,
           updated_at: now,
           created_at: now,
         },
@@ -87,16 +88,20 @@ export function useAddNote(projectId: string) {
 /** Autosave path: patch a note's title and/or content; bumps updated_at locally
  *  so the list re-sorts immediately (the DB trigger sets the canonical value). */
 export function useUpdateNote(projectId: string) {
-  return useNotesMutation<Note, { id: string; title?: string; content?: string }>(
+  return useNotesMutation<
+    Note,
+    { id: string; title?: string; content?: string; content_json?: Record<string, unknown> | null }
+  >(
     projectId,
     ({ id, ...rest }) => patchNote(id, rest),
-    (notes, { id, title, content }) =>
+    (notes, { id, title, content, content_json }) =>
       notes.map((note) =>
         note.id === id
           ? {
               ...note,
               ...(title !== undefined ? { title: title.trim() } : {}),
               ...(content !== undefined ? { content } : {}),
+              ...(content_json !== undefined ? { content_json } : {}),
               updated_at: new Date().toISOString(),
             }
           : note,

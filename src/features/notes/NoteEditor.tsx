@@ -1,16 +1,31 @@
-import { useEffect, useRef, useState, type ChangeEvent } from 'react';
-import { AlertCircle, Check, Eye, Pencil, Trash2 } from 'lucide-react';
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from 'react';
+import { AlertCircle, Check, Trash2 } from 'lucide-react';
+import type { JSONContent } from '@tiptap/core';
 import { Spinner } from '@/components/feedback/Spinner';
-import { SegmentedToggle } from '@/components/forms/SegmentedToggle';
 import type { Note } from '@/types/database';
 import { noteTitleSchema } from './schemas';
-import { Markdown } from './markdown';
+
+// The Tiptap block editor (+ markdown converter) is code-split — it loads only
+// when a note is actually opened, so the notes routes stay light.
+const NoteBlockEditor = lazy(() => import('./NoteBlockEditor'));
 
 /** Autosave patch handler. Assignable from TanStack's `mutate`, so the same
- *  editor drives project notes AND standalone Library notes — each parent passes
- *  its own scoped mutation. */
+ *  editor drives project notes AND standalone Library notes. */
 export type UpdateNoteFn = (
-  variables: { id: string; title?: string; content?: string },
+  variables: {
+    id: string;
+    title?: string;
+    content?: string;
+    content_json?: Record<string, unknown> | null;
+  },
   options?: { onSuccess?: (row: Note) => void; onError?: () => void },
 ) => void;
 export type DeleteNoteFn = (variables: { id: string }) => void;
@@ -33,80 +48,79 @@ type SaveStatus = 'saved' | 'unsaved' | 'saving' | 'error';
 /** Debounced autosave: one write per ~700ms of idle, never on every keystroke. */
 const AUTOSAVE_DELAY = 700;
 
-interface Snapshot {
-  title: string;
-  content: string;
-}
-
-/** Build the patch for the changed fields, or null if nothing (valid) changed. */
-function buildPatch(title: string, content: string, saved: Snapshot) {
-  const parsed = noteTitleSchema.safeParse(title);
-  if (!parsed.success) return null; // an empty title can't be persisted
-  const titleChanged = parsed.data !== saved.title;
-  const contentChanged = content !== saved.content;
-  if (!titleChanged && !contentChanged) return null;
-  return {
-    ...(titleChanged ? { title: parsed.data } : {}),
-    ...(contentChanged ? { content } : {}),
-  };
-}
-
 /**
- * The note editor: an inline title, a full-width markdown pane with an
- * Edit/Preview toggle (single pane on every breakpoint — never side-by-side),
- * and a subtle save indicator. Edits autosave on a debounce and flush on
- * unmount, so switching notes never drops an in-flight change. Save status is
- * derived during render; only async outcomes touch state.
+ * The note editor: an inline title, the shared Notion-style block editor, and a
+ * subtle save indicator. Title and document edits autosave on a debounce and
+ * flush on unmount, so switching notes never drops an in-flight change. The block
+ * document is the source of truth (content_json); a plain-text mirror is saved
+ * alongside for previews + search. Save status is derived during render.
  */
 export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: NoteEditorProps) {
-  // runUpdate/runDelete are stable references (TanStack mutate), so the debounce
-  // effect below only re-runs on real edits — background re-renders can't reset it.
   const [title, setTitle] = useState(note.title);
-  const [content, setContent] = useState(note.content);
-  const [saved, setSaved] = useState<Snapshot>({ title: note.title, content: note.content });
+  const [savedTitle, setSavedTitle] = useState(note.title);
+  const [docDirty, setDocDirty] = useState(false);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'error'>('idle');
-  const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
-  // Derived (no setState in render): validity + dirtiness + the shown status.
+  // Latest document from the editor (only present once the user edits).
+  const docRef = useRef<{ json: JSONContent; text: string } | null>(null);
+
   const titleParse = noteTitleSchema.safeParse(title);
   const titleError = titleParse.success
     ? null
     : (titleParse.error.issues[0]?.message ?? 'Give the note a title.');
-  const isDirty = content !== saved.content || title.trim() !== saved.title;
+  const titleDirty = titleParse.success && titleParse.data !== savedTitle;
+  const isDirty = titleDirty || docDirty;
   const status: SaveStatus =
     saveState === 'saving' ? 'saving' : saveState === 'error' ? 'error' : isDirty ? 'unsaved' : 'saved';
 
-  // Debounced autosave. setState only runs inside async callbacks, never
-  // synchronously in the effect body.
+  const handleDocChange = useCallback((json: JSONContent, text: string) => {
+    docRef.current = { json, text };
+    setDocDirty(true);
+  }, []);
+
+  // Build the patch for whatever changed, or null if nothing (valid) has.
+  const buildPatch = useCallback(() => {
+    const patch: {
+      id: string;
+      title?: string;
+      content?: string;
+      content_json?: Record<string, unknown>;
+    } = { id: note.id };
+    if (titleParse.success && titleParse.data !== savedTitle) patch.title = titleParse.data;
+    if (docDirty && docRef.current) {
+      patch.content_json = docRef.current.json as Record<string, unknown>;
+      patch.content = docRef.current.text;
+    }
+    return patch.title === undefined && patch.content_json === undefined ? null : patch;
+  }, [note.id, titleParse, savedTitle, docDirty]);
+
+  // Debounced autosave. setState only runs inside async callbacks.
   useEffect(() => {
-    if (!canEdit) return;
-    const patch = buildPatch(title, content, saved);
-    if (!patch) return;
+    if (!canEdit || !isDirty) return;
     const timer = setTimeout(() => {
+      const patch = buildPatch();
+      if (!patch) return;
       setSaveState('saving');
-      runUpdate(
-        { id: note.id, ...patch },
-        {
-          onSuccess: (row) => {
-            setSaved({ title: row.title, content: row.content });
-            setSaveState('idle');
-          },
-          onError: () => setSaveState('error'),
+      runUpdate(patch, {
+        onSuccess: (row) => {
+          setSavedTitle(row.title);
+          setDocDirty(false);
+          setSaveState('idle');
         },
-      );
+        onError: () => setSaveState('error'),
+      });
     }, AUTOSAVE_DELAY);
     return () => clearTimeout(timer);
-  }, [title, content, saved, note.id, runUpdate, canEdit]);
+  }, [canEdit, isDirty, buildPatch, runUpdate]);
 
-  // Keep a flush closure current, then run it once on unmount so a change made
-  // within the debounce window (e.g. quickly switching notes) is still saved.
+  // Flush any pending change once on unmount (e.g. quickly switching notes).
   const flushRef = useRef<() => void>(() => {});
   useEffect(() => {
     flushRef.current = () => {
       if (!canEdit) return;
-      const patch = buildPatch(title, content, saved);
-      if (patch) runUpdate({ id: note.id, ...patch });
+      const patch = buildPatch();
+      if (patch) runUpdate(patch);
     };
   });
   useEffect(() => () => flushRef.current(), []);
@@ -172,50 +186,15 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
         </div>
       )}
 
-      {/* Edit / Preview toggle on every breakpoint — only the active pane shows,
-          always full width. Viewers get a single rendered pane (no toggle). */}
-      {canEdit && (
-        <SegmentedToggle
-          label="Editor mode"
-          value={mode}
-          onChange={setMode}
-          options={[
-            { value: 'edit', label: 'Edit', icon: <Pencil size={14} /> },
-            { value: 'preview', label: 'Preview', icon: <Eye size={14} /> },
-          ]}
-        />
-      )}
-
-      {canEdit ? (
-        <div className="flex min-h-0 flex-1 flex-col">
-          {mode === 'edit' ? (
-            <textarea
-              value={content}
-              onChange={(event) => setContent(event.target.value)}
-              placeholder="Write in markdown… **bold**, # headings, - lists, [links](https://…)"
-              aria-label="Note content"
-              spellCheck
-              className="h-full min-h-[50vh] w-full flex-1 resize-none rounded-2xl border bg-[var(--field-bg)] p-4 font-mono text-sm leading-relaxed text-fg placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
-            />
-          ) : (
-            <div className="h-full min-h-[50vh] flex-1 overflow-y-auto rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-fill)] p-4">
-              {content.trim() ? (
-                <Markdown source={content} />
-              ) : (
-                <p className="text-sm text-fg-subtle">Nothing to preview yet.</p>
-              )}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="min-h-[50vh] flex-1 overflow-y-auto rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-fill)] p-4 sm:p-6">
-          {content.trim() ? (
-            <Markdown source={content} />
-          ) : (
-            <p className="text-sm text-fg-subtle">This note is empty.</p>
-          )}
-        </div>
-      )}
+      <Suspense
+        fallback={
+          <div className="grid min-h-[40vh] place-items-center">
+            <Spinner size={28} />
+          </div>
+        }
+      >
+        <NoteBlockEditor key={note.id} note={note} editable={canEdit} onChange={handleDocChange} />
+      </Suspense>
     </div>
   );
 }

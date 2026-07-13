@@ -1,0 +1,441 @@
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react';
+import type { Editor } from '@tiptap/react';
+import {
+  Bold,
+  ChevronDown,
+  Code2,
+  Heading1,
+  Heading2,
+  Heading3,
+  Highlighter,
+  Italic,
+  Link2,
+  List,
+  ListChecks,
+  ListOrdered,
+  ListTree,
+  Minus,
+  Palette,
+  Quote,
+  Strikethrough,
+  Underline,
+  Unlink,
+} from 'lucide-react';
+import { cn } from '@/lib/cn';
+import { ColorPicker } from '@/features/canvas/ColorPicker';
+import { safeLinkHref, BULLET_LIST_STYLES, ORDERED_LIST_STYLES } from './extensions';
+
+interface EditorToolbarProps {
+  editor: Editor;
+  className?: string;
+}
+
+/** A generous colour palette (Nvexis earthy + brights) for text + highlight. */
+const DEFAULT_TEXT_COLOR = '#7A2A26';
+const TEXT_COLORS: readonly string[] = [
+  DEFAULT_TEXT_COLOR,
+  '#C24A40',
+  '#B45309',
+  '#D97706',
+  '#CA8A04',
+  '#4D7C0F',
+  '#0F766E',
+  '#0369A1',
+  '#4338CA',
+  '#7C3AED',
+  '#BE185D',
+  '#1F2937',
+];
+
+const LIST_STYLE_LABELS: Record<string, string> = {
+  disc: '• Disc',
+  circle: '○ Circle',
+  square: '▪ Square',
+  hyphen: '– Hyphen',
+  decimal: '1. Decimal',
+  'lower-alpha': 'a. Lower alpha',
+  'upper-alpha': 'A. Upper alpha',
+  'lower-roman': 'i. Lower roman',
+  'upper-roman': 'I. Upper roman',
+};
+
+/** Highlight (marker) colours — soft, translucent so text stays legible. */
+const HIGHLIGHT_COLORS: readonly string[] = [
+  '#FEF08A',
+  '#FED7AA',
+  '#FBCFE8',
+  '#BBF7D0',
+  '#BAE6FD',
+  '#DDD6FE',
+  '#E5E7EB',
+];
+
+type OpenPopover = 'color' | 'highlight' | 'link' | 'liststyle' | null;
+
+/**
+ * The block editor's formatting toolbar. Buttons run Tiptap chain commands;
+ * `onMouseDown` is prevented so a click never steals the selection. Colour, link
+ * and list-style open small popovers. Links are sanitised to http/https/mailto
+ * before they're set. Wraps so it never scroll-clips on a phone.
+ */
+export function EditorToolbar({ editor, className }: EditorToolbarProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState<OpenPopover>(null);
+  const [linkValue, setLinkValue] = useState('');
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (rootRef.current && !rootRef.current.contains(event.target as Node)) setOpen(null);
+    };
+    document.addEventListener('pointerdown', onPointerDown, true);
+    return () => document.removeEventListener('pointerdown', onPointerDown, true);
+  }, [open]);
+
+  const styleAttrs: Record<string, unknown> = editor.getAttributes('textStyle');
+  const currentColor = typeof styleAttrs.color === 'string' ? styleAttrs.color : null;
+  const highlightAttrs: Record<string, unknown> = editor.getAttributes('highlight');
+  const currentHighlight = typeof highlightAttrs.color === 'string' ? highlightAttrs.color : null;
+  const linkAttrs: Record<string, unknown> = editor.getAttributes('link');
+  const currentHref = typeof linkAttrs.href === 'string' ? linkAttrs.href : '';
+  const linkActive = editor.isActive('link');
+
+  const inBullet = editor.isActive('bulletList');
+  const inOrdered = editor.isActive('orderedList');
+  const inList = inBullet || inOrdered;
+  const listStyles = inOrdered ? ORDERED_LIST_STYLES : BULLET_LIST_STYLES;
+
+  const setColorNoClose = useCallback(
+    (hex: string) => editor.chain().focus().setColor(hex).run(),
+    [editor],
+  );
+  const clearColor = useCallback(() => {
+    editor.chain().focus().unsetColor().run();
+    setOpen(null);
+  }, [editor]);
+
+  const openLink = useCallback(() => {
+    setLinkValue(currentHref);
+    setOpen((o) => (o === 'link' ? null : 'link'));
+  }, [currentHref]);
+
+  const applyLink = useCallback(() => {
+    const trimmed = linkValue.trim();
+    if (trimmed === '') {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+      setOpen(null);
+      return;
+    }
+    const safe = safeLinkHref(trimmed);
+    if (!safe) return;
+    editor.chain().focus().extendMarkRange('link').setLink({ href: safe }).run();
+    setOpen(null);
+  }, [editor, linkValue]);
+
+  const removeLink = useCallback(() => {
+    editor.chain().focus().extendMarkRange('link').unsetLink().run();
+    setOpen(null);
+  }, [editor]);
+
+  const applyListStyle = useCallback(
+    (style: string) => {
+      editor
+        .chain()
+        .focus()
+        .updateAttributes(inOrdered ? 'orderedList' : 'bulletList', { listStyle: style })
+        .run();
+      setOpen(null);
+    },
+    [editor, inOrdered],
+  );
+
+  const onLinkKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    event.stopPropagation();
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      applyLink();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      setOpen(null);
+    }
+  };
+
+  const linkInvalid = linkValue.trim() !== '' && safeLinkHref(linkValue) === null;
+
+  return (
+    <div
+      ref={rootRef}
+      role="toolbar"
+      aria-label="Text formatting"
+      className={cn(
+        'glass-menu sticky top-0 z-10 flex max-w-full flex-wrap items-center gap-0.5 rounded-xl border border-[var(--glass-border)] px-1.5 py-1',
+        className,
+      )}
+    >
+      <Btn label="Bold" active={editor.isActive('bold')} onRun={() => editor.chain().focus().toggleBold().run()}>
+        <Bold size={15} />
+      </Btn>
+      <Btn label="Italic" active={editor.isActive('italic')} onRun={() => editor.chain().focus().toggleItalic().run()}>
+        <Italic size={15} />
+      </Btn>
+      <Btn label="Underline" active={editor.isActive('underline')} onRun={() => editor.chain().focus().toggleUnderline().run()}>
+        <Underline size={15} />
+      </Btn>
+      <Btn label="Strikethrough" active={editor.isActive('strike')} onRun={() => editor.chain().focus().toggleStrike().run()}>
+        <Strikethrough size={15} />
+      </Btn>
+      <Popover
+        open={open === 'highlight'}
+        trigger={
+          <Btn
+            label="Highlight"
+            active={editor.isActive('highlight') || open === 'highlight'}
+            onRun={() => setOpen((o) => (o === 'highlight' ? null : 'highlight'))}
+          >
+            <span className="relative grid place-items-center">
+              <Highlighter size={15} />
+              <span
+                aria-hidden
+                className="absolute -bottom-1 h-0.5 w-4 rounded-full"
+                style={{ background: currentHighlight ?? '#FEF08A' }}
+              />
+            </span>
+          </Btn>
+        }
+      >
+        <div className="flex w-40 flex-wrap gap-1.5">
+          {HIGHLIGHT_COLORS.map((color) => (
+            <button
+              key={color}
+              type="button"
+              aria-label={`Highlight ${color}`}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                editor.chain().focus().toggleHighlight({ color }).run();
+                setOpen(null);
+              }}
+              className="h-6 w-6 rounded-full border border-black/10 transition-transform hover:scale-110 dark:border-white/20"
+              style={{ backgroundColor: color }}
+            />
+          ))}
+        </div>
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => {
+            editor.chain().focus().unsetHighlight().run();
+            setOpen(null);
+          }}
+          className="mt-2 w-full rounded-lg px-2 py-1 text-xs text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+        >
+          Remove highlight
+        </button>
+      </Popover>
+
+      <Divider />
+
+      <Popover
+        open={open === 'color'}
+        trigger={
+          <Btn label="Text colour" active={open === 'color'} onRun={() => setOpen((o) => (o === 'color' ? null : 'color'))}>
+            <span className="relative grid place-items-center">
+              <Palette size={16} />
+              <span
+                aria-hidden
+                className="absolute -bottom-1 h-0.5 w-4 rounded-full"
+                style={{ background: currentColor ?? 'currentColor' }}
+              />
+            </span>
+          </Btn>
+        }
+      >
+        <ColorPicker color={currentColor ?? DEFAULT_TEXT_COLOR} presets={TEXT_COLORS} onChange={setColorNoClose} />
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={clearColor}
+          className="mt-2 w-full rounded-lg px-2 py-1 text-xs text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+        >
+          Default colour
+        </button>
+      </Popover>
+
+      <Popover
+        open={open === 'link'}
+        trigger={
+          <Btn label="Link" active={linkActive || open === 'link'} onRun={openLink}>
+            <Link2 size={16} />
+          </Btn>
+        }
+      >
+        <div className="flex items-center gap-1">
+          <input
+            type="url"
+            inputMode="url"
+            autoFocus
+            value={linkValue}
+            placeholder="https://example.com"
+            aria-label="Link URL"
+            aria-invalid={linkInvalid}
+            onChange={(e) => setLinkValue(e.target.value)}
+            onKeyDown={onLinkKeyDown}
+            className={cn(
+              'w-52 rounded-lg border bg-[var(--glass-fill)] px-2 py-1 text-sm text-fg outline-none placeholder:text-fg-subtle',
+              linkInvalid ? 'border-danger' : 'border-[var(--glass-border)]',
+            )}
+          />
+          <button
+            type="button"
+            aria-label="Apply link"
+            disabled={linkInvalid}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={applyLink}
+            className="grid h-8 w-8 place-items-center rounded-lg bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)] disabled:opacity-40"
+          >
+            <Link2 size={15} />
+          </button>
+          {linkActive && (
+            <button
+              type="button"
+              aria-label="Remove link"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={removeLink}
+              className="grid h-8 w-8 place-items-center rounded-lg text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+            >
+              <Unlink size={15} />
+            </button>
+          )}
+        </div>
+        {linkInvalid && <p className="mt-1 text-xs text-danger">Only http, https and mailto links are allowed.</p>}
+      </Popover>
+
+      <Divider />
+
+      <Btn label="Heading 1" active={editor.isActive('heading', { level: 1 })} onRun={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}>
+        <Heading1 size={16} />
+      </Btn>
+      <Btn label="Heading 2" active={editor.isActive('heading', { level: 2 })} onRun={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
+        <Heading2 size={16} />
+      </Btn>
+      <Btn label="Heading 3" active={editor.isActive('heading', { level: 3 })} onRun={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>
+        <Heading3 size={16} />
+      </Btn>
+
+      <Divider />
+
+      <Btn label="Bullet list" active={inBullet} onRun={() => editor.chain().focus().toggleBulletList().run()}>
+        <List size={16} />
+      </Btn>
+      <Btn label="Numbered list" active={inOrdered} onRun={() => editor.chain().focus().toggleOrderedList().run()}>
+        <ListOrdered size={16} />
+      </Btn>
+      <Btn label="Task list" active={editor.isActive('taskList')} onRun={() => editor.chain().focus().toggleTaskList().run()}>
+        <ListChecks size={16} />
+      </Btn>
+
+      <Popover
+        open={open === 'liststyle'}
+        trigger={
+          <Btn
+            label="List style"
+            active={open === 'liststyle'}
+            disabled={!inList}
+            onRun={() => setOpen((o) => (o === 'liststyle' ? null : 'liststyle'))}
+          >
+            <span className="flex items-center">
+              <ListTree size={16} />
+              <ChevronDown size={12} />
+            </span>
+          </Btn>
+        }
+      >
+        <div className="flex w-40 flex-col">
+          {listStyles.map((style) => (
+            <button
+              key={style}
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => applyListStyle(style)}
+              className="rounded-lg px-2 py-1.5 text-left text-sm text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+            >
+              {LIST_STYLE_LABELS[style]}
+            </button>
+          ))}
+        </div>
+      </Popover>
+
+      <Divider />
+
+      <Btn label="Toggle block" active={editor.isActive('details')} onRun={() => editor.chain().focus().setDetails().run()}>
+        <ChevronDown size={16} />
+      </Btn>
+      <Btn label="Quote" active={editor.isActive('blockquote')} onRun={() => editor.chain().focus().toggleBlockquote().run()}>
+        <Quote size={15} />
+      </Btn>
+      <Btn label="Code block" active={editor.isActive('codeBlock')} onRun={() => editor.chain().focus().toggleCodeBlock().run()}>
+        <Code2 size={15} />
+      </Btn>
+      <Btn label="Divider" active={false} onRun={() => editor.chain().focus().setHorizontalRule().run()}>
+        <Minus size={16} />
+      </Btn>
+    </div>
+  );
+}
+
+function Divider() {
+  return <span className="mx-0.5 h-5 w-px bg-[var(--glass-border)]" aria-hidden />;
+}
+
+function Popover({ open, trigger, children }: { open: boolean; trigger: ReactNode; children: ReactNode }) {
+  return (
+    <span className="relative">
+      {trigger}
+      {open && (
+        <div className="glass-menu absolute left-0 top-full z-20 mt-1 rounded-xl border border-[var(--glass-border)] p-2 shadow-[0_14px_34px_-18px_rgba(0,0,0,0.7)]">
+          {children}
+        </div>
+      )}
+    </span>
+  );
+}
+
+function Btn({
+  label,
+  active,
+  onRun,
+  disabled = false,
+  children,
+}: {
+  label: string;
+  active: boolean;
+  onRun: () => void;
+  disabled?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      aria-pressed={active}
+      disabled={disabled}
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={onRun}
+      className={cn(
+        'grid h-8 w-8 place-items-center rounded-lg transition-colors disabled:opacity-40',
+        active
+          ? 'bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)]'
+          : 'text-fg-muted hover:bg-[var(--glass-fill)] hover:text-fg',
+      )}
+    >
+      {children}
+    </button>
+  );
+}

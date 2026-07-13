@@ -201,6 +201,7 @@ export function useCreateLibraryNote() {
           folder_id: folderId,
           title: title.trim(),
           content: '',
+          content_json: null,
           updated_at: now,
           created_at: now,
         },
@@ -214,15 +215,19 @@ export function useCreateLibraryNote() {
 /** Autosave path for a standalone note (title/content); bumps updated_at locally
  *  so the list re-sorts immediately. Shape matches project notes' useUpdateNote. */
 export function useUpdateLibraryNote() {
-  return useLibraryNotesMutation<Note, { id: string; title?: string; content?: string }>(
+  return useLibraryNotesMutation<
+    Note,
+    { id: string; title?: string; content?: string; content_json?: Record<string, unknown> | null }
+  >(
     ({ id, ...rest }) => patchNote(id, rest),
-    (notes, { id, title, content }) =>
+    (notes, { id, title, content, content_json }) =>
       notes.map((note) =>
         note.id === id
           ? {
               ...note,
               ...(title !== undefined ? { title: title.trim() } : {}),
               ...(content !== undefined ? { content } : {}),
+              ...(content_json !== undefined ? { content_json } : {}),
               updated_at: new Date().toISOString(),
             }
           : note,

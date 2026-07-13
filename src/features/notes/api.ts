@@ -58,11 +58,17 @@ export async function insertStandaloneNote(input: {
   return data;
 }
 
-/** Patch a note's title, content and/or Library folder. The trigger refreshes
- *  updated_at. folder_id only applies to standalone notes. */
+/** Patch a note's title, content, block document and/or Library folder. The
+ *  trigger refreshes updated_at. folder_id only applies to standalone notes.
+ *  content_json is the Tiptap document (jsonb); content is its plain-text mirror. */
 export async function patchNote(
   id: string,
-  patch: { title?: string; content?: string; folder_id?: string | null },
+  patch: {
+    title?: string;
+    content?: string;
+    content_json?: Record<string, unknown> | null;
+    folder_id?: string | null;
+  },
 ): Promise<Note> {
   const { data, error } = await supabase
     .from('notes')

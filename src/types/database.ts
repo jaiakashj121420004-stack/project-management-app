@@ -401,8 +401,12 @@ export interface Database {
           // note). Set null if the folder is deleted.
           folder_id: string | null;
           title: string;
-          // Markdown body; rendered to a live preview client-side.
+          // Plain-text mirror of the document (previews + search). Was markdown
+          // pre-Phase-3; now the flattened text of content_json after first save.
           content: string;
+          // Tiptap block-editor document (Phase 3 source of truth). NULL for a
+          // legacy note not yet opened in the block editor. jsonb, typed loosely.
+          content_json: Record<string, unknown> | null;
           // Stamped server-side by the notes_set_updated_at trigger on every edit.
           updated_at: string;
           created_at: string;
@@ -416,6 +420,7 @@ export interface Database {
           // Defaults to 'Untitled note' in the DB.
           title?: string;
           content?: string;
+          content_json?: Record<string, unknown> | null;
           updated_at?: string;
           created_at?: string;
         };
@@ -426,6 +431,7 @@ export interface Database {
           folder_id?: string | null;
           title?: string;
           content?: string;
+          content_json?: Record<string, unknown> | null;
           updated_at?: string;
           created_at?: string;
         };

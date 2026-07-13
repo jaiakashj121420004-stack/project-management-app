@@ -1,0 +1,204 @@
+/* =========================================================================
+   Block editor (Nvexis Phase 3). `.block-editor` styles BOTH the live Tiptap
+   editor (notes + canvas text) and any static generateHTML render, so content
+   looks identical editing or not. Tailwind's preflight resets lists/headings, so
+   these restore them — scoped to `.block-editor` only.
+   ========================================================================= */
+.block-editor {
+  font-family: 'Spectral', Georgia, serif;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: rgb(var(--fg));
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+.block-editor .ProseMirror {
+  outline: none;
+  min-height: 100%;
+  caret-color: rgb(var(--fg));
+}
+.block-editor > :first-child,
+.block-editor .ProseMirror > :first-child {
+  margin-top: 0;
+}
+
+.block-editor p {
+  margin: 0.4em 0;
+}
+.block-editor h1,
+.block-editor h2,
+.block-editor h3 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0.8em 0 0.3em;
+}
+.block-editor h1 {
+  font-size: 1.7em;
+  font-weight: 800;
+}
+.block-editor h2 {
+  font-size: 1.4em;
+}
+.block-editor h3 {
+  font-size: 1.18em;
+}
+.block-editor strong {
+  font-weight: 700;
+}
+.block-editor em {
+  font-style: italic;
+}
+.block-editor u {
+  text-decoration: underline;
+}
+.block-editor s {
+  text-decoration: line-through;
+}
+.block-editor a {
+  color: var(--accent-from);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.block-editor mark {
+  border-radius: 0.2em;
+  padding: 0 0.12em;
+}
+
+/* Lists — base, plus the custom list-style variants from extensions.ts. */
+.block-editor ul {
+  list-style: disc;
+  padding-left: 1.5em;
+  margin: 0.4em 0;
+}
+.block-editor ol {
+  list-style: decimal;
+  padding-left: 1.6em;
+  margin: 0.4em 0;
+}
+.block-editor li {
+  margin: 0.15em 0;
+}
+.block-editor li > p {
+  margin: 0.1em 0;
+}
+.block-editor ul[data-list-style='disc'] { list-style-type: disc; }
+.block-editor ul[data-list-style='circle'] { list-style-type: circle; }
+.block-editor ul[data-list-style='square'] { list-style-type: square; }
+.block-editor ul[data-list-style='hyphen'] { list-style-type: '–  '; }
+.block-editor ol[data-list-style='decimal'] { list-style-type: decimal; }
+.block-editor ol[data-list-style='lower-alpha'] { list-style-type: lower-alpha; }
+.block-editor ol[data-list-style='upper-alpha'] { list-style-type: upper-alpha; }
+.block-editor ol[data-list-style='lower-roman'] { list-style-type: lower-roman; }
+.block-editor ol[data-list-style='upper-roman'] { list-style-type: upper-roman; }
+
+/* Task lists — checkbox + label, no bullet. */
+.block-editor ul[data-type='taskList'] {
+  list-style: none;
+  padding-left: 0.2em;
+}
+.block-editor ul[data-type='taskList'] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5em;
+}
+.block-editor ul[data-type='taskList'] li > label {
+  margin-top: 0.32em;
+  user-select: none;
+}
+.block-editor ul[data-type='taskList'] li > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.block-editor ul[data-type='taskList'] input[type='checkbox'] {
+  accent-color: var(--accent-from);
+  width: 1em;
+  height: 1em;
+  cursor: pointer;
+}
+.block-editor ul[data-type='taskList'] li[data-checked='true'] > div {
+  color: rgb(var(--fg-muted));
+  text-decoration: line-through;
+}
+
+/* Blockquote / code / rule. */
+.block-editor blockquote {
+  border-left: 3px solid var(--accent-from);
+  padding-left: 0.85em;
+  margin: 0.5em 0;
+  color: rgb(var(--fg-muted));
+  font-style: italic;
+}
+.block-editor code {
+  font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  background: var(--glass-fill);
+  padding: 0.1em 0.3em;
+  border-radius: 0.3em;
+  font-size: 0.88em;
+}
+.block-editor pre {
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-border);
+  padding: 0.7em 0.9em;
+  border-radius: 0.6em;
+  margin: 0.5em 0;
+  overflow-x: auto;
+  font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  font-size: 0.88em;
+}
+.block-editor pre code {
+  background: none;
+  padding: 0;
+}
+.block-editor hr {
+  border: none;
+  border-top: 1px solid var(--glass-border);
+  margin: 0.9em 0;
+}
+
+/* Toggle / collapsible (Details). Editor renders a button + summary + content;
+   the static render is a <div data-type="details">. Style both shapes. */
+.block-editor [data-type='details'],
+.block-editor details {
+  border: 1px solid var(--glass-border);
+  border-radius: 0.6em;
+  padding: 0.35em 0.6em;
+  margin: 0.5em 0;
+  background: var(--glass-fill);
+}
+.block-editor [data-type='details'] > button {
+  background: transparent;
+  border: none;
+  color: rgb(var(--fg-muted));
+  cursor: pointer;
+  margin-right: 0.3em;
+  transition: transform 0.15s ease;
+}
+.block-editor [data-type='details'][open] > button,
+.block-editor [data-type='details'].is-open > button {
+  transform: rotate(90deg);
+}
+.block-editor summary {
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+.block-editor [data-type='detailsContent'] {
+  margin-top: 0.25em;
+  padding-left: 0.2em;
+}
+
+/* Placeholder (empty editor / empty first line). */
+.block-editor .ProseMirror .is-editor-empty:first-child::before,
+.block-editor .ProseMirror .is-empty::before {
+  content: attr(data-placeholder);
+  color: rgb(var(--fg-subtle));
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Text selection tint. */
+.block-editor .ProseMirror ::selection {
+  background: color-mix(in srgb, var(--accent-from) 24%, transparent);
+}
