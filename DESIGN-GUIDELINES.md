@@ -1,6 +1,6 @@
-# Lodestar — Design Guidelines (Brand Bible)
+# Nvexis — Design Guidelines (Brand Bible)
 
-*The single source of truth for how Lodestar looks. Every project, post, slide, app, and page follows this. Version 4.0 · 28 June 2026.*
+*The single source of truth for how Nvexis looks. Every project, post, slide, app, and page follows this. Version 4.0 · 28 June 2026.*
 *System name: **The Almanac** (Editorial Authority) — a serious publication with a century of back-issues, not a startup template.*
 
 > **Why this exists:** ~88% of a brand judgment happens in the first 90 milliseconds, driven mostly by colour, and ~46% of people judge credibility on visual design alone. Consistency across every surface is what turns a logo into a brand. Use the exact tokens below — they are law.
@@ -41,7 +41,7 @@ Both are first-class. **Day** is the hero (a publication is read on paper); **Ni
 
 Backgrounds are **flat aged paper** — no gradients, no glow, no mesh. The texture lives in the *type and the rules*, not in effects.
 
-> **Both modes are fully realised as kits:** `Lodestar-Editorial-Identity.html` (Day / light) and `Lodestar-Editorial-Identity-Dark.html` (Night / dark). The Night kit also documents **surface elevation** (depth via hairline + lift, never shadow-soup) and the **Light↔Dark token parity** every app wires into its theme switch.
+> **Both modes are fully realised as kits:** `Nvexis-Editorial-Identity.html` (Day / light) and `Nvexis-Editorial-Identity-Dark.html` (Night / dark). The Night kit also documents **surface elevation** (depth via hairline + lift, never shadow-soup) and the **Light↔Dark token parity** every app wires into its theme switch.
 
 ---
 
@@ -126,11 +126,11 @@ Distinctive, free (Google Fonts), and deliberately **not Inter**. The serif is t
 
 ## 6. Logo & motifs
 
-- **The mark — the lodestar (kept):** the founder's **elongated four-point star inside a fine ring** — the star sailors steered by, not a sparkle. *Form unchanged; recoloured only.* Star + ring in **oxblood** (Day `#7A2A26` / Night `#C24A40`), or single-ink for mono. The path is fixed: never restretch, never fill the ring.
-- **Clear space:** equal to the ring's radius on all sides. **Min size:** 16px (use the heavier-ring favicon variant below 24px).
-- **Wordmark:** "Lodestar" in **Fraunces 900**, tight tracking. The mark leads the word or stands alone.
-- **Star as fleuron:** the mark, small, as a section divider and recurring motif (mastheads, dividers, social).
-- **Logo files (ready):** `Lodestar Rebrand/Editorial Authority/logo/` — day, night, mono ink, reverse/parchment, app-icon tiles, favicon, wordmark lockup.
+- **The mark — the Nvexis prism:** a **faceted gem whose three planes converge to a single apex** — *nexus* (paths meeting) + *vertex* (the point), the meaning of the name made visible. Day: three oxblood facet-tones (`#5E211E` / `#7A2A26` / `#A0453B`) on parchment. Night: brighter oxblood with a bone facet (`#9A3A34` / `#C24A40` / `#ECE2D2`) on ink. Mono: single-ink line-art (outline + three facet edges). Keep the geometry fixed; never re-tint outside the oxblood family. *(Introduced 5 Jul 2026 with the Lodestar to Nvexis rename; replaced the four-point star.)*
+- **Clear space:** equal to the gem's half-height on all sides. **Min size:** 16px (use the `nvexis-favicon` variant below 24px).
+- **Wordmark:** "Nvexis" in **Fraunces 900**, tight tracking. The prism leads the word or stands alone.
+- **Facet as fleuron:** a single cropped facet-triangle, small, as a section divider and recurring motif (mastheads, dividers, social).
+- **Logo files (ready):** `Nvexis Rebrand/Editorial Authority/logo/` — day, night, mono ink, reverse/parchment, app-icon tiles, favicon, wordmark lockup.
 - **Imagery:** duotone (ink × oxblood) or high-contrast mono. No generic stock realism.
 - **Banned:** spring-green / neon, gold-or-foil-as-primary, navy/blue, violet, glassmorphism, gradients/glow, drop-shadow soup, Inter, the four-point AI sparkle.
 
@@ -164,7 +164,7 @@ Distinctive, free (Google Fonts), and deliberately **not Inter**. The serif is t
 
 ## 9. Consistency rules (every project follows)
 
-This file lives in every Lodestar-brand folder. Whatever you build — CO-CE outputs, Cairn, Aurora, Fintrack, the websites, the newsletter, slides, Discord branding — pulls from these exact tokens:
+This file lives in every Nvexis-brand folder. Whatever you build — CO-CE outputs, Cairn, Aurora, Fintrack, the websites, the newsletter, slides, Discord branding — pulls from these exact tokens:
 
 1. **Only** the palette in §3 (exact hex), both Day + Night.
 2. **Only** Fraunces (display) + Spectral (body) + IBM Plex Mono (figures). Never Inter.
@@ -197,8 +197,8 @@ This file lives in every Lodestar-brand folder. Whatever you build — CO-CE out
 }
 ```
 Fonts (free): `fonts.google.com/specimen/Fraunces`, `/Spectral`, `/IBM+Plex+Mono`.
-Living reference — **two kit pages**: `Lodestar-Editorial-Identity.html` (Day / light) + `Lodestar-Editorial-Identity-Dark.html` (Night / dark, incl. elevation + Light↔Dark parity), plus `logo/` — all in `Lodestar Rebrand/Editorial Authority/`.
+Living reference — **two kit pages**: `Nvexis-Editorial-Identity.html` (Day / light) + `Nvexis-Editorial-Identity-Dark.html` (Night / dark, incl. elevation + Light↔Dark parity), plus `logo/` — all in `Nvexis Rebrand/Editorial Authority/`.
 
 ---
 
-*If a decision isn't covered here, ask: "What would a serious almanac — edited, set in metal type, made to last — do?" — then do that. Two inks, one paper, the lodestar, lots of space.*
+*If a decision isn't covered here, ask: "What would a serious almanac — edited, set in metal type, made to last — do?" — then do that. Two inks, one paper, the nvexis, lots of space.*

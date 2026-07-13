@@ -1,7 +1,7 @@
 @echo off
 REM ============================================================
 REM  Ship the To-Do + Canvas features to the live Aurora app.
-REM  Commits ONLY the feature work (the Lodestar design rebrand
+REM  Commits ONLY the feature work (the Nvexis design rebrand
 REM  is intentionally left out), then pushes to main so
 REM  Cloudflare Pages auto-deploys.
 REM

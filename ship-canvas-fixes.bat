@@ -2,7 +2,7 @@
 REM ============================================================
 REM  Ship the CANVAS FIXES to the live Aurora app.
 REM
-REM  Commits ONLY the canvas files (the Lodestar design rebrand
+REM  Commits ONLY the canvas files (the Nvexis design rebrand
 REM  and everything else stay untouched), then pushes to main so
 REM  Cloudflare Pages auto-deploys.
 REM
