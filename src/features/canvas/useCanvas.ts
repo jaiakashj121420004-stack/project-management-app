@@ -40,6 +40,7 @@ function toSummary(note: CanvasNote): CanvasNoteSummary {
     id: note.id,
     project_id: note.project_id,
     owner_id: note.owner_id,
+    folder_id: note.folder_id,
     title: note.title,
     page_type: note.page_type,
     updated_by: note.updated_by,
@@ -122,12 +123,14 @@ function optimisticSummary(input: {
   ownerId: string;
   title: string;
   pageType?: PageType;
+  folderId?: string | null;
 }): CanvasNoteSummary {
   const now = new Date().toISOString();
   return {
     id: input.id,
     project_id: input.projectId,
     owner_id: input.ownerId,
+    folder_id: input.folderId ?? null,
     title: input.title.trim(),
     page_type: input.pageType ?? 'blank',
     updated_by: null,
@@ -198,11 +201,12 @@ export function useCreateIndependentCanvas() {
   return useMutation<
     CanvasNote,
     Error,
-    { title: string; pageType?: PageType; tempId: string },
+    { title: string; pageType?: PageType; tempId: string; folderId?: string | null },
     CreateContext
   >({
-    mutationFn: ({ title, pageType }) => insertIndependentCanvas({ title, pageType }),
-    onMutate: async ({ title, pageType, tempId }) => {
+    mutationFn: ({ title, pageType, folderId }) =>
+      insertIndependentCanvas({ title, pageType, folderId }),
+    onMutate: async ({ title, pageType, tempId, folderId }) => {
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<CanvasNoteSummary[]>(key);
       const optimistic = optimisticSummary({
@@ -211,6 +215,7 @@ export function useCreateIndependentCanvas() {
         ownerId: user?.id ?? '',
         title,
         pageType,
+        folderId,
       });
       queryClient.setQueryData<CanvasNoteSummary[]>(key, (old) => [optimistic, ...(old ?? [])]);
       seedEditorCache(queryClient, optimistic);
@@ -276,6 +281,76 @@ export function useDeleteCanvas(projectId: string | null) {
     onSettled: () => {
       if (projectListKey) void queryClient.invalidateQueries({ queryKey: projectListKey });
       void queryClient.invalidateQueries({ queryKey: aggregateKey });
+    },
+  });
+}
+
+interface MoveContext {
+  previous?: CanvasNoteSummary[];
+}
+
+/**
+ * Move a personal canvas into a Library folder (or to the root, folderId null).
+ * Optimistically patches the aggregated ['canvas-all', userId] cache that the
+ * Library reads. Project canvases are never moved from here (they aren't in the
+ * Library), so only the aggregated cache is touched.
+ */
+export function useMoveCanvasToFolder() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const key = allKey(user?.id);
+
+  return useMutation<CanvasNote, Error, { id: string; folderId: string | null }, MoveContext>({
+    mutationFn: ({ id, folderId }) => patchCanvas(id, { folder_id: folderId }),
+    onMutate: async ({ id, folderId }) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<CanvasNoteSummary[]>(key);
+      queryClient.setQueryData<CanvasNoteSummary[]>(key, (old) =>
+        old ? old.map((row) => (row.id === id ? { ...row, folder_id: folderId } : row)) : old,
+      );
+      return { previous };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) queryClient.setQueryData(key, context.previous);
+    },
+    onSuccess: (saved) => {
+      queryClient.setQueryData<CanvasNoteSummary[]>(key, (old) => reconcileList(old, saved));
+      queryClient.setQueryData(canvasKey(saved.id), saved);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: key });
+    },
+  });
+}
+
+/**
+ * Rename a canvas from the Library (optimistic title on the aggregated cache).
+ * Kept separate from useSaveCanvas so the Library needn't know a canvas's project.
+ */
+export function useRenameCanvas() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const key = allKey(user?.id);
+
+  return useMutation<CanvasNote, Error, { id: string; title: string }, MoveContext>({
+    mutationFn: ({ id, title }) => patchCanvas(id, { title }),
+    onMutate: async ({ id, title }) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<CanvasNoteSummary[]>(key);
+      queryClient.setQueryData<CanvasNoteSummary[]>(key, (old) =>
+        old ? old.map((row) => (row.id === id ? { ...row, title: title.trim() } : row)) : old,
+      );
+      return { previous };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) queryClient.setQueryData(key, context.previous);
+    },
+    onSuccess: (saved) => {
+      queryClient.setQueryData<CanvasNoteSummary[]>(key, (old) => reconcileList(old, saved));
+      queryClient.setQueryData(canvasKey(saved.id), saved);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: key });
     },
   });
 }

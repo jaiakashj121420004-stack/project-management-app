@@ -351,10 +351,55 @@ export interface Database {
         };
         Relationships: [];
       };
+      folders: {
+        // Library folders — owner-scoped, self-nesting (parent_id). Hold
+        // standalone notes + personal canvases via their folder_id.
+        Row: {
+          id: string;
+          // Defaults to auth.uid(); immutable (folders_before_write).
+          owner_id: string;
+          // NULL = a top-level (root) folder; otherwise nests under another of
+          // the owner's folders. Deleting a folder cascades to its subfolders.
+          parent_id: string | null;
+          name: string;
+          // Orders siblings within the same parent.
+          position: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_id?: string;
+          parent_id?: string | null;
+          // Defaults to 'New folder' in the DB.
+          name?: string;
+          position?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_id?: string;
+          parent_id?: string | null;
+          name?: string;
+          position?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       notes: {
         Row: {
           id: string;
-          project_id: string;
+          // NULL for a standalone (Library) note; set for a project note.
+          // Immutable (touch_notes_updated_at).
+          project_id: string | null;
+          // The note owner — the only access path for a standalone note, the
+          // creator for a project note. Defaults to auth.uid(); immutable.
+          owner_id: string;
+          // Library folder for a standalone note (null = Library root / project
+          // note). Set null if the folder is deleted.
+          folder_id: string | null;
           title: string;
           // Markdown body; rendered to a live preview client-side.
           content: string;
@@ -364,7 +409,10 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          project_id: string;
+          // Omit / null for a standalone note. owner_id defaults to auth.uid().
+          project_id?: string | null;
+          owner_id?: string;
+          folder_id?: string | null;
           // Defaults to 'Untitled note' in the DB.
           title?: string;
           content?: string;
@@ -373,7 +421,9 @@ export interface Database {
         };
         Update: {
           id?: string;
-          project_id?: string;
+          project_id?: string | null;
+          owner_id?: string;
+          folder_id?: string | null;
           title?: string;
           content?: string;
           updated_at?: string;
@@ -390,6 +440,9 @@ export interface Database {
           // The canvas owner — the only access path for a personal canvas, the
           // creator for a project canvas. Defaults to auth.uid(); immutable.
           owner_id: string;
+          // Library folder for a personal canvas (null = Library root / project
+          // canvas). Set null if the folder is deleted.
+          folder_id: string | null;
           title: string;
           // Page background; constrained by a DB check (see lib/canvasPages.ts).
           page_type: PageType;
@@ -411,6 +464,7 @@ export interface Database {
           // Omit / null for a personal canvas. owner_id defaults to auth.uid().
           project_id?: string | null;
           owner_id?: string;
+          folder_id?: string | null;
           // Defaults to 'Untitled canvas' in the DB.
           title?: string;
           page_type?: PageType;
@@ -424,6 +478,7 @@ export interface Database {
           id?: string;
           project_id?: string | null;
           owner_id?: string;
+          folder_id?: string | null;
           title?: string;
           page_type?: PageType;
           doc_state?: string | null;
@@ -914,6 +969,7 @@ export type Label = Database['public']['Tables']['labels']['Row'];
 export type CardLabel = Database['public']['Tables']['card_labels']['Row'];
 export type TodoList = Database['public']['Tables']['todo_lists']['Row'];
 export type TodoItem = Database['public']['Tables']['todo_items']['Row'];
+export type Folder = Database['public']['Tables']['folders']['Row'];
 export type Note = Database['public']['Tables']['notes']['Row'];
 export type CanvasNote = Database['public']['Tables']['canvas_notes']['Row'];
 export type CanvasMember = Database['public']['Tables']['canvas_members']['Row'];

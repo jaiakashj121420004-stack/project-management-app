@@ -18,7 +18,7 @@ import type { CanvasScene } from './elements';
 export type CanvasNoteSummary = Omit<CanvasNote, 'scene' | 'doc_state'>;
 
 const SUMMARY_COLUMNS =
-  'id, project_id, owner_id, title, page_type, updated_by, updated_at, created_at';
+  'id, project_id, owner_id, folder_id, title, page_type, updated_by, updated_at, created_at';
 
 /** All canvases for a project, most-recently-edited first (RLS-scoped). */
 export async function fetchCanvasList(projectId: string): Promise<CanvasNoteSummary[]> {
@@ -78,17 +78,20 @@ export async function insertCanvas(input: {
   return data;
 }
 
-/** Create a PERSONAL canvas (no project). owner_id defaults to auth.uid()
- *  server-side; RLS requires the caller to be on Pro. */
+/** Create a PERSONAL canvas (no project), optionally filed into a Library folder.
+ *  owner_id defaults to auth.uid() server-side; RLS requires the caller to be on
+ *  Pro. */
 export async function insertIndependentCanvas(input: {
   title: string;
   pageType?: PageType;
+  folderId?: string | null;
 }): Promise<CanvasNote> {
   const { data, error } = await supabase
     .from('canvas_notes')
     .insert({
       project_id: null,
       title: input.title,
+      folder_id: input.folderId ?? null,
       ...(input.pageType ? { page_type: input.pageType } : {}),
     })
     .select('*')
@@ -102,13 +105,20 @@ export async function insertIndependentCanvas(input: {
  *  column; doc_state is a Postgres bytea hex literal (`\x…`) for the BYTEA column. */
 export async function patchCanvas(
   id: string,
-  patch: { title?: string; page_type?: PageType; scene?: CanvasScene; doc_state?: string },
+  patch: {
+    title?: string;
+    page_type?: PageType;
+    scene?: CanvasScene;
+    doc_state?: string;
+    folder_id?: string | null;
+  },
 ): Promise<CanvasNote> {
   const update: {
     title?: string;
     page_type?: PageType;
     scene?: Record<string, unknown>;
     doc_state?: string;
+    folder_id?: string | null;
   } = {
     ...(patch.title !== undefined ? { title: patch.title } : {}),
     ...(patch.page_type !== undefined ? { page_type: patch.page_type } : {}),
@@ -116,6 +126,7 @@ export async function patchCanvas(
       ? { scene: patch.scene as unknown as Record<string, unknown> }
       : {}),
     ...(patch.doc_state !== undefined ? { doc_state: patch.doc_state } : {}),
+    ...(patch.folder_id !== undefined ? { folder_id: patch.folder_id } : {}),
   };
   const { data, error } = await supabase
     .from('canvas_notes')

@@ -30,10 +30,39 @@ export async function insertNote(input: { projectId: string; title: string }): P
   return data;
 }
 
-/** Patch a note's title and/or content. The trigger refreshes updated_at. */
+/** Every standalone (project-less) note the caller owns, newest-edited first.
+ *  RLS scopes to the owner (project_id is null → the member path never matches),
+ *  so we never filter by user here. Backs the Library. */
+export async function fetchStandaloneNotes(): Promise<Note[]> {
+  const { data, error } = await supabase
+    .from('notes')
+    .select('*')
+    .is('project_id', null)
+    .order('updated_at', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+/** Create a standalone note, optionally filed into a Library folder. project_id
+ *  stays null; owner_id defaults to auth.uid() server-side. */
+export async function insertStandaloneNote(input: {
+  title: string;
+  folderId?: string | null;
+}): Promise<Note> {
+  const { data, error } = await supabase
+    .from('notes')
+    .insert({ project_id: null, title: input.title, folder_id: input.folderId ?? null })
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/** Patch a note's title, content and/or Library folder. The trigger refreshes
+ *  updated_at. folder_id only applies to standalone notes. */
 export async function patchNote(
   id: string,
-  patch: { title?: string; content?: string },
+  patch: { title?: string; content?: string; folder_id?: string | null },
 ): Promise<Note> {
   const { data, error } = await supabase
     .from('notes')

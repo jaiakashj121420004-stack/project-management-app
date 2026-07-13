@@ -5,7 +5,7 @@ import { GradientButton } from '@/components/buttons/GradientButton';
 import { Spinner } from '@/components/feedback/Spinner';
 import { EntityPicker } from '@/components/forms/EntityPicker';
 import type { Note } from '@/types/database';
-import { useAddNote, useNotes } from './useNotes';
+import { useAddNote, useDeleteNote, useNotes, useUpdateNote } from './useNotes';
 import { NoteEditor } from './NoteEditor';
 
 const DEFAULT_TITLE = 'Untitled note';
@@ -34,6 +34,8 @@ function snippet(content: string): string {
 export function NotesPanel({ projectId, canEdit }: { projectId: string; canEdit: boolean }) {
   const { data, isLoading, isError } = useNotes(projectId);
   const addNote = useAddNote(projectId);
+  const updateNote = useUpdateNote(projectId);
+  const deleteNote = useDeleteNote(projectId);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -125,10 +127,11 @@ export function NotesPanel({ projectId, canEdit }: { projectId: string; canEdit:
         <GlassPanel className="flex min-h-[70vh] flex-col p-5 sm:p-6">
           <NoteEditor
             key={selected.id}
-            projectId={projectId}
             note={selected}
             canEdit={canEdit}
             onDeleted={() => setSelectedId(null)}
+            runUpdate={updateNote.mutate}
+            runDelete={deleteNote.mutate}
           />
         </GlassPanel>
       ) : null}

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/useAuth';
 import type { Note } from '@/types/database';
 import { fetchNotes, insertNote, patchNote, removeNote } from './api';
 
@@ -58,6 +59,7 @@ function useNotesMutation<TData, TVariables>(
 }
 
 export function useAddNote(projectId: string) {
+  const { user } = useAuth();
   return useNotesMutation<Note, { title: string; tempId: string }>(
     projectId,
     ({ title }) => insertNote({ projectId, title }),
@@ -67,6 +69,8 @@ export function useAddNote(projectId: string) {
         {
           id: tempId,
           project_id: projectId,
+          owner_id: user?.id ?? '',
+          folder_id: null,
           title: title.trim(),
           content: '',
           updated_at: now,

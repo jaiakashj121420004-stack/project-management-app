@@ -1,11 +1,10 @@
 import {
   CalendarDays,
   LayoutGrid,
+  Library,
   ListTodo,
   Megaphone,
   MessageSquareHeart,
-  NotebookPen,
-  PenTool,
   Sparkles,
   type LucideIcon,
 } from 'lucide-react';
@@ -27,8 +26,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: 'Boards', to: '/boards', icon: LayoutGrid, end: true, bottomNav: true },
   { label: 'To-Do', to: '/todos', icon: ListTodo, bottomNav: true },
   { label: 'Calendar', to: '/calendar', icon: CalendarDays, bottomNav: true },
-  { label: 'Notes', to: '/notes', icon: NotebookPen, bottomNav: true },
-  { label: 'Canvas', to: '/canvas', icon: PenTool },
+  { label: 'Library', to: '/library', icon: Library, bottomNav: true },
   { label: 'From the Founder', to: '/from-the-founder', icon: Megaphone },
   { label: 'Feedback/Features', to: '/feedback', icon: MessageSquareHeart },
   { label: 'Style Guide', to: '/style-guide', icon: Sparkles },

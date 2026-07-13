@@ -6,8 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { ProjectsPage, ProjectPage } from '@/features/projects';
 import { CalendarPage } from '@/features/calendar';
 import { TodosPage } from '@/features/todos';
-import { NotesHome } from '@/features/notes';
-import { CanvasHome } from '@/features/canvas';
+import { LibraryPage } from '@/features/library';
 import { BillingPage } from '@/features/billing';
 import { CeoMessagePage } from '@/features/announcements';
 import { FeedbackPage } from '@/features/feedback';
@@ -57,8 +56,11 @@ export default function App() {
           <Route path="projects/:projectId" element={<ProjectPage />} />
           <Route path="calendar" element={<CalendarPage />} />
           <Route path="todos" element={<TodosPage />} />
-          <Route path="notes" element={<NotesHome />} />
-          <Route path="canvas" element={<CanvasHome />} />
+          <Route path="library" element={<LibraryPage />} />
+          {/* The old global Notes + Canvas destinations now live in the Library.
+              Redirect legacy links / PWA shortcuts so nothing 404s. */}
+          <Route path="notes" element={<Navigate to="/library" replace />} />
+          <Route path="canvas" element={<Navigate to="/library" replace />} />
           <Route path="from-the-founder" element={<CeoMessagePage />} />
           <Route path="feedback" element={<FeedbackPage />} />
           <Route path="billing" element={<BillingPage />} />

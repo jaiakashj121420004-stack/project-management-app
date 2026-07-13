@@ -4,17 +4,28 @@ import { Spinner } from '@/components/feedback/Spinner';
 import { SegmentedToggle } from '@/components/forms/SegmentedToggle';
 import type { Note } from '@/types/database';
 import { noteTitleSchema } from './schemas';
-import { useDeleteNote, useUpdateNote } from './useNotes';
 import { Markdown } from './markdown';
 
+/** Autosave patch handler. Assignable from TanStack's `mutate`, so the same
+ *  editor drives project notes AND standalone Library notes — each parent passes
+ *  its own scoped mutation. */
+export type UpdateNoteFn = (
+  variables: { id: string; title?: string; content?: string },
+  options?: { onSuccess?: (row: Note) => void; onError?: () => void },
+) => void;
+export type DeleteNoteFn = (variables: { id: string }) => void;
+
 interface NoteEditorProps {
-  projectId: string;
   /** Keyed by id in the parent, so this remounts (re-seeds) when the note changes. */
   note: Note;
   /** Editors/owners can edit + delete; viewers get a read-only rendered view. */
   canEdit: boolean;
   /** Clear the parent's selection after a delete (falls back to the next note). */
   onDeleted: () => void;
+  /** Scoped autosave mutation (project- or library-keyed cache). */
+  runUpdate: UpdateNoteFn;
+  /** Scoped delete mutation. */
+  runDelete: DeleteNoteFn;
 }
 
 type SaveStatus = 'saved' | 'unsaved' | 'saving' | 'error';
@@ -47,12 +58,9 @@ function buildPatch(title: string, content: string, saved: Snapshot) {
  * unmount, so switching notes never drops an in-flight change. Save status is
  * derived during render; only async outcomes touch state.
  */
-export function NoteEditor({ projectId, note, canEdit, onDeleted }: NoteEditorProps) {
-  // mutate is a stable reference in TanStack Query, so the debounce effect below
-  // only re-runs on real edits — background re-renders can't reset the timer.
-  const { mutate: runUpdate } = useUpdateNote(projectId);
-  const { mutate: runDelete } = useDeleteNote(projectId);
-
+export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: NoteEditorProps) {
+  // runUpdate/runDelete are stable references (TanStack mutate), so the debounce
+  // effect below only re-runs on real edits — background re-renders can't reset it.
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
   const [saved, setSaved] = useState<Snapshot>({ title: note.title, content: note.content });
