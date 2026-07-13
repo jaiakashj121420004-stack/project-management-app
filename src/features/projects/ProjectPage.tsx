@@ -121,7 +121,7 @@ export function ProjectPage() {
           <div
             role="tablist"
             aria-label="Project views"
-            className="mt-5 inline-flex items-center gap-1 rounded-2xl border border-[var(--glass-border)] p-1"
+            className="mt-5 flex max-w-full items-center gap-1 overflow-x-auto rounded-2xl border border-[var(--glass-border)] p-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:inline-flex sm:max-w-none [&::-webkit-scrollbar]:hidden"
           >
             <TabButton
               active={tab === 'board'}
@@ -207,7 +207,7 @@ function TabButton({
       aria-selected={active}
       onClick={onClick}
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-sm font-semibold transition-colors',
+        'inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-sm font-semibold transition-colors',
         active
           ? 'bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)] shadow-[0_8px_18px_-10px_var(--accent-glow)]'
           : 'text-fg-muted hover:text-fg',

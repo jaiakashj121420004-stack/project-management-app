@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Brush, Highlighter, Pen, Pipette } from 'lucide-react';
+import { Brush, ChevronDown, ChevronUp, Highlighter, Pen, Pipette } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { ColorPicker } from './ColorPicker';
@@ -29,10 +29,64 @@ const PRESET_ICONS: Record<PenPreset, LucideIcon> = {
  * the size to that preset's default; the slider then fine-tunes within the
  * preset's range. Wraps so the dropdown-free row never scroll-clips.
  */
+const COLLAPSE_KEY = 'canvas-pen-collapsed';
+
 export function PenToolbar({ settings, onChange, className }: PenToolbarProps) {
   const spec = PEN_PRESETS[settings.preset];
   const [pickerOpen, setPickerOpen] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(COLLAPSE_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+
+  function toggleCollapsed() {
+    setCollapsed((c) => {
+      const next = !c;
+      try {
+        localStorage.setItem(COLLAPSE_KEY, next ? '1' : '0');
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }
+
+  // Collapsed: a compact bar showing the current preset + colour + size, with a
+  // chevron to reopen the full options. Keeps the canvas clear on small screens.
+  if (collapsed) {
+    const ActiveIcon = PRESET_ICONS[settings.preset];
+    return (
+      <div
+        role="toolbar"
+        aria-label="Pen settings"
+        className={cn(
+          'glass-menu flex items-center gap-2 rounded-2xl border border-[var(--glass-border)] px-2.5 py-1.5 shadow-[0_14px_34px_-18px_rgba(0,0,0,0.7)]',
+          className,
+        )}
+      >
+        <ActiveIcon size={15} className="text-fg-muted" />
+        <span
+          className="h-5 w-5 rounded-full border border-black/10 dark:border-white/20"
+          style={{ backgroundColor: settings.color }}
+          aria-hidden
+        />
+        <span className="w-5 text-right text-xs tabular-nums text-fg-subtle">{settings.size}</span>
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          aria-label="Show pen options"
+          title="Show pen options"
+          className="grid h-7 w-7 place-items-center rounded-lg text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+        >
+          <ChevronDown size={16} />
+        </button>
+      </div>
+    );
+  }
 
   useEffect(() => {
     if (!pickerOpen) return;
@@ -152,6 +206,17 @@ export function PenToolbar({ settings, onChange, className }: PenToolbarProps) {
         />
         <span className="w-6 text-right tabular-nums text-fg-subtle">{settings.size}</span>
       </label>
+
+      <Divider />
+      <button
+        type="button"
+        onClick={toggleCollapsed}
+        aria-label="Hide pen options"
+        title="Hide pen options"
+        className="grid h-7 w-7 place-items-center rounded-lg text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+      >
+        <ChevronUp size={16} />
+      </button>
     </div>
   );
 }

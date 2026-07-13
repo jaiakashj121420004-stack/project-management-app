@@ -34,7 +34,7 @@ export function AppShell() {
 
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           <Topbar onOpenMenu={() => setDrawerOpen(true)} />
-          <main className="min-w-0 flex-1 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-2">
+          <main className="min-w-0 flex-1 pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-2">
             <Outlet />
           </main>
         </div>
