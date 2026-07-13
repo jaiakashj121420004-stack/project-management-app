@@ -57,7 +57,7 @@ export function BoardColumn({
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className="w-[19rem] shrink-0 animate-fade-in"
+      className="w-[85vw] max-w-[20rem] shrink-0 animate-fade-in sm:w-[19rem] sm:max-w-none"
     >
       <GlassPanel
         strong

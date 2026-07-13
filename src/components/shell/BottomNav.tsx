@@ -5,7 +5,7 @@ import { cn } from '@/lib/cn';
 /** Touch-friendly bottom navigation, shown only on small screens. */
 export function BottomNav() {
   return (
-    <nav className="glass-strong fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-[max(0.75rem,env(safe-area-inset-left))] right-[max(0.75rem,env(safe-area-inset-right))] z-30 flex items-center justify-around rounded-3xl px-2 py-1.5 md:hidden">
+    <nav className="glass-strong fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-[max(0.75rem,env(safe-area-inset-left))] right-[max(0.75rem,env(safe-area-inset-right))] z-30 flex items-center justify-around rounded-2xl px-2 py-1.5 md:hidden">
       {NAV_ITEMS.filter((item) => item.bottomNav).map(({ label, to, icon: Icon, end }) => (
         <NavLink
           key={to}

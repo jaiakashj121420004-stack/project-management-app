@@ -66,7 +66,7 @@ export function Sidebar({
       {/* Desktop rail */}
       <aside
         className={cn(
-          'glass relative z-20 hidden shrink-0 rounded-3xl transition-[width] duration-300 ease-spring md:block',
+          'glass relative z-20 hidden shrink-0 rounded-2xl transition-[width] duration-300 ease-spring md:block',
           collapsed ? 'w-[5.5rem]' : 'w-64',
         )}
       >
@@ -93,7 +93,7 @@ export function Sidebar({
               onClick={onCloseDrawer}
             />
             <motion.aside
-              className="glass-strong absolute inset-y-0 left-0 w-72 rounded-r-3xl pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pt-[env(safe-area-inset-top)]"
+              className="glass-strong absolute inset-y-0 left-0 w-72 rounded-r-2xl pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pt-[env(safe-area-inset-top)]"
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
