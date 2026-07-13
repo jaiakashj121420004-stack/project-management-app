@@ -1,8 +1,11 @@
 import type { CSSProperties } from 'react';
 
 /**
- * The six Aurora project accent gradients (plan.md §4.2). Each project picks
- * one; it drives headers, buttons, active states, and card glows.
+ * Per-project accents, retinted to the Nvexis "Almanac" earth palette
+ * (oxblood, gilt, clay, pine, terracotta, umber). Each project picks one; it
+ * drives headers, buttons, active states, and card glows. Keys are unchanged
+ * from the original Aurora set so existing `projects.accent` values keep
+ * working with no migration — only the colours are re-toned onto the brand.
  */
 export interface Accent {
   readonly label: string;
@@ -13,12 +16,12 @@ export interface Accent {
 }
 
 export const ACCENTS = {
-  aurora: { label: 'Aurora', from: '#7C3AED', to: '#06B6D4', glow: 'rgba(124, 58, 237, 0.45)' },
-  sunset: { label: 'Sunset', from: '#FF6B6B', to: '#FFD93D', glow: 'rgba(255, 107, 107, 0.45)' },
-  bloom: { label: 'Bloom', from: '#EC4899', to: '#8B5CF6', glow: 'rgba(236, 72, 153, 0.45)' },
-  lagoon: { label: 'Lagoon', from: '#06B6D4', to: '#10B981', glow: 'rgba(6, 182, 212, 0.45)' },
-  ember: { label: 'Ember', from: '#F97316', to: '#EF4444', glow: 'rgba(249, 115, 22, 0.45)' },
-  galaxy: { label: 'Galaxy', from: '#6366F1', to: '#A855F7', glow: 'rgba(99, 102, 241, 0.45)' },
+  aurora: { label: 'Oxblood', from: '#7A2A26', to: '#9B3A33', glow: 'rgba(122, 42, 38, 0.28)' },
+  sunset: { label: 'Gilt', from: '#8A6A2E', to: '#B0863A', glow: 'rgba(138, 106, 46, 0.26)' },
+  bloom: { label: 'Clay', from: '#8E4A3C', to: '#A85A48', glow: 'rgba(142, 74, 60, 0.26)' },
+  lagoon: { label: 'Pine', from: '#3E5C4B', to: '#4C6B54', glow: 'rgba(62, 92, 75, 0.24)' },
+  ember: { label: 'Terracotta', from: '#A0453B', to: '#B85A44', glow: 'rgba(160, 69, 59, 0.28)' },
+  galaxy: { label: 'Umber', from: '#5E5346', to: '#7A6A54', glow: 'rgba(94, 83, 70, 0.22)' },
 } as const satisfies Record<string, Accent>;
 
 export type AccentName = keyof typeof ACCENTS;

@@ -2,10 +2,11 @@ export type Theme = 'dark' | 'light';
 
 const STORAGE_KEY = 'aurora-theme';
 
-/** Browser-chrome color per theme — matches the --bg base in styles/index.css. */
+/** Browser-chrome color per theme — matches the --bg base in styles/index.css.
+ *  Nvexis: Night = ink, Day = parchment. */
 export const THEME_COLORS: Record<Theme, string> = {
-  dark: '#0B0710',
-  light: '#FAF7FF',
+  dark: '#181210',
+  light: '#ECE4D6',
 };
 
 /** The persisted theme, or null if the user has never chosen one. */

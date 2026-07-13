@@ -11,9 +11,9 @@
   box-sizing: border-box;
   height: 100%;
   padding: 12px;
-  font-family: 'Inter Variable', system-ui, sans-serif;
+  font-family: 'Spectral', Georgia, serif;
   font-size: 15px;
-  line-height: 1.45;
+  line-height: 1.5;
   overflow-wrap: break-word;
   word-break: break-word;
 }
@@ -27,14 +27,14 @@
   margin: 0.25em 0;
 }
 .canvas-rich h1 {
-  font-family: 'Space Grotesk Variable', system-ui, sans-serif;
+  font-family: 'Fraunces', Georgia, serif;
   font-size: 1.6em;
   font-weight: 800;
   line-height: 1.15;
   margin: 0.2em 0 0.3em;
 }
 .canvas-rich h2 {
-  font-family: 'Space Grotesk Variable', system-ui, sans-serif;
+  font-family: 'Fraunces', Georgia, serif;
   font-size: 1.3em;
   font-weight: 700;
   line-height: 1.2;

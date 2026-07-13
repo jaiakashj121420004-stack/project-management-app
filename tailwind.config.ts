@@ -17,15 +17,20 @@ export default {
         fg: 'rgb(var(--fg) / <alpha-value>)',
         'fg-muted': 'rgb(var(--fg-muted) / <alpha-value>)',
         'fg-subtle': 'rgb(var(--fg-subtle) / <alpha-value>)',
-        // Fixed semantic colors (plan.md §4.2).
-        success: '#10B981',
-        warning: '#F59E0B',
-        danger: '#EF4444',
-        info: '#06B6D4',
+        // Oxblood accent + brand extras (flip per theme via CSS vars).
+        ox: 'var(--ox)',
+        'ox-bright': 'var(--ox-bright)',
+        gilt: 'var(--gilt)',
+        // Functional status colors — restrained, Almanac-compatible.
+        success: '#4C6B54', // muted pine (done)
+        warning: 'var(--gilt)', // gilt (due-soon)
+        danger: 'var(--signal)', // signal oxblood-red (overdue)
+        info: '#5E5346', // umber (neutral info)
       },
       fontFamily: {
-        display: ['"Space Grotesk Variable"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        sans: ['"Inter Variable"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['Fraunces', 'Georgia', 'serif'],
+        sans: ['Spectral', 'Georgia', 'serif'],
+        mono: ['"IBM Plex Mono"', 'ui-monospace', 'monospace'],
       },
       fontSize: {
         // Generous display scale (plan.md §4.3).

@@ -2,8 +2,8 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import '@fontsource-variable/space-grotesk';
-import '@fontsource-variable/inter';
+// Nvexis fonts (Fraunces / Spectral / IBM Plex Mono) are loaded via <link> in
+// index.html so no self-hosted font dependency is required.
 import App from '@/App';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { AuthProvider } from '@/features/auth';

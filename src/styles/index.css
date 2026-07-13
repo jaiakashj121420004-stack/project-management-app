@@ -3,77 +3,93 @@
 @tailwind utilities;
 
 /* =========================================================================
-   Aurora design system — theme tokens (plan.md §4).
-   Dark is the default (:root); .light overrides. Both are first-class.
+   Nvexis design system — "The Almanac", hybrid glass-over-parchment.
+   Two inks on aged paper (oxblood + ink on parchment), per DESIGN-GUIDELINES.md.
+   Night (ink) is the default (:root); .light is Day (parchment) — the hero mode.
    Channel vars (--bg, --fg…) are "r g b" triplets so Tailwind can apply alpha.
    Glass/shadow vars hold finished values because their alpha differs per theme.
+   Hybrid deviation from the strict brand: we KEEP frosted glass + paper grain,
+   but warm them onto parchment/ink and use oxblood as the single accent.
    ========================================================================= */
 :root,
 .dark {
   color-scheme: dark;
 
-  --bg: 11 7 16; /* #0B0710 deep aubergine-black, not navy */
-  --fg: 245 243 255;
-  --fg-muted: 198 192 224;
-  --fg-subtle: 150 144 178;
+  --bg: 24 18 16; /* #181210 ink */
+  --fg: 236 226 210; /* #ECE2D2 bone */
+  --fg-muted: 199 186 169; /* #C7BAA9 body */
+  --fg-subtle: 158 144 130; /* #9E9082 umber-muted */
 
-  --glass-fill: rgba(255, 255, 255, 0.06);
-  --glass-fill-strong: rgba(255, 255, 255, 0.1);
+  /* Glass warmed onto ink — a lamplit almanac surface, not white frost. */
+  --glass-fill: rgba(52, 40, 36, 0.55);
+  --glass-fill-strong: rgba(60, 46, 42, 0.72);
   /* Opaque surface for dropdown menus/popovers (no content bleed-through). */
-  --menu-fill: linear-gradient(0deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08)), rgb(var(--bg));
-  --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-highlight: rgba(255, 255, 255, 0.22);
+  --menu-fill: linear-gradient(0deg, rgba(255, 246, 232, 0.06), rgba(255, 246, 232, 0.06)), rgb(var(--bg));
+  --glass-border: rgba(236, 226, 210, 0.14);
+  --glass-highlight: rgba(236, 226, 210, 0.16);
   --glass-shadow:
-    0 1px 0 0 var(--glass-highlight) inset, 0 18px 40px -16px rgba(0, 0, 0, 0.65),
-    0 6px 16px -8px rgba(0, 0, 0, 0.5);
+    0 1px 0 0 var(--glass-highlight) inset, 0 18px 40px -16px rgba(0, 0, 0, 0.6),
+    0 6px 16px -8px rgba(0, 0, 0, 0.45);
   --glass-shadow-lift:
-    0 1px 0 0 var(--glass-highlight) inset, 0 32px 60px -20px rgba(0, 0, 0, 0.7),
-    0 12px 28px -10px rgba(0, 0, 0, 0.55);
-  --hairline: rgba(255, 255, 255, 0.1);
-  --field-bg: rgba(255, 255, 255, 0.05);
+    0 1px 0 0 var(--glass-highlight) inset, 0 32px 60px -20px rgba(0, 0, 0, 0.66),
+    0 12px 28px -10px rgba(0, 0, 0, 0.5);
+  --hairline: rgba(236, 226, 210, 0.12); /* ~ #352724 warm hairline */
+  --field-bg: rgba(236, 226, 210, 0.05);
 
-  /* Aurora background blob tints (violet / cyan / magenta). */
-  --blob-1: rgba(124, 58, 237, 0.5);
-  --blob-2: rgba(6, 182, 212, 0.42);
-  --blob-3: rgba(236, 72, 153, 0.4);
-  --blob-opacity: 0.55;
+  /* Background wash — warm oxblood/gilt only, low opacity. No rainbow. */
+  --blob-1: rgba(194, 74, 64, 0.1);
+  --blob-2: rgba(199, 162, 78, 0.07);
+  --blob-3: rgba(194, 74, 64, 0.08);
+  --blob-opacity: 0.9;
 
-  /* Default app accent = Aurora (violet → cyan). Overridable per element. */
-  --accent-from: #7c3aed;
-  --accent-to: #06b6d4;
-  --accent-glow: rgba(124, 58, 237, 0.45);
-  --accent-fg: #ffffff;
+  /* Oxblood — the single accent. A whisper of shimmer via ox → ox-bright. */
+  --ox: #c24a40; /* Night oxblood (lifted) */
+  --ox-bright: #d2675c;
+  --accent-from: #c24a40;
+  --accent-to: #d2675c;
+  --accent-glow: rgba(194, 74, 64, 0.34);
+  --accent-fg: #f7f1e6;
+  --accent-btn: #8e332d; /* deepened fill so label keeps AA contrast on dark */
+  --signal: #d8634a;
+  --gilt: #c7a24e;
 }
 
 .light {
   color-scheme: light;
 
-  --bg: 250 247 255; /* #FAF7FF warm off-white */
-  --fg: 26 20 48; /* deep plum, not navy */
-  --fg-muted: 86 74 122;
-  --fg-subtle: 130 120 160;
+  --bg: 236 228 214; /* #ECE4D6 parchment */
+  --fg: 34 26 20; /* #221A14 ink */
+  --fg-muted: 74 63 53; /* #4A3F35 body */
+  --fg-subtle: 94 83 70; /* #5E5346 umber */
 
-  --glass-fill: rgba(255, 255, 255, 0.55);
-  --glass-fill-strong: rgba(255, 255, 255, 0.72);
-  --menu-fill: linear-gradient(0deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)), rgb(var(--bg));
-  --glass-border: rgba(255, 255, 255, 0.7);
-  --glass-highlight: rgba(255, 255, 255, 0.9);
+  --glass-fill: rgba(244, 238, 226, 0.62);
+  --glass-fill-strong: rgba(244, 238, 226, 0.82);
+  --menu-fill: linear-gradient(0deg, rgba(244, 238, 226, 0.85), rgba(244, 238, 226, 0.85)), rgb(var(--bg));
+  --glass-border: rgba(205, 191, 168, 0.75);
+  --glass-highlight: rgba(255, 251, 243, 0.85);
   --glass-shadow:
-    0 1px 0 0 var(--glass-highlight) inset, 0 20px 44px -20px rgba(80, 40, 120, 0.28),
-    0 6px 16px -10px rgba(80, 40, 120, 0.18);
+    0 1px 0 0 var(--glass-highlight) inset, 0 20px 44px -20px rgba(74, 50, 30, 0.22),
+    0 6px 16px -10px rgba(74, 50, 30, 0.14);
   --glass-shadow-lift:
-    0 1px 0 0 var(--glass-highlight) inset, 0 34px 64px -24px rgba(80, 40, 120, 0.34),
-    0 12px 28px -12px rgba(80, 40, 120, 0.22);
-  --hairline: rgba(40, 20, 70, 0.08);
-  --field-bg: rgba(255, 255, 255, 0.6);
+    0 1px 0 0 var(--glass-highlight) inset, 0 34px 64px -24px rgba(74, 50, 30, 0.28),
+    0 12px 28px -12px rgba(74, 50, 30, 0.18);
+  --hairline: rgba(126, 42, 38, 0.14); /* #CDBFA8-ish, faint oxblood-warm */
+  --field-bg: rgba(255, 251, 243, 0.6);
 
-  /* Pastel aurora blobs (soft violet / peach / mint) at low opacity. */
-  --blob-1: rgba(167, 139, 250, 0.5);
-  --blob-2: rgba(253, 186, 140, 0.45);
-  --blob-3: rgba(110, 231, 183, 0.45);
-  --blob-opacity: 0.7;
+  --blob-1: rgba(122, 42, 38, 0.06);
+  --blob-2: rgba(138, 106, 46, 0.05);
+  --blob-3: rgba(122, 42, 38, 0.05);
+  --blob-opacity: 1;
 
-  --accent-glow: rgba(124, 58, 237, 0.3);
+  --ox: #7a2a26; /* Day oxblood */
+  --ox-bright: #9b3a33;
+  --accent-from: #7a2a26;
+  --accent-to: #9b3a33;
+  --accent-glow: rgba(122, 42, 38, 0.22);
+  --accent-fg: #f7f1e6;
+  --accent-btn: #7a2a26;
+  --signal: #b23a2e;
+  --gilt: #8a6a2e;
 }
 
 @layer base {
@@ -88,11 +104,12 @@
   body {
     margin: 0;
     min-height: 100dvh;
-    font-family: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+    font-family: 'Spectral', Georgia, 'Times New Roman', serif;
     color: rgb(var(--fg));
     background-color: rgb(var(--bg));
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    font-feature-settings: 'onum' 1; /* oldstyle figures inside prose */
     /* Cross-fade the theme switch when View Transitions are unavailable. */
     transition:
       background-color 0.5s ease,
@@ -103,17 +120,18 @@
   h2,
   h3,
   h4 {
-    font-family: 'Space Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
+    font-family: 'Fraunces', Georgia, serif;
+    letter-spacing: -0.018em;
   }
 
-  /* Accessible, on-brand focus ring. */
+  /* Accessible, on-brand focus ring (oxblood). */
   :focus-visible {
     outline: 2px solid transparent;
     outline-offset: 2px;
     box-shadow:
       0 0 0 2px rgb(var(--bg)),
-      0 0 0 4px var(--accent-from);
-    border-radius: 0.5rem;
+      0 0 0 4px var(--ox);
+    border-radius: 0.375rem;
   }
 }
 
@@ -325,9 +343,9 @@
   box-sizing: border-box;
   height: 100%;
   padding: 12px;
-  font-family: 'Inter Variable', system-ui, sans-serif;
+  font-family: 'Spectral', Georgia, serif;
   font-size: 15px;
-  line-height: 1.45;
+  line-height: 1.5;
   overflow-wrap: break-word;
   word-break: break-word;
 }
@@ -341,14 +359,14 @@
   margin: 0.25em 0;
 }
 .canvas-rich h1 {
-  font-family: 'Space Grotesk Variable', system-ui, sans-serif;
+  font-family: 'Fraunces', Georgia, serif;
   font-size: 1.6em;
   font-weight: 800;
   line-height: 1.15;
   margin: 0.2em 0 0.3em;
 }
 .canvas-rich h2 {
-  font-family: 'Space Grotesk Variable', system-ui, sans-serif;
+  font-family: 'Fraunces', Georgia, serif;
   font-size: 1.3em;
   font-weight: 700;
   line-height: 1.2;
