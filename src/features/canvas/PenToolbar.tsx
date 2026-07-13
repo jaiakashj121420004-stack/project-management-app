@@ -55,6 +55,18 @@ export function PenToolbar({ settings, onChange, className }: PenToolbarProps) {
     });
   }
 
+  // NOTE: every hook must run before the early `if (collapsed) return` below —
+  // otherwise collapsing changes the hook count between renders and React throws
+  // "rendered fewer hooks than expected", blanking the whole app.
+  useEffect(() => {
+    if (!pickerOpen) return;
+    const onDown = (e: PointerEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) setPickerOpen(false);
+    };
+    document.addEventListener('pointerdown', onDown, true);
+    return () => document.removeEventListener('pointerdown', onDown, true);
+  }, [pickerOpen]);
+
   // Collapsed: a compact bar showing the current preset + colour + size, with a
   // chevron to reopen the full options. Keeps the canvas clear on small screens.
   if (collapsed) {
@@ -87,15 +99,6 @@ export function PenToolbar({ settings, onChange, className }: PenToolbarProps) {
       </div>
     );
   }
-
-  useEffect(() => {
-    if (!pickerOpen) return;
-    const onDown = (e: PointerEvent) => {
-      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) setPickerOpen(false);
-    };
-    document.addEventListener('pointerdown', onDown, true);
-    return () => document.removeEventListener('pointerdown', onDown, true);
-  }, [pickerOpen]);
 
   const customActive = !PEN_COLORS.some((c) => c.toLowerCase() === settings.color.toLowerCase());
 
