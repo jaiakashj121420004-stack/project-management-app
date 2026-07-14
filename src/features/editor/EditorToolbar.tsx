@@ -7,6 +7,7 @@ import {
   Code2,
   Heading1,
   Heading2,
+  Film,
   Heading3,
   Highlighter,
   Image as ImageIcon,
@@ -27,9 +28,11 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Spinner } from '@/components/feedback/Spinner';
+import { useIsPro, UpgradeModal } from '@/features/billing';
 import { uploadNoteImage } from '@/features/notes/noteMedia';
 import { safeLinkHref, BULLET_LIST_STYLES, ORDERED_LIST_STYLES } from './extensions';
 import { CanvasPickerModal } from './CanvasPickerModal';
+import { EmbedModal } from './EmbedModal';
 import { useNoteRef } from './noteContext';
 
 interface EditorToolbarProps {
@@ -100,8 +103,11 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
   const [canvasPickerOpen, setCanvasPickerOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [embedOpen, setEmbedOpen] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const noteRef = useNoteRef();
+  const isPro = useIsPro();
   const close = () => setOpen(null);
 
   async function uploadAndInsert(file: File) {
@@ -456,6 +462,13 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
       <Btn label="Insert image" active={false} disabled={uploading} onRun={() => fileInputRef.current?.click()}>
         {uploading ? <Spinner size={14} className="text-current" /> : <ImageIcon size={16} />}
       </Btn>
+      <Btn
+        label="Embed audio / video (Pro)"
+        active={embedOpen}
+        onRun={() => (isPro ? setEmbedOpen(true) : setUpgradeOpen(true))}
+      >
+        <Film size={16} />
+      </Btn>
       <Btn label="Insert canvas" active={canvasPickerOpen} onRun={() => setCanvasPickerOpen(true)}>
         <Shapes size={16} />
       </Btn>
@@ -477,6 +490,16 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
         onSelect={(canvasId, title) =>
           editor.chain().focus().insertCanvasLink({ canvasId, title }).run()
         }
+      />
+      <EmbedModal
+        open={embedOpen}
+        onClose={() => setEmbedOpen(false)}
+        onInsert={(attrs) => editor.chain().focus().insertNoteEmbed(attrs).run()}
+      />
+      <UpgradeModal
+        open={upgradeOpen}
+        onClose={() => setUpgradeOpen(false)}
+        reason="Upgrade to Pro to embed YouTube, Vimeo, Loom and SoundCloud in your notes."
       />
       {imageError && <span className="w-full px-1 text-xs text-danger">{imageError}</span>}
     </div>
