@@ -49,6 +49,18 @@ export async function renameFolder(id: string, name: string): Promise<Folder> {
   return data;
 }
 
+/** Set (or clear, with null) a folder's emoji icon. */
+export async function setFolderIcon(id: string, icon: string | null): Promise<Folder> {
+  const { data, error } = await supabase
+    .from('folders')
+    .update({ icon })
+    .eq('id', id)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 /** Move a folder under a new parent (null = to the root). The trigger rejects a
  *  move that would create a cycle or target a folder the caller doesn't own. */
 export async function moveFolder(id: string, parentId: string | null): Promise<Folder> {

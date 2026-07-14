@@ -7,7 +7,14 @@ import {
   patchNote,
   removeNote,
 } from '@/features/notes/api';
-import { fetchFolders, insertFolder, moveFolder, removeFolder, renameFolder } from './api';
+import {
+  fetchFolders,
+  insertFolder,
+  moveFolder,
+  removeFolder,
+  renameFolder,
+  setFolderIcon,
+} from './api';
 import { descendantIds } from './tree';
 
 /**
@@ -87,6 +94,7 @@ export function useCreateFolder() {
           owner_id: user?.id ?? '',
           parent_id: parentId,
           name: name.trim(),
+          icon: null,
           position: folders.length,
           created_at: now,
           updated_at: now,
@@ -103,6 +111,16 @@ export function useRenameFolder() {
     ({ id, name }) => renameFolder(id, name),
     (folders, { id, name }) =>
       folders.map((folder) => (folder.id === id ? { ...folder, name: name.trim() } : folder)),
+    (folders, updated) => folders.map((f) => (f.id === updated.id ? updated : f)),
+  );
+}
+
+/** Set or clear a folder's emoji icon. Optimistic, like rename. */
+export function useSetFolderIcon() {
+  return useFoldersMutation<Folder, { id: string; icon: string | null }>(
+    ({ id, icon }) => setFolderIcon(id, icon),
+    (folders, { id, icon }) =>
+      folders.map((folder) => (folder.id === id ? { ...folder, icon } : folder)),
     (folders, updated) => folders.map((f) => (f.id === updated.id ? updated : f)),
   );
 }
@@ -200,6 +218,7 @@ export function useCreateLibraryNote() {
           owner_id: user?.id ?? '',
           folder_id: folderId,
           title: title.trim(),
+          icon: null,
           content: '',
           content_json: null,
           updated_at: now,
@@ -217,15 +236,22 @@ export function useCreateLibraryNote() {
 export function useUpdateLibraryNote() {
   return useLibraryNotesMutation<
     Note,
-    { id: string; title?: string; content?: string; content_json?: Record<string, unknown> | null }
+    {
+      id: string;
+      title?: string;
+      icon?: string | null;
+      content?: string;
+      content_json?: Record<string, unknown> | null;
+    }
   >(
     ({ id, ...rest }) => patchNote(id, rest),
-    (notes, { id, title, content, content_json }) =>
+    (notes, { id, title, icon, content, content_json }) =>
       notes.map((note) =>
         note.id === id
           ? {
               ...note,
               ...(title !== undefined ? { title: title.trim() } : {}),
+              ...(icon !== undefined ? { icon } : {}),
               ...(content !== undefined ? { content } : {}),
               ...(content_json !== undefined ? { content_json } : {}),
               updated_at: new Date().toISOString(),

@@ -8,10 +8,12 @@ import {
   ListChecks,
   Quote,
   Code2,
+  ChevronRight,
   Minus,
   Type,
   type LucideIcon,
 } from 'lucide-react';
+import { NOTE_TEMPLATES } from '../noteTemplates';
 
 /** A block that can be inserted from the slash menu. */
 export interface SlashItem {
@@ -88,12 +90,27 @@ export const SLASH_ITEMS: readonly SlashItem[] = [
     command: (e) => e.chain().focus().toggleCodeBlock().run(),
   },
   {
+    title: 'Toggle',
+    subtitle: 'Collapsible section',
+    icon: ChevronRight,
+    keywords: ['toggle', 'details', 'collapse', 'accordion', 'expand'],
+    command: (e) => e.chain().focus().setDetails().run(),
+  },
+  {
     title: 'Divider',
     subtitle: 'Horizontal rule',
     icon: Minus,
     keywords: ['divider', 'hr', 'rule', 'separator', 'line'],
     command: (e) => e.chain().focus().setHorizontalRule().run(),
   },
+  // Ready-made note structures (meeting notes, journal, brief, weekly plan).
+  ...NOTE_TEMPLATES.map((template) => ({
+    title: template.title,
+    subtitle: template.subtitle,
+    icon: template.icon,
+    keywords: template.keywords,
+    command: (e: Editor) => e.chain().focus().insertContent(template.build()).run(),
+  })),
 ];
 
 /** Filter the menu by a query against each item's title + keywords. */

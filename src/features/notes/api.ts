@@ -65,6 +65,7 @@ export async function patchNote(
   id: string,
   patch: {
     title?: string;
+    icon?: string | null;
     content?: string;
     content_json?: Record<string, unknown> | null;
     folder_id?: string | null;

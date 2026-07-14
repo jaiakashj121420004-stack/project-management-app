@@ -18,6 +18,8 @@ interface LayersPanelProps {
   onSelect: (ids: string[]) => void;
   onToggleVisibility: (id: string) => void;
   onToggleLock: (id: string) => void;
+  /** Center the camera on an element (plain click on a row). */
+  onJumpTo?: (id: string) => void;
 }
 
 /** Human-readable label + icon for each element type. */
@@ -51,6 +53,7 @@ export function LayersPanel({
   onSelect,
   onToggleVisibility,
   onToggleLock,
+  onJumpTo,
 }: LayersPanelProps) {
   // Sort descending by z so the topmost element appears first in the list.
   const sorted = [...elements].sort((a, b) => b.z - a.z);
@@ -63,6 +66,8 @@ export function LayersPanel({
       onSelect(next);
     } else {
       onSelect([id]);
+      // A plain click also recenters the viewport on the element.
+      onJumpTo?.(id);
     }
   }
 

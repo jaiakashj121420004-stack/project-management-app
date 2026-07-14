@@ -7,12 +7,14 @@ import {
   useState,
   type ChangeEvent,
 } from 'react';
-import { AlertCircle, Check, Trash2 } from 'lucide-react';
+import { AlertCircle, Check, Download, Trash2 } from 'lucide-react';
 import type { JSONContent } from '@tiptap/core';
 import { Spinner } from '@/components/feedback/Spinner';
 import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
 import { useAuth } from '@/hooks/useAuth';
 import { ShareButton } from '@/features/sharing';
+import { EmojiPicker } from '@/components/forms/EmojiPicker';
+import { docToMarkdown } from '@/features/editor/serialize';
 import type { Note } from '@/types/database';
 import { noteTitleSchema } from './schemas';
 
@@ -26,6 +28,7 @@ export type UpdateNoteFn = (
   variables: {
     id: string;
     title?: string;
+    icon?: string | null;
     content?: string;
     content_json?: Record<string, unknown> | null;
   },
@@ -68,6 +71,9 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
   const [docDirty, setDocDirty] = useState(false);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'error'>('idle');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  // Emoji icon (standalone Library notes only). Written immediately on change.
+  const [icon, setIcon] = useState<string | null>(note.icon ?? null);
+  const isStandalone = note.project_id === null;
 
   // Latest document from the editor (only present once the user edits).
   const docRef = useRef<{ json: JSONContent; text: string } | null>(null);
@@ -137,38 +143,85 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
     onDeleted();
   }
 
+  function handleIconSelect(next: string | null) {
+    setIcon(next);
+    runUpdate({ id: note.id, icon: next });
+  }
+
+  // Export the current document (including unsaved edits) as a .md download.
+  function handleExport() {
+    const doc = docRef.current?.json ?? (note.content_json as JSONContent | null);
+    const cleanTitle = title.trim() || 'Untitled note';
+    const markdown = `# ${cleanTitle}\n\n${docToMarkdown(doc as Record<string, unknown> | null)}`;
+    const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${cleanTitle.replace(/[^\w\- ]+/g, '').trim() || 'note'}.md`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <input
-            value={title}
-            maxLength={120}
-            readOnly={!canEdit}
-            onChange={(event: ChangeEvent<HTMLInputElement>) => setTitle(event.target.value)}
-            placeholder="Note title…"
-            aria-label="Note title"
-            className="w-full truncate bg-transparent font-display text-xl font-bold text-fg placeholder:text-fg-subtle focus:outline-none sm:text-2xl"
-          />
+          <div className="flex items-center gap-2">
+            {isStandalone && canEdit ? (
+              <EmojiPicker
+                value={icon}
+                onSelect={handleIconSelect}
+                ariaLabel="Set note icon"
+                buttonClassName="h-9 w-9 shrink-0"
+                iconSize={22}
+              />
+            ) : (
+              icon && (
+                <span className="grid h-9 w-9 shrink-0 place-items-center text-2xl leading-none">{icon}</span>
+              )
+            )}
+            <input
+              value={title}
+              maxLength={120}
+              readOnly={!canEdit}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => setTitle(event.target.value)}
+              placeholder="Note title…"
+              aria-label="Note title"
+              className="min-w-0 flex-1 truncate bg-transparent font-display text-xl font-bold text-fg placeholder:text-fg-subtle focus:outline-none sm:text-2xl"
+            />
+          </div>
           {canEdit && titleError && <p className="mt-1 text-xs text-danger">{titleError}</p>}
         </div>
 
-        {canEdit && (
-          <div className="flex shrink-0 items-center gap-2">
-            {canShare && (
-              <ShareButton kind="note" targetId={note.id} title={note.title} className="hidden sm:inline-flex" />
-            )}
-            <SaveIndicator status={status} />
-            <button
-              type="button"
-              aria-label="Delete note"
-              onClick={() => setConfirmingDelete((open) => !open)}
-              className="grid h-9 w-9 place-items-center rounded-xl text-fg-subtle transition-colors hover:bg-danger/10 hover:text-danger"
-            >
-              <Trash2 size={16} />
-            </button>
-          </div>
-        )}
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            aria-label="Export as Markdown"
+            title="Export as Markdown"
+            onClick={handleExport}
+            className="grid h-9 w-9 place-items-center rounded-xl text-fg-subtle transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+          >
+            <Download size={16} />
+          </button>
+          {canEdit && (
+            <>
+              {canShare && (
+                <ShareButton kind="note" targetId={note.id} title={note.title} className="hidden sm:inline-flex" />
+              )}
+              <SaveIndicator status={status} />
+              <button
+                type="button"
+                aria-label="Delete note"
+                onClick={() => setConfirmingDelete((open) => !open)}
+                className="grid h-9 w-9 place-items-center rounded-xl text-fg-subtle transition-colors hover:bg-danger/10 hover:text-danger"
+              >
+                <Trash2 size={16} />
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {confirmingDelete && canEdit && (

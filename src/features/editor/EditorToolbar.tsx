@@ -4,6 +4,7 @@ import { ToolbarPopover } from '@/components/forms/ToolbarPopover';
 import {
   Bold,
   ChevronDown,
+  ChevronRight,
   Code2,
   Heading1,
   Heading2,
@@ -421,6 +422,9 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
       </Btn>
       <Btn label="Code block" active={editor.isActive('codeBlock')} onRun={() => editor.chain().focus().toggleCodeBlock().run()}>
         <Code2 size={15} />
+      </Btn>
+      <Btn label="Toggle (collapsible)" active={editor.isActive('details')} onRun={() => editor.chain().focus().setDetails().run()}>
+        <ChevronRight size={16} />
       </Btn>
       <Btn label="Divider" active={false} onRun={() => editor.chain().focus().setHorizontalRule().run()}>
         <Minus size={16} />

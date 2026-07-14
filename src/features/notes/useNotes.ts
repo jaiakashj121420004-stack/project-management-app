@@ -72,6 +72,7 @@ export function useAddNote(projectId: string) {
           owner_id: user?.id ?? '',
           folder_id: null,
           title: title.trim(),
+          icon: null,
           content: '',
           content_json: null,
           updated_at: now,

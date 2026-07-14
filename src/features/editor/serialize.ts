@@ -55,6 +55,128 @@ export function isEmptyDoc(body: Record<string, unknown> | null): boolean {
   return docToPlainText(body).length === 0;
 }
 
+// ── doc → Markdown (note export) ─────────────────────────────────────────────
+
+/** Serialise one text node with its marks applied (code/bold/italic/strike/link). */
+function markText(node: JSONContent): string {
+  let text = node.text ?? '';
+  for (const mark of node.marks ?? []) {
+    switch (mark.type) {
+      case 'code':
+        text = '`' + text + '`';
+        break;
+      case 'bold':
+        text = '**' + text + '**';
+        break;
+      case 'italic':
+        text = '*' + text + '*';
+        break;
+      case 'strike':
+        text = '~~' + text + '~~';
+        break;
+      case 'link':
+        text = '[' + text + '](' + String(mark.attrs?.href ?? '') + ')';
+        break;
+      default:
+        break;
+    }
+  }
+  return text;
+}
+
+/** Inline children → a markdown string (text + hard breaks). */
+function inlineToMd(nodes: JSONContent[] | undefined): string {
+  if (!nodes) return '';
+  return nodes
+    .map((node) => {
+      if (node.type === 'text') return markText(node);
+      if (node.type === 'hardBreak') return '  \n';
+      return inlineToMd(node.content);
+    })
+    .join('');
+}
+
+/** The plain paragraphs of a list item, joined — nested lists handled separately. */
+function itemLead(item: JSONContent): string {
+  return (item.content ?? [])
+    .filter((child) => child.type === 'paragraph')
+    .map((child) => inlineToMd(child.content))
+    .join(' ');
+}
+
+/** Nested lists inside a list item, indented under the parent marker. */
+function nestedLists(item: JSONContent, indent: string): string {
+  return (item.content ?? [])
+    .filter((c) => c.type === 'bulletList' || c.type === 'orderedList' || c.type === 'taskList')
+    .map((c) => '\n' + listToMd(c, indent + '  '))
+    .join('');
+}
+
+function listToMd(list: JSONContent, indent: string): string {
+  const items = list.content ?? [];
+  return items
+    .map((item, index) => {
+      const lead =
+        list.type === 'taskList'
+          ? `- [${item.attrs?.checked === true ? 'x' : ' '}] ${itemLead(item)}`
+          : list.type === 'orderedList'
+            ? `${index + 1}. ${itemLead(item)}`
+            : `- ${itemLead(item)}`;
+      return indent + lead + nestedLists(item, indent);
+    })
+    .join('\n');
+}
+
+/** One block node → markdown, or null to skip. Best-effort; never throws. */
+function blockToMd(node: JSONContent): string | null {
+  switch (node.type) {
+    case 'paragraph':
+      return inlineToMd(node.content);
+    case 'heading':
+      return '#'.repeat(Math.min(3, Math.max(1, Number(node.attrs?.level) || 1))) + ' ' + inlineToMd(node.content);
+    case 'blockquote':
+      return (node.content ?? [])
+        .map((child) => '> ' + (blockToMd(child) ?? ''))
+        .join('\n');
+    case 'codeBlock':
+      return '```' + String(node.attrs?.language ?? '') + '\n' +
+        (node.content ?? []).map((t) => t.text ?? '').join('') + '\n```';
+    case 'horizontalRule':
+      return '---';
+    case 'bulletList':
+    case 'orderedList':
+    case 'taskList':
+      return listToMd(node, '');
+    case 'details': {
+      const summary = (node.content ?? []).find((c) => c.type === 'detailsSummary');
+      const inner = (node.content ?? []).find((c) => c.type === 'detailsContent');
+      const body = (inner?.content ?? []).map((c) => blockToMd(c) ?? '').join('\n\n');
+      return `**${inlineToMd(summary?.content) || 'Toggle'}**\n\n${body}`;
+    }
+    case 'noteImage':
+      return `_[image: ${String(node.attrs?.alt ?? 'attached')}]_`;
+    case 'noteEmbed': {
+      const url = String(node.attrs?.embedUrl ?? '');
+      return url ? `[${String(node.attrs?.provider ?? 'Embed')} embed](${url})` : '';
+    }
+    case 'canvasLink':
+      return `_[canvas: ${String(node.attrs?.title ?? 'Canvas')}]_`;
+    default:
+      return node.content ? inlineToMd(node.content) : null;
+  }
+}
+
+/** doc JSON → a Markdown string (note export). Private images and canvas links
+ *  degrade to a bracketed placeholder — the private path is never leaked. */
+export function docToMarkdown(body: Record<string, unknown> | null): string {
+  if (!body) return '';
+  const doc = body as JSONContent;
+  const blocks = (doc.content ?? [])
+    .map(blockToMd)
+    .filter((s): s is string => s !== null);
+  return (blocks.join('\n\n').replace(/\n{3,}/g, '\n\n').trim() + '\n');
+}
+
 // ── Legacy markdown → doc (one-time note migration) ──────────────────────────
 
 /** Inline markdown → an array of Tiptap text nodes with marks. Handles code,

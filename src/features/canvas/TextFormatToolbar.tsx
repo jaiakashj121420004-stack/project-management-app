@@ -30,7 +30,12 @@ const TEXT_COLORS: readonly string[] = [
   '#0F766E', '#0369A1', '#4338CA', '#7C3AED', '#BE185D', '#1F2937',
 ];
 
-type OpenPopover = 'color' | 'link' | null;
+/** Highlight (marker) colours — soft, translucent so text stays legible. */
+const HIGHLIGHT_COLORS: readonly string[] = [
+  '#FEF08A', '#FED7AA', '#FBCFE8', '#BBF7D0', '#BAE6FD', '#DDD6FE', '#E5E7EB',
+];
+
+type OpenPopover = 'color' | 'highlight' | 'link' | null;
 
 /**
  * The floating rich-text toolbar shown above a text box while it's being edited.
@@ -50,6 +55,8 @@ export function TextFormatToolbar({ editor, className }: TextFormatToolbarProps)
   const currentHref = typeof linkAttrs.href === 'string' ? linkAttrs.href : '';
   const styleAttrs: Record<string, unknown> = editor.getAttributes('textStyle');
   const currentColor = typeof styleAttrs.color === 'string' ? styleAttrs.color : null;
+  const highlightAttrs: Record<string, unknown> = editor.getAttributes('highlight');
+  const currentHighlight = typeof highlightAttrs.color === 'string' ? highlightAttrs.color : null;
   const linkActive = editor.isActive('link');
 
   const toggleColor = useCallback(() => setOpen((o) => (o === 'color' ? null : 'color')), []);
@@ -132,13 +139,55 @@ export function TextFormatToolbar({ editor, className }: TextFormatToolbarProps)
       >
         <Strikethrough size={15} />
       </FmtButton>
-      <FmtButton
-        label="Highlight"
-        active={editor.isActive('highlight')}
-        onRun={() => editor.chain().focus().toggleHighlight().run()}
+      <Popover
+        open={open === 'highlight'}
+        onClose={close}
+        title="Highlight"
+        trigger={
+          <FmtButton
+            label="Highlight"
+            active={editor.isActive('highlight') || open === 'highlight'}
+            onRun={() => setOpen((o) => (o === 'highlight' ? null : 'highlight'))}
+          >
+            <span className="relative grid place-items-center">
+              <Highlighter size={15} />
+              <span
+                aria-hidden
+                className="absolute -bottom-1 h-0.5 w-4 rounded-full"
+                style={{ background: currentHighlight ?? '#FEF08A' }}
+              />
+            </span>
+          </FmtButton>
+        }
       >
-        <Highlighter size={15} />
-      </FmtButton>
+        <div className="flex w-40 flex-wrap gap-1.5">
+          {HIGHLIGHT_COLORS.map((color) => (
+            <button
+              key={color}
+              type="button"
+              aria-label={`Highlight ${color}`}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                editor.chain().focus().toggleHighlight({ color }).run();
+                setOpen(null);
+              }}
+              className="h-6 w-6 rounded-full border border-black/10 transition-transform hover:scale-110 dark:border-white/20"
+              style={{ backgroundColor: color }}
+            />
+          ))}
+        </div>
+        <button
+          type="button"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => {
+            editor.chain().focus().unsetHighlight().run();
+            setOpen(null);
+          }}
+          className="mt-2 w-full rounded-lg px-2 py-1 text-xs text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+        >
+          Remove highlight
+        </button>
+      </Popover>
 
       <Divider />
 

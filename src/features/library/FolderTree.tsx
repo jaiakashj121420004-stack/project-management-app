@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { ChevronRight, FolderIcon, Home, Plus } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { EmojiPicker } from '@/components/forms/EmojiPicker';
 import type { Folder } from '@/types/database';
 import { buildFolderTree, folderPath, type FolderNode } from './tree';
+import { useSetFolderIcon } from './useLibrary';
 
 interface FolderTreeProps {
   folders: Folder[];
@@ -27,6 +29,7 @@ export function FolderTree({
   canEdit,
 }: FolderTreeProps) {
   const tree = buildFolderTree(folders);
+  const setFolderIcon = useSetFolderIcon();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   // Keep the path to the current folder open whenever the selection changes.
@@ -88,6 +91,8 @@ export function FolderTree({
           expanded={expanded}
           onToggle={toggle}
           onSelect={onSelect}
+          canEdit={canEdit}
+          onSetIcon={(id, icon) => setFolderIcon.mutate({ id, icon })}
         />
       ))}
     </nav>
@@ -101,9 +106,20 @@ interface TreeRowProps {
   expanded: Set<string>;
   onToggle: (id: string) => void;
   onSelect: (folderId: string) => void;
+  canEdit: boolean;
+  onSetIcon: (id: string, icon: string | null) => void;
 }
 
-function TreeRow({ node, depth, currentFolderId, expanded, onToggle, onSelect }: TreeRowProps) {
+function TreeRow({
+  node,
+  depth,
+  currentFolderId,
+  expanded,
+  onToggle,
+  onSelect,
+  canEdit,
+  onSetIcon,
+}: TreeRowProps) {
   const isOpen = expanded.has(node.id);
   const hasChildren = node.children.length > 0;
   const isActive = node.id === currentFolderId;
@@ -141,12 +157,27 @@ function TreeRow({ node, depth, currentFolderId, expanded, onToggle, onSelect }:
             isActive && 'font-semibold',
           )}
         >
-          <FolderIcon
-            size={15}
-            className={cn('shrink-0', isActive ? 'text-[var(--accent-from)]' : 'text-fg-subtle')}
-          />
+          {node.icon ? (
+            <span className="grid h-[15px] w-[15px] shrink-0 place-items-center text-sm leading-none">
+              {node.icon}
+            </span>
+          ) : (
+            <FolderIcon
+              size={15}
+              className={cn('shrink-0', isActive ? 'text-[var(--accent-from)]' : 'text-fg-subtle')}
+            />
+          )}
           <span className="truncate">{node.name}</span>
         </button>
+        {canEdit && (
+          <EmojiPicker
+            value={node.icon}
+            onSelect={(emoji) => onSetIcon(node.id, emoji)}
+            ariaLabel={`Set icon for ${node.name}`}
+            buttonClassName="h-6 w-6 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+            iconSize={13}
+          />
+        )}
       </div>
 
       {isOpen &&
@@ -159,6 +190,8 @@ function TreeRow({ node, depth, currentFolderId, expanded, onToggle, onSelect }:
             expanded={expanded}
             onToggle={onToggle}
             onSelect={onSelect}
+            canEdit={canEdit}
+            onSetIcon={onSetIcon}
           />
         ))}
     </div>

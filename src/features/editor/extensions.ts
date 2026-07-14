@@ -16,6 +16,7 @@ import { Color, TextStyle } from '@tiptap/extension-text-style';
 import { Link } from '@tiptap/extension-link';
 import { TaskList } from '@tiptap/extension-task-list';
 import { TaskItem } from '@tiptap/extension-task-item';
+import { Details, DetailsSummary, DetailsContent } from '@tiptap/extension-details';
 import { Collaboration } from '@tiptap/extension-collaboration';
 import { CollaborationCaret } from '@tiptap/extension-collaboration-caret';
 import type { AnyExtension } from '@tiptap/core';
@@ -117,6 +118,9 @@ export const blockExtensions: AnyExtension[] = [
   SafeLink,
   TaskList,
   TaskItem.configure({ nested: true }),
+  Details.configure({ persist: true, HTMLAttributes: { class: 'tt-details' } }),
+  DetailsSummary,
+  DetailsContent,
   ListStyle,
 ];
 
@@ -147,6 +151,9 @@ export function collabBlockExtensions(opts: {
     SafeLink,
     TaskList,
     TaskItem.configure({ nested: true }),
+    Details.configure({ persist: true, HTMLAttributes: { class: 'tt-details' } }),
+    DetailsSummary,
+    DetailsContent,
     ListStyle,
     Collaboration.configure({ fragment: opts.fragment }),
     CollaborationCaret.configure({ provider: opts.provider, user: opts.user }),

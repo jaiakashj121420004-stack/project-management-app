@@ -50,6 +50,7 @@ import { CanvasStage } from './CanvasStage';
 import { CanvasToolbar } from './CanvasToolbar';
 import { ContextMenu } from './ContextMenu';
 import { LayersPanel } from './LayersPanel';
+import { centerCamera } from './bounds';
 import { PenToolbar } from './PenToolbar';
 import { EraserToolbar } from './EraserToolbar';
 import {
@@ -1027,6 +1028,10 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
             onToggleLock={(id) => {
               const el = scene.elements.find((e) => e.id === id);
               if (el) commit({ elements: scene.elements.map((e) => e.id === id ? { ...e, locked: !e.locked } : e) });
+            }}
+            onJumpTo={(id) => {
+              const el = scene.elements.find((e) => e.id === id);
+              if (el) setCamera(centerCamera(el.x + el.width / 2, el.y + el.height / 2, viewport, camera.scale));
             }}
           />
         )}
