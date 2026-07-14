@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { AuroraBackground } from '@/components/AuroraBackground';
+import { RouteErrorBoundary } from '@/components/feedback/RouteErrorBoundary';
 import { OfflineBanner } from '@/components/pwa/OfflineBanner';
 import { PWAReloadPrompt } from '@/components/pwa/PWAReloadPrompt';
 import { useDueReminders } from '@/features/reminders';
@@ -17,6 +18,7 @@ import { BottomNav } from './BottomNav';
 export function AppShell() {
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const location = useLocation();
 
   // In-app due-date reminders (browser notifications) — opt-in, runs app-wide.
   useDueReminders();
@@ -36,7 +38,12 @@ export function AppShell() {
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           <Topbar onOpenMenu={() => setDrawerOpen(true)} />
           <main className="min-w-0 flex-1 pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-2">
-            <Outlet />
+            {/* Root crash boundary: a render error or failed lazy-chunk load in
+                any page shows the inline fallback instead of white-screening the
+                whole app, and recovers automatically when the route changes. */}
+            <RouteErrorBoundary label="this page" resetKeys={[location.pathname]}>
+              <Outlet />
+            </RouteErrorBoundary>
           </main>
         </div>
       </div>

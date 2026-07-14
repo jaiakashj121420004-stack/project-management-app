@@ -53,7 +53,9 @@ Phases 1 and 2 are independent and can run in parallel. 3 depends on 2 (tests + 
 
 ---
 
-## Phase 2 — Resilience safety net *(do before the big refactors)*
+## Phase 2 — Resilience safety net *(do before the big refactors)*  ✅ BUILT 2026-07-14 (`npm install` + build/test + commit on Windows)
+> **Delivered:** root error boundaries — extended `ErrorBoundary` (`onReset` + `resetKeys`) + new `RouteErrorBoundary` (pairs `QueryErrorResetBoundary`) wrapping the authenticated `<Outlet/>` (`AppShell`) and every lazy `<Suspense>` (project canvas, Library `OpenCanvas`, `CanvasHome`, `NoteEditor`). Visible mutation failures — a global `MutationCache({ onError })` in `lib/queryClient.ts` (+ typed `Register.mutationMeta` opt-outs) firing a **custom** toast (`components/feedback/{toast.ts,Toaster.tsx}`, no `sonner`), mounted at root in `main.tsx`. Test harness — Vitest 4 + testing-library + jsdom + coverage-v8, `test`/`test:ci`/`coverage` scripts, `vitest.config.ts`, `src/test/setup.ts`, ESLint test override; 5 pure-logic suites (`board/ordering`, `lib/dueAt`, `editor/serialize`, `library/tree`, `canvas/collab/yCanvasDoc`). CI — `.github/workflows/ci.yml` runs `typecheck && lint && test:ci && build`. ⚠️ New **dev** deps require `npm install`; not built/tested in-session (mount truncation) — run the gate + commit on Windows. See `memory.md`.
+
 **Goal:** make every later change safe to ship — catch crashes, surface failures, and prove correctness with tests.
 
 **Tasks**

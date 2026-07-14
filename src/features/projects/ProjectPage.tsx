@@ -5,6 +5,7 @@ import { cn } from '@/lib/cn';
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import { Badge } from '@/components/Badge';
 import { Spinner } from '@/components/feedback/Spinner';
+import { RouteErrorBoundary } from '@/components/feedback/RouteErrorBoundary';
 import { Reveal } from '@/components/motion/Reveal';
 import { useAuth } from '@/hooks/useAuth';
 import { accentVars } from '@/lib/accents';
@@ -163,15 +164,17 @@ export function ProjectPage() {
           title="The Notes Canvas is a Pro feature"
           reason="Upgrade to Pro to sketch, lay out, and collaborate on an infinite per-project whiteboard."
         >
-          <Suspense
-            fallback={
-              <div className="grid place-items-center py-24">
-                <Spinner size={32} />
-              </div>
-            }
-          >
-            <CanvasPanel projectId={project.id} canEdit={canEdit} />
-          </Suspense>
+          <RouteErrorBoundary label="the canvas">
+            <Suspense
+              fallback={
+                <div className="grid place-items-center py-24">
+                  <Spinner size={32} />
+                </div>
+              }
+            >
+              <CanvasPanel projectId={project.id} canEdit={canEdit} />
+            </Suspense>
+          </RouteErrorBoundary>
         </ProGate>
       )}
       {tab === 'activity' && (

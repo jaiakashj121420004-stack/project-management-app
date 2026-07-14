@@ -4,6 +4,7 @@ import { PenTool, Plus } from 'lucide-react';
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import { GradientButton } from '@/components/buttons/GradientButton';
 import { Spinner } from '@/components/feedback/Spinner';
+import { RouteErrorBoundary } from '@/components/feedback/RouteErrorBoundary';
 import { Reveal } from '@/components/motion/Reveal';
 import { EntityPicker } from '@/components/forms/EntityPicker';
 import { useAuth } from '@/hooks/useAuth';
@@ -176,21 +177,23 @@ function CanvasWorkspace() {
       )}
 
       {selected && (
-        <Suspense
-          fallback={
-            <div className="grid place-items-center py-24">
-              <Spinner size={32} />
-            </div>
-          }
-        >
-          <CanvasEditor
-            key={selected.id}
-            noteId={selected.id}
-            projectId={selected.project_id}
-            canEdit={canEdit}
-            onDeleted={() => setSelectedId(null)}
-          />
-        </Suspense>
+        <RouteErrorBoundary label="the canvas" resetKeys={[selected.id]}>
+          <Suspense
+            fallback={
+              <div className="grid place-items-center py-24">
+                <Spinner size={32} />
+              </div>
+            }
+          >
+            <CanvasEditor
+              key={selected.id}
+              noteId={selected.id}
+              projectId={selected.project_id}
+              canEdit={canEdit}
+              onDeleted={() => setSelectedId(null)}
+            />
+          </Suspense>
+        </RouteErrorBoundary>
       )}
     </div>
   );

@@ -10,7 +10,7 @@ import {
 import { AlertCircle, Check, Download, ImagePlus, Trash2 } from 'lucide-react';
 import type { JSONContent } from '@tiptap/core';
 import { Spinner } from '@/components/feedback/Spinner';
-import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
+import { RouteErrorBoundary } from '@/components/feedback/RouteErrorBoundary';
 import { useAuth } from '@/hooks/useAuth';
 import { ShareButton } from '@/features/sharing';
 import { EmojiPicker } from '@/components/forms/EmojiPicker';
@@ -329,7 +329,7 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
         </div>
       )}
 
-      <ErrorBoundary key={note.id} label="the note editor">
+      <RouteErrorBoundary key={note.id} label="the note editor" resetKeys={[note.id]}>
         <Suspense
           fallback={
             <div className="grid min-h-[40vh] place-items-center">
@@ -339,7 +339,7 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
         >
           <NoteBlockEditor note={note} editable={canEdit} onChange={handleDocChange} />
         </Suspense>
-      </ErrorBoundary>
+      </RouteErrorBoundary>
     </div>
   );
 }

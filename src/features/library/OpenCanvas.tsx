@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { Spinner } from '@/components/feedback/Spinner';
+import { RouteErrorBoundary } from '@/components/feedback/RouteErrorBoundary';
 
 // The Konva editor is lazy-loaded (imported via dynamic import, exactly like
 // CanvasHome) so the heavy canvas chunk never ships in the Library's main bundle.
@@ -22,20 +23,22 @@ export function OpenCanvas({
   onBack: () => void;
 }) {
   return (
-    <Suspense
-      fallback={
-        <div className="grid place-items-center py-24">
-          <Spinner size={32} />
-        </div>
-      }
-    >
-      <CanvasEditor
-        key={canvasId}
-        noteId={canvasId}
-        projectId={null}
-        canEdit={canEdit}
-        onDeleted={onBack}
-      />
-    </Suspense>
+    <RouteErrorBoundary label="the canvas" resetKeys={[canvasId]}>
+      <Suspense
+        fallback={
+          <div className="grid place-items-center py-24">
+            <Spinner size={32} />
+          </div>
+        }
+      >
+        <CanvasEditor
+          key={canvasId}
+          noteId={canvasId}
+          projectId={null}
+          canEdit={canEdit}
+          onDeleted={onBack}
+        />
+      </Suspense>
+    </RouteErrorBoundary>
   );
 }

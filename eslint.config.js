@@ -38,5 +38,19 @@ export default tseslint.config(
     languageOptions: { globals: globals.node },
     extends: [tseslint.configs.disableTypeChecked],
   },
+  // Tests: relax the `no-unsafe-*` family (fixtures cast partial rows, and
+  // Tiptap's `attrs` are typed `any`) and allow non-null assertions on the
+  // known-shaped data under test. The app source keeps the strict rules.
+  {
+    files: ['**/*.{test,spec}.{ts,tsx}', 'src/test/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
+    },
+  },
   prettier,
 );

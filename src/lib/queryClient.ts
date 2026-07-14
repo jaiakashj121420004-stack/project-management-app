@@ -1,5 +1,24 @@
-import { QueryClient } from '@tanstack/react-query';
+import { MutationCache, QueryClient } from '@tanstack/react-query';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
+import { toast } from '@/components/feedback/toast';
+
+/**
+ * Optional per-mutation metadata read by the global error handler below.
+ * A hook can set `meta: { errorMessage: '…' }` for a tailored message, or
+ * `meta: { suppressErrorToast: true }` when it surfaces its own error UI
+ * (e.g. an inline banner) so the user isn't told twice.
+ */
+declare module '@tanstack/react-query' {
+  interface Register {
+    mutationMeta: {
+      errorMessage?: string;
+      suppressErrorToast?: boolean;
+    };
+  }
+}
+
+/** Default copy when a mutation fails and the hook didn't provide its own. */
+const DEFAULT_MUTATION_ERROR = "Couldn't save your changes. Please try again.";
 
 /**
  * The app's single QueryClient plus a localStorage persister (Phase 9).
@@ -29,6 +48,18 @@ export const queryClient = new QueryClient({
       gcTime: PERSIST_MAX_AGE,
     },
   },
+  // Global write-failure feedback (Phase 2 resilience). Every mutation's optimistic
+  // `onError` still rolls the cache back; this adds the *visible* half so a failed
+  // card move / rename / etc. no longer snaps back silently. Hooks that render their
+  // own error UI opt out via `meta.suppressErrorToast`.
+  mutationCache: new MutationCache({
+    onError: (_error, _variables, _context, mutation) => {
+      if (mutation.meta?.suppressErrorToast) return;
+      // Prefer the hook's own copy; otherwise a friendly default (raw Supabase
+      // messages like "new row violates row-level security policy" aren't for users).
+      toast.error(mutation.meta?.errorMessage ?? DEFAULT_MUTATION_ERROR);
+    },
+  }),
 });
 
 export const persister = createSyncStoragePersister({
