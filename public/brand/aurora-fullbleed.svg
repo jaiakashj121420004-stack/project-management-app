@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Aurora">
-  <rect x="8" y="8" width="104" height="104" rx="26" fill="#7A2A26"/>
-  <g fill="#F3ECDD">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <rect x="0" y="0" width="120" height="120" fill="#7A2A26"/>
+  <g fill="#F3ECDD" transform="translate(60,60) scale(0.72) translate(-60,-60)">
     <polygon points="60,24 62,24 37,96 25,96"/>
     <polygon points="58,24 60,24 101,96 77,96"/>
     <rect x="44" y="66.5" width="29" height="8"/>

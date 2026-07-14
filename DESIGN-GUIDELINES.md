@@ -131,6 +131,7 @@ Distinctive, free (Google Fonts), and deliberately **not Inter**. The serif is t
 - **Wordmark:** "Nvexis" in **Fraunces 900**, tight tracking. The prism leads the word or stands alone.
 - **Facet as fleuron:** a single cropped facet-triangle, small, as a section divider and recurring motif (mastheads, dividers, social).
 - **Logo files (ready):** `Nvexis Rebrand/Editorial Authority/logo/` — day, night, mono ink, reverse/parchment, app-icon tiles, favicon, wordmark lockup.
+- **Product sub-brand — the Aurora "A" (added 14 Jul 2026):** the **Aurora** app (a Nvexis product) carries its **own product logo**: a Fraunces-style **high-contrast serif "A"** knocked out of an **oxblood tile** (letter in warm bone `#F3ECDD`; tile uses the theme oxblood so it stays vivid on Day parchment + Night ink). It is the *product* mark — the Nvexis prism remains the *company* mark and is not used inside the app. Outlined-vector source: `public/brand/aurora-{mark,mark-night,fullbleed,glyph}.svg` (font-independent); rendered in-app by `AuroraMark` in `components/shell/Brand.tsx`; rasterised to `favicon`/PWA/apple-touch/maskable via `scripts/generate-icons.mjs`. Min size 16px; wordmark "Aurora" in **Fraunces**, single oxblood accent (no gradient).
 - **Imagery:** duotone (ink × oxblood) or high-contrast mono. No generic stock realism.
 - **Banned:** spring-green / neon, gold-or-foil-as-primary, navy/blue, violet, glassmorphism, gradients/glow, drop-shadow soup, Inter, the four-point AI sparkle.
 

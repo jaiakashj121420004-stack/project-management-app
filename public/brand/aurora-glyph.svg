@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Aurora">
+  <g fill="#7A2A26">
+    <polygon points="60,20 62,20 39,100 26,100"/>
+    <polygon points="58,20 60,20 102,100 78,100"/>
+    <rect x="45" y="66" width="29" height="8.5"/>
+    <rect x="19" y="95" width="28" height="7" rx="1.5"/>
+    <rect x="75" y="95" width="31" height="7" rx="1.5"/>
+  </g>
+</svg>

@@ -49,11 +49,11 @@ If these three are read, you have complete context. Do not duplicate their conte
 
 ## Design rules — **Nvexis "The Almanac"** (rebranded 2026-07-13; see `DESIGN-GUIDELINES.md` + `NVEXIS-UPGRADE-PLAN.md`)
 
-> The app was rebranded from the old colorful "Aurora" look to the **Nvexis** brand. The name stays *Aurora* (a Nvexis product line); only the look is Nvexis. Do **not** reintroduce the old violet/cyan gradients, rainbow accents, Inter, or Space Grotesk.
+> The app uses the **Nvexis "Almanac"** visual language. **Brand hierarchy (locked 2026-07-14): Nvexis = the company; Aurora = the product** (this app). Aurora is the hero everywhere in-app; "Nvexis" appears only as quiet attribution (footer, legal, "by Nvexis"). Do **not** reintroduce the old violet/cyan gradients, rainbow accents, Inter, or Space Grotesk.
 
 - **Aesthetic = hybrid "glass over parchment."** Warm two-ink palette — **oxblood** (`#7A2A26` Day / `#C24A40` Night) on **parchment** `#ECE4D6` (Day) / **ink** `#181210` (Night). We KEEP frosted glassmorphism surfaces (warmed onto paper, not white frost) and a subtle **paper-grain** noise. Oxblood is the single accent ("one chroma in the room").
 - **Type:** Fraunces (display/headings) · Spectral (body) · IBM Plex Mono (figures/eyebrows). **Never Inter.** Loaded via Google Fonts `<link>` in `index.html`.
-- **Tokens** live in `src/styles/index.css` (CSS vars: Night = `:root/.dark`, Day = `.light`) + `tailwind.config.ts`. Per-project accents are an earthy family in `src/lib/accents.ts`. Logo = the **Nvexis prism** (`public/brand/*`, sidebar `Brand` mark, `favicon`/PWA icons).
+- **Tokens** live in `src/styles/index.css` (CSS vars: Night = `:root/.dark`, Day = `.light`) + `tailwind.config.ts`. Per-project accents are an earthy family in `src/lib/accents.ts`. Logo = the **Aurora "A"-monogram** (Phase 1, 2026-07-14) — a Fraunces-style high-contrast serif A in an oxblood tile, outlined vector in `public/brand/aurora-*.svg`, rendered inline by `AuroraMark` in `components/shell/Brand.tsx` and rasterised into `favicon`/PWA/apple-touch/maskable icons (regenerate via `scripts/generate-icons.mjs`). The old Nvexis-prism PNGs were removed.
 - **Motion & depth stay** (Framer Motion, 3D tactile buttons, card tilt, spring) but calmer/editorial; gate heavy motion behind `prefers-reduced-motion`.
 - Full light **and** dark themes, both first-class (Day is the hero). Persist the choice; cross-fade on toggle.
 - **Every screen is mobile-first** and verified on a phone (see `NVEXIS-UPGRADE-PLAN.md` §10).

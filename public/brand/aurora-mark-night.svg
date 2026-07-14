@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Aurora">
-  <rect x="8" y="8" width="104" height="104" rx="26" fill="#7A2A26"/>
+  <rect x="8" y="8" width="104" height="104" rx="26" fill="#C24A40"/>
   <g fill="#F3ECDD">
     <polygon points="60,24 62,24 37,96 25,96"/>
     <polygon points="58,24 60,24 101,96 77,96"/>

@@ -30,7 +30,9 @@ Phases 1 and 2 are independent and can run in parallel. 3 depends on 2 (tests + 
 
 ---
 
-## Phase 1 — Aurora brand & logo
+## Phase 1 — Aurora brand & logo  ✅ BUILT 2026-07-14 (build + commit on Windows)
+> **Delivered:** chosen concept **A — Almanac** (serif A in an oxblood tile). Outlined-vector assets `public/brand/aurora-{mark,mark-night,fullbleed,glyph}.svg`; regenerated `favicon-64`/`pwa-192`/`pwa-512`/`apple-touch-icon`/`maskable-512` + `favicon.svg` via CairoSVG; deleted old `nvexis-*.png`. `Brand.tsx` → inline `AuroraMark` + solid `text-ox` wordmark (dropped `gradient-text`); `LandingPage.tsx` mark swapped; "Lodestar" retired (`/lodestar`→`/preview`); "· by Nvexis" in the sidebar footer; `index.html` + `generate-icons.mjs` docs updated. ⚠️ Not built/committed in-session (mount truncation) — do `npm run build` + commit on Windows.
+
 **Goal:** a distinct, beautiful Aurora identity; retire the Nvexis prism as the *product* mark and the "Lodestar" name; establish product-led hierarchy with quiet Nvexis attribution.
 
 **Decision point (early in phase):** I produce **3 SVG "A" monogram concepts** (Fraunces-derived, oxblood-on-parchment, tested at 16 px favicon → 512 px PWA) → you pick one → I finalize. Everything below flows from the chosen mark.

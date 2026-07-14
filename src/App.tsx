@@ -37,7 +37,7 @@ export default function App() {
       <Route path="/" element={<RootRoute />} />
       {/* Always renders the landing page, even when signed in — for previewing
           the marketing site without logging out. */}
-      <Route path="/lodestar" element={<LandingPage />} />
+      <Route path="/preview" element={<LandingPage />} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />

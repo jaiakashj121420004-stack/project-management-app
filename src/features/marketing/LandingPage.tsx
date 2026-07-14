@@ -31,7 +31,7 @@ import {
 } from './lodestar/Mockups';
 import './lodestar.css';
 
-const MARK = '/brand/nvexis-mark-transparent-800.png';
+const MARK = '/brand/aurora-mark.svg';
 
 /**
  * Shows a real app screenshot from /public/shots/<name>.png if it exists; until
@@ -53,10 +53,11 @@ function Shot({ src, children }: { src: string; children: ReactNode }) {
 }
 
 /**
- * The public landing page — "Lodestar", the celestial front door of Aurora (a
- * Nvexis product line). A starlit hero descends into warm parchment feature
- * sections showcasing every part of the app, on the Nvexis palette + gilt accent.
- * Faux app windows stand in for screenshots (see lodestar/Mockups.tsx).
+ * The public landing page — the celestial front door of Aurora (the product;
+ * Nvexis is the company). A starlit hero descends into warm parchment feature
+ * sections showcasing every part of the app, on the brand palette + gilt accent.
+ * Faux app windows stand in for screenshots (see lodestar/Mockups.tsx — the
+ * folder keeps its internal name; nothing user-facing reads "Lodestar").
  */
 export function LandingPage() {
   return (
@@ -112,7 +113,7 @@ function Hero() {
     <section className="lode-night lode-stars relative px-4 pb-24 pt-16 sm:px-6 sm:pt-24">
       <div className="mx-auto max-w-3xl text-center">
         <div className="lode-glow mx-auto mb-7 w-fit">
-          <img src={MARK} alt="Nvexis" className="mx-auto h-16 w-16" />
+          <img src={MARK} alt="Aurora" className="mx-auto h-16 w-16" />
         </div>
         <p className="lode-eyebrow mb-4 text-[rgba(216,180,85,0.9)]">Aurora · by Nvexis</p>
         <h1 className="font-display text-4xl font-black leading-[1.05] text-[color:var(--lode-parchment)] sm:text-6xl">
