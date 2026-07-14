@@ -57,7 +57,7 @@ export function NoteImageView({ node, updateAttributes, deleteNode, selected, ed
   }
 
   return (
-    <NodeViewWrapper className="note-image-node" data-drag-handle>
+    <NodeViewWrapper className="note-image-node">
       <div
         ref={containerRef}
         contentEditable={false}
@@ -118,13 +118,16 @@ export function NoteImageView({ node, updateAttributes, deleteNode, selected, ed
               </button>
             </div>
 
-            {/* Drag-to-resize handle (right edge) */}
+            {/* Drag-to-resize handle — a full-height hit zone on the right edge. */}
             <div
               role="separator"
-              aria-label="Resize image"
+              aria-label="Drag to resize"
               onPointerDown={startResize}
-              className="absolute right-1 top-1/2 h-12 w-2 -translate-y-1/2 cursor-ew-resize touch-none rounded-full border border-white/40 bg-[var(--accent-from)] shadow"
-            />
+              onDragStart={(event) => event.preventDefault()}
+              className="absolute right-0 top-0 z-20 flex h-full w-6 cursor-ew-resize touch-none items-center justify-end pr-1"
+            >
+              <span className="h-14 w-1.5 rounded-full bg-[var(--accent-from)] shadow ring-1 ring-white/50" />
+            </div>
           </>
         )}
       </div>

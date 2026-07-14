@@ -21,7 +21,7 @@ export const NoteImage = Node.create({
   group: 'block',
   atom: true,
   selectable: true,
-  draggable: true,
+  // NOT draggable: node-drag would hijack the resize-handle pointer gesture.
 
   addAttributes() {
     return {
