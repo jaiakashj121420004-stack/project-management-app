@@ -36,7 +36,7 @@ const FOOTER_COLUMNS: FooterColumn[] = [
 export function MarketingFooter() {
   return (
     <footer className="px-4 pb-10 pt-20 sm:px-6">
-      <div className="glass mx-auto max-w-6xl rounded-3xl p-8 sm:p-10">
+      <div className="glass mx-auto max-w-6xl rounded-2xl p-8 sm:p-10">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_repeat(3,1fr)]">
           <div className="max-w-xs">
             <Brand />

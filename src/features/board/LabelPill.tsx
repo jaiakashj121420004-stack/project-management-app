@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { labelHex, withAlpha, type LabelColor } from '@/lib/labelColors';
+import { labelHex, labelTextColor, withAlpha, type LabelColor } from '@/lib/labelColors';
+import { useTheme } from '@/hooks/useTheme';
 
 interface LabelPillProps {
   name: string;
@@ -18,6 +19,7 @@ interface LabelPillProps {
  * the card modal, and as a filter chip.
  */
 export function LabelPill({ name, color, variant = 'full', onRemove, className }: LabelPillProps) {
+  const { theme } = useTheme();
   const hex = labelHex(color);
 
   if (variant === 'dot') {
@@ -41,7 +43,7 @@ export function LabelPill({ name, color, variant = 'full', onRemove, className }
       style={{
         backgroundColor: withAlpha(hex, 0.16),
         borderColor: withAlpha(hex, 0.36),
-        color: hex,
+        color: labelTextColor(color, theme),
       }}
     >
       <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: hex }} aria-hidden />

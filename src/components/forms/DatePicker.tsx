@@ -262,7 +262,7 @@ export function DatePicker({
             animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.98 }}
             transition={springs.snappy}
-            className="glass-menu z-20 w-[19rem] max-w-[calc(100vw-3rem)] origin-top rounded-3xl p-3"
+            className="glass-menu z-20 w-[19rem] max-w-[calc(100vw-3rem)] origin-top rounded-2xl p-3"
           >
             <div className="mb-2 flex items-center justify-between">
               <IconButton label="Previous month" onClick={() => setViewMonth((m) => addMonths(m, -1))}>

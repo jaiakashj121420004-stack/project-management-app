@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Search } from 'lucide-react';
 import { NAV_ITEMS } from '@/components/shell/navItems';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { cn } from '@/lib/cn';
 
 interface Command {
@@ -24,6 +25,10 @@ export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [index, setIndex] = useState(0);
+  const listId = useId();
+  const optionId = (i: number) => `${listId}-opt-${i}`;
+  // Trap + restore focus while the palette is open; Esc closes it.
+  const dialogRef = useFocusTrap<HTMLDivElement>(open, { onEscape: () => setOpen(false) });
 
   // Global open shortcut.
   useEffect(() => {
@@ -82,10 +87,8 @@ export function CommandPalette() {
     } else if (event.key === 'Enter') {
       event.preventDefault();
       choose(index);
-    } else if (event.key === 'Escape') {
-      event.preventDefault();
-      setOpen(false);
     }
+    // Escape is handled by the focus trap (which also restores focus).
   }
 
   return createPortal(
@@ -100,13 +103,15 @@ export function CommandPalette() {
             onClick={() => setOpen(false)}
           />
           <motion.div
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-label="Command palette"
+            tabIndex={-1}
             initial={{ opacity: 0, y: -8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.98 }}
-            className="glass-strong relative z-10 w-full max-w-lg overflow-hidden rounded-2xl"
+            className="glass-strong relative z-10 w-full max-w-lg overflow-hidden rounded-2xl outline-none"
           >
             <div className="flex items-center gap-2 border-b border-[var(--glass-border)] px-3.5">
               <Search size={16} className="shrink-0 text-fg-subtle" />
@@ -117,13 +122,23 @@ export function CommandPalette() {
                 onKeyDown={onKeyDown}
                 placeholder="Search destinations…"
                 aria-label="Command palette search"
+                role="combobox"
+                aria-expanded
+                aria-controls={listId}
+                aria-autocomplete="list"
+                aria-activedescendant={results[index] ? optionId(index) : undefined}
                 className="w-full bg-transparent py-3 text-sm text-fg placeholder:text-fg-subtle focus:outline-none"
               />
               <kbd className="hidden rounded bg-[var(--glass-fill)] px-1.5 py-0.5 text-[10px] text-fg-subtle sm:block">
                 Esc
               </kbd>
             </div>
-            <div className="max-h-80 overflow-y-auto p-1.5">
+            <div
+              id={listId}
+              role="listbox"
+              aria-label="Results"
+              className="max-h-80 overflow-y-auto p-1.5"
+            >
               {results.length === 0 ? (
                 <p className="px-3 py-6 text-center text-sm text-fg-subtle">No matches</p>
               ) : (
@@ -132,7 +147,11 @@ export function CommandPalette() {
                   return (
                     <button
                       key={command.id}
+                      id={optionId(i)}
                       type="button"
+                      role="option"
+                      aria-selected={i === index}
+                      tabIndex={-1}
                       onMouseEnter={() => setIndex(i)}
                       onClick={() => choose(i)}
                       className={cn(

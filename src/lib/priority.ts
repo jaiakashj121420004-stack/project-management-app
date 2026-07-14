@@ -24,12 +24,19 @@ export function priorityTier(value: number): PriorityTier {
   return 'lowest';
 }
 
-/** Tailwind classes for a priority pill, by tier. */
+/**
+ * Tailwind classes for a priority pill, by tier. Text/fill/border are driven by
+ * theme-reactive CSS vars (defined per theme in styles/index.css) whose text
+ * tokens are pre-darkened/-lightened to clear WCAG AA (≥ 4.5:1) on the tint in
+ * BOTH themes — the old full-saturation hex text (`#f97316`, `#3b82f6`, raw
+ * danger/warning) failed contrast (audit §1). `lowest` stays neutral glass.
+ */
 export const PRIORITY_PILL: Record<PriorityTier, string> = {
-  critical: 'border-danger/40 bg-danger/15 text-danger',
-  high: 'border-[#f97316]/40 bg-[#f97316]/15 text-[#f97316]',
-  medium: 'border-warning/40 bg-warning/15 text-warning',
-  low: 'border-[#3b82f6]/40 bg-[#3b82f6]/15 text-[#3b82f6]',
+  critical:
+    'border-[color:var(--prio-crit-line)] bg-[var(--prio-crit-bg)] text-[color:var(--prio-crit-fg)]',
+  high: 'border-[color:var(--prio-high-line)] bg-[var(--prio-high-bg)] text-[color:var(--prio-high-fg)]',
+  medium: 'border-[color:var(--prio-med-line)] bg-[var(--prio-med-bg)] text-[color:var(--prio-med-fg)]',
+  low: 'border-[color:var(--prio-low-line)] bg-[var(--prio-low-bg)] text-[color:var(--prio-low-fg)]',
   lowest: 'border-[var(--glass-border)] bg-[var(--glass-fill)] text-fg-muted',
 };
 

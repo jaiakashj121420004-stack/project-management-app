@@ -44,7 +44,7 @@ export function AddColumn({ onAdd }: AddColumnProps) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex h-fit w-[16rem] shrink-0 items-center gap-2 rounded-3xl border border-dashed border-[var(--glass-border)] px-4 py-3 text-sm font-medium text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+        className="flex h-fit w-[16rem] shrink-0 items-center gap-2 rounded-2xl border border-dashed border-[var(--glass-border)] px-4 py-3 text-sm font-medium text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
       >
         <Plus size={18} /> Add column
       </button>

@@ -119,7 +119,7 @@ export function NotificationBell() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: -6 }}
             transition={springs.snappy}
-            className="glass-menu absolute right-0 top-12 z-50 w-[min(22rem,calc(100vw-2rem))] origin-top-right rounded-3xl p-2"
+            className="glass-menu absolute right-0 top-12 z-50 w-[min(22rem,calc(100vw-2rem))] origin-top-right rounded-2xl p-2"
           >
             <div className="flex items-center justify-between px-2 py-1.5">
               <span className="text-sm font-semibold text-fg">Notifications</span>

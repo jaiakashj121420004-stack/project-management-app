@@ -130,7 +130,8 @@ export function StyleGuide() {
           <p className="font-display text-headline font-bold text-fg">Headline</p>
           <p className="font-display text-title font-semibold text-fg">Title</p>
           <p className="text-fg-muted">
-            Body copy in Inter — highly legible at small sizes, generous in rhythm and spacing.
+            Body copy in Spectral — a warm literary serif, highly legible at small sizes and
+            generous in rhythm and spacing.
           </p>
         </div>
       </Section>

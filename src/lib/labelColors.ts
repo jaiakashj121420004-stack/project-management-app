@@ -5,6 +5,9 @@
  * decoupled from exact swatches. Kept distinct from the six project accents:
  * labels are flat single-hue tags, not gradients.
  */
+import { readableOnTint } from '@/lib/contrast';
+import type { Theme } from '@/lib/theme';
+
 export interface LabelColorDef {
   readonly label: string;
   readonly hex: string;
@@ -31,6 +34,15 @@ export const DEFAULT_LABEL_COLOR: LabelColor = 'violet';
 /** Hex for a label color name. */
 export function labelHex(color: LabelColor): string {
   return LABEL_COLORS[color].hex;
+}
+
+/**
+ * A darkened (Day) / lightened (Night) version of the label hue that stays AA
+ * legible as *text* on the 16% pill tint — the raw swatch hex fails WCAG badly
+ * in light mode (audit §1). Use for pill text; keep the raw hex for the dot.
+ */
+export function labelTextColor(color: LabelColor, theme: Theme): string {
+  return readableOnTint(LABEL_COLORS[color].hex, theme);
 }
 
 /** `#RRGGBB` → `rgba(r, g, b, alpha)` for tinted pill fills/borders. */

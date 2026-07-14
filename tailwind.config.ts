@@ -21,11 +21,13 @@ export default {
         ox: 'var(--ox)',
         'ox-bright': 'var(--ox-bright)',
         gilt: 'var(--gilt)',
-        // Functional status colors — restrained, Almanac-compatible.
-        success: '#4C6B54', // muted pine (done)
+        // Functional status colors — restrained, Almanac-compatible. All four
+        // flip per theme via CSS vars so badge text clears AA in both themes
+        // (the old fixed-hex success/info failed on the dark ink surface).
+        success: 'var(--success)', // muted pine (done)
         warning: 'var(--gilt)', // gilt (due-soon)
         danger: 'var(--signal)', // signal oxblood-red (overdue)
-        info: '#5E5346', // umber (neutral info)
+        info: 'var(--info)', // umber (neutral info)
       },
       fontFamily: {
         display: ['Fraunces', 'Georgia', 'serif'],
@@ -38,9 +40,11 @@ export default {
         headline: ['clamp(2rem, 4vw, 3rem)', { lineHeight: '1.06', letterSpacing: '-0.02em' }],
         title: ['1.5rem', { lineHeight: '1.2', letterSpacing: '-0.01em' }],
       },
-      borderRadius: {
-        '4xl': '2rem',
-      },
+      // Radius scale is intentionally consolidated (Phase 3) to a small,
+      // consistent set: `md` (0.5rem) for controls/inputs, `xl` (0.75rem) for
+      // buttons/cards, `2xl` (1rem) for panels/menus/modals, plus `full` for
+      // pills. The old ad-hoc `3xl`/`4xl` steps were removed and remapped to
+      // `2xl` so surfaces stop mixing radii interchangeably.
       transitionTimingFunction: {
         spring: 'cubic-bezier(0.22, 1, 0.36, 1)',
       },

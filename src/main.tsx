@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
+import { MotionConfig } from 'framer-motion';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 // Nvexis fonts (Fraunces / Spectral / IBM Plex Mono) are loaded via <link> in
 // index.html so no self-hosted font dependency is required.
@@ -41,12 +42,17 @@ createRoot(rootElement).render(
         }}
       >
         <AuthProvider>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
-          {/* App-wide toast host — surfaces global mutation-failure feedback
-              (see lib/queryClient MutationCache). Fixed overlay, router-independent. */}
-          <Toaster />
+          {/* Honor prefers-reduced-motion for ALL Framer motion (mount/exit
+              transforms the CSS guard can't stop): reducedMotion="user" drops
+              transform/layout animation, keeping only opacity. */}
+          <MotionConfig reducedMotion="user">
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+            {/* App-wide toast host — surfaces global mutation-failure feedback
+                (see lib/queryClient MutationCache). Fixed overlay, router-independent. */}
+            <Toaster />
+          </MotionConfig>
         </AuthProvider>
       </PersistQueryClientProvider>
     </ThemeProvider>

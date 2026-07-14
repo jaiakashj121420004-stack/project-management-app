@@ -22,7 +22,7 @@ export function ProjectCard({ project, isOwner, onEdit, onDelete }: ProjectCardP
       <Link
         to={`/projects/${project.id}`}
         aria-label={`Open ${project.name}`}
-        className="absolute inset-0 z-0 rounded-3xl"
+        className="absolute inset-0 z-0 rounded-2xl"
       />
 
       <div className="relative flex items-start justify-between gap-3">

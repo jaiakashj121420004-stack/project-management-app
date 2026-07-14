@@ -26,6 +26,8 @@ export default defineConfig({
       include: [
         'src/features/board/ordering.ts',
         'src/lib/dueAt.ts',
+        'src/lib/contrast.ts',
+        'src/hooks/useFocusTrap.ts',
         'src/features/editor/serialize.ts',
         'src/features/library/tree.ts',
         'src/features/canvas/collab/yCanvasDoc.ts',

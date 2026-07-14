@@ -52,6 +52,26 @@
   --accent-btn: #8e332d; /* deepened fill so label keeps AA contrast on dark */
   --signal: #d8634a;
   --gilt: #c7a24e;
+
+  /* Functional status inks — theme-reactive so badge text clears AA on Night
+     too (the old fixed hex failed on ink). Text tokens are lightened for dark. */
+  --success: #7fb08a; /* lifted pine */
+  --info: #c7b9a6; /* lifted umber */
+
+  /* Priority-pill tokens (see lib/priority.ts). fg is lightened per tier to
+     clear AA (≥ 4.5:1) on its own 15% tint over ink; bg/line are the tint. */
+  --prio-crit-fg: #da6e56;
+  --prio-crit-bg: rgba(216, 99, 74, 0.15);
+  --prio-crit-line: rgba(216, 99, 74, 0.4);
+  --prio-high-fg: #f97316;
+  --prio-high-bg: rgba(249, 115, 22, 0.15);
+  --prio-high-line: rgba(249, 115, 22, 0.4);
+  --prio-med-fg: #c7a24e;
+  --prio-med-bg: rgba(199, 162, 78, 0.15);
+  --prio-med-line: rgba(199, 162, 78, 0.4);
+  --prio-low-fg: #498af5;
+  --prio-low-bg: rgba(59, 130, 246, 0.15);
+  --prio-low-line: rgba(59, 130, 246, 0.4);
 }
 
 .light {
@@ -90,6 +110,24 @@
   --accent-btn: #7a2a26;
   --signal: #b23a2e;
   --gilt: #8a6a2e;
+
+  /* Functional status inks — darkened for AA on parchment. */
+  --success: #3e5a46; /* deep pine */
+  --info: #5e5346; /* umber */
+
+  /* Priority-pill tokens — fg darkened per tier to clear AA on its own tint. */
+  --prio-crit-fg: #9c3328;
+  --prio-crit-bg: rgba(178, 58, 46, 0.15);
+  --prio-crit-line: rgba(178, 58, 46, 0.4);
+  --prio-high-fg: #95450d;
+  --prio-high-bg: rgba(249, 115, 22, 0.15);
+  --prio-high-line: rgba(249, 115, 22, 0.4);
+  --prio-med-fg: #6e5525;
+  --prio-med-bg: rgba(138, 106, 46, 0.15);
+  --prio-med-line: rgba(138, 106, 46, 0.4);
+  --prio-low-fg: #2858a6;
+  --prio-low-bg: rgba(59, 130, 246, 0.15);
+  --prio-low-line: rgba(59, 130, 246, 0.4);
 }
 
 @layer base {
@@ -458,6 +496,18 @@
   outline: none;
 }
 
+/* An opacity pulse used as the reduced-motion fallback for the Spinner (the
+   global guard below would otherwise freeze the rotating ring mid-arc). */
+@keyframes spinner-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
 /* Honor prefers-reduced-motion: calm all heavy motion (plan.md §4.4). */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -470,5 +520,10 @@
   }
   .aurora-blob {
     animation: none !important;
+  }
+  /* Swap the frozen rotation for a gentle opacity pulse so the loading state
+     still reads as "working" without any spinning motion. */
+  .spinner {
+    animation: spinner-pulse 1.4s ease-in-out infinite !important;
   }
 }

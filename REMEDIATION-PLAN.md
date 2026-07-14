@@ -73,6 +73,8 @@ Phases 1 and 2 are independent and can run in parallel. 3 depends on 2 (tests + 
 ---
 
 ## Phase 3 — Accessibility & design-system
+**Status: ✅ BUILT (2026-07-14) — pending build/test + commit on Windows (see memory.md).** All six task groups done: AA contrast (new `lib/contrast.ts` + per-theme label/priority/status tokens), `useFocusTrap` (Modal/CommandPalette/mobile drawer + Modal `aria-labelledby`/`describedby`), `<MotionConfig reducedMotion="user">` + Spinner opacity-pulse + Reveal comment, skip link, GlassSelect listbox + CommandPalette `aria-activedescendant`, radius consolidation (3xl/4xl → 2xl) + StyleGuide "Inter"→"Spectral". Tests: `contrast.test.ts` + `useFocusTrap.test.tsx`.
+
 **Goal:** clear the audit's accessibility red flags and tighten the token system. This is the largest design phase.
 
 **Tasks**

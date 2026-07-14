@@ -5,8 +5,10 @@ import { cn } from '@/lib/cn';
 
 /**
  * Consistent fade + lift entrance. Drop around any block to reveal it on mount;
- * place inside a `stagger` parent to cascade. Respects reduced motion via the
- * global CSS guard.
+ * place inside a `stagger` parent to cascade. Reduced motion is honored by the
+ * app-level `<MotionConfig reducedMotion="user">` (main.tsx), which drops the
+ * transform/lift and keeps only the opacity fade — the CSS guard alone cannot
+ * stop Framer's JS-driven transforms.
  */
 export function Reveal({
   children,

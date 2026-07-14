@@ -1,4 +1,11 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+} from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -11,9 +18,10 @@ import { springs } from '@/lib/motion';
  * RoleControl decision-log note). Generic over the option value so it works for
  * strings (project scope, channel) and numbers (lead days, offset units) alike.
  *
- * Keyboard/pointer behaviour mirrors the existing custom dropdowns: click the
- * trigger to toggle, click-outside or Escape to close, the selected option is
- * checked. `openUp` flips the menu above the trigger for bottom-of-panel use.
+ * Implements the WAI-ARIA collapsible-listbox pattern (Phase 3, a11y): focus
+ * stays on the trigger, which owns `aria-activedescendant`; ↑/↓/Home/End move
+ * the active option, Enter/Space select it, Esc closes, and printable keys do
+ * type-ahead. `openUp` flips the menu above the trigger for bottom-of-panel use.
  */
 export interface GlassSelectOption<T extends string | number> {
   value: T;
@@ -35,6 +43,11 @@ interface GlassSelectProps<T extends string | number> {
   menuClassName?: string;
 }
 
+/** Best-effort text for type-ahead: the label when it's a plain string. */
+function optionText<T extends string | number>(option: GlassSelectOption<T>): string {
+  return (typeof option.label === 'string' ? option.label : String(option.value)).toLowerCase();
+}
+
 export function GlassSelect<T extends string | number>({
   value,
   onChange,
@@ -47,37 +60,114 @@ export function GlassSelect<T extends string | number>({
   menuClassName,
 }: GlassSelectProps<T>) {
   const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const listId = useId();
+  const optionId = (i: number) => `${listId}-opt-${i}`;
+
+  const selectedIndex = options.findIndex((option) => option.value === value);
+
+  // Type-ahead buffer, cleared after a short idle.
+  const typeahead = useRef<{ text: string; timer: number | undefined }>({
+    text: '',
+    timer: undefined,
+  });
 
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (event: MouseEvent) => {
       if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
     };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false);
-    };
     document.addEventListener('mousedown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
+    return () => document.removeEventListener('mousedown', onPointerDown);
   }, [open]);
 
-  const selected = options.find((option) => option.value === value);
+  // Reset the active option to the current selection each time it opens.
+  useEffect(() => {
+    if (open) setActiveIndex(selectedIndex >= 0 ? selectedIndex : 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  // Keep the active option scrolled into view while navigating.
+  useEffect(() => {
+    if (!open) return;
+    document.getElementById(optionId(activeIndex))?.scrollIntoView({ block: 'nearest' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeIndex, open]);
+
+  function commit(index: number) {
+    const option = options[index];
+    if (!option) return;
+    onChange(option.value);
+    setOpen(false);
+    buttonRef.current?.focus();
+  }
+
+  function runTypeahead(char: string) {
+    const state = typeahead.current;
+    window.clearTimeout(state.timer);
+    state.text += char.toLowerCase();
+    state.timer = window.setTimeout(() => {
+      state.text = '';
+    }, 500);
+    const match = options.findIndex((option) => optionText(option).startsWith(state.text));
+    if (match >= 0) setActiveIndex(match);
+  }
+
+  function onKeyDown(event: ReactKeyboardEvent<HTMLButtonElement>) {
+    if (disabled) return;
+    const { key } = event;
+
+    if (!open) {
+      if (key === 'ArrowDown' || key === 'ArrowUp' || key === 'Enter' || key === ' ') {
+        event.preventDefault();
+        setOpen(true);
+      }
+      return;
+    }
+
+    if (key === 'ArrowDown') {
+      event.preventDefault();
+      setActiveIndex((i) => (options.length ? (i + 1) % options.length : 0));
+    } else if (key === 'ArrowUp') {
+      event.preventDefault();
+      setActiveIndex((i) => (options.length ? (i + options.length - 1) % options.length : 0));
+    } else if (key === 'Home') {
+      event.preventDefault();
+      setActiveIndex(0);
+    } else if (key === 'End') {
+      event.preventDefault();
+      setActiveIndex(options.length - 1);
+    } else if (key === 'Enter' || key === ' ') {
+      event.preventDefault();
+      commit(activeIndex);
+    } else if (key === 'Escape') {
+      event.preventDefault();
+      setOpen(false);
+    } else if (key === 'Tab') {
+      setOpen(false);
+    } else if (key.length === 1 && !event.metaKey && !event.ctrlKey && !event.altKey) {
+      runTypeahead(key);
+    }
+  }
+
+  const selected = options[selectedIndex];
 
   return (
     <div ref={ref} className={cn('relative', className)}>
       <button
+        ref={buttonRef}
         type="button"
         disabled={disabled}
         onClick={() => setOpen((prev) => !prev)}
+        onKeyDown={onKeyDown}
+        role="combobox"
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={label}
         aria-controls={open ? listId : undefined}
+        aria-activedescendant={open ? optionId(activeIndex) : undefined}
         className={cn(
           'flex w-full items-center justify-between gap-2 border border-[var(--glass-border)] bg-[var(--field-bg)] font-medium text-fg',
           'backdrop-blur-sm outline-none transition-colors focus:border-[color:var(--accent-from)] focus:ring-2 focus:ring-[var(--accent-from)]',
@@ -94,6 +184,8 @@ export function GlassSelect<T extends string | number>({
           <motion.ul
             id={listId}
             role="listbox"
+            aria-label={label}
+            aria-activedescendant={optionId(activeIndex)}
             initial={{ opacity: 0, scale: 0.97, y: openUp ? 4 : -4 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: openUp ? 4 : -4 }}
@@ -104,21 +196,23 @@ export function GlassSelect<T extends string | number>({
               menuClassName,
             )}
           >
-            {options.map((option) => (
+            {options.map((option, i) => (
               <li key={String(option.value)}>
                 <button
+                  id={optionId(i)}
                   type="button"
                   role="option"
                   aria-selected={option.value === value}
-                  onClick={() => {
-                    onChange(option.value);
-                    setOpen(false);
-                  }}
+                  tabIndex={-1}
+                  onMouseEnter={() => setActiveIndex(i)}
+                  onClick={() => commit(i)}
                   className={cn(
                     'flex w-full items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-left text-sm font-medium transition-colors',
-                    option.value === value
-                      ? 'text-fg'
-                      : 'text-fg-muted hover:bg-[var(--glass-fill)] hover:text-fg',
+                    i === activeIndex
+                      ? 'bg-[var(--glass-fill)] text-fg'
+                      : option.value === value
+                        ? 'text-fg'
+                        : 'text-fg-muted',
                   )}
                 >
                   <span className="truncate">{option.label}</span>

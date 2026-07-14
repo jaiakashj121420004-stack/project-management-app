@@ -4,6 +4,7 @@ import { PanelLeftClose, PanelLeftOpen, Plus } from 'lucide-react';
 import { Brand } from './Brand';
 import { SidebarNav } from './SidebarNav';
 import { GradientButton } from '@/components/buttons/GradientButton';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { springs } from '@/lib/motion';
 import { cn } from '@/lib/cn';
 
@@ -61,6 +62,9 @@ export function Sidebar({
   drawerOpen,
   onCloseDrawer,
 }: SidebarProps) {
+  // Trap + restore focus inside the mobile drawer; Esc closes it.
+  const drawerRef = useFocusTrap<HTMLElement>(drawerOpen, { onEscape: onCloseDrawer });
+
   return (
     <>
       {/* Desktop rail */}
@@ -93,7 +97,12 @@ export function Sidebar({
               onClick={onCloseDrawer}
             />
             <motion.aside
-              className="glass-strong absolute inset-y-0 left-0 w-72 rounded-r-2xl pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pt-[env(safe-area-inset-top)]"
+              ref={drawerRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Menu"
+              tabIndex={-1}
+              className="glass-strong absolute inset-y-0 left-0 w-72 rounded-r-2xl pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pt-[env(safe-area-inset-top)] outline-none"
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
