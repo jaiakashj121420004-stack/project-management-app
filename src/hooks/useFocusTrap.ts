@@ -42,9 +42,12 @@ export function useFocusTrap<T extends HTMLElement = HTMLElement>(
 ): RefObject<T | null> {
   const containerRef = useRef<T>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
-  // Keep the latest onEscape without re-running the effect on every render.
+  // Keep the latest onEscape without re-running the trap effect on every render
+  // (written in an effect, not during render).
   const onEscapeRef = useRef(onEscape);
-  onEscapeRef.current = onEscape;
+  useEffect(() => {
+    onEscapeRef.current = onEscape;
+  }, [onEscape]);
 
   useEffect(() => {
     if (!active) return;
@@ -83,6 +86,7 @@ export function useFocusTrap<T extends HTMLElement = HTMLElement>(
       }
       const first = items[0];
       const last = items[items.length - 1];
+      if (!first || !last) return;
       const activeEl = document.activeElement;
 
       if (event.shiftKey) {

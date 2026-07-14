@@ -83,18 +83,17 @@ export function GlassSelect<T extends string | number>({
     return () => document.removeEventListener('mousedown', onPointerDown);
   }, [open]);
 
-  // Reset the active option to the current selection each time it opens.
-  useEffect(() => {
-    if (open) setActiveIndex(selectedIndex >= 0 ? selectedIndex : 0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
-
   // Keep the active option scrolled into view while navigating.
   useEffect(() => {
     if (!open) return;
-    document.getElementById(optionId(activeIndex))?.scrollIntoView({ block: 'nearest' });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeIndex, open]);
+    document.getElementById(`${listId}-opt-${activeIndex}`)?.scrollIntoView({ block: 'nearest' });
+  }, [activeIndex, open, listId]);
+
+  // Open the menu with the active option seeded to the current selection.
+  function openMenu() {
+    setActiveIndex(selectedIndex >= 0 ? selectedIndex : 0);
+    setOpen(true);
+  }
 
   function commit(index: number) {
     const option = options[index];
@@ -122,7 +121,7 @@ export function GlassSelect<T extends string | number>({
     if (!open) {
       if (key === 'ArrowDown' || key === 'ArrowUp' || key === 'Enter' || key === ' ') {
         event.preventDefault();
-        setOpen(true);
+        openMenu();
       }
       return;
     }
@@ -160,7 +159,7 @@ export function GlassSelect<T extends string | number>({
         ref={buttonRef}
         type="button"
         disabled={disabled}
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={() => (open ? setOpen(false) : openMenu())}
         onKeyDown={onKeyDown}
         role="combobox"
         aria-haspopup="listbox"
