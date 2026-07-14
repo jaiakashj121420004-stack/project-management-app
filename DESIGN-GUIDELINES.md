@@ -1,6 +1,7 @@
 # Nvexis — Design Guidelines (Brand Bible)
 
-*The single source of truth for how Nvexis looks. Every project, post, slide, app, and page follows this. Version 5.0 · 14 July 2026.*
+*The single source of truth for how Nvexis looks. Every project, post, slide, app, and page follows this. Version 5.1 · 15 July 2026.*
+*v5.1 (Phase 7): verified §11 against the shipped implementation — the CSS vars (`--glass-fill`/`--glass-border`/`--glass-shadow`/`--field-bg`/`--accent-glow`/`--accent-from`) and file paths named below all exist in `src/styles/index.css`, `src/lib/{accents,contrast,motion}.ts`, and `src/components/Avatar.tsx`. Logo = the **Aurora "A"-monogram** (oxblood tile, `public/brand/aurora-*.svg`); the retired "Lodestar" codename must not reappear in user-facing copy.*
 *System name: **The Almanac** (Editorial Authority) — a serious publication with a century of back-issues, not a startup template.*
 
 > **Why this exists:** ~88% of a brand judgment happens in the first 90 milliseconds, driven mostly by colour, and ~46% of people judge credibility on visual design alone. Consistency across every surface is what turns a logo into a brand. Use the exact tokens below — they are law.

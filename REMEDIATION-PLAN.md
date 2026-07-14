@@ -150,7 +150,9 @@ Phases 1 and 2 are independent and can run in parallel. 3 depends on 2 (tests + 
 
 ---
 
-## Phase 7 — Verification & go-live
+## Phase 7 — Verification & go-live  ✅ BUILT 2026-07-15 (`npm install` axe-core + run the gate/checklists on Windows + a real phone)
+> **Delivered:** automated **axe-core** a11y suite (`src/test/axe.ts` harness + `src/test/a11y.test.tsx` over `LabelPill`/`Modal`/`Spinner`/`GlassSelect` collapsed+expanded) wired into the Phase 2 Vitest gate (new dev dep `axe-core`); a single executable **[PHASE-7-VERIFICATION.md](./PHASE-7-VERIFICATION.md)** carrying the Lighthouse run guide (desktop+mobile, a11y ≥ 95 + installability check since Lighthouse 12 dropped the PWA category + perf budget), the real-device mobile pass (§10: board DnD, modals/focus, canvas, install+offline, both themes), the full-regression matrix (typecheck/lint/Vitest/build + `supabase test db` pgTAP + a per-feature manual smoke), the **re-score** (each audit path item mapped to its closing phase → Design/Eng/Security 9.5 pending the runtime evidence), and the human-only go-live gates. `DESIGN-GUIDELINES.md` bumped v5.0→v5.1 (verified §11 against the shipped CSS vars/paths). ⚠️ Not built/committed in-session (mount truncation) — `npm install` (axe-core) then run the gate + checklists on Windows/phone.
+
 **Goal:** prove the whole thing, on real devices, and update the docs.
 
 **Tasks**
