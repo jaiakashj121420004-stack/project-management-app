@@ -70,6 +70,18 @@ const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 const FROM_EMAIL = Deno.env.get('REMINDER_FROM_EMAIL') ?? 'Aurora <onboarding@resend.dev>';
 const CRON_SECRET = Deno.env.get('CRON_SECRET') ?? '';
 
+/**
+ * Constant-time string comparison so the shared-secret check can't be defeated
+ * by measuring how long a mismatch takes to reject. Returns false on any length
+ * difference (the length itself is not secret here — the value is).
+ */
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
 /** Call a SECURITY DEFINER RPC with the service role. */
 async function rpc<T>(name: string, body: Record<string, unknown>): Promise<T> {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
@@ -306,8 +318,9 @@ async function runNotificationEmails(): Promise<number> {
 }
 
 Deno.serve(async (req: Request) => {
-  // Only the scheduler (which knows CRON_SECRET) may invoke this.
-  if (!CRON_SECRET || req.headers.get('x-cron-secret') !== CRON_SECRET) {
+  // Only the scheduler (which knows CRON_SECRET) may invoke this. Compare in
+  // constant time so a caller can't recover the secret byte-by-byte from timing.
+  if (!CRON_SECRET || !timingSafeEqual(req.headers.get('x-cron-secret') ?? '', CRON_SECRET)) {
     return new Response('Unauthorized', { status: 401 });
   }
   if (!RESEND_API_KEY) {

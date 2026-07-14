@@ -999,14 +999,16 @@ export interface Database {
         Returns: boolean;
       };
       // Phase 4 sharing RPCs — resolve an email to a user + upsert membership
-      // (owner-gated). Return the target user's id.
+      // (owner-gated). Hardened in Remediation Phase 6: the email lookup is
+      // inlined and the result is generic (void) whether or not the email
+      // matched, so the RPC never reveals which addresses have accounts.
       share_canvas: {
         Args: { p_canvas_id: string; p_email: string; p_role: string };
-        Returns: string;
+        Returns: undefined;
       };
       share_note: {
         Args: { p_note_id: string; p_email: string; p_role: string };
-        Returns: string;
+        Returns: undefined;
       };
       user_id_for_email: {
         Args: { p_email: string };

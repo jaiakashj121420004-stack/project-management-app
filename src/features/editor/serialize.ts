@@ -11,6 +11,7 @@
  * past this boundary.
  */
 import { generateHTML, type JSONContent } from '@tiptap/core';
+import DOMPurify from 'isomorphic-dompurify';
 import { blockExtensions } from './extensions';
 
 export function emptyDoc(): JSONContent {
@@ -19,15 +20,30 @@ export function emptyDoc(): JSONContent {
 
 const htmlCache = new WeakMap<object, string>();
 
-/** doc JSON → HTML for static display. '' for an empty/missing body so callers
- *  can show their own placeholder. Cached by body reference (bodies are replaced,
- *  never mutated, on edit) so re-rendering doesn't re-serialise every time. */
+/**
+ * Sanitize the static-render HTML as defence-in-depth (Remediation Phase 6).
+ * Content authored through the app is already XSS-safe by construction — the
+ * hardened Tiptap schema (SafeLink allow-lists href on parse + render, text is
+ * escaped by ProseMirror). This pass is a belt-and-suspenders second layer so a
+ * future extension misconfig, or a hand-tampered jsonb body, still can't reach
+ * the one `dangerouslySetInnerHTML` sink (canvas text) with active markup.
+ * Runs isomorphically (jsdom under Node/tests, native DOM in the browser).
+ * `target` is kept so links still open in a new tab.
+ */
+export function sanitizeBlockHtml(html: string): string {
+  return DOMPurify.sanitize(html, { ADD_ATTR: ['target'] });
+}
+
+/** doc JSON → sanitized HTML for static display. '' for an empty/missing body so
+ *  callers can show their own placeholder. Cached by body reference (bodies are
+ *  replaced, never mutated, on edit) so re-rendering doesn't re-serialise every
+ *  time. Output is DOMPurify-sanitized before it can reach any HTML sink. */
 export function renderBlockHtml(body: Record<string, unknown> | null): string {
   if (!body) return '';
   const cached = htmlCache.get(body);
   if (cached !== undefined) return cached;
   try {
-    const html = generateHTML(body, blockExtensions);
+    const html = sanitizeBlockHtml(generateHTML(body, blockExtensions));
     htmlCache.set(body, html);
     return html;
   } catch {

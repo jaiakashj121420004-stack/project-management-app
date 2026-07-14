@@ -1,0 +1,46 @@
+name: RLS regression tests
+
+# Prove multi-tenant isolation stays intact (Remediation Phase 6 "Assurance").
+# Boots the local Supabase stack (applies every migration) and runs the pgTAP
+# suite in supabase/tests/. Kept OFF the main CI gate (its own workflow) because
+# it needs the Supabase stack + Docker, which the app itself never requires — so
+# a slow or flaky stack boot can't red-X an unrelated code PR. No secrets needed:
+# everything runs against the local stack.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/tests/**'
+      - '.github/workflows/rls-tests.yml'
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/tests/**'
+      - '.github/workflows/rls-tests.yml'
+
+concurrency:
+  group: rls-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rls:
+    name: pgTAP RLS isolation suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase (applies all migrations)
+        run: supabase start
+
+      - name: Run pgTAP RLS tests
+        run: supabase test db
+
+      - name: Stop Supabase
+        if: always()
+        run: supabase stop

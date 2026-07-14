@@ -38,11 +38,13 @@ const DODO_BASE = (Deno.env.get('DODO_PAYMENTS_ENVIRONMENT') ?? 'test')
   ? 'https://live.dodopayments.com'
   : 'https://test.dodopayments.com';
 
-// Browsers call this cross-origin, so every response carries CORS headers.
+// Browsers call this cross-origin from the app only, so CORS is scoped to
+// APP_URL (not '*'). `Vary: Origin` keeps caches from mixing origins.
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': APP_URL,
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  Vary: 'Origin',
 };
 
 function json(body: unknown, status = 200): Response {
@@ -50,6 +52,29 @@ function json(body: unknown, status = 200): Response {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
+}
+
+// Best-effort per-user rate limiting. Checkout creation is a rare, deliberate
+// action, so a tight fixed window is plenty to blunt accidental floods or a
+// stolen token spamming Dodo. State lives in the isolate's memory: it survives
+// across warm invocations and resets on cold start — good enough as a first line
+// without a shared store, and it fails open (never blocks a legitimate user for
+// long). Keyed by Supabase user id.
+const RATE_LIMIT_MAX = 8;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const rateHits = new Map<string, number[]>();
+
+/** True when the user is over the limit; records this hit otherwise. */
+function isRateLimited(userId: string): boolean {
+  const now = Date.now();
+  const recent = (rateHits.get(userId) ?? []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+  if (recent.length >= RATE_LIMIT_MAX) {
+    rateHits.set(userId, recent);
+    return true;
+  }
+  recent.push(now);
+  rateHits.set(userId, recent);
+  return false;
 }
 
 interface AuthedUser {
@@ -99,6 +124,10 @@ Deno.serve(async (req: Request) => {
   try {
     const user = await getAuthedUser(req);
     if (!user) return json({ error: 'Unauthorized' }, 401);
+
+    if (isRateLimited(user.id)) {
+      return json({ error: 'Too many requests. Please try again in a moment.' }, 429);
+    }
 
     // Reuse the saved Dodo customer if we have one, so a user never ends up with
     // duplicate customers across repeated upgrade attempts; otherwise let Dodo

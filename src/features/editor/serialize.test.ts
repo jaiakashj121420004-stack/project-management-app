@@ -6,6 +6,7 @@ import {
   isEmptyDoc,
   markdownToDoc,
   renderBlockHtml,
+  sanitizeBlockHtml,
 } from './serialize';
 
 describe('emptyDoc / isEmptyDoc', () => {
@@ -57,6 +58,53 @@ describe('renderBlockHtml', () => {
 
   it('never throws on a malformed body (returns a string)', () => {
     expect(typeof renderBlockHtml({ not: 'a real doc' })).toBe('string');
+  });
+});
+
+describe('sanitizeBlockHtml (XSS defense-in-depth)', () => {
+  it('strips <script> tags', () => {
+    const out = sanitizeBlockHtml('<p>hi</p><script>alert(1)</script>');
+    expect(out).toContain('hi');
+    expect(out.toLowerCase()).not.toContain('<script');
+  });
+
+  it('strips inline event handlers', () => {
+    const out = sanitizeBlockHtml('<p onclick="steal()">click</p>');
+    expect(out).not.toContain('onclick');
+    expect(out).toContain('click');
+  });
+
+  it('drops javascript: image sources and onerror payloads', () => {
+    const out = sanitizeBlockHtml('<img src="x" onerror="alert(1)">');
+    expect(out).not.toContain('onerror');
+  });
+
+  it('removes <iframe> and other active embeds', () => {
+    const out = sanitizeBlockHtml('<iframe src="https://evil.test"></iframe><p>ok</p>');
+    expect(out.toLowerCase()).not.toContain('<iframe');
+    expect(out).toContain('ok');
+  });
+
+  it('preserves safe formatting, links (with target) and task checkboxes', () => {
+    const html =
+      '<a href="https://aurora.test" target="_blank" rel="noopener noreferrer nofollow">link</a>' +
+      '<ul data-type="taskList"><li data-checked="true"><label><input type="checkbox" checked><span></span></label><div><p>task</p></div></li></ul>';
+    const out = sanitizeBlockHtml(html);
+    expect(out).toContain('href="https://aurora.test"');
+    expect(out).toContain('target="_blank"');
+    expect(out).toContain('type="checkbox"');
+    expect(out).toContain('task');
+  });
+
+  it('is applied by renderBlockHtml (no script survives a tampered body)', () => {
+    // A hand-crafted body that smuggles raw HTML into a text node. The hardened
+    // schema escapes it, and the DOMPurify pass is the second guarantee.
+    const doc = {
+      type: 'doc',
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: '<img src=x onerror=alert(1)>' }] }],
+    };
+    const out = renderBlockHtml(doc);
+    expect(out).not.toContain('onerror');
   });
 });
 

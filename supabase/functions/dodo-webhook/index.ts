@@ -12,6 +12,11 @@
 //
 // Required secrets (set with `supabase secrets set`, never committed):
 //   DODO_WEBHOOK_SECRET — Standard Webhooks signing secret for this endpoint
+// Optional secrets (harden which subscriptions may grant Pro):
+//   DODO_PRODUCT_PRO_MONTHLY — Dodo product id for the MONTHLY Pro plan (pdt_…)
+//   DODO_PRODUCT_PRO_ANNUAL  — Dodo product id for the YEARLY Pro plan (pdt_…)
+//   DODO_BUSINESS_ID         — this endpoint's Dodo business id; when set, an
+//                              event from any other business is rejected
 // Provided automatically by the Edge runtime: SUPABASE_URL,
 // SUPABASE_SERVICE_ROLE_KEY.
 
@@ -19,8 +24,30 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const DODO_WEBHOOK_SECRET = Deno.env.get('DODO_WEBHOOK_SECRET')!;
 
+// The only products that may flip an account to Pro. A future, cheaper product
+// (or a typo'd id) must never grant Pro — so a grant event is honoured only when
+// its product_id is one of these. When neither secret is configured the set is
+// empty and NO product can grant Pro (fail closed), surfaced in the logs.
+const PRO_PRODUCT_IDS = new Set(
+  [Deno.env.get('DODO_PRODUCT_PRO_MONTHLY'), Deno.env.get('DODO_PRODUCT_PRO_ANNUAL')].filter(
+    (id): id is string => typeof id === 'string' && id.length > 0,
+  ),
+);
+
+// When set, only events from this Dodo business are accepted.
+const EXPECTED_BUSINESS_ID = Deno.env.get('DODO_BUSINESS_ID') ?? '';
+
 // Reject events whose timestamp is more than this far from now (replay defence).
 const TOLERANCE_SECONDS = 60 * 5;
+
+// Canonical v4 UUID shape — metadata.user_id is server-set (never client input)
+// and signature-gated, but we still validate it before interpolating it into a
+// PostgREST filter, so a malformed id can never widen the query.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isUuid(value: unknown): value is string {
+  return typeof value === 'string' && UUID_RE.test(value);
+}
 
 function base64ToBytes(b64: string): Uint8Array {
   const bin = atob(b64);
@@ -123,9 +150,12 @@ async function patchProfile(filter: string, changes: Record<string, unknown>): P
  */
 function resolveProfileFilter(data: DodoSubscriptionData): string | null {
   const userId = data.metadata?.user_id;
-  if (userId) return `id=eq.${userId}`;
-  if (data.subscription_id) return `dodo_subscription_id=eq.${data.subscription_id}`;
-  if (data.customer?.customer_id) return `dodo_customer_id=eq.${data.customer.customer_id}`;
+  // Only trust user_id when it is a well-formed UUID; otherwise fall back to the
+  // Dodo ids so a malformed metadata value can never reshape the filter.
+  if (isUuid(userId)) return `id=eq.${userId}`;
+  if (data.subscription_id) return `dodo_subscription_id=eq.${encodeURIComponent(data.subscription_id)}`;
+  if (data.customer?.customer_id)
+    return `dodo_customer_id=eq.${encodeURIComponent(data.customer.customer_id)}`;
   return null;
 }
 
@@ -153,6 +183,16 @@ Deno.serve(async (req: Request) => {
     return new Response('Invalid JSON body', { status: 400 });
   }
 
+  // Every genuine Dodo event carries the business id. Require it, and — when we
+  // know our own business id — require it to match, so an event minted for a
+  // different (or missing) business can never touch our data.
+  if (!event.business_id) {
+    return new Response('Missing business_id', { status: 400 });
+  }
+  if (EXPECTED_BUSINESS_ID && event.business_id !== EXPECTED_BUSINESS_ID) {
+    return new Response('Unexpected business_id', { status: 400 });
+  }
+
   try {
     const data = event.data ?? {};
     const filter = resolveProfileFilter(data);
@@ -163,6 +203,13 @@ Deno.serve(async (req: Request) => {
       case 'subscription.active':
       case 'subscription.renewed': {
         if (!filter) break;
+        // Only a KNOWN Pro product may grant Pro. Anything else (a future cheaper
+        // product, a mispriced test product, a typo) is acknowledged but never
+        // upgrades the account.
+        if (!data.product_id || !PRO_PRODUCT_IDS.has(data.product_id)) {
+          console.warn(`Ignoring ${event.type} for unrecognised product_id: ${data.product_id}`);
+          break;
+        }
         await patchProfile(filter, {
           plan: 'pro',
           plan_status: 'active',

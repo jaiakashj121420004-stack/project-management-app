@@ -28,15 +28,26 @@ export function SharePanel({ open, onClose, kind, targetId, title }: SharePanelP
   const { collaborators, share, setRole, remove } = useSharing(kind, targetId);
   const [email, setEmail] = useState('');
   const [role, setRole_] = useState<ShareRole>('editor');
+  // The address the last share was sent to. The share RPC is deliberately
+  // generic — it neither confirms nor denies that the email has an account (see
+  // migration 20260714230000) — so we show a neutral "if they're an Aurora user"
+  // note rather than claiming success against a specific person.
+  const [sharedEmail, setSharedEmail] = useState<string | null>(null);
 
   const emailValid = EMAIL_RE.test(email.trim());
 
   function submit(event: FormEvent) {
     event.preventDefault();
     if (!emailValid) return;
+    const target = email.trim().toLowerCase();
     share.mutate(
-      { email: email.trim().toLowerCase(), role },
-      { onSuccess: () => setEmail('') },
+      { email: target, role },
+      {
+        onSuccess: () => {
+          setEmail('');
+          setSharedEmail(target);
+        },
+      },
     );
   }
 
@@ -78,6 +89,12 @@ export function SharePanel({ open, onClose, kind, targetId, title }: SharePanelP
         {share.isError && (
           <p className="text-xs text-danger">
             {share.error instanceof Error ? share.error.message : 'Could not share.'}
+          </p>
+        )}
+        {share.isSuccess && !share.isError && sharedEmail && (
+          <p className="text-xs text-fg-muted" role="status">
+            If <span className="font-medium text-fg">{sharedEmail}</span> belongs to an Aurora
+            account, they now have access. They'll appear below once they do.
           </p>
         )}
       </form>

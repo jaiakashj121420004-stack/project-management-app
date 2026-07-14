@@ -26,11 +26,13 @@ const DODO_BASE = (Deno.env.get('DODO_PAYMENTS_ENVIRONMENT') ?? 'test')
   ? 'https://live.dodopayments.com'
   : 'https://test.dodopayments.com';
 
-// Browsers call this cross-origin, so every response carries CORS headers.
+// Browsers call this cross-origin from the app only, so CORS is scoped to
+// APP_URL (not '*'). `Vary: Origin` keeps caches from mixing origins.
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': APP_URL,
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  Vary: 'Origin',
 };
 
 function json(body: unknown, status = 200): Response {
@@ -38,6 +40,25 @@ function json(body: unknown, status = 200): Response {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
+}
+
+// Best-effort per-user rate limiting (see dodo-create-checkout for the rationale;
+// state is per-isolate, fails open, keyed by Supabase user id).
+const RATE_LIMIT_MAX = 8;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const rateHits = new Map<string, number[]>();
+
+/** True when the user is over the limit; records this hit otherwise. */
+function isRateLimited(userId: string): boolean {
+  const now = Date.now();
+  const recent = (rateHits.get(userId) ?? []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+  if (recent.length >= RATE_LIMIT_MAX) {
+    rateHits.set(userId, recent);
+    return true;
+  }
+  recent.push(now);
+  rateHits.set(userId, recent);
+  return false;
 }
 
 /**
@@ -76,6 +97,10 @@ Deno.serve(async (req: Request) => {
   try {
     const userId = await getAuthedUserId(req);
     if (!userId) return json({ error: 'Unauthorized' }, 401);
+
+    if (isRateLimited(userId)) {
+      return json({ error: 'Too many requests. Please try again in a moment.' }, 429);
+    }
 
     const customerId = await getCustomerId(userId);
     // No Dodo customer means the user has never completed checkout — there is

@@ -130,8 +130,10 @@ Phases 1 and 2 are independent and can run in parallel. 3 depends on 2 (tests + 
 
 ---
 
-## Phase 6 — Security hardening
+## Phase 6 — Security hardening  ✅ BUILT (2026-07-14) — ⚠️ npm install + build/test + commit on Windows + apply 1 migration
 **Goal:** close the low/defense-in-depth findings and add *assurance* (the security posture is already strong — see audit §3).
+
+> **Built:** enumeration oracle closed (new migration `20260714230000_sharing_hardening.sql`: `revoke execute` on `user_id_for_email` from `authenticated`/`public`; `share_canvas`/`share_note` dropped + recreated `returns void` with the email lookup inlined and a generic no-op on unknown/self email; `SharePanel` shows a neutral "if they're an Aurora user" note; `database.ts` share RPC `Returns: undefined`). Webhook hardened (product allow-list `PRO_PRODUCT_IDS` fail-closed, `business_id` required + optionally matched to `DODO_BUSINESS_ID`, `metadata.user_id` UUID-gated before the PostgREST filter). Edge fns hardened (constant-time `x-cron-secret` compare in `send-due-reminders`; CORS scoped `*`→`APP_URL` + `Vary: Origin` in `dodo-create-checkout`/`dodo-portal`; best-effort per-user in-memory rate limiting on both). Plaintext `Aurora payment api.txt` deleted (was gitignored + untracked). XSS defense-in-depth (`isomorphic-dompurify` pass over `renderBlockHtml` output in `serialize.ts`). Assurance: pgTAP RLS regression suite `supabase/tests/rls_regression.test.sql` (15 assertions: non-member read/write denial across projects/cards/columns/labels/folders/todo_lists, viewer-can't-write, user-can't-self-set-plan, owner positive controls) + `supabase/tests/README.md` + a separate `.github/workflows/rls-tests.yml` (local Supabase stack, off the main gate). New dep: `isomorphic-dompurify`. Tests: sanitize suite added to `serialize.test.ts`. Verified via a review subagent (host reads only); pending Windows build/test + commit + applying the migration. **Next: Phase 7 — Verification & go-live.**
 
 **Tasks**
 - **Enumeration oracle (Low).** `supabase/migrations/…_sharing.sql`: `revoke execute` on `user_id_for_email(text)` from `authenticated` and inline the lookup inside the `share_canvas`/`share_note` RPCs; return a generic result whether or not the email matched (don't leak account existence). New migration.
