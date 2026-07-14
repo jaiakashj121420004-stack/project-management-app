@@ -2,8 +2,6 @@ import { useEffect } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import type { JSONContent } from '@tiptap/core';
 import { Placeholder } from '@tiptap/extension-placeholder';
-import { DragHandle } from '@tiptap/extension-drag-handle-react';
-import { GripVertical } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { blockExtensions } from './extensions';
 import { EditorToolbar } from './EditorToolbar';
@@ -39,6 +37,8 @@ export function BlockEditor({
 }: BlockEditorProps) {
   const editor = useEditor({
     editable,
+    // immediatelyRender:false avoids a first-paint race in React 18/19 StrictMode.
+    immediatelyRender: false,
     extensions: [
       ...blockExtensions,
       Placeholder.configure({ placeholder }),
@@ -63,16 +63,6 @@ export function BlockEditor({
     <div className={cn('flex min-h-0 flex-1 flex-col gap-2', className)}>
       {editable && editor && <EditorToolbar editor={editor} />}
       <div className="block-editor relative min-h-[40vh] flex-1 overflow-y-auto">
-        {editable && editor && (
-          <DragHandle editor={editor}>
-            <span
-              className="grid h-6 w-5 cursor-grab place-items-center rounded text-fg-subtle transition-colors hover:bg-[var(--glass-fill)] hover:text-fg active:cursor-grabbing"
-              aria-hidden
-            >
-              <GripVertical size={15} />
-            </span>
-          </DragHandle>
-        )}
         <EditorContent editor={editor} />
       </div>
     </div>

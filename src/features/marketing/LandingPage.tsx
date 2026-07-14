@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -16,6 +16,10 @@ import {
   ClipboardCheck,
   Sparkles,
   Users,
+  Type,
+  PenTool,
+  Library as LibraryIcon,
+  LayoutGrid,
   type LucideIcon,
 } from 'lucide-react';
 import {
@@ -30,6 +34,25 @@ import './lodestar.css';
 const MARK = '/brand/nvexis-mark-transparent-800.png';
 
 /**
+ * Shows a real app screenshot from /public/shots/<name>.png if it exists; until
+ * you drop the file in, it gracefully falls back to the styled faux mockup. So
+ * the site looks great now AND upgrades to real screenshots the moment they land.
+ */
+function Shot({ src, children }: { src: string; children: ReactNode }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return <>{children}</>;
+  return (
+    <img
+      src={src}
+      alt=""
+      loading="lazy"
+      onError={() => setFailed(true)}
+      className="lode-window w-full"
+    />
+  );
+}
+
+/**
  * The public landing page — "Lodestar", the celestial front door of Aurora (a
  * Nvexis product line). A starlit hero descends into warm parchment feature
  * sections showcasing every part of the app, on the Nvexis palette + gilt accent.
@@ -42,6 +65,7 @@ export function LandingPage() {
       <Hero />
       <StatBand />
       <Spotlights />
+      <DeepDive />
       <FeatureGrid />
       <CollaborationBand />
       <Pricing />
@@ -90,14 +114,14 @@ function Hero() {
         <div className="lode-glow mx-auto mb-7 w-fit">
           <img src={MARK} alt="Nvexis" className="mx-auto h-16 w-16" />
         </div>
-        <p className="lode-eyebrow mb-4 text-[rgba(216,180,85,0.9)]">Your work’s guiding star</p>
+        <p className="lode-eyebrow mb-4 text-[rgba(216,180,85,0.9)]">Aurora · by Nvexis</p>
         <h1 className="font-display text-4xl font-black leading-[1.05] text-[color:var(--lode-parchment)] sm:text-6xl">
-          Every project, note, and idea — <span className="lode-gilt">in one lodestar.</span>
+          Every project, note, and idea — <span className="lode-gilt">in one calm home.</span>
         </h1>
         <p className="mx-auto mt-5 max-w-xl text-lg text-[rgba(236,228,214,0.72)]">
-          Aurora is a jaw-dropping workspace: Kanban boards, a Notion-style editor, an infinite
-          collaborative canvas, calendar, and to-dos — installable on every device, synced, and
-          free to start.
+          Aurora is a jaw-dropping workspace: Kanban boards, a Notion-style block editor, an
+          infinite collaborative canvas with pen, media &amp; embeds, a calendar, standalone notes
+          and daily to-dos — installable on every device, synced in real time, and free to start.
         </p>
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link to="/signup" className="lode-cta text-base">
@@ -117,8 +141,8 @@ function Hero() {
 
       {/* Flagship montage */}
       <div className="mx-auto mt-14 grid max-w-5xl gap-4 sm:grid-cols-2">
-        <div className="sm:mt-8"><BoardMockup /></div>
-        <div><EditorMockup /></div>
+        <div className="sm:mt-8"><Shot src="/shots/board.png"><BoardMockup /></Shot></div>
+        <div><Shot src="/shots/editor.png"><EditorMockup /></Shot></div>
       </div>
     </section>
   );
@@ -197,7 +221,7 @@ function Spotlights() {
           title="Kanban that gets out of your way"
           body="Drag cards across columns, set due dates and priorities, attach checklists and labels. Multiple projects, each its own board."
           points={['Drag-and-drop columns & cards', 'Due dates, priorities, checklists, labels', 'Assignees + a linked calendar']}
-          mockup={<BoardMockup />}
+          mockup={<Shot src="/shots/board.png"><BoardMockup /></Shot>}
         />
         <Spotlight
           reverse
@@ -205,16 +229,122 @@ function Spotlights() {
           title="A Notion-style editor, organised like a file explorer"
           body="Standalone notes and canvases live in one nested Library. Write with a real block editor: slash commands, toggles, task lists, custom colours, emoji, drag-to-reorder."
           points={['Infinite folders for notes + canvases', '“/” slash menu, toggles, task lists, colours', 'Full-text search across your Library']}
-          mockup={<EditorMockup />}
+          mockup={<Shot src="/shots/editor.png"><EditorMockup /></Shot>}
         />
         <Spotlight
           eyebrow="Canvas · Pro"
           title="An infinite whiteboard that thinks with you"
           body="Pressure-sensitive pen, marker and highlighter, shapes and text, images, audio and video — and live multiplayer cursors so a team can sketch together in real time."
           points={['Freehand ink, media, embeds', 'Live cursors + real-time co-editing', 'Minimap, fit-to-content, page styles']}
-          mockup={<CanvasMockup />}
+          mockup={<Shot src="/shots/canvas.png"><CanvasMockup /></Shot>}
         />
       </div>
+    </section>
+  );
+}
+
+/* ---- Deep dive: detailed capabilities per pillar -------------------------- */
+const PILLARS: { icon: LucideIcon; title: string; intro: string; points: string[] }[] = [
+  {
+    icon: Type,
+    title: 'A real block editor',
+    intro: 'The same Notion-style editor powers standalone notes and every text box on the canvas.',
+    points: [
+      'Press “/” for a slash menu that inserts any block',
+      'Headings H1–H3, quotes, code blocks, dividers',
+      'Bullet, numbered, hyphen, lettered (a,b,c) & Roman (i,ii,iii) lists — nested',
+      'Task lists with real checkboxes that strike through when done',
+      'Toggle / collapsible blocks to fold away detail',
+      'Bold, italic, underline, strike, inline code',
+      'Custom text colours AND highlight colours (full palette)',
+      'Emoji: type “:” to autocomplete, or pick from the toolbar',
+      'Safe, sanitised links — and everything autosaves as you type',
+    ],
+  },
+  {
+    icon: PenTool,
+    title: 'An infinite canvas',
+    intro: 'A whiteboard that thinks with you — draw, drop media, and lay ideas out freely.',
+    points: [
+      'Infinite pan & zoom; ruled, grid, dotted or blank pages',
+      'Pressure-sensitive pen, marker & translucent highlighter',
+      'Two erasers: whole-stroke and pixel-precise',
+      'Rich text boxes (the full block editor above)',
+      'Images: paste, drag-drop, or upload',
+      'Audio & video: record in-app, upload, OR embed from YouTube, Vimeo, Loom & SoundCloud',
+      'Multi-select, group move, z-order, lock, duplicate, layers panel',
+      'Minimap + fit-to-content + reset view to navigate big boards',
+      'Live multiplayer cursors — co-edit in real time',
+    ],
+  },
+  {
+    icon: LibraryIcon,
+    title: 'Library & notes',
+    intro: 'One nested folder tree holds your notes and canvases together, like a real file explorer.',
+    points: [
+      'Infinite subfolders holding BOTH notes and canvases',
+      'Standalone notes (independent of any project) + per-project notes',
+      'Rename, move to any folder, delete, and search across everything',
+      'Share a note or canvas by email as editor or viewer',
+      'Legacy markdown notes convert to blocks automatically',
+    ],
+  },
+  {
+    icon: LayoutGrid,
+    title: 'Boards & teamwork',
+    intro: 'Kanban that scales from a solo to-do to a whole team’s review pipeline.',
+    points: [
+      'Drag-drop columns & cards across multiple projects',
+      'Due dates, priorities, checklists, labels, assignees',
+      'Review flow: request → approve / needs-changes, with status filters',
+      'Comments with @mentions + emoji reactions',
+      'Per-project activity log + a live notification bell',
+      'Presence avatars show who’s viewing; changes sync live',
+    ],
+  },
+];
+
+function DeepDive() {
+  return (
+    <section className="lode-night lode-stars px-4 py-20 sm:px-6">
+      <div className="mx-auto max-w-3xl text-center">
+        <p className="lode-eyebrow text-[rgba(216,180,85,0.9)]">Under the hood</p>
+        <h2 className="mt-2 font-display text-3xl font-black text-[color:var(--lode-parchment)] sm:text-4xl">
+          Deceptively simple. Seriously deep.
+        </h2>
+        <p className="mx-auto mt-3 max-w-xl text-[rgba(236,228,214,0.7)]">
+          Every surface is loaded with the details that make real work fast. Here’s a taste.
+        </p>
+      </div>
+      <div className="mx-auto mt-14 grid max-w-5xl gap-4 md:grid-cols-2">
+        {PILLARS.map(({ icon: Icon, title, intro, points }) => (
+          <div
+            key={title}
+            className="rounded-2xl border border-[rgba(255,245,225,0.1)] bg-white/[0.03] p-6"
+          >
+            <div className="flex items-center gap-3">
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-[rgba(216,180,85,0.14)] text-[color:var(--lode-gold)]">
+                <Icon size={19} />
+              </span>
+              <h3 className="font-display text-xl font-bold text-[color:var(--lode-parchment)]">{title}</h3>
+            </div>
+            <p className="mt-3 text-sm text-[rgba(236,228,214,0.7)]">{intro}</p>
+            <ul className="mt-4 space-y-2">
+              {points.map((p) => (
+                <li key={p} className="flex items-start gap-2 text-sm text-[rgba(236,228,214,0.85)]">
+                  <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-[color:var(--lode-gold)]" />
+                  {p}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+      <p className="mx-auto mt-8 max-w-3xl text-center text-sm text-[rgba(236,228,214,0.6)]">
+        Plus: a ⌘K command palette, a calendar with drag-to-reschedule, a daily to-do planner with
+        recurring templates, email + browser reminders at custom times, an installable PWA that
+        works offline, and row-level security so every row is private by default.
+      </p>
     </section>
   );
 }
@@ -278,10 +408,10 @@ function CollaborationBand() {
           </div>
         </div>
         <div className="grid gap-4">
-          <CanvasMockup />
+          <Shot src="/shots/canvas.png"><CanvasMockup /></Shot>
           <div className="grid grid-cols-2 gap-4">
-            <CalendarMockup />
-            <PaletteMockup />
+            <Shot src="/shots/calendar.png"><CalendarMockup /></Shot>
+            <Shot src="/shots/palette.png"><PaletteMockup /></Shot>
           </div>
         </div>
       </div>
@@ -374,10 +504,10 @@ function FinalCta() {
         <img src={MARK} alt="" className="h-12 w-12" />
       </div>
       <h2 className="mx-auto max-w-2xl font-display text-3xl font-black text-[color:var(--lode-parchment)] sm:text-5xl">
-        Find your <span className="lode-gilt">lodestar.</span>
+        Everything you make, <span className="lode-gilt">in one place.</span>
       </h2>
       <p className="mx-auto mt-4 max-w-md text-[rgba(236,228,214,0.72)]">
-        One calm, beautiful home for everything you’re making. Free to start, on every device.
+        One calm, beautiful home for your projects, notes and ideas. Free to start, on every device.
       </p>
       <Link to="/signup" className="lode-cta mt-8 text-base">
         Start free <ArrowRight size={17} />
