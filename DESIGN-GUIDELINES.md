@@ -1,16 +1,39 @@
 # Nvexis — Design Guidelines (Brand Bible)
 
-*The single source of truth for how Nvexis looks. Every project, post, slide, app, and page follows this. Version 4.0 · 28 June 2026.*
+*The single source of truth for how Nvexis looks. Every project, post, slide, app, and page follows this. Version 5.0 · 14 July 2026.*
 *System name: **The Almanac** (Editorial Authority) — a serious publication with a century of back-issues, not a startup template.*
 
 > **Why this exists:** ~88% of a brand judgment happens in the first 90 milliseconds, driven mostly by colour, and ~46% of people judge credibility on visual design alone. Consistency across every surface is what turns a logo into a brand. Use the exact tokens below — they are law.
 
 ---
 
+## 0. Two canonical surfaces (read this first)
+
+The brand lives on **two surfaces**, and both are canonical. Earlier versions of this
+file described only the first and then *banned* the very system the second is built
+on — so the doc contradicted the shipped **Aurora** app. v5.0 fixes that: it documents
+**both**, and says exactly where each applies.
+
+| Surface | What it is | Finish |
+|---|---|---|
+| **A — Editorial (print / social / marketing)** | Posts, slides, newsletters, one-pagers, the marketing hero. | **Flat Almanac.** Two inks on aged paper. No glass, no glow, no mesh. Character from type + rules + whitespace. |
+| **B — Product UI (the Aurora app)** | The signed-in application — boards, Library, canvas, calendar. | **Glass-over-parchment.** The Almanac palette + type, rendered on **warmed frosted-glass** surfaces with a subtle **paper-grain**, single-family **gradient accent tiles**, and calm **Framer motion / tactile depth**. |
+
+**Same ink, same paper, same type, same restraint — different finish.** The app is a
+*living, tactile* almanac (glass panels floating on parchment); print is a *bound,
+flat* one. When a rule below says "no gradients / no glow / flat paper," it governs
+**Surface A**. The **Surface B** system is specified in §11.
+
+> The old blanket bans on glassmorphism, gradients, glow and motion applied to
+> Surface A only. They were never meant to outlaw the app's own design system — this
+> version makes that explicit rather than leaving the doc at war with the product.
+
+---
+
 ## 1. Design philosophy
 
 **What we are NOT (the looks we reject):**
-- ❌ The **generic AI / fintech** look — navy/blue-black, neon gradients, glassmorphism, Inter, and the four-point "✨" sparkle. Everyone ships it; it reads machine-made. *(It's also where our old mark and spring-green accidentally lived — the sparkle is the most AI-coded glyph in use, and #46CC5B sat in the Robinhood/Spotify family.)*
+- ❌ The **generic AI / fintech** look — navy/blue-black, *cold* neon gradients, *blue-white* glassmorphism, Inter, and the four-point "✨" sparkle. Everyone ships it; it reads machine-made. *(It's also where our old mark and spring-green accidentally lived — the sparkle is the most AI-coded glyph in use, and #46CC5B sat in the Robinhood/Spotify family.)* **Note:** the Aurora app's **warm oxblood-on-parchment** glass is the opposite of this cold frost — see §11; the thing we reject is the *cold blue* version and *rainbow* gradients, not glass or warm depth as such.
 - ❌ The **get-rich-quick guru** look — gold-on-black, hype, fake luxury, shouting. The exact opposite of who we are.
 
 **What we ARE: The Almanac.** A serious, century-old publication. Two inks on aged paper — **oxblood** and **ink** on **parchment**. The authority of a bound financial almanac and a printer's craft: earned knowledge, the long voyage, depth over noise. Character comes from a distinctive serif and disciplined editorial layout, not from effects.
@@ -21,7 +44,7 @@
 1. **Authority over decoration.** Rules, drop caps, folios, generous margins. It reads *edited* — a publication, not a feed.
 2. **Two inks, one paper.** Oxblood is the only chroma in the room. Restraint is the luxury.
 3. **Earned, not loud.** No neon, no gold, no hype. The seriousness *is* the differentiation — built for people who do the work, not the get-rich-quick crowd.
-4. **Set, don't decorate.** Character comes from the type (Fraunces + Spectral) and the grid — never from gloss, glow, or gradients.
+4. **Set, don't decorate.** Character comes first from the type (Fraunces + Spectral) and the grid — not from effects. On **editorial** surfaces that means *no* gloss/glow/gradient at all; in the **app** (§11) the glass + depth are a quiet, warm *substrate* for the same type and grid, never the star.
 5. **Two true modes.** Day (parchment) is the hero — it's a publication. Night (ink) is its lamplit pair, never an afterthought.
 
 ---
@@ -39,7 +62,7 @@ Both are first-class. **Day** is the hero (a publication is read on paper); **Ni
 | **Hairline** | `#CDBFA8` | `#352724` |
 | **Accent** | Oxblood **#7A2A26** | Oxblood **#C24A40** (lifted for dark) |
 
-Backgrounds are **flat aged paper** — no gradients, no glow, no mesh. The texture lives in the *type and the rules*, not in effects.
+On **editorial** surfaces (Surface A) backgrounds are **flat aged paper** — no gradients, no glow, no mesh; the texture lives in the *type and the rules*. The **app** (Surface B, §11) sits its glass panels on the same parchment/ink page plus a subtle paper-grain and a soft accent glow — warm depth, not cold frost.
 
 > **Both modes are fully realised as kits:** `Nvexis-Editorial-Identity.html` (Day / light) and `Nvexis-Editorial-Identity-Dark.html` (Night / dark). The Night kit also documents **surface elevation** (depth via hairline + lift, never shadow-soup) and the **Light↔Dark token parity** every app wires into its theme switch.
 
@@ -133,7 +156,8 @@ Distinctive, free (Google Fonts), and deliberately **not Inter**. The serif is t
 - **Logo files (ready):** `Nvexis Rebrand/Editorial Authority/logo/` — day, night, mono ink, reverse/parchment, app-icon tiles, favicon, wordmark lockup.
 - **Product sub-brand — the Aurora "A" (added 14 Jul 2026):** the **Aurora** app (a Nvexis product) carries its **own product logo**: a Fraunces-style **high-contrast serif "A"** knocked out of an **oxblood tile** (letter in warm bone `#F3ECDD`; tile uses the theme oxblood so it stays vivid on Day parchment + Night ink). It is the *product* mark — the Nvexis prism remains the *company* mark and is not used inside the app. Outlined-vector source: `public/brand/aurora-{mark,mark-night,fullbleed,glyph}.svg` (font-independent); rendered in-app by `AuroraMark` in `components/shell/Brand.tsx`; rasterised to `favicon`/PWA/apple-touch/maskable via `scripts/generate-icons.mjs`. Min size 16px; wordmark "Aurora" in **Fraunces**, single oxblood accent (no gradient).
 - **Imagery:** duotone (ink × oxblood) or high-contrast mono. No generic stock realism.
-- **Banned:** spring-green / neon, gold-or-foil-as-primary, navy/blue, violet, glassmorphism, gradients/glow, drop-shadow soup, Inter, the four-point AI sparkle.
+- **Banned everywhere (both surfaces):** spring-green / neon, gold-or-foil-as-primary, navy/blue, violet, *cold blue-white* glass, *rainbow / multi-hue* gradients, Inter, the four-point AI sparkle, drop-shadow soup (uncontrolled shadows).
+- **Editorial-only bans (Surface A):** *any* glassmorphism, gradient, or glow. The **app** (§11) may use **warm oxblood-family** glass, single-family accent gradients, and a controlled accent glow — see §11 for the exact, permitted forms.
 
 ---
 
@@ -170,9 +194,9 @@ This file lives in every Nvexis-brand folder. Whatever you build — CO-CE outpu
 1. **Only** the palette in §3 (exact hex), both Day + Night.
 2. **Only** Fraunces (display) + Spectral (body) + IBM Plex Mono (figures). Never Inter.
 3. The **8px spacing scale** and the **type scale** — no arbitrary values.
-4. **60 / 35 / 5**; one oxblood moment per view; both modes supported.
-5. **No** spring-green / gold / neon / navy / violet / glass / gradient / Inter / AI-sparkle.
-6. Body text uses **`--ink2`**, not `--muted` (the audited contrast rule).
+4. **60 / 35 / 5**; **one accent family per surface** (§11) — never oxblood + an unrelated hue in the same card/tile/avatar cluster; both modes supported.
+5. **No** spring-green / gold-as-primary / neon / navy / violet / *cold* glass / *rainbow* gradient / Inter / AI-sparkle. (Warm oxblood-family glass + single-family gradients are allowed **in the app only** — §11.)
+6. Body text uses **`--ink2`**, not `--muted` (the audited contrast rule); every pill/badge/caption clears **AA (≥ 4.5 : 1)** in both modes (§11 tokens).
 7. When unsure, choose the more **spacious, more precise** option — and let the work talk.
 
 > Feed these tokens into CO-CE's Design Director and every app's stylesheet. Consistency compounds recognition into trust.
@@ -202,4 +226,64 @@ Living reference — **two kit pages**: `Nvexis-Editorial-Identity.html` (Day / 
 
 ---
 
-*If a decision isn't covered here, ask: "What would a serious almanac — edited, set in metal type, made to last — do?" — then do that. Two inks, one paper, the nvexis, lots of space.*
+## 11. The Aurora app — "glass-over-parchment" (Surface B, the source of truth for the product)
+
+This section describes the system the **Aurora** app is *actually* built on. It is
+canonical — where an earlier blanket ban and this section disagree, **this section
+governs the app.** The goal is unchanged: the Almanac's authority and restraint, made
+tactile. Think *warm frosted panels floating on aged paper*, not cold fintech frost.
+
+### What we KEEP from the Almanac
+Everything that carries meaning: the exact §3 palette (both modes), the §4 type
+(Fraunces / Spectral / IBM Plex Mono, never Inter), the 8px spacing scale, **oxblood as
+the single accent**, 60 / 35 / 5, and AA contrast on all text.
+
+### What the app ADDS (the permitted "glass-over-parchment" forms)
+- **Warmed frosted glass surfaces.** Cards, panels, the sidebar, the top bar and modals
+  are translucent glass **warmed onto paper** — a parchment/ink fill at partial opacity
+  with a `backdrop-blur` and a hairline border, driven by CSS vars (`--glass-fill`,
+  `--glass-border`, `--glass-shadow`, `--field-bg`) in `src/styles/index.css`. It is
+  **never** the cold blue-white frost we reject — the tint is always warm paper.
+- **Paper-grain.** A subtle noise texture over the page for tactility (the app's answer
+  to the almanac's stock), plus a soft **accent glow** (`--accent-glow`) behind key
+  surfaces. Warm depth, never a rainbow mesh.
+- **Single-family accent tiles & gradients.** Icon tiles, the Pro badge, and the small
+  card accent-strip use `linear-gradient(--accent-from → --accent-to)` — but the two
+  stops are **always the same hue family** (per-project earthy accents in
+  `src/lib/accents.ts`, defaulting to oxblood). One family per surface.
+- **Per-project accents (subtle).** A project may pick an *earthy* accent (oxblood, gilt,
+  clay, pine, terracotta, umber). It tints that project's own headers/cards only — it is
+  the *one* accent moment on that surface, not a second competing hue.
+- **Calm motion & tactile depth.** Framer Motion springs (`src/lib/motion.ts`), a card
+  pointer-tilt, and 3D tactile buttons — editorial and calm, **gated behind
+  `prefers-reduced-motion`** (`<MotionConfig reducedMotion="user">` + CSS guards).
+
+### One accent family per surface (accent-restraint law — Phase 4)
+A single surface (a card, tile, avatar cluster, toolbar) must show **one accent family**.
+- **Semantic colour is exempt and stays multi-hue** *by meaning*: status (`success` /
+  `warning` / `danger` / `info`), priority tiers, due-date urgency, user-chosen **label**
+  colours, and multiplayer **cursor** colours. These are information, not decoration —
+  they are theme-reactive tokens tuned to AA, not brand accents.
+- **Decoration must not introduce a second family.** Avatars use an **oxblood-family
+  tonal ramp** (`src/components/Avatar.tsx`), *not* a rainbow hash. Icon tiles inherit the
+  surface's own accent. (Before Phase 4, avatars hashed across six unrelated families, so
+  one card could show four competing hues — audit §1. That is now fixed.)
+
+### Contrast & tokens (AA, both modes)
+- Label/priority/status pills derive a **darkened (Day) / lightened (Night)** foreground
+  via `src/lib/contrast.ts` (`readableOnTint`) so every pill clears AA on its tint — never
+  render a saturated swatch hex as text.
+- `success` / `info` / `warning` / `danger` are **theme-reactive CSS vars**, not fixed hex.
+
+### Radius scale (consolidated — Phase 3)
+Use **md / xl / 2xl (+ full)** only. `rounded-3xl` / `rounded-4xl` are retired.
+
+### Where each surface applies
+Glass-over-parchment is the **app** (Surface B). The **marketing site** and all print /
+social (Surface A) stay flat Almanac — the one bridge is the palette, type and oxblood
+accent, which are shared. Keep them distinct: a slide should never wear app glass, and the
+app should never flatten into a poster.
+
+---
+
+*If a decision isn't covered here, ask: "What would a serious almanac — edited, set in metal type, made to last — do?" — then do that. Two inks, one paper, the nvexis, lots of space. In the app, that almanac is made tactile: warm glass on parchment, one accent in the room.*

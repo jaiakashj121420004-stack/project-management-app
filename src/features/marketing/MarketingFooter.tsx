@@ -12,7 +12,7 @@ const FOOTER_COLUMNS: FooterColumn[] = [
     heading: 'Product',
     links: [
       { label: 'Features', to: '/#features' },
-      { label: 'Showcase', to: '/#showcase' },
+      { label: 'Collaborate', to: '/#collaborate' },
       { label: 'Pricing', to: '/pricing' },
     ],
   },
@@ -41,8 +41,8 @@ export function MarketingFooter() {
           <div className="max-w-xs">
             <Brand />
             <p className="mt-4 text-sm leading-relaxed text-fg-muted">
-              The project workspace that feels like magic. Boards, calendar, notes and
-              reminders — beautifully in one place.
+              One calm workspace for your projects, notes and ideas. Boards, calendar,
+              canvas, notes and reminders — in one place.
             </p>
             <div className="mt-5">
               <ThemeToggle />

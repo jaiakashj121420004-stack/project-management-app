@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
-import { accentVars, ACCENT_NAMES, type AccentName } from '@/lib/accents';
 
 interface AvatarProps {
   name: string;
@@ -16,17 +15,33 @@ function initials(name: string): string {
   return (parts[0]![0]! + parts[parts.length - 1]![0]!).toUpperCase();
 }
 
-/** Deterministically pick an accent from the name so avatars feel personal. */
-function accentFor(name: string): AccentName {
+/**
+ * Oxblood-family tonal ramp for initials avatars. Deliberately a single chroma
+ * (warm oxblood → clay → terracotta) so a stack of avatars stays personal-yet-
+ * restrained — the brand's "one chroma in the room" rule (Phase 4 accent
+ * restraint; the old version hashed across six different accent families, so a
+ * card could show four unrelated hues at once — audit §1).
+ */
+const AVATAR_TONES: readonly (readonly [string, string])[] = [
+  ['#5E211E', '#7A2A26'], // deep oxblood
+  ['#7A2A26', '#9B3A33'], // oxblood
+  ['#8E4A3C', '#A85A48'], // clay
+  ['#A0453B', '#B85A44'], // terracotta
+  ['#6E2E28', '#8E3A30'], // brick
+];
+
+/** Deterministically pick an oxblood-family tone from the name. */
+function toneFor(name: string): readonly [string, string] {
   let hash = 0;
   for (let i = 0; i < name.length; i += 1) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
-  return ACCENT_NAMES[hash % ACCENT_NAMES.length]!;
+  return AVATAR_TONES[hash % AVATAR_TONES.length]!;
 }
 
-/** Circular avatar: shows the image when available, else gradient initials. */
+/** Circular avatar: shows the image when available, else oxblood initials. */
 export function Avatar({ name, src, size = 40, className }: AvatarProps) {
   const [failed, setFailed] = useState(false);
   const showImage = src && !failed;
+  const [from, to] = toneFor(name);
 
   return (
     <span
@@ -39,10 +54,7 @@ export function Avatar({ name, src, size = 40, className }: AvatarProps) {
         width: size,
         height: size,
         fontSize: size * 0.4,
-        ...accentVars(accentFor(name)),
-        backgroundImage: showImage
-          ? undefined
-          : 'linear-gradient(135deg, var(--accent-from), var(--accent-to))',
+        backgroundImage: showImage ? undefined : `linear-gradient(135deg, ${from}, ${to})`,
       }}
       title={name}
     >

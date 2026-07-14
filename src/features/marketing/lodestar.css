@@ -11,6 +11,10 @@
   --lode-night: #120d0b;
   --lode-night-2: #1c1512;
   --lode-oxblood: #c24a40;
+  /* Day oxblood — for small TEXT on parchment. #c24a40 (the night accent) only
+     hits ~3.8:1 on paper and gold-deep ~2.4:1, both below AA; this clears 7.6:1
+     so eyebrows/labels on light bands pass WCAG AA (Phase 4 contrast fix). */
+  --lode-oxblood-deep: #7a2a26;
   --lode-parchment: #ece4d6;
   --lode-ink: #221a14;
 }

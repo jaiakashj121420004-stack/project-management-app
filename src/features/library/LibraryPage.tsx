@@ -38,19 +38,32 @@ export function LibraryPage() {
   const [backNote, setBackNote] = useState<{ id: string; title: string } | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Deep-link: `/library?canvas=<id>` (e.g. from an Insert-canvas card in a note)
-  // opens that canvas. `note`/`noteTitle` carry the origin note so we can offer a
-  // "back to note" link. Params are cleared so refresh/back won't re-trigger.
+  // Deep-links (e.g. from the command palette or an Insert-canvas card):
+  //   `/library?canvas=<id>` opens that canvas — `note`/`noteTitle` may ride
+  //     along to offer a "back to note" link.
+  //   `/library?note=<id>`   opens that standalone note.
+  //   `/library?folder=<id>` drills into that folder.
+  // Params are cleared after handling so refresh/back won't re-trigger.
   useEffect(() => {
     const canvasId = searchParams.get('canvas');
-    if (!canvasId) return;
-    setOpen({ kind: 'canvas', id: canvasId });
     const noteId = searchParams.get('note');
-    setBackNote(noteId ? { id: noteId, title: searchParams.get('noteTitle') ?? 'note' } : null);
+    const folderId = searchParams.get('folder');
+    if (!canvasId && !noteId && !folderId) return;
+
+    if (canvasId) {
+      setOpen({ kind: 'canvas', id: canvasId });
+      setBackNote(noteId ? { id: noteId, title: searchParams.get('noteTitle') ?? 'note' } : null);
+    } else if (noteId) {
+      setOpen({ kind: 'note', id: noteId });
+    } else if (folderId) {
+      setCurrentFolderId(folderId);
+    }
+
     const next = new URLSearchParams(searchParams);
     next.delete('canvas');
     next.delete('note');
     next.delete('noteTitle');
+    next.delete('folder');
     setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams]);
 

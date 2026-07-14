@@ -70,7 +70,7 @@ export function LandingPage() {
       <FeatureGrid />
       <CollaborationBand />
       <Pricing />
-      <Testimonials />
+      <MakersNote />
       <FinalCta />
       <Footer />
     </div>
@@ -120,7 +120,7 @@ function Hero() {
           Every project, note, and idea — <span className="lode-gilt">in one calm home.</span>
         </h1>
         <p className="mx-auto mt-5 max-w-xl text-lg text-[rgba(236,228,214,0.72)]">
-          Aurora is a jaw-dropping workspace: Kanban boards, a Notion-style block editor, an
+          One calm workspace for everything: Kanban boards, a Notion-style block editor, an
           infinite collaborative canvas with pen, media &amp; embeds, a calendar, standalone notes
           and daily to-dos — installable on every device, synced in real time, and free to start.
         </p>
@@ -135,7 +135,7 @@ function Hero() {
             See what’s inside
           </Link>
         </div>
-        <p className="mt-4 font-mono text-xs uppercase tracking-widest text-[rgba(236,228,214,0.45)]">
+        <p className="mt-4 font-mono text-xs uppercase tracking-widest text-[rgba(236,228,214,0.72)]">
           No credit card · Works on mobile + desktop
         </p>
       </div>
@@ -190,7 +190,7 @@ function Spotlight({
   return (
     <div className="grid items-center gap-8 md:grid-cols-2">
       <div className={reverse ? 'md:order-2' : ''}>
-        <p className="lode-eyebrow text-[color:var(--lode-gold-deep)]">{eyebrow}</p>
+        <p className="lode-eyebrow text-[color:var(--lode-oxblood-deep)]">{eyebrow}</p>
         <h3 className="mt-2 font-display text-3xl font-bold text-[color:var(--lode-ink)]">{title}</h3>
         <p className="mt-3 text-[color:rgba(34,26,20,0.72)]">{body}</p>
         <ul className="mt-4 space-y-2">
@@ -211,7 +211,7 @@ function Spotlights() {
   return (
     <section id="features" className="lode-paper px-4 py-20 sm:px-6">
       <div className="mx-auto max-w-3xl text-center">
-        <p className="lode-eyebrow text-[color:var(--lode-gold-deep)]">Everything, in one place</p>
+        <p className="lode-eyebrow text-[color:var(--lode-oxblood-deep)]">Everything, in one place</p>
         <h2 className="mt-2 font-display text-3xl font-black text-[color:var(--lode-ink)] sm:text-4xl">
           A whole workspace that finally feels like one thing.
         </h2>
@@ -427,7 +427,7 @@ function Pricing() {
   return (
     <section className="lode-paper px-4 py-20 sm:px-6">
       <div className="mx-auto max-w-3xl text-center">
-        <p className="lode-eyebrow text-[color:var(--lode-gold-deep)]">Simple pricing</p>
+        <p className="lode-eyebrow text-[color:var(--lode-oxblood-deep)]">Simple pricing</p>
         <h2 className="mt-2 font-display text-3xl font-black text-[color:var(--lode-ink)] sm:text-4xl">
           Start free. Upgrade when you fly.
         </h2>
@@ -451,14 +451,17 @@ function PlanCard({
       style={highlight ? { borderColor: 'var(--lode-gold)', boxShadow: '0 24px 60px -30px rgba(184,144,47,0.5)' } : undefined}
     >
       {highlight && (
-        <span className="lode-chip absolute -top-3 left-6 bg-[#fdfaf4]">
-          <Sparkles size={12} /> Most loved
+        <span
+          className="lode-chip absolute -top-3 left-6 bg-[#fdfaf4]"
+          style={{ color: 'var(--lode-oxblood-deep)', borderColor: 'rgba(122,42,38,0.35)' }}
+        >
+          <Sparkles size={12} /> Best value
         </span>
       )}
       <p className="font-display text-lg font-bold text-[color:var(--lode-ink)]">{name}</p>
       <p className="mt-1 text-sm text-[color:rgba(34,26,20,0.6)]">{tagline}</p>
       <p className="mt-4 font-display text-4xl font-black text-[color:var(--lode-ink)]">
-        {price}<span className="text-base font-medium text-[color:rgba(34,26,20,0.5)]">{period}</span>
+        {price}<span className="text-base font-medium text-[color:rgba(34,26,20,0.72)]">{period}</span>
       </p>
       <ul className="mt-5 flex-1 space-y-2">
         {points.map((p) => (
@@ -474,24 +477,29 @@ function PlanCard({
   );
 }
 
-/* ---- Testimonials --------------------------------------------------------- */
-function Testimonials() {
-  const quotes = [
-    ['“It replaced three apps. My notes, my board, and my whiteboard finally live together.”', 'Priya · Product designer'],
-    ['“The canvas co-editing feels like magic — we brainstorm live from different cities.”', 'Marco · Startup founder'],
-    ['“Beautiful and fast. The block editor is the first one I actually enjoy writing in.”', 'Dana · Writer'],
-  ];
+/* ---- Maker's note ---------------------------------------------------------
+ * Aurora is new, so there's no wall of five-star customer quotes to show — and
+ * inventing them would be exactly the hype this brand rejects (see the anti-guru
+ * voice in DESIGN-GUIDELINES §8). Instead: one honest note from the person who
+ * built it, and a candid line about where the product stands. */
+function MakersNote() {
   return (
     <section className="lode-night px-4 py-20 sm:px-6">
-      <div className="mx-auto grid max-w-5xl gap-4 md:grid-cols-3">
-        {quotes.map(([q, who]) => (
-          <figure key={who} className="rounded-2xl border border-[rgba(255,245,225,0.1)] bg-white/[0.03] p-6">
-            <blockquote className="text-[rgba(236,228,214,0.9)]">{q}</blockquote>
-            <figcaption className="mt-4 font-mono text-xs uppercase tracking-wider text-[rgba(216,180,85,0.8)]">
-              {who}
-            </figcaption>
-          </figure>
-        ))}
+      <div className="mx-auto max-w-3xl text-center">
+        <p className="lode-eyebrow text-[rgba(216,180,85,0.9)]">A note from the maker</p>
+        <blockquote className="mt-5 font-display text-2xl font-semibold leading-snug text-[color:var(--lode-parchment)] sm:text-3xl">
+          “I built Aurora because my notes, my boards, and my whiteboard lived in three
+          different apps. I wanted one calm home for all of it — honest, no lock-in, and
+          free to start.”
+        </blockquote>
+        <figcaption className="mt-5 font-mono text-xs uppercase tracking-wider text-[rgba(236,228,214,0.7)]">
+          J. Jai Akash · builder of Aurora
+        </figcaption>
+        <p className="mx-auto mt-8 max-w-xl text-sm text-[rgba(236,228,214,0.7)]">
+          Aurora is new, so you won’t find a wall of testimonials here yet — we’d rather
+          show you the product than quote strangers. Every feature above works today. Try
+          it free and judge for yourself.
+        </p>
       </div>
     </section>
   );
@@ -524,7 +532,7 @@ function Footer() {
         <div className="flex items-center gap-2">
           <img src={MARK} alt="" className="h-6 w-6" />
           <span className="font-display font-semibold text-[color:var(--lode-parchment)]">Aurora</span>
-          <span className="opacity-50">· a Nvexis product</span>
+          <span className="text-[rgba(236,228,214,0.72)]">· a Nvexis product</span>
         </div>
         <nav className="flex flex-wrap items-center justify-center gap-5">
           <Link to="/pricing" className="hover:text-[color:var(--lode-parchment)]">Pricing</Link>
@@ -532,7 +540,7 @@ function Footer() {
           <Link to="/privacy" className="hover:text-[color:var(--lode-parchment)]">Privacy</Link>
           <Link to="/login" className="hover:text-[color:var(--lode-parchment)]">Sign in</Link>
         </nav>
-        <p className="font-mono text-xs opacity-50">Made by J. Jai Akash</p>
+        <p className="font-mono text-xs text-[rgba(236,228,214,0.72)]">Made by J. Jai Akash</p>
       </div>
     </footer>
   );
