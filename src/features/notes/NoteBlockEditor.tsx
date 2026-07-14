@@ -3,6 +3,7 @@ import type { AnyExtension, JSONContent } from '@tiptap/core';
 import { BlockEditor } from '@/features/editor/BlockEditor';
 import { markdownToDoc } from '@/features/editor/serialize';
 import { CanvasLink } from '@/features/editor/nodes/CanvasLink';
+import { NoteContext } from '@/features/editor/noteContext';
 import type { Note } from '@/types/database';
 
 // Note-only extensions (stable reference — the editor is built once). Insert
@@ -30,11 +31,13 @@ export default function NoteBlockEditor({
   );
 
   return (
-    <BlockEditor
-      content={initial}
-      editable={editable}
-      onChange={onChange}
-      extraExtensions={NOTE_EXTENSIONS}
-    />
+    <NoteContext.Provider value={{ noteId: note.id, noteTitle: note.title }}>
+      <BlockEditor
+        content={initial}
+        editable={editable}
+        onChange={onChange}
+        extraExtensions={NOTE_EXTENSIONS}
+      />
+    </NoteContext.Provider>
   );
 }

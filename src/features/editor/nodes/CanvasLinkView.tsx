@@ -1,6 +1,7 @@
 import { NodeViewWrapper, type NodeViewProps } from '@tiptap/react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight, Shapes } from 'lucide-react';
+import { useNoteRef } from '../noteContext';
 
 /**
  * Renders the embedded canvas card inside a note. Clicking opens the canvas in
@@ -9,15 +10,27 @@ import { ArrowUpRight, Shapes } from 'lucide-react';
  */
 export function CanvasLinkView({ node }: NodeViewProps) {
   const navigate = useNavigate();
+  const noteRef = useNoteRef();
   const canvasId = typeof node.attrs.canvasId === 'string' ? node.attrs.canvasId : '';
   const title = typeof node.attrs.title === 'string' && node.attrs.title ? node.attrs.title : 'Canvas';
 
+  const openCanvas = () => {
+    if (!canvasId) return;
+    const params = new URLSearchParams({ canvas: canvasId });
+    // Carry the origin note so the canvas view can offer a "back to note" link.
+    if (noteRef) {
+      params.set('note', noteRef.noteId);
+      params.set('noteTitle', noteRef.noteTitle);
+    }
+    navigate(`/library?${params.toString()}`);
+  };
+
   return (
-    <NodeViewWrapper className="canvas-link-node" data-drag-handle>
+    <NodeViewWrapper className="canvas-link-node">
       <button
         type="button"
         contentEditable={false}
-        onClick={() => canvasId && navigate(`/library?canvas=${canvasId}`)}
+        onClick={openCanvas}
         className="my-1.5 flex w-full items-center gap-3 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-fill)] p-3 text-left transition-colors hover:border-[var(--accent-from)] hover:bg-[var(--accent-from)]/5"
       >
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--accent-from)]/12 text-[var(--accent-from)]">

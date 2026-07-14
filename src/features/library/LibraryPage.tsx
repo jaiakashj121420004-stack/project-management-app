@@ -35,16 +35,22 @@ export function LibraryPage() {
   const [open, setOpen] = useState<OpenItem>(null);
   const [newFolderOpen, setNewFolderOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [backNote, setBackNote] = useState<{ id: string; title: string } | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Deep-link: `/library?canvas=<id>` (e.g. from an Insert-canvas card in a note)
-  // opens that canvas, then clears the param so refresh/back won't re-open it.
+  // opens that canvas. `note`/`noteTitle` carry the origin note so we can offer a
+  // "back to note" link. Params are cleared so refresh/back won't re-trigger.
   useEffect(() => {
     const canvasId = searchParams.get('canvas');
     if (!canvasId) return;
     setOpen({ kind: 'canvas', id: canvasId });
+    const noteId = searchParams.get('note');
+    setBackNote(noteId ? { id: noteId, title: searchParams.get('noteTitle') ?? 'note' } : null);
     const next = new URLSearchParams(searchParams);
     next.delete('canvas');
+    next.delete('note');
+    next.delete('noteTitle');
     setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams]);
 
@@ -97,14 +103,30 @@ export function LibraryPage() {
       ) : open ? (
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={() => setOpen(null)}
-              className="inline-flex w-fit items-center gap-1.5 rounded-lg px-2 py-1 text-sm text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
-            >
-              <ArrowLeft size={16} /> Library
-              <span className="text-fg-subtle">· {openTitle}</span>
-            </button>
+            {open.kind === 'canvas' &&
+            backNote &&
+            (notes.data ?? []).some((note) => note.id === backNote.id) ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen({ kind: 'note', id: backNote.id });
+                  setBackNote(null);
+                }}
+                className="inline-flex w-fit items-center gap-1.5 rounded-lg px-2 py-1 text-sm text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+              >
+                <ArrowLeft size={16} /> Back to
+                <span className="max-w-[12rem] truncate font-medium text-fg">{backNote.title}</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setOpen(null)}
+                className="inline-flex w-fit items-center gap-1.5 rounded-lg px-2 py-1 text-sm text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+              >
+                <ArrowLeft size={16} /> Library
+                <span className="text-fg-subtle">· {openTitle}</span>
+              </button>
+            )}
             {open.kind === 'canvas' && (
               <ShareButton kind="canvas" targetId={open.id} title={openTitle} />
             )}
