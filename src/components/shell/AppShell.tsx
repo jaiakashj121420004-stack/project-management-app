@@ -4,6 +4,7 @@ import { AuroraBackground } from '@/components/AuroraBackground';
 import { OfflineBanner } from '@/components/pwa/OfflineBanner';
 import { PWAReloadPrompt } from '@/components/pwa/PWAReloadPrompt';
 import { useDueReminders } from '@/features/reminders';
+import { CommandPalette } from '@/features/command-palette/CommandPalette';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { BottomNav } from './BottomNav';
@@ -44,6 +45,7 @@ export function AppShell() {
 
       <OfflineBanner />
       <PWAReloadPrompt />
+      <CommandPalette />
     </div>
   );
 }

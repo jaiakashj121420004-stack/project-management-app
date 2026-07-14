@@ -516,6 +516,28 @@ export interface Database {
         };
         Relationships: [];
       };
+      note_members: {
+        // Per-note sharing (mirrors canvas_members). Owner is notes.owner_id.
+        Row: {
+          note_id: string;
+          user_id: string;
+          role: CanvasRole;
+          created_at: string;
+        };
+        Insert: {
+          note_id: string;
+          user_id: string;
+          role?: CanvasRole;
+          created_at?: string;
+        };
+        Update: {
+          note_id?: string;
+          user_id?: string;
+          role?: CanvasRole;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       invitations: {
         Row: {
           id: string;
@@ -923,6 +945,42 @@ export interface Database {
         Args: { p_canvas_id: string };
         Returns: boolean;
       };
+      // Phase 4 sharing RPCs — resolve an email to a user + upsert membership
+      // (owner-gated). Return the target user's id.
+      share_canvas: {
+        Args: { p_canvas_id: string; p_email: string; p_role: string };
+        Returns: string;
+      };
+      share_note: {
+        Args: { p_note_id: string; p_email: string; p_role: string };
+        Returns: string;
+      };
+      user_id_for_email: {
+        Args: { p_email: string };
+        Returns: string;
+      };
+      canvas_collaborators: {
+        Args: { p_canvas_id: string };
+        Returns: {
+          user_id: string;
+          role: string;
+          created_at: string;
+          display_name: string | null;
+          avatar_url: string | null;
+          email: string | null;
+        }[];
+      };
+      note_collaborators: {
+        Args: { p_note_id: string };
+        Returns: {
+          user_id: string;
+          role: string;
+          created_at: string;
+          display_name: string | null;
+          avatar_url: string | null;
+          email: string | null;
+        }[];
+      };
       // True when the caller is the app administrator (ADMIN_EMAIL). Used by the
       // feedback / ceo_messages RLS policies (lib/admin.ts mirrors it in the UI).
       is_admin: {
@@ -979,6 +1037,7 @@ export type Folder = Database['public']['Tables']['folders']['Row'];
 export type Note = Database['public']['Tables']['notes']['Row'];
 export type CanvasNote = Database['public']['Tables']['canvas_notes']['Row'];
 export type CanvasMember = Database['public']['Tables']['canvas_members']['Row'];
+export type NoteMember = Database['public']['Tables']['note_members']['Row'];
 export type Invitation = Database['public']['Tables']['invitations']['Row'];
 export type Feedback = Database['public']['Tables']['feedback']['Row'];
 export type CeoMessage = Database['public']['Tables']['ceo_messages']['Row'];

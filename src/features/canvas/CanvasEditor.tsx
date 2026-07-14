@@ -11,6 +11,7 @@ import {
 import { AlertCircle, Check, Eye, Pencil, Trash2, X } from 'lucide-react';
 import { Spinner } from '@/components/feedback/Spinner';
 import { SegmentedToggle } from '@/components/forms/SegmentedToggle';
+import { CanvasMinimap } from './CanvasMinimap';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/features/auth/useProfile';
@@ -959,6 +960,17 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
             onPointerWorldMove={editing ? setLocalCursor : undefined}
           />
         </div>
+
+        {viewport.width > 0 && (
+          <div className="pointer-events-none absolute bottom-3 right-3 z-10 hidden sm:block">
+            <CanvasMinimap
+              elements={visibleElements}
+              camera={camera}
+              viewport={viewport}
+              onCameraChange={setCamera}
+            />
+          </div>
+        )}
 
         <div className="pointer-events-none absolute inset-x-0 top-0 flex flex-col items-center gap-2 p-2 sm:p-3">
           <CanvasToolbar

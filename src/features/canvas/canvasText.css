@@ -150,3 +150,62 @@
 .canvas-rich--ruled h2 {
   font-size: 1.2em;
 }
+
+/* --- Shared block schema additions (Phase 3): H3, task lists, toggle blocks,
+   and custom list-style variants — scoped to the canvas overlay. --- */
+.canvas-rich h3 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.12em;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0.2em 0 0.2em;
+}
+.canvas-rich ul[data-list-style='disc'] { list-style-type: disc; }
+.canvas-rich ul[data-list-style='circle'] { list-style-type: circle; }
+.canvas-rich ul[data-list-style='square'] { list-style-type: square; }
+.canvas-rich ul[data-list-style='hyphen'] { list-style-type: '–  '; }
+.canvas-rich ol[data-list-style='decimal'] { list-style-type: decimal; }
+.canvas-rich ol[data-list-style='lower-alpha'] { list-style-type: lower-alpha; }
+.canvas-rich ol[data-list-style='upper-alpha'] { list-style-type: upper-alpha; }
+.canvas-rich ol[data-list-style='lower-roman'] { list-style-type: lower-roman; }
+.canvas-rich ol[data-list-style='upper-roman'] { list-style-type: upper-roman; }
+.canvas-rich ul[data-type='taskList'] {
+  list-style: none;
+  padding-left: 0.1em;
+}
+.canvas-rich ul[data-type='taskList'] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4em;
+}
+.canvas-rich ul[data-type='taskList'] li > label {
+  margin-top: 0.28em;
+  user-select: none;
+}
+.canvas-rich ul[data-type='taskList'] input[type='checkbox'] {
+  accent-color: var(--accent-from);
+  cursor: pointer;
+}
+.canvas-rich ul[data-type='taskList'] li[data-checked='true'] > div {
+  color: rgb(var(--fg-muted));
+  text-decoration: line-through;
+}
+.canvas-rich [data-type='details'],
+.canvas-rich details {
+  border: 1px solid var(--glass-border);
+  border-radius: 0.5em;
+  padding: 0.3em 0.5em;
+  margin: 0.3em 0;
+}
+.canvas-rich [data-type='details'] > button {
+  background: transparent;
+  border: none;
+  color: rgb(var(--fg-muted));
+  cursor: pointer;
+  margin-right: 0.25em;
+}
+.canvas-rich summary {
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}

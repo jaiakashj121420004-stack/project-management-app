@@ -41,6 +41,8 @@ interface LibraryContentsProps {
   onOpenItem: (item: { kind: 'note' | 'canvas'; id: string }) => void;
   /** Open the shared "New folder" dialog (owned by LibraryPage). */
   onNewFolder: () => void;
+  /** Global title filter; when non-empty, shows matches across all folders. */
+  search: string;
 }
 
 type Dialog =
@@ -68,6 +70,7 @@ export function LibraryContents({
   onNavigate,
   onOpenItem,
   onNewFolder,
+  search,
 }: LibraryContentsProps) {
   const [dialog, setDialog] = useState<Dialog>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
@@ -86,15 +89,48 @@ export function LibraryContents({
 
   const crumbs = useMemo(() => folderPath(folders, currentFolderId), [folders, currentFolderId]);
 
+  const query = search.trim().toLowerCase();
+
   const items = useMemo<LibraryItem[]>(() => {
+    // Search mode: flat title matches across every folder.
+    if (query) {
+      const folderHits: LibraryItem[] = folders
+        .filter((folder) => folder.name.toLowerCase().includes(query))
+        .map((folder) => ({ kind: 'folder', id: folder.id, name: folder.name }));
+      const noteHits: LibraryItem[] = notes
+        .filter((note) => note.title.toLowerCase().includes(query))
+        .map((note) => ({
+          kind: 'note',
+          id: note.id,
+          title: note.title,
+          subtitle: `Note · edited ${rel(note.updated_at)}`,
+        }));
+      const canvasHits: LibraryItem[] = canvases
+        .filter((canvas) => canvas.title.toLowerCase().includes(query))
+        .map((canvas) => ({
+          kind: 'canvas',
+          id: canvas.id,
+          title: canvas.title,
+          subtitle: `${PAGE_LABELS[canvas.page_type]} canvas · edited ${rel(canvas.updated_at)}`,
+        }));
+      return [...folderHits, ...noteHits, ...canvasHits];
+    }
+
     const folderItems: LibraryItem[] = folders
       .filter((folder) => folder.parent_id === currentFolderId)
       .map((folder) => ({ kind: 'folder', id: folder.id, name: folder.name }));
 
+    // A SHARED item carries the sharer's folder_id — a folder we don't own and
+    // can't see. Treat any folder_id that isn't one of ours as the Library root,
+    // so shared notes/canvases surface at the top level instead of vanishing.
+    const myFolders = new Set(folders.map((folder) => folder.id));
+    const effectiveFolder = (folderId: string | null): string | null =>
+      folderId && myFolders.has(folderId) ? folderId : null;
+
     // Notes + canvases together, newest-edited first (folders always lead).
     const files: { updated: string; item: LibraryItem }[] = [
       ...notes
-        .filter((note) => note.folder_id === currentFolderId)
+        .filter((note) => effectiveFolder(note.folder_id) === currentFolderId)
         .map((note) => ({
           updated: note.updated_at,
           item: {
@@ -105,7 +141,7 @@ export function LibraryContents({
           },
         })),
       ...canvases
-        .filter((canvas) => canvas.folder_id === currentFolderId)
+        .filter((canvas) => effectiveFolder(canvas.folder_id) === currentFolderId)
         .map((canvas) => ({
           updated: canvas.updated_at,
           item: {
@@ -120,7 +156,7 @@ export function LibraryContents({
     files.sort((a, b) => new Date(b.updated).getTime() - new Date(a.updated).getTime());
 
     return [...folderItems, ...files.map((file) => file.item)];
-  }, [folders, notes, canvases, currentFolderId]);
+  }, [folders, notes, canvases, currentFolderId, query]);
 
   function handleNewNote() {
     createNote.mutate(

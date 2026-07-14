@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
-import { ArrowLeft, Library as LibraryIcon } from 'lucide-react';
+import { ArrowLeft, Library as LibraryIcon, Search, X } from 'lucide-react';
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import { Spinner } from '@/components/feedback/Spinner';
 import { Reveal } from '@/components/motion/Reveal';
 import { useIsPro } from '@/features/billing';
+import { ShareButton } from '@/features/sharing';
 import { useAllCanvases } from '@/features/canvas/useCanvas';
 import { FolderTree } from './FolderTree';
 import { LibraryContents } from './LibraryContents';
@@ -32,6 +33,7 @@ export function LibraryPage() {
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [open, setOpen] = useState<OpenItem>(null);
   const [newFolderOpen, setNewFolderOpen] = useState(false);
+  const [search, setSearch] = useState('');
 
   // Personal canvases only (project canvases live in their project's Canvas tab).
   const personalCanvases = useMemo(
@@ -54,6 +56,7 @@ export function LibraryPage() {
 
   function navigate(folderId: string | null) {
     setCurrentFolderId(folderId);
+    setSearch('');
   }
 
   return (
@@ -80,14 +83,19 @@ export function LibraryPage() {
         </GlassPanel>
       ) : open ? (
         <div className="flex flex-col gap-4">
-          <button
-            type="button"
-            onClick={() => setOpen(null)}
-            className="inline-flex w-fit items-center gap-1.5 rounded-lg px-2 py-1 text-sm text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
-          >
-            <ArrowLeft size={16} /> Library
-            <span className="text-fg-subtle">· {openTitle}</span>
-          </button>
+          <div className="flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={() => setOpen(null)}
+              className="inline-flex w-fit items-center gap-1.5 rounded-lg px-2 py-1 text-sm text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+            >
+              <ArrowLeft size={16} /> Library
+              <span className="text-fg-subtle">· {openTitle}</span>
+            </button>
+            {open.kind === 'canvas' && (
+              <ShareButton kind="canvas" targetId={open.id} title={openTitle} />
+            )}
+          </div>
 
           {open.kind === 'note' ? (
             openNote ? (
@@ -102,7 +110,29 @@ export function LibraryPage() {
           )}
         </div>
       ) : (
-        <div className="md:grid md:grid-cols-[16rem_1fr] md:gap-6">
+        <div className="flex flex-col gap-4">
+          <div className="relative max-w-md">
+            <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle" />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search your Library…"
+              aria-label="Search the Library"
+              className="w-full rounded-xl border border-[var(--glass-border)] bg-[var(--field-bg)] py-2.5 pl-9 pr-9 text-sm text-fg placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
+            />
+            {search && (
+              <button
+                type="button"
+                aria-label="Clear search"
+                onClick={() => setSearch('')}
+                className="absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-md text-fg-subtle hover:bg-[var(--glass-fill)] hover:text-fg"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          <div className="md:grid md:grid-cols-[16rem_1fr] md:gap-6">
           {/* Folder tree — desktop only; mobile navigates via the contents view. */}
           <aside className="hidden md:block">
             <GlassPanel className="sticky top-4 p-3">
@@ -126,7 +156,9 @@ export function LibraryPage() {
               onNavigate={navigate}
               onOpenItem={setOpen}
               onNewFolder={() => setNewFolderOpen(true)}
+              search={search}
             />
+          </div>
           </div>
         </div>
       )}

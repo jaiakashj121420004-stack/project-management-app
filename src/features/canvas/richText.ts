@@ -1,173 +1,26 @@
 /**
- * richText.ts — shared Tiptap configuration for canvas text boxes (P3.3).
+ * richText.ts — canvas text now uses the ONE shared block schema (Nvexis Phase 3).
  *
- * A text element stores its content as Tiptap document JSON in `element.body`
- * (full-fidelity, re-editable) plus a plain-text mirror in `element.text` (used
- * for previews + the empty-state check). Both the live editor (RichTextBox) and
- * the static renderer (TextLayer) must use the SAME extension list, so it lives
- * here once. Konva-free — safe to import from the lazy canvas chunk.
- */
-import { generateHTML, type AnyExtension, type JSONContent } from '@tiptap/core';
-import { StarterKit } from '@tiptap/starter-kit';
-import { Highlight } from '@tiptap/extension-highlight';
-import { Color, TextStyle } from '@tiptap/extension-text-style';
-import { Link } from '@tiptap/extension-link';
-import { Collaboration } from '@tiptap/extension-collaboration';
-import { CollaborationCaret } from '@tiptap/extension-collaboration-caret';
-import type { XmlFragment } from 'yjs';
-
-/**
- * Allow only safe link targets, mirroring the notes markdown allow-list. Returns
- * the trimmed URL for http/https/mailto, else null. A `javascript:`, `data:` or
- * any other scheme is rejected — this is the single source of truth for link
- * safety, used both by the toolbar (before setting a link) and by the schema
- * below (on parse + render), so an XSS href can never reach the DOM.
- */
-export function safeLinkHref(raw: string): string | null {
-  const url = raw.trim();
-  return /^(https?:\/\/|mailto:)/i.test(url) ? url : null;
-}
-
-/**
- * Link, hardened. The body is untrusted jsonb from the DB and the static
- * renderer feeds generateHTML output straight into dangerouslySetInnerHTML, so
- * the href is sanitised on BOTH parse and render: a stored `javascript:`/`data:`
- * URL is dropped to no href rather than emitted. Opens in a new tab with
- * `rel="noopener noreferrer nofollow"`, and never navigates on click while
- * editing.
- */
-const SafeLink = Link.extend({
-  addAttributes() {
-    return {
-      ...this.parent?.(),
-      href: {
-        default: null,
-        parseHTML: (el: HTMLElement) => safeLinkHref(el.getAttribute('href') ?? ''),
-        renderHTML: (attrs: Record<string, unknown>) => {
-          const safe = safeLinkHref(typeof attrs.href === 'string' ? attrs.href : '');
-          return safe ? { href: safe } : {};
-        },
-      },
-    };
-  },
-}).configure({
-  openOnClick: false,
-  autolink: true,
-  protocols: ['http', 'https', 'mailto'],
-  HTMLAttributes: { rel: 'noopener noreferrer nofollow', target: '_blank' },
-});
-
-/**
- * The canvas rich-text feature set. StarterKit v3 already bundles bold, italic,
- * underline, strike, code, headings, bullet/ordered lists, blockquote and
- * horizontal rule; Highlight adds the marker; TextStyle + Color add per-range
- * text colour. StarterKit's own Link is disabled in favour of the sanitising
- * SafeLink above. Heading is capped at two levels so a text box stays a text
- * box, not a document.
+ * Previously the canvas defined its own Tiptap extension list. It now re-exports
+ * the shared editor's schema + serialise helpers under the names the canvas
+ * already imports, so canvas text boxes and standalone/project notes share
+ * exactly one content model and renderer — a document authored in either place
+ * round-trips losslessly. New block types (task lists, toggle blocks, custom list
+ * styles, H3) are styled for the canvas overlay in canvasText.css.
  *
- * Both the live editor (RichTextBox) and the static renderer (TextLayer) import
- * this same list, so a box looks identical whether or not it's being edited. In
- * P3.7 the body becomes a Yjs fragment for collaborative editing; this stays a
- * plain extension list so that swap is isolated to RichTextBox.
+ * Kept as a thin shim so the canvas files (RichTextBox / TextLayer / CanvasStage /
+ * TextFormatToolbar / collab/yCanvasDoc) need no import changes.
  */
-export const textExtensions = [
-  StarterKit.configure({
-    heading: { levels: [1, 2] },
-    link: false,
-  }),
-  Highlight,
-  TextStyle,
-  Color,
-  SafeLink,
-];
+export {
+  blockExtensions as textExtensions,
+  collabBlockExtensions as collabTextExtensions,
+  safeLinkHref,
+  type CaretUser,
+} from '@/features/editor/extensions';
 
-/** The participant shown by the collaborative caret (name + cursor colour). */
-export interface CaretUser {
-  name: string;
-  color: string;
-}
-
-/**
- * The COLLABORATIVE extension list for the live editor (P3.7). Identical schema
- * to `textExtensions` (so fragment ⇄ JSON conversion stays consistent), but:
- *   - StarterKit's local undo/redo is disabled — Yjs owns history, and a local
- *     ProseMirror history would fight the CRDT;
- *   - `Collaboration` binds the editor to this box's `Y.XmlFragment`, so two
- *     people typing in the same box merge keystroke-by-keystroke;
- *   - `CollaborationCaret` shows each remote editor's caret + name inside the box.
- *
- * `content` must NOT be passed to a collaborative editor (the fragment is the
- * source of truth) — the fragment is pre-seeded from `body` when the doc is built.
- */
-export function collabTextExtensions(opts: {
-  fragment: XmlFragment;
-  provider: { awareness: unknown };
-  user: CaretUser;
-}): AnyExtension[] {
-  return [
-    StarterKit.configure({ heading: { levels: [1, 2] }, link: false, undoRedo: false }),
-    Highlight,
-    TextStyle,
-    Color,
-    SafeLink,
-    Collaboration.configure({ fragment: opts.fragment }),
-    CollaborationCaret.configure({ provider: opts.provider, user: opts.user }),
-  ];
-}
-
-/** An empty Tiptap document (a single empty paragraph) for a brand-new box. */
-export function emptyTextDoc(): JSONContent {
-  return { type: 'doc', content: [{ type: 'paragraph' }] };
-}
-
-/**
- * Render a stored Tiptap document to an HTML string for static (non-editing)
- * display. Returns '' for an empty/missing body so callers can show their own
- * placeholder. Defensive: a malformed body never throws past this boundary.
- *
- * Results are cached by body reference (a body object is replaced, never mutated,
- * on every edit) so panning/zooming — which re-renders the overlay every frame —
- * doesn't re-serialise every text box each time.
- */
-const htmlCache = new WeakMap<object, string>();
-
-export function renderTextHtml(body: Record<string, unknown> | null): string {
-  if (!body) return '';
-  const cached = htmlCache.get(body);
-  if (cached !== undefined) return cached;
-  try {
-    const html = generateHTML(body, textExtensions);
-    htmlCache.set(body, html);
-    return html;
-  } catch {
-    htmlCache.set(body, '');
-    return '';
-  }
-}
-
-/**
- * Flatten a Tiptap document to plain text (newline between block nodes). Used for
- * the `element.text` mirror that drives previews + the empty-state check. Walks
- * the JSON directly so it needs no editor instance.
- */
-export function docToPlainText(body: Record<string, unknown> | null): string {
-  if (!body) return '';
-  const blocks: string[] = [];
-
-  const walk = (node: JSONContent): string => {
-    if (node.type === 'text') return node.text ?? '';
-    const inner = (node.content ?? []).map(walk).join('');
-    return inner;
-  };
-
-  const doc = body as JSONContent;
-  for (const child of doc.content ?? []) {
-    blocks.push(walk(child));
-  }
-  return blocks.join('\n').trim();
-}
-
-/** True when a body has no visible text (drives the dashed empty-box hint). */
-export function isEmptyDoc(body: Record<string, unknown> | null): boolean {
-  return docToPlainText(body).length === 0;
-}
+export {
+  renderBlockHtml as renderTextHtml,
+  docToPlainText,
+  isEmptyDoc,
+  emptyDoc as emptyTextDoc,
+} from '@/features/editor/serialize';

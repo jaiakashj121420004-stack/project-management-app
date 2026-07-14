@@ -1,0 +1,182 @@
+/* =========================================================================
+   Lodestar — the marketing site theme. A celestial "guiding star" front door
+   for Aurora (a Nvexis product line). Dark starlit hero → warm parchment
+   feature sections. Uses the Nvexis palette (oxblood accent, parchment/ink,
+   Fraunces/Spectral/IBM Plex Mono) plus a gilt "lodestar" gold. Scoped to
+   `.lode` so it never leaks into the app.
+   ========================================================================= */
+.lode {
+  --lode-gold: #d8b455;
+  --lode-gold-deep: #b8902f;
+  --lode-night: #120d0b;
+  --lode-night-2: #1c1512;
+  --lode-oxblood: #c24a40;
+  --lode-parchment: #ece4d6;
+  --lode-ink: #221a14;
+}
+
+/* ---- Night hero backdrop ------------------------------------------------- */
+.lode-night {
+  position: relative;
+  background:
+    radial-gradient(120% 90% at 50% -10%, rgba(216, 180, 85, 0.16), transparent 55%),
+    radial-gradient(80% 70% at 80% 20%, rgba(194, 74, 64, 0.14), transparent 60%),
+    linear-gradient(180deg, var(--lode-night) 0%, var(--lode-night-2) 70%, #241a15 100%);
+  color: var(--lode-parchment);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Starfield — three tiled layers of tiny stars + a slow twinkle. */
+.lode-stars::before,
+.lode-stars::after {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  z-index: -1;
+  background-repeat: repeat;
+  pointer-events: none;
+}
+.lode-stars::before {
+  background-image:
+    radial-gradient(1.5px 1.5px at 20px 30px, rgba(255, 250, 240, 0.9), transparent),
+    radial-gradient(1px 1px at 120px 80px, rgba(255, 250, 240, 0.7), transparent),
+    radial-gradient(1.5px 1.5px at 200px 160px, rgba(255, 245, 225, 0.8), transparent),
+    radial-gradient(1px 1px at 260px 40px, rgba(255, 250, 240, 0.6), transparent);
+  background-size: 300px 220px;
+  opacity: 0.55;
+  animation: lode-twinkle 6s ease-in-out infinite alternate;
+}
+.lode-stars::after {
+  background-image:
+    radial-gradient(1px 1px at 60px 120px, rgba(216, 180, 85, 0.8), transparent),
+    radial-gradient(1.5px 1.5px at 180px 60px, rgba(255, 250, 240, 0.7), transparent),
+    radial-gradient(1px 1px at 40px 200px, rgba(255, 250, 240, 0.5), transparent);
+  background-size: 240px 260px;
+  opacity: 0.4;
+  animation: lode-twinkle 9s ease-in-out infinite alternate-reverse;
+}
+@keyframes lode-twinkle {
+  from { opacity: 0.25; }
+  to { opacity: 0.6; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lode-stars::before,
+  .lode-stars::after { animation: none; }
+}
+
+/* The guiding lodestar — a soft radiant glow behind the prism logo. */
+.lode-glow {
+  position: relative;
+}
+.lode-glow::before {
+  content: '';
+  position: absolute;
+  inset: -40%;
+  z-index: -1;
+  background: radial-gradient(circle, rgba(216, 180, 85, 0.35), rgba(194, 74, 64, 0.12) 45%, transparent 70%);
+  filter: blur(6px);
+}
+
+/* ---- Type accents -------------------------------------------------------- */
+.lode-gilt {
+  background: linear-gradient(100deg, var(--lode-gold) 0%, #f0dca0 40%, var(--lode-gold-deep) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.lode-eyebrow {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 0.72rem;
+}
+
+/* ---- Faux app-window chrome (stand-in for screenshots) ------------------- */
+.lode-window {
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 245, 225, 0.14);
+  background: linear-gradient(180deg, rgba(28, 21, 18, 0.92), rgba(18, 13, 11, 0.96));
+  box-shadow: 0 40px 90px -40px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(216, 180, 85, 0.06);
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+}
+.lode-window--paper {
+  background: linear-gradient(180deg, #f6f0e4, #efe7d8);
+  border-color: rgba(122, 42, 38, 0.16);
+  color: var(--lode-ink);
+  box-shadow: 0 40px 90px -45px rgba(60, 30, 20, 0.45);
+}
+.lode-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid rgba(255, 245, 225, 0.08);
+}
+.lode-window--paper .lode-titlebar {
+  border-bottom-color: rgba(122, 42, 38, 0.12);
+}
+.lode-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 999px;
+}
+
+/* Parchment feature band. */
+.lode-paper {
+  background:
+    radial-gradient(90% 60% at 15% 0%, rgba(216, 180, 85, 0.08), transparent 60%),
+    linear-gradient(180deg, #efe7d8 0%, #ece4d6 100%);
+  color: var(--lode-ink);
+}
+.lode-card {
+  border: 1px solid rgba(122, 42, 38, 0.14);
+  background: rgba(255, 253, 248, 0.6);
+  border-radius: 1rem;
+  backdrop-filter: blur(6px);
+}
+.lode-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid rgba(216, 180, 85, 0.4);
+  color: var(--lode-gold-deep);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.72rem;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+/* ---- Primary call-to-action (gilt "star" button) ------------------------- */
+.lode-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 0.8rem;
+  padding: 0.62rem 1.2rem;
+  font-weight: 600;
+  color: #1b120e;
+  background: linear-gradient(110deg, var(--lode-gold), #efd88f 45%, var(--lode-gold-deep));
+  box-shadow: 0 14px 32px -14px rgba(216, 180, 85, 0.65);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  white-space: nowrap;
+}
+.lode-cta:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+}
+.lode-cta:active {
+  transform: translateY(0);
+}
+.lode-cta--ghost {
+  background: transparent;
+  color: var(--lode-ink);
+  border: 1px solid rgba(122, 42, 38, 0.3);
+  box-shadow: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lode-cta:hover {
+    transform: none;
+  }
+}

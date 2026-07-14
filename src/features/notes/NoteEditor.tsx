@@ -10,6 +10,8 @@ import {
 import { AlertCircle, Check, Trash2 } from 'lucide-react';
 import type { JSONContent } from '@tiptap/core';
 import { Spinner } from '@/components/feedback/Spinner';
+import { useAuth } from '@/hooks/useAuth';
+import { ShareButton } from '@/features/sharing';
 import type { Note } from '@/types/database';
 import { noteTitleSchema } from './schemas';
 
@@ -56,6 +58,10 @@ const AUTOSAVE_DELAY = 700;
  * alongside for previews + search. Save status is derived during render.
  */
 export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: NoteEditorProps) {
+  const { user } = useAuth();
+  // A standalone note the current user owns can be shared with other users.
+  const canShare = note.project_id === null && note.owner_id === user?.id;
+
   const [title, setTitle] = useState(note.title);
   const [savedTitle, setSavedTitle] = useState(note.title);
   const [docDirty, setDocDirty] = useState(false);
@@ -148,6 +154,9 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
 
         {canEdit && (
           <div className="flex shrink-0 items-center gap-2">
+            {canShare && (
+              <ShareButton kind="note" targetId={note.id} title={note.title} className="hidden sm:inline-flex" />
+            )}
             <SaveIndicator status={status} />
             <button
               type="button"

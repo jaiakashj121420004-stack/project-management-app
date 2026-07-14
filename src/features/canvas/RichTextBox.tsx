@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, type CSSProperties, type Keybo
 import type { XmlFragment } from 'yjs';
 import { EditorContent, useEditor } from '@tiptap/react';
 import { collabTextExtensions, type CaretUser } from './richText';
+import { SlashCommand } from '@/features/editor/suggestion/SlashCommand';
+import { EmojiCommand } from '@/features/editor/suggestion/EmojiCommand';
 import { TextFormatToolbar } from './TextFormatToolbar';
 
 interface RichTextBoxProps {
@@ -96,9 +98,15 @@ export function RichTextBox({
     }
   }, []);
 
-  // Collaborative extensions are built once for this fragment/box.
+  // Collaborative extensions are built once for this fragment/box. The slash `/`
+  // and emoji `:` commands are added here (editor-only, not part of the shared
+  // schema) so canvas text gets the same block picker as notes.
   const extensions = useMemo(
-    () => collabTextExtensions({ fragment, provider: caretProvider, user }),
+    () => [
+      ...collabTextExtensions({ fragment, provider: caretProvider, user }),
+      SlashCommand,
+      EmojiCommand,
+    ],
     [fragment, caretProvider, user],
   );
 
