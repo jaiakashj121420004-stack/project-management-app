@@ -14,7 +14,7 @@
 
 If these three are read, you have complete context. Do not duplicate their content elsewhere — link to it.
 
-**Active multi-phase upgrade:** the Nvexis rebrand + notes/canvas expansion is tracked in **[NVEXIS-UPGRADE-PLAN.md](./NVEXIS-UPGRADE-PLAN.md)** (locked decisions, Phase 1 done, Phases 2–6 specs, and session/environment quirks). Read it before continuing that work. **Currently: Phases 1–2 shipped + live (Phase 2 = Library + unified folder tree + standalone notes; migration applied, deployed, verified); Phase 3 (Notion-style block editor + custom colours) is next.**
+**Active multi-phase upgrade:** the Nvexis rebrand + notes/canvas expansion is tracked in **[NVEXIS-UPGRADE-PLAN.md](./NVEXIS-UPGRADE-PLAN.md)** (locked decisions, Phase 1 done, Phases 2–6 specs, and session/environment quirks). Read it before continuing that work. **Currently: Phases 1–6 built + a 2026-07-14 polish pass. Phases 1–2 are LIVE; Phases 3–6 (block editor + custom colours, notes/canvas sharing, canvas minimap/frames/outline, extras) plus the polish (toggle blocks, note Markdown export, slash-menu templates, emoji icons on notes/folders, note cover images, Pro audio/video embeds, images with drag-resize, Library-card icons, canvas jump-to-element + named Frame elements, unified highlight swatches) are written + type-verified via review subagents and PENDING build/commit + 3 idempotent migrations (`20260714180000_note_media`, `20260714200000_notes_folders_icon`, `20260714210000_note_cover`) on Windows — see `memory.md`. Remaining: runtime-test, then go-live (Dodo LIVE keys, KYC, legal).**
 
 **First-time environment setup** (accounts, keys, git remote, Cloudflare) lives in [SETUP.md](./SETUP.md) — a one-time human checklist, separate from the build prompts.
 

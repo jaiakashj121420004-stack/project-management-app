@@ -96,12 +96,13 @@ export function LibraryContents({
     if (query) {
       const folderHits: LibraryItem[] = folders
         .filter((folder) => folder.name.toLowerCase().includes(query))
-        .map((folder) => ({ kind: 'folder', id: folder.id, name: folder.name }));
+        .map((folder) => ({ kind: 'folder', id: folder.id, name: folder.name, icon: folder.icon }));
       const noteHits: LibraryItem[] = notes
         .filter((note) => note.title.toLowerCase().includes(query))
         .map((note) => ({
           kind: 'note',
           id: note.id,
+          icon: note.icon,
           title: note.title,
           subtitle: `Note · edited ${rel(note.updated_at)}`,
         }));
@@ -118,7 +119,7 @@ export function LibraryContents({
 
     const folderItems: LibraryItem[] = folders
       .filter((folder) => folder.parent_id === currentFolderId)
-      .map((folder) => ({ kind: 'folder', id: folder.id, name: folder.name }));
+      .map((folder) => ({ kind: 'folder', id: folder.id, name: folder.name, icon: folder.icon }));
 
     // A SHARED item carries the sharer's folder_id — a folder we don't own and
     // can't see. Treat any folder_id that isn't one of ours as the Library root,
@@ -136,6 +137,7 @@ export function LibraryContents({
           item: {
             kind: 'note' as const,
             id: note.id,
+            icon: note.icon,
             title: note.title,
             subtitle: `Note · edited ${rel(note.updated_at)}`,
           },

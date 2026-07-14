@@ -169,12 +169,12 @@ Kept deliberately tight. Postgres tables:
 | `cards` | Tasks | `id`, `project_id`, `column_id`, `title`, `description`, `due_date`, `assignee_id`, `position`, `created_at` |
 | `checklist_items` | To-do list inside a card | `id`, `card_id`, `text`, `is_done`, `position` |
 | `labels` + `card_labels` | Tags / filtering | `name`, `color` / `card_id`, `label_id` |
-| `notes` | Notes/docs per project | `id`, `project_id`, `title`, `content`, `updated_at` |
+| `notes` | Notes/docs — **project OR standalone** | `id`, `project_id?` (nullable), `owner_id`, `folder_id?`, `title`, `content` (plain-text mirror), `content_json` (Tiptap doc, source of truth), `icon?` (emoji), `cover?` (note-media path), `updated_at` |
 | `canvas_notes` | Infinite whiteboard (Pro) — **project OR personal** | `id`, `project_id?` (nullable), `owner_id`, `title`, `page_type`, `scene` (jsonb, denormalised fast-read), `doc_state` (BYTEA, **Yjs CRDT snapshot — live since P3.7**), `updated_at` |
 | `canvas_members` | Per-canvas sharing (for personal canvases) | `canvas_id`, `user_id`, `role` (`editor`/`viewer`) |
 | `comments` | Discussion on a card (collab) | `id`, `card_id`, `user_id`, `body`, `created_at` |
 
-**Nvexis upgrade — Phase 2 additions (planned, see `NVEXIS-UPGRADE-PLAN.md` §4):** a new **`folders`** table (self-referential `parent_id` for a nested "Library" tree, `owner_id`), **`notes` becomes standalone** (nullable `project_id` + new `owner_id` + `folder_id`), and `canvas_notes` gains `folder_id`. Later phases add `note_members` (Phase 4 collaboration) and canvas **Frame** elements (Phase 5).
+**Nvexis upgrade — SHIPPED (Phases 2–6, 2026-07-13 → 07-14):** a **`folders`** table (self-referential `parent_id` for a nested "Library" tree, `owner_id`, plus an `icon?` emoji); **`notes` is standalone** (nullable `project_id` + `owner_id` + `folder_id`) carrying a `content_json` Tiptap document (source of truth), an `icon?` emoji and a `cover?` image path; `canvas_notes` gained `folder_id`; **`note_members`** (Phase 4 sharing); and a canvas **Frame** element type (`type:'frame'` with `label`/`color`, stored inside the `scene` jsonb — Phase 5, no column). Media for notes lives in the private **`note-media`** Storage bucket (images + covers). See `NVEXIS-UPGRADE-PLAN.md` §4 + `memory.md`.
 
 **Feature → data mapping:** Multiple projects → `projects`. Kanban → `columns` + `cards` (`position` for ordering). To-do lists → `checklist_items`. Due dates & reminders → `cards.due_date` (+ reminders in Phase 9). Calendar → query cards with a `due_date`. Notes → `notes`. Canvas → `canvas_notes`. Collaboration → `project_members` + Realtime.
 

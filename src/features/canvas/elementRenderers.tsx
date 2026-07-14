@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Group, Image as KonvaImage, Path, Rect, Text } from 'react-konva';
 import type Konva from 'konva';
 import { MIN_ELEMENT_SIZE, type ElementBox } from './constants';
-import type { CanvasElement, ElementPatch, ImageElement, StrokeElement } from './elements';
+import type { CanvasElement, ElementPatch, FrameElement, ImageElement, StrokeElement } from './elements';
 import { strokePathData } from './freehand';
 import { useSignedUrl } from './useSignedUrl';
 import type { CanvasPalette } from './useCanvasPalette';
@@ -206,6 +206,10 @@ function ElementVisual({ element, palette }: { element: CanvasElement; palette: 
     return <ImageVisual element={element} palette={palette} />;
   }
 
+  if (element.type === 'frame') {
+    return <FrameVisual element={element} />;
+  }
+
   // Media (audio/video): Konva renders ONLY the background rect — the hit /
   // transform / drag target. The actual <audio>/<video> player or embed <iframe>
   // is drawn by the HTML MediaLayer overlay (Konva can't host them), layered on
@@ -247,6 +251,46 @@ function StrokeVisual({ element }: { element: StrokeElement }) {
       perfectDrawEnabled={false}
       shadowForStrokeEnabled={false}
     />
+  );
+}
+
+/** A named frame: a translucent tinted rounded rect + a border in the frame
+ *  colour, with its label at the top-left. The filled rect is the hit target, so
+ *  the frame is selectable in its empty areas while content on top stays clickable. */
+function FrameVisual({ element }: { element: FrameElement }) {
+  const { width, height, color } = element;
+  return (
+    <>
+      <Rect
+        width={width}
+        height={height}
+        cornerRadius={14}
+        fill={color}
+        opacity={0.08}
+        perfectDrawEnabled={false}
+      />
+      <Rect
+        width={width}
+        height={height}
+        cornerRadius={14}
+        stroke={color}
+        strokeWidth={1.5}
+        opacity={0.55}
+        fillEnabled={false}
+        listening={false}
+        perfectDrawEnabled={false}
+      />
+      <Text
+        text={element.label || 'Frame'}
+        x={12}
+        y={10}
+        fontSize={13}
+        fontStyle="bold"
+        fill={color}
+        listening={false}
+        perfectDrawEnabled={false}
+      />
+    </>
   );
 }
 

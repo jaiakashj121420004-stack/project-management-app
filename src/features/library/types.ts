@@ -2,8 +2,8 @@
  *  personal canvas. Kept intentionally small; the components resolve icons +
  *  actions from `kind`. */
 export type LibraryItem =
-  | { kind: 'folder'; id: string; name: string }
-  | { kind: 'note'; id: string; title: string; subtitle: string }
+  | { kind: 'folder'; id: string; name: string; icon?: string | null }
+  | { kind: 'note'; id: string; title: string; subtitle: string; icon?: string | null }
   | { kind: 'canvas'; id: string; title: string; subtitle: string };
 
 export function itemLabel(item: LibraryItem): string {

@@ -110,8 +110,10 @@ Every new screen must be built mobile-first and verified on a phone viewport: pr
 
 - [x] Phase 1 — Nvexis rebrand + mobile pass (core done; minor polish optional)
 - [x] Phase 2 — Library + unified folder tree + standalone notes (2026-07-13; shipped, migration applied, deployed, verified live)
-- [ ] Phase 3 — Notion-style block editor + custom colours
-- [ ] Phase 4 — Collaboration for notes + canvas sharing UI
-- [ ] Phase 5 — Canvas navigation: minimap, frames, outline
-- [ ] Phase 6 — Extras (command palette, search, backlinks, export, templates)
+- [x] Phase 3 — Notion-style block editor + custom colours (2026-07-13→14; slash menu, bubble toolbar, emoji, **toggle blocks**, list styles, custom colour swatches, note **images**/**audio-video embeds (Pro)**/**canvas links**, **Markdown export**, **templates**, **emoji icons**, **cover images** — built + type-verified, pending build/commit)
+- [x] Phase 4 — Collaboration for notes + canvas sharing UI (2026-07-14; reliable share + RLS chosen over blind Yjs-for-notes; `features/sharing`)
+- [x] Phase 5 — Canvas navigation: minimap, frames, outline (2026-07-14; corner minimap + **jump-to-element** from the Layers panel + a **named Frame element type** with an Add-frame tool + inline rename)
+- [x] Phase 6 — Extras (2026-07-14; ⌘K command palette + Library search + note export + templates shipped; backlinks/version-history still open)
+
+> **Progress note (2026-07-14):** all six phases are built. Phases 1–2 are live; Phases 3–6 + the polish pass are written and type-verified via review subagents but **not yet built/committed** on Windows (the in-session Linux mount serves truncated reads). Apply the three idempotent migrations (`20260714180000_note_media`, `20260714200000_notes_folders_icon`, `20260714210000_note_cover`), then `npm run build` + commit per slice. Only **go-live** (Dodo LIVE keys, KYC, legal) and the marketing re-skin polish remain.
 - [ ] Marketing re-skin + go-live (LAST)

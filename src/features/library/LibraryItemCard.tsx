@@ -52,6 +52,7 @@ export function LibraryItemCard({
 
   const Icon = ICONS[item.kind];
   const label = itemLabel(item);
+  const emoji = item.kind !== 'canvas' ? item.icon : null;
   const subtitle = item.kind === 'folder' ? 'Folder' : item.subtitle;
 
   useEffect(() => {
@@ -125,7 +126,7 @@ export function LibraryItemCard({
               : 'bg-[var(--glass-fill)] text-fg-muted',
           )}
         >
-          <Icon size={20} />
+          {emoji ? <span className="text-xl leading-none">{emoji}</span> : <Icon size={20} />}
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate font-display text-[0.98rem] font-semibold text-fg">{label}</p>

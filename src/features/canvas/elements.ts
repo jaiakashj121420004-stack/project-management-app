@@ -93,8 +93,24 @@ export interface MediaElement extends CanvasElementBase {
   embedUrl: string | null;
 }
 
+/** A named region — a labeled rounded rectangle drawn BEHIND content to group
+ *  related elements. Purely visual + organisational; participates in selection,
+ *  move, resize and the layers outline like any other element. */
+export interface FrameElement extends CanvasElementBase {
+  type: 'frame';
+  /** The frame's title, shown as a chip at its top-left corner. */
+  label: string;
+  /** Accent colour (hex) for the border, translucent fill and label chip. */
+  color: string;
+}
+
 /** The discriminated union of everything that can live on a canvas. */
-export type CanvasElement = StrokeElement | TextBoxElement | ImageElement | MediaElement;
+export type CanvasElement =
+  | StrokeElement
+  | TextBoxElement
+  | ImageElement
+  | MediaElement
+  | FrameElement;
 
 /** A canvas element's `type` tag. */
 export type CanvasElementType = CanvasElement['type'];
@@ -108,7 +124,8 @@ export type CanvasElementType = CanvasElement['type'];
  */
 export type ElementPatch = Partial<CanvasElementBase> &
   Partial<Pick<StrokeElement, 'points' | 'size'>> &
-  Partial<Pick<TextBoxElement, 'body' | 'text'>>;
+  Partial<Pick<TextBoxElement, 'body' | 'text'>> &
+  Partial<Pick<FrameElement, 'label' | 'color'>>;
 
 /** The persisted document body: just an ordered list of elements. */
 export interface CanvasScene {
@@ -167,11 +184,19 @@ const mediaSchema = z.object({
   embedUrl: z.string().nullable(),
 });
 
+const frameSchema = z.object({
+  ...baseSchema,
+  type: z.literal('frame'),
+  label: z.string(),
+  color: z.string(),
+});
+
 const elementSchema: z.ZodType<CanvasElement> = z.discriminatedUnion('type', [
   strokeSchema,
   textBoxSchema,
   imageSchema,
   mediaSchema,
+  frameSchema,
 ]);
 
 /** An empty scene (what a fresh canvas and the `{}` default both resolve to). */
@@ -202,6 +227,35 @@ export function parseScene(raw: unknown): CanvasScene {
 /** The next z value to place a new element on top of everything else. */
 export function topZ(elements: readonly CanvasElement[]): number {
   return elements.reduce((max, el) => Math.max(max, el.z), 0) + 1;
+}
+
+/** The next z BELOW everything — so a new frame renders behind existing content. */
+export function bottomZ(elements: readonly CanvasElement[]): number {
+  return elements.reduce((min, el) => Math.min(min, el.z), 1) - 1;
+}
+
+/**
+ * A named frame region centred on (cx, cy) in world coordinates. A fully real,
+ * persisted element (selectable / movable / resizable / rotatable) that renders
+ * behind content thanks to its low z. Mirrors the other create* factories.
+ */
+export function createFrame(cx: number, cy: number, z: number): FrameElement {
+  const width = 480;
+  const height = 320;
+  return {
+    id: crypto.randomUUID(),
+    type: 'frame',
+    x: cx - width / 2,
+    y: cy - height / 2,
+    width,
+    height,
+    rotation: 0,
+    z,
+    locked: false,
+    visible: true,
+    label: 'Frame',
+    color: '#7A2A26',
+  };
 }
 
 /**

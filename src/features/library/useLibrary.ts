@@ -219,6 +219,7 @@ export function useCreateLibraryNote() {
           folder_id: folderId,
           title: title.trim(),
           icon: null,
+          cover: null,
           content: '',
           content_json: null,
           updated_at: now,
@@ -240,18 +241,20 @@ export function useUpdateLibraryNote() {
       id: string;
       title?: string;
       icon?: string | null;
+      cover?: string | null;
       content?: string;
       content_json?: Record<string, unknown> | null;
     }
   >(
     ({ id, ...rest }) => patchNote(id, rest),
-    (notes, { id, title, icon, content, content_json }) =>
+    (notes, { id, title, icon, cover, content, content_json }) =>
       notes.map((note) =>
         note.id === id
           ? {
               ...note,
               ...(title !== undefined ? { title: title.trim() } : {}),
               ...(icon !== undefined ? { icon } : {}),
+              ...(cover !== undefined ? { cover } : {}),
               ...(content !== undefined ? { content } : {}),
               ...(content_json !== undefined ? { content_json } : {}),
               updated_at: new Date().toISOString(),

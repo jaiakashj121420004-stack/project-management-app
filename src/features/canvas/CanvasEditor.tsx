@@ -33,12 +33,14 @@ import {
   createImageElement,
   createMediaFileElement,
   createMediaEmbedElement,
+  createFrame,
   bringToFront,
   bringForward,
   sendBackward,
   sendToBack,
   duplicateElements,
   topZ,
+  bottomZ,
   type CanvasElement,
   type CanvasScene,
   type ElementPatch,
@@ -544,6 +546,17 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
     setEditingTextId(element.id);
   }
 
+  /** Drop a named frame region at the centre of the view, behind existing
+   *  content (low z), and select it so it can be moved / resized straight away. */
+  function addFrame() {
+    const worldCx = (viewport.width / 2 - camera.x) / camera.scale;
+    const worldCy = (viewport.height / 2 - camera.y) / camera.scale;
+    const element = createFrame(worldCx, worldCy, bottomZ(scene.elements));
+    commit({ elements: [...scene.elements, element] });
+    setTool('select');
+    setSelectedIds([element.id]);
+  }
+
   /** Drop a document-width writing column near the top-left of the view and start
    *  typing — Google-Docs-style long-form writing on the canvas. */
   function addPageText() {
@@ -991,6 +1004,7 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
             onRedo={redo}
             onAdd={addText}
             onAddPage={addPageText}
+            onAddFrame={addFrame}
             onAddImage={projectId !== null ? addImage : undefined}
             onAddMedia={projectId !== null ? () => setMediaModalOpen(true) : undefined}
             hasSelection={hasSelection}
@@ -1017,6 +1031,24 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
               onSize={setEraserSize}
             />
           )}
+          {editing &&
+            selectedIds.length === 1 &&
+            (() => {
+              const sole = scene.elements.find((el) => el.id === selectedIds[0]);
+              if (!sole || sole.type !== 'frame') return null;
+              return (
+                <div className="glass-menu pointer-events-auto flex items-center gap-2 rounded-xl border border-[var(--glass-border)] px-2.5 py-1.5">
+                  <span className="text-xs font-medium text-fg-subtle">Frame</span>
+                  <input
+                    value={sole.label}
+                    onChange={(event) => changeElement(sole.id, { label: event.target.value })}
+                    placeholder="Frame name"
+                    aria-label="Frame name"
+                    className="w-44 bg-transparent text-sm text-fg placeholder:text-fg-subtle focus:outline-none"
+                  />
+                </div>
+              );
+            })()}
         </div>
 
         {editing && showLayers && (

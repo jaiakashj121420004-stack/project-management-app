@@ -7,7 +7,7 @@ import {
   useState,
   type ChangeEvent,
 } from 'react';
-import { AlertCircle, Check, Download, Trash2 } from 'lucide-react';
+import { AlertCircle, Check, Download, ImagePlus, Trash2 } from 'lucide-react';
 import type { JSONContent } from '@tiptap/core';
 import { Spinner } from '@/components/feedback/Spinner';
 import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
@@ -16,6 +16,7 @@ import { ShareButton } from '@/features/sharing';
 import { EmojiPicker } from '@/components/forms/EmojiPicker';
 import { docToMarkdown } from '@/features/editor/serialize';
 import type { Note } from '@/types/database';
+import { uploadNoteImage, useNoteMediaUrl } from './noteMedia';
 import { noteTitleSchema } from './schemas';
 
 // The Tiptap block editor (+ markdown converter) is code-split — it loads only
@@ -29,6 +30,7 @@ export type UpdateNoteFn = (
     id: string;
     title?: string;
     icon?: string | null;
+    cover?: string | null;
     content?: string;
     content_json?: Record<string, unknown> | null;
   },
@@ -71,8 +73,12 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
   const [docDirty, setDocDirty] = useState(false);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'error'>('idle');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  // Emoji icon (standalone Library notes only). Written immediately on change.
+  // Emoji icon + cover image (standalone Library notes only). Written immediately.
   const [icon, setIcon] = useState<string | null>(note.icon ?? null);
+  const [cover, setCover] = useState<string | null>(note.cover ?? null);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const { url: coverUrl } = useNoteMediaUrl(cover);
   const isStandalone = note.project_id === null;
 
   // Latest document from the editor (only present once the user edits).
@@ -148,6 +154,24 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
     runUpdate({ id: note.id, icon: next });
   }
 
+  async function uploadCover(file: File) {
+    setCoverUploading(true);
+    try {
+      const { path } = await uploadNoteImage(note.id, file);
+      setCover(path);
+      runUpdate({ id: note.id, cover: path });
+    } catch {
+      // Leave the banner unchanged on failure — not worth an intrusive error here.
+    } finally {
+      setCoverUploading(false);
+    }
+  }
+
+  function removeCover() {
+    setCover(null);
+    runUpdate({ id: note.id, cover: null });
+  }
+
   // Export the current document (including unsaved edits) as a .md download.
   function handleExport() {
     const doc = docRef.current?.json ?? (note.content_json as JSONContent | null);
@@ -166,6 +190,62 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
 
   return (
     <div className="flex flex-1 flex-col gap-4">
+      {isStandalone && (cover || canEdit) && (
+        <div className="group relative -mt-1 h-32 overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-fill)] sm:h-44">
+          {cover ? (
+            coverUrl ? (
+              <img src={coverUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <div className="grid h-full w-full place-items-center text-xs text-fg-subtle">Loading cover…</div>
+            )
+          ) : (
+            <button
+              type="button"
+              onClick={() => coverInputRef.current?.click()}
+              className="flex h-full w-full flex-col items-center justify-center gap-1 text-fg-subtle transition-colors hover:text-fg"
+            >
+              <ImagePlus size={20} />
+              <span className="text-xs font-medium">Add cover</span>
+            </button>
+          )}
+          {canEdit && cover && (
+            <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+              <button
+                type="button"
+                onClick={() => coverInputRef.current?.click()}
+                className="glass-strong rounded-lg border border-[var(--glass-border)] px-2 py-1 text-xs font-medium text-fg-muted hover:text-fg"
+              >
+                Change
+              </button>
+              <button
+                type="button"
+                onClick={removeCover}
+                className="glass-strong rounded-lg border border-[var(--glass-border)] px-2 py-1 text-xs font-medium text-fg-muted hover:text-danger"
+              >
+                Remove
+              </button>
+            </div>
+          )}
+          {coverUploading && (
+            <div className="absolute inset-0 grid place-items-center bg-black/25">
+              <Spinner size={22} />
+            </div>
+          )}
+        </div>
+      )}
+      {isStandalone && canEdit && (
+        <input
+          ref={coverInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) void uploadCover(file);
+            event.target.value = '';
+          }}
+        />
+      )}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">

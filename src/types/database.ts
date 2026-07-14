@@ -407,6 +407,8 @@ export interface Database {
           title: string;
           // One emoji, or null = fall back to the default note icon.
           icon: string | null;
+          // Private note-media path for a cover image, or null.
+          cover: string | null;
           // Plain-text mirror of the document (previews + search). Was markdown
           // pre-Phase-3; now the flattened text of content_json after first save.
           content: string;
@@ -426,6 +428,7 @@ export interface Database {
           // Defaults to 'Untitled note' in the DB.
           title?: string;
           icon?: string | null;
+          cover?: string | null;
           content?: string;
           content_json?: Record<string, unknown> | null;
           updated_at?: string;
@@ -438,6 +441,7 @@ export interface Database {
           folder_id?: string | null;
           title?: string;
           icon?: string | null;
+          cover?: string | null;
           content?: string;
           content_json?: Record<string, unknown> | null;
           updated_at?: string;
