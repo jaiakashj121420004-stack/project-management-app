@@ -18,6 +18,7 @@ import {
   Minus,
   Palette,
   Quote,
+  Shapes,
   Smile,
   Strikethrough,
   Underline,
@@ -25,6 +26,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { safeLinkHref, BULLET_LIST_STYLES, ORDERED_LIST_STYLES } from './extensions';
+import { CanvasPickerModal } from './CanvasPickerModal';
 
 interface EditorToolbarProps {
   editor: Editor;
@@ -91,6 +93,7 @@ type OpenPopover = 'color' | 'highlight' | 'link' | 'liststyle' | 'emoji' | null
 export function EditorToolbar({ editor, className }: EditorToolbarProps) {
   const [open, setOpen] = useState<OpenPopover>(null);
   const [linkValue, setLinkValue] = useState('');
+  const [canvasPickerOpen, setCanvasPickerOpen] = useState(false);
   const close = () => setOpen(null);
 
   const styleAttrs: Record<string, unknown> = editor.getAttributes('textStyle');
@@ -425,6 +428,19 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
           ))}
         </div>
       </Popover>
+
+      <Divider />
+
+      <Btn label="Insert canvas" active={canvasPickerOpen} onRun={() => setCanvasPickerOpen(true)}>
+        <Shapes size={16} />
+      </Btn>
+      <CanvasPickerModal
+        open={canvasPickerOpen}
+        onClose={() => setCanvasPickerOpen(false)}
+        onSelect={(canvasId, title) =>
+          editor.chain().focus().insertCanvasLink({ canvasId, title }).run()
+        }
+      />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
-import type { JSONContent } from '@tiptap/core';
+import type { AnyExtension, JSONContent } from '@tiptap/core';
 import { Placeholder } from '@tiptap/extension-placeholder';
 import { cn } from '@/lib/cn';
 import { blockExtensions } from './extensions';
@@ -19,6 +19,9 @@ interface BlockEditorProps {
   /** Fires on every edit with the new doc JSON + a plain-text mirror (for the
    *  searchable `content` column). The parent debounces the actual save. */
   onChange?: (doc: JSONContent, plainText: string) => void;
+  /** Extra Tiptap extensions for this surface only (e.g. notes' Insert-canvas).
+   *  Must be a stable reference (module constant) — the editor is built once. */
+  extraExtensions?: AnyExtension[];
   className?: string;
 }
 
@@ -33,6 +36,7 @@ export function BlockEditor({
   editable,
   placeholder = 'Write something, or press “/” for blocks…',
   onChange,
+  extraExtensions = [],
   className,
 }: BlockEditorProps) {
   const editor = useEditor({
@@ -44,6 +48,7 @@ export function BlockEditor({
       Placeholder.configure({ placeholder }),
       SlashCommand,
       EmojiCommand,
+      ...extraExtensions,
     ],
     content: content ?? undefined,
     onUpdate: ({ editor: instance }) => {

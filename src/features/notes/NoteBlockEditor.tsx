@@ -1,8 +1,13 @@
 import { useState } from 'react';
-import type { JSONContent } from '@tiptap/core';
+import type { AnyExtension, JSONContent } from '@tiptap/core';
 import { BlockEditor } from '@/features/editor/BlockEditor';
 import { markdownToDoc } from '@/features/editor/serialize';
+import { CanvasLink } from '@/features/editor/nodes/CanvasLink';
 import type { Note } from '@/types/database';
+
+// Note-only extensions (stable reference — the editor is built once). Insert
+// canvas lives here so the canvas text editor never gets it.
+const NOTE_EXTENSIONS: AnyExtension[] = [CanvasLink];
 
 /**
  * Bridges a Note to the shared BlockEditor. Lives in the lazy chunk (Tiptap +
@@ -24,5 +29,12 @@ export default function NoteBlockEditor({
     note.content_json ? (note.content_json as JSONContent) : markdownToDoc(note.content),
   );
 
-  return <BlockEditor content={initial} editable={editable} onChange={onChange} />;
+  return (
+    <BlockEditor
+      content={initial}
+      editable={editable}
+      onChange={onChange}
+      extraExtensions={NOTE_EXTENSIONS}
+    />
+  );
 }

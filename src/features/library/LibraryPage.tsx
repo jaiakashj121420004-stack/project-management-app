@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Library as LibraryIcon, Search, X } from 'lucide-react';
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import { Spinner } from '@/components/feedback/Spinner';
@@ -34,6 +35,18 @@ export function LibraryPage() {
   const [open, setOpen] = useState<OpenItem>(null);
   const [newFolderOpen, setNewFolderOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Deep-link: `/library?canvas=<id>` (e.g. from an Insert-canvas card in a note)
+  // opens that canvas, then clears the param so refresh/back won't re-open it.
+  useEffect(() => {
+    const canvasId = searchParams.get('canvas');
+    if (!canvasId) return;
+    setOpen({ kind: 'canvas', id: canvasId });
+    const next = new URLSearchParams(searchParams);
+    next.delete('canvas');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   // Personal canvases only (project canvases live in their project's Canvas tab).
   const personalCanvases = useMemo(
