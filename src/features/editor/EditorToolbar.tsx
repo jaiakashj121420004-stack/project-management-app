@@ -1,12 +1,6 @@
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type KeyboardEvent,
-  type ReactNode,
-} from 'react';
+import { useCallback, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { Editor } from '@tiptap/react';
+import { ToolbarPopover } from '@/components/forms/ToolbarPopover';
 import {
   Bold,
   ChevronDown,
@@ -96,18 +90,9 @@ type OpenPopover = 'color' | 'highlight' | 'link' | 'liststyle' | 'emoji' | null
  * before they're set. Wraps so it never scroll-clips on a phone.
  */
 export function EditorToolbar({ editor, className }: EditorToolbarProps) {
-  const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState<OpenPopover>(null);
   const [linkValue, setLinkValue] = useState('');
-
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (event: PointerEvent) => {
-      if (rootRef.current && !rootRef.current.contains(event.target as Node)) setOpen(null);
-    };
-    document.addEventListener('pointerdown', onPointerDown, true);
-    return () => document.removeEventListener('pointerdown', onPointerDown, true);
-  }, [open]);
+  const close = () => setOpen(null);
 
   const styleAttrs: Record<string, unknown> = editor.getAttributes('textStyle');
   const currentColor = typeof styleAttrs.color === 'string' ? styleAttrs.color : null;
@@ -181,7 +166,6 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
 
   return (
     <div
-      ref={rootRef}
       role="toolbar"
       aria-label="Text formatting"
       className={cn(
@@ -203,6 +187,8 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
       </Btn>
       <Popover
         open={open === 'highlight'}
+        onClose={close}
+        title="Highlight"
         trigger={
           <Btn
             label="Highlight"
@@ -253,6 +239,8 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
 
       <Popover
         open={open === 'color'}
+        onClose={close}
+        title="Text colour"
         trigger={
           <Btn label="Text colour" active={open === 'color'} onRun={() => setOpen((o) => (o === 'color' ? null : 'color'))}>
             <span className="relative grid place-items-center">
@@ -279,6 +267,8 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
 
       <Popover
         open={open === 'link'}
+        onClose={close}
+        title="Link"
         trigger={
           <Btn label="Link" active={linkActive || open === 'link'} onRun={openLink}>
             <Link2 size={16} />
@@ -352,6 +342,8 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
 
       <Popover
         open={open === 'liststyle'}
+        onClose={close}
+        title="List style"
         trigger={
           <Btn
             label="List style"
@@ -400,6 +392,8 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
 
       <Popover
         open={open === 'emoji'}
+        onClose={close}
+        title="Emoji"
         trigger={
           <Btn label="Emoji" active={open === 'emoji'} onRun={() => setOpen((o) => (o === 'emoji' ? null : 'emoji'))}>
             <Smile size={16} />
@@ -432,16 +426,23 @@ function Divider() {
   return <span className="mx-0.5 h-5 w-px bg-[var(--glass-border)]" aria-hidden />;
 }
 
-function Popover({ open, trigger, children }: { open: boolean; trigger: ReactNode; children: ReactNode }) {
+function Popover({
+  open,
+  onClose,
+  title,
+  trigger,
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title?: string;
+  trigger: ReactNode;
+  children: ReactNode;
+}) {
   return (
-    <span className="relative">
-      {trigger}
-      {open && (
-        <div className="glass-menu absolute left-0 top-full z-20 mt-1 rounded-xl border border-[var(--glass-border)] p-2 shadow-[0_14px_34px_-18px_rgba(0,0,0,0.7)]">
-          {children}
-        </div>
-      )}
-    </span>
+    <ToolbarPopover open={open} onClose={onClose} title={title} trigger={trigger}>
+      {children}
+    </ToolbarPopover>
   );
 }
 

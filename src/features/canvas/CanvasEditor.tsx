@@ -924,7 +924,7 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
         />
       )}
 
-      <div className="relative min-h-[75vh] w-full flex-1">
+      <div className="relative min-h-[82vh] w-full flex-1 sm:min-h-[78vh]">
         <div className="absolute inset-0">
           <CanvasStage
             elements={visibleElements}

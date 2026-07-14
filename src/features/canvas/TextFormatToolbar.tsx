@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useCallback, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { Editor } from '@tiptap/react';
+import { ToolbarPopover } from '@/components/forms/ToolbarPopover';
 import {
   Bold,
   Heading1,
@@ -46,19 +47,9 @@ type OpenPopover = 'color' | 'link' | null;
  * http/https/mailto before they're ever set.
  */
 export function TextFormatToolbar({ editor, className }: TextFormatToolbarProps) {
-  const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState<OpenPopover>(null);
   const [linkValue, setLinkValue] = useState('');
-
-  // Close any popover when the user interacts outside the toolbar.
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (event: PointerEvent) => {
-      if (rootRef.current && !rootRef.current.contains(event.target as Node)) setOpen(null);
-    };
-    document.addEventListener('pointerdown', onPointerDown, true);
-    return () => document.removeEventListener('pointerdown', onPointerDown, true);
-  }, [open]);
+  const close = () => setOpen(null);
 
   const linkAttrs: Record<string, unknown> = editor.getAttributes('link');
   const currentHref = typeof linkAttrs.href === 'string' ? linkAttrs.href : '';
@@ -120,7 +111,6 @@ export function TextFormatToolbar({ editor, className }: TextFormatToolbarProps)
 
   return (
     <div
-      ref={rootRef}
       role="toolbar"
       aria-label="Text formatting"
       className={cn(
@@ -168,6 +158,8 @@ export function TextFormatToolbar({ editor, className }: TextFormatToolbarProps)
 
       <Popover
         open={open === 'color'}
+        onClose={close}
+        title="Text colour"
         trigger={
           <FmtButton label="Text colour" active={open === 'color'} onRun={toggleColor}>
             <span className="relative grid place-items-center">
@@ -198,6 +190,8 @@ export function TextFormatToolbar({ editor, className }: TextFormatToolbarProps)
 
       <Popover
         open={open === 'link'}
+        onClose={close}
+        title="Link"
         trigger={
           <FmtButton label="Link" active={linkActive || open === 'link'} onRun={openLink}>
             <Link2 size={16} />
@@ -299,25 +293,24 @@ function Divider() {
   return <span className="mx-0.5 h-5 w-px bg-[var(--glass-border)]" aria-hidden />;
 }
 
-/** A toolbar control with an anchored popover panel below it. */
+/** A toolbar control with a viewport-safe (portaled) popover — clean on mobile. */
 function Popover({
   open,
+  onClose,
+  title,
   trigger,
   children,
 }: {
   open: boolean;
+  onClose: () => void;
+  title?: string;
   trigger: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <span className="relative">
-      {trigger}
-      {open && (
-        <div className="glass-menu absolute left-0 top-full z-20 mt-1 rounded-xl border border-[var(--glass-border)] p-2 shadow-[0_14px_34px_-18px_rgba(0,0,0,0.7)]">
-          {children}
-        </div>
-      )}
-    </span>
+    <ToolbarPopover open={open} onClose={onClose} title={title} trigger={trigger}>
+      {children}
+    </ToolbarPopover>
   );
 }
 

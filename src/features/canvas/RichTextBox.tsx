@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, type CSSProperties, type KeyboardEvent } from 'react';
 import type { XmlFragment } from 'yjs';
 import { EditorContent, useEditor } from '@tiptap/react';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { collabTextExtensions, type CaretUser } from './richText';
 import { SlashCommand } from '@/features/editor/suggestion/SlashCommand';
 import { EmojiCommand } from '@/features/editor/suggestion/EmojiCommand';
@@ -145,10 +146,25 @@ export function RichTextBox({
     }
   };
 
+  // On phones the floating toolbar (positioned above the box) jumps as the box
+  // grows and moves; dock it to a stable, full-width bar at the top of the screen
+  // instead. Escapes the canvas overlay's clipping (no transformed ancestor here).
+  const isMobile = useMediaQuery('(max-width: 640px)');
+  const mobileToolbarStyle: CSSProperties = {
+    position: 'fixed',
+    top: 'calc(0.5rem + env(safe-area-inset-top))',
+    left: '0.5rem',
+    right: '0.5rem',
+    zIndex: 50,
+  };
+
   return (
     <>
       {editor && (
-        <div style={toolbarStyle} className="pointer-events-auto">
+        <div
+          style={isMobile ? mobileToolbarStyle : toolbarStyle}
+          className="pointer-events-auto flex justify-center"
+        >
           <TextFormatToolbar editor={editor} />
         </div>
       )}
