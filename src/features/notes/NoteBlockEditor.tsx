@@ -3,12 +3,13 @@ import type { AnyExtension, JSONContent } from '@tiptap/core';
 import { BlockEditor } from '@/features/editor/BlockEditor';
 import { markdownToDoc } from '@/features/editor/serialize';
 import { CanvasLink } from '@/features/editor/nodes/CanvasLink';
+import { NoteImage } from '@/features/editor/nodes/NoteImage';
 import { NoteContext } from '@/features/editor/noteContext';
 import type { Note } from '@/types/database';
 
 // Note-only extensions (stable reference — the editor is built once). Insert
-// canvas lives here so the canvas text editor never gets it.
-const NOTE_EXTENSIONS: AnyExtension[] = [CanvasLink];
+// canvas + images live here so the canvas text editor never gets them.
+const NOTE_EXTENSIONS: AnyExtension[] = [CanvasLink, NoteImage];
 
 /**
  * Bridges a Note to the shared BlockEditor. Lives in the lazy chunk (Tiptap +

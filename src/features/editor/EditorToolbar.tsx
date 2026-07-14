@@ -1,4 +1,4 @@
-import { useCallback, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useCallback, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { Editor } from '@tiptap/react';
 import { ToolbarPopover } from '@/components/forms/ToolbarPopover';
 import {
@@ -9,6 +9,7 @@ import {
   Heading2,
   Heading3,
   Highlighter,
+  Image as ImageIcon,
   Italic,
   Link2,
   List,
@@ -25,8 +26,11 @@ import {
   Unlink,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { Spinner } from '@/components/feedback/Spinner';
+import { uploadNoteImage } from '@/features/notes/noteMedia';
 import { safeLinkHref, BULLET_LIST_STYLES, ORDERED_LIST_STYLES } from './extensions';
 import { CanvasPickerModal } from './CanvasPickerModal';
+import { useNoteRef } from './noteContext';
 
 interface EditorToolbarProps {
   editor: Editor;
@@ -94,7 +98,25 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
   const [open, setOpen] = useState<OpenPopover>(null);
   const [linkValue, setLinkValue] = useState('');
   const [canvasPickerOpen, setCanvasPickerOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const noteRef = useNoteRef();
   const close = () => setOpen(null);
+
+  async function uploadAndInsert(file: File) {
+    if (!noteRef) return;
+    setUploading(true);
+    setImageError(null);
+    try {
+      const { path } = await uploadNoteImage(noteRef.noteId, file);
+      editor.chain().focus().insertNoteImage({ path }).run();
+    } catch (error) {
+      setImageError(error instanceof Error ? error.message : 'Upload failed.');
+    } finally {
+      setUploading(false);
+    }
+  }
 
   const styleAttrs: Record<string, unknown> = editor.getAttributes('textStyle');
   const currentColor = typeof styleAttrs.color === 'string' ? styleAttrs.color : null;
@@ -431,9 +453,24 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
 
       <Divider />
 
+      <Btn label="Insert image" active={false} disabled={uploading} onRun={() => fileInputRef.current?.click()}>
+        {uploading ? <Spinner size={14} className="text-current" /> : <ImageIcon size={16} />}
+      </Btn>
       <Btn label="Insert canvas" active={canvasPickerOpen} onRun={() => setCanvasPickerOpen(true)}>
         <Shapes size={16} />
       </Btn>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) void uploadAndInsert(file);
+          event.target.value = '';
+        }}
+      />
       <CanvasPickerModal
         open={canvasPickerOpen}
         onClose={() => setCanvasPickerOpen(false)}
@@ -441,6 +478,7 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
           editor.chain().focus().insertCanvasLink({ canvasId, title }).run()
         }
       />
+      {imageError && <span className="w-full px-1 text-xs text-danger">{imageError}</span>}
     </div>
   );
 }
