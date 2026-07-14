@@ -17,7 +17,6 @@ import {
   Unlink,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { ColorPicker } from './ColorPicker';
 import { safeLinkHref } from './richText';
 
 interface TextFormatToolbarProps {
@@ -25,14 +24,10 @@ interface TextFormatToolbarProps {
   className?: string;
 }
 
-/** Aurora-aligned text colours offered by the colour popover. */
-const TEXT_COLORS: readonly { label: string; value: string }[] = [
-  { label: 'Violet', value: '#7C3AED' },
-  { label: 'Cyan', value: '#06B6D4' },
-  { label: 'Pink', value: '#EC4899' },
-  { label: 'Emerald', value: '#10B981' },
-  { label: 'Amber', value: '#F59E0B' },
-  { label: 'Red', value: '#EF4444' },
+/** Text colours offered by the colour popover (Nvexis earthy + brights). */
+const TEXT_COLORS: readonly string[] = [
+  '#7A2A26', '#C24A40', '#B45309', '#D97706', '#CA8A04', '#4D7C0F',
+  '#0F766E', '#0369A1', '#4338CA', '#7C3AED', '#BE185D', '#1F2937',
 ];
 
 type OpenPopover = 'color' | 'link' | null;
@@ -63,15 +58,6 @@ export function TextFormatToolbar({ editor, className }: TextFormatToolbarProps)
     setLinkValue(currentHref);
     setOpen((o) => (o === 'link' ? null : 'link'));
   }, [currentHref]);
-
-  // Live colour changes from the spectrum/hex picker keep the popover open and
-  // re-focus the editor so the colour applies to the remembered selection.
-  const setColorNoClose = useCallback(
-    (hex: string) => {
-      editor.chain().focus().setColor(hex).run();
-    },
-    [editor],
-  );
 
   const clearColor = useCallback(() => {
     editor.chain().focus().unsetColor().run();
@@ -173,16 +159,27 @@ export function TextFormatToolbar({ editor, className }: TextFormatToolbarProps)
           </FmtButton>
         }
       >
-        <ColorPicker
-          color={currentColor ?? '#7C3AED'}
-          presets={TEXT_COLORS.map((c) => c.value)}
-          onChange={setColorNoClose}
-        />
+        <div className="grid grid-cols-6 gap-2">
+          {TEXT_COLORS.map((color) => (
+            <button
+              key={color}
+              type="button"
+              aria-label={color}
+              onPointerDown={(event) => event.preventDefault()}
+              onClick={() => {
+                editor.chain().focus().setColor(color).run();
+                close();
+              }}
+              className="h-8 w-8 rounded-full border border-black/10 transition-transform hover:scale-110 dark:border-white/25"
+              style={{ backgroundColor: color }}
+            />
+          ))}
+        </div>
         <button
           type="button"
-          onMouseDown={(event) => event.preventDefault()}
+          onPointerDown={(event) => event.preventDefault()}
           onClick={clearColor}
-          className="mt-2 w-full rounded-lg px-2 py-1 text-xs text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+          className="mt-3 w-full rounded-lg border border-[var(--glass-border)] px-2 py-1.5 text-xs text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
         >
           Default colour
         </button>

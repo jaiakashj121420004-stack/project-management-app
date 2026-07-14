@@ -10,6 +10,7 @@ import {
 import { AlertCircle, Check, Trash2 } from 'lucide-react';
 import type { JSONContent } from '@tiptap/core';
 import { Spinner } from '@/components/feedback/Spinner';
+import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
 import { useAuth } from '@/hooks/useAuth';
 import { ShareButton } from '@/features/sharing';
 import type { Note } from '@/types/database';
@@ -195,15 +196,17 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
         </div>
       )}
 
-      <Suspense
-        fallback={
-          <div className="grid min-h-[40vh] place-items-center">
-            <Spinner size={28} />
-          </div>
-        }
-      >
-        <NoteBlockEditor key={note.id} note={note} editable={canEdit} onChange={handleDocChange} />
-      </Suspense>
+      <ErrorBoundary key={note.id} label="the note editor">
+        <Suspense
+          fallback={
+            <div className="grid min-h-[40vh] place-items-center">
+              <Spinner size={28} />
+            </div>
+          }
+        >
+          <NoteBlockEditor note={note} editable={canEdit} onChange={handleDocChange} />
+        </Suspense>
+      </ErrorBoundary>
     </div>
   );
 }

@@ -24,7 +24,6 @@ import {
   Unlink,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { ColorPicker } from '@/features/canvas/ColorPicker';
 import { safeLinkHref, BULLET_LIST_STYLES, ORDERED_LIST_STYLES } from './extensions';
 
 interface EditorToolbarProps {
@@ -107,10 +106,6 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
   const inList = inBullet || inOrdered;
   const listStyles = inOrdered ? ORDERED_LIST_STYLES : BULLET_LIST_STYLES;
 
-  const setColorNoClose = useCallback(
-    (hex: string) => editor.chain().focus().setColor(hex).run(),
-    [editor],
-  );
   const clearColor = useCallback(() => {
     editor.chain().focus().unsetColor().run();
     setOpen(null);
@@ -254,12 +249,27 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
           </Btn>
         }
       >
-        <ColorPicker color={currentColor ?? DEFAULT_TEXT_COLOR} presets={TEXT_COLORS} onChange={setColorNoClose} />
+        <div className="grid grid-cols-6 gap-2">
+          {TEXT_COLORS.map((color) => (
+            <button
+              key={color}
+              type="button"
+              aria-label={color}
+              onPointerDown={(e) => e.preventDefault()}
+              onClick={() => {
+                editor.chain().focus().setColor(color).run();
+                close();
+              }}
+              className="h-8 w-8 rounded-full border border-black/10 transition-transform hover:scale-110 dark:border-white/25"
+              style={{ backgroundColor: color }}
+            />
+          ))}
+        </div>
         <button
           type="button"
-          onMouseDown={(e) => e.preventDefault()}
+          onPointerDown={(e) => e.preventDefault()}
           onClick={clearColor}
-          className="mt-2 w-full rounded-lg px-2 py-1 text-xs text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+          className="mt-3 w-full rounded-lg border border-[var(--glass-border)] px-2 py-1.5 text-xs text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
         >
           Default colour
         </button>
@@ -375,9 +385,6 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
 
       <Divider />
 
-      <Btn label="Toggle block" active={editor.isActive('details')} onRun={() => editor.chain().focus().setDetails().run()}>
-        <ChevronDown size={16} />
-      </Btn>
       <Btn label="Quote" active={editor.isActive('blockquote')} onRun={() => editor.chain().focus().toggleBlockquote().run()}>
         <Quote size={15} />
       </Btn>

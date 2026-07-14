@@ -6,7 +6,6 @@ import {
   List,
   ListOrdered,
   ListChecks,
-  ChevronRight,
   Quote,
   Code2,
   Minus,
@@ -73,13 +72,6 @@ export const SLASH_ITEMS: readonly SlashItem[] = [
     icon: ListChecks,
     keywords: ['task', 'todo', 'checkbox', 'check'],
     command: (e) => e.chain().focus().toggleTaskList().run(),
-  },
-  {
-    title: 'Toggle',
-    subtitle: 'Collapsible section',
-    icon: ChevronRight,
-    keywords: ['toggle', 'collapse', 'details', 'dropdown', 'accordion'],
-    command: (e) => e.chain().focus().setDetails().run(),
   },
   {
     title: 'Quote',
