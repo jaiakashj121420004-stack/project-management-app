@@ -27,6 +27,16 @@ export const NoteImage = Node.create({
     return {
       path: { default: null },
       alt: { default: '' },
+      // Display width as a percentage of the content column (null = full width).
+      width: {
+        default: null,
+        parseHTML: (el: HTMLElement) => {
+          const w = el.getAttribute('data-width');
+          return w ? Number(w) : null;
+        },
+        renderHTML: (attrs: Record<string, unknown>) =>
+          attrs.width ? { 'data-width': String(attrs.width) } : {},
+      },
     };
   },
 
