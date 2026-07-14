@@ -96,15 +96,19 @@ describe('sanitizeBlockHtml (XSS defense-in-depth)', () => {
     expect(out).toContain('task');
   });
 
-  it('is applied by renderBlockHtml (no script survives a tampered body)', () => {
-    // A hand-crafted body that smuggles raw HTML into a text node. The hardened
-    // schema escapes it, and the DOMPurify pass is the second guarantee.
+  it('is applied by renderBlockHtml (a tampered body yields no live markup)', () => {
+    // A hand-crafted body that smuggles raw HTML into a text node. ProseMirror
+    // escapes text nodes, so the "<img …>" becomes inert "&lt;img …&gt;" display
+    // text; the DOMPurify pass is the second guarantee. Assert there is no LIVE
+    // element (an escaped literal legitimately still contains the word "onerror"
+    // as visible text — that's safe, so we check for an actual tag instead).
     const doc = {
       type: 'doc',
       content: [{ type: 'paragraph', content: [{ type: 'text', text: '<img src=x onerror=alert(1)>' }] }],
     };
     const out = renderBlockHtml(doc);
-    expect(out).not.toContain('onerror');
+    expect(out).not.toContain('<img');
+    expect(out).toContain('&lt;img'); // proof the dangerous markup was neutralised
   });
 });
 

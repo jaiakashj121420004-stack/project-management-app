@@ -36,7 +36,11 @@ export interface OptimisticMutationConfig<TData, TVariables, TSnapshot> {
   meta?: { errorMessage?: string; suppressErrorToast?: boolean };
 }
 
-interface OptimisticContext<TSnapshot> {
+/** The mutation context carried between onMutate → onError/onSuccess: the
+ *  pre-mutation snapshot used to roll back. Exported so consumers' inferred
+ *  return types (UseMutationResult<…, OptimisticContext<…>>) can be named under
+ *  `tsc -b` declaration emit — otherwise TS4058 ("cannot be named"). */
+export interface OptimisticContext<TSnapshot> {
   previous?: TSnapshot;
 }
 

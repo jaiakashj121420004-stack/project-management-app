@@ -18,11 +18,22 @@ describe('useOptimisticMutation', () => {
     const client = new QueryClient();
     client.setQueryData<number[]>(KEY, [1]);
 
+    // Gate the server response so the optimistic window is deterministically
+    // observable — otherwise the mutationFn resolves in the same microtask and
+    // the cache jumps straight to the reconciled value on fast machines.
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+
     const { result } = renderHook(
       () =>
         useOptimisticMutation<number, number, number[]>({
           queryKey: KEY,
-          mutationFn: async (v) => v * 10,
+          mutationFn: async (v) => {
+            await gate;
+            return v * 10;
+          },
           patch: (old, v) => [...(old ?? []), v],
           // Replace the optimistic placeholder (2) with the canonical server value.
           reconcile: (old, data, v) => old.map((n) => (n === v ? data : n)),
@@ -34,9 +45,14 @@ describe('useOptimisticMutation', () => {
       result.current.mutate(2);
     });
 
-    // Optimistic write lands (onMutate awaits cancelQueries, so it's async).
+    // Optimistic write lands (onMutate awaits cancelQueries, so it's async) and
+    // holds while the gated mutationFn is still pending.
     await waitFor(() => expect(client.getQueryData<number[]>(KEY)).toEqual([1, 2]));
-    // On success the placeholder is reconciled to the server value.
+
+    // Let the server respond; on success the placeholder is reconciled.
+    act(() => {
+      release();
+    });
     await waitFor(() => expect(client.getQueryData<number[]>(KEY)).toEqual([1, 20]));
   });
 
