@@ -1,9 +1,10 @@
+import { useMemo } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { Activity } from 'lucide-react';
 import { Avatar } from '@/components/Avatar';
 import { Spinner } from '@/components/feedback/Spinner';
 import type { ActivityEntry } from '@/types/database';
-import { useCardActivity, useProjectActivity } from './useActivity';
+import { useCardActivity, useProjectActivityInfinite } from './useActivity';
 
 function metaString(meta: Record<string, unknown>, key: string): string | undefined {
   const value = meta[key];
@@ -46,13 +47,20 @@ interface ActivityFeedProps {
 
 /** Read-only activity feed, project-wide or scoped to a card. */
 export function ActivityFeed({ projectId, cardId }: ActivityFeedProps) {
-  const projectQuery = useProjectActivity(cardId ? undefined : projectId);
-  const cardQuery = useCardActivity(cardId ? projectId : undefined, cardId);
-  const query = cardId ? cardQuery : projectQuery;
-  const entries = query.data ?? [];
   const scoped = Boolean(cardId);
 
-  if (query.isLoading) {
+  // Card feed is one bounded slice; the project feed pages older activity in.
+  const cardQuery = useCardActivity(cardId ? projectId : undefined, cardId);
+  const projectQuery = useProjectActivityInfinite(cardId ? undefined : projectId);
+
+  const entries = useMemo<ActivityEntry[]>(
+    () => (scoped ? (cardQuery.data ?? []) : (projectQuery.data?.pages.flat() ?? [])),
+    [scoped, cardQuery.data, projectQuery.data],
+  );
+
+  const isLoading = scoped ? cardQuery.isLoading : projectQuery.isLoading;
+
+  if (isLoading) {
     return (
       <div className="flex justify-center py-6">
         <Spinner size={20} />
@@ -69,23 +77,42 @@ export function ActivityFeed({ projectId, cardId }: ActivityFeedProps) {
   }
 
   return (
-    <ul className="flex flex-col gap-3">
-      {entries.map((entry) => {
-        const actor = metaString(entry.meta, 'actor_name') ?? 'Someone';
-        const snippet = entry.verb === 'commented' ? metaString(entry.meta, 'snippet') : undefined;
-        return (
-          <li key={entry.id} className="flex gap-2.5">
-            <Avatar name={actor} size={26} className="mt-0.5 shrink-0" />
-            <div className="min-w-0">
-              <p className="text-sm text-fg-muted">
-                <span className="font-semibold text-fg">{actor}</span> {phrase(entry, scoped)}{' '}
-                <span className="text-fg-subtle">· {timeAgo(entry.created_at)}</span>
-              </p>
-              {snippet && <p className="truncate text-sm text-fg-subtle">“{snippet}”</p>}
-            </div>
-          </li>
-        );
-      })}
-    </ul>
+    <div className="flex flex-col gap-3">
+      <ul className="flex flex-col gap-3">
+        {entries.map((entry) => {
+          const actor = metaString(entry.meta, 'actor_name') ?? 'Someone';
+          const snippet = entry.verb === 'commented' ? metaString(entry.meta, 'snippet') : undefined;
+          return (
+            <li key={entry.id} className="flex gap-2.5">
+              <Avatar name={actor} size={26} className="mt-0.5 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm text-fg-muted">
+                  <span className="font-semibold text-fg">{actor}</span> {phrase(entry, scoped)}{' '}
+                  <span className="text-fg-subtle">· {timeAgo(entry.created_at)}</span>
+                </p>
+                {snippet && <p className="truncate text-sm text-fg-subtle">“{snippet}”</p>}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+
+      {!scoped && projectQuery.hasNextPage && (
+        <button
+          type="button"
+          onClick={() => void projectQuery.fetchNextPage()}
+          disabled={projectQuery.isFetchingNextPage}
+          className="mx-auto inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg disabled:opacity-60"
+        >
+          {projectQuery.isFetchingNextPage ? (
+            <>
+              <Spinner size={13} className="text-current" /> Loading…
+            </>
+          ) : (
+            'Load older activity'
+          )}
+        </button>
+      )}
+    </div>
   );
 }

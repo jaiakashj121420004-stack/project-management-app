@@ -2,11 +2,14 @@ import { describe, it, expect } from 'vitest';
 import type { Card, Column } from '@/types/database';
 import {
   POSITION_STEP,
+  REBALANCE_MIN_GAP,
   byPosition,
   cardsInColumn,
   isDoneColumn,
+  needsRebalance,
   positionBetween,
   positionForIndex,
+  rebalancedPositions,
   sortColumns,
 } from './ordering';
 
@@ -63,6 +66,80 @@ describe('byPosition', () => {
   it('sorts ascending by position', () => {
     const items = [{ position: 3 }, { position: 1 }, { position: 2 }];
     expect([...items].sort(byPosition).map((i) => i.position)).toEqual([1, 2, 3]);
+  });
+
+  it('breaks ties by created_at (older first), then id — deterministically', () => {
+    // Two rows momentarily share a position (e.g. two peers both picked the same
+    // midpoint). The tiebreaker must impose ONE stable order regardless of input
+    // order, so the board never flickers between renders.
+    const a = { position: 50, created_at: '2026-01-01T00:00:00Z', id: 'zzz' };
+    const b = { position: 50, created_at: '2026-01-02T00:00:00Z', id: 'aaa' };
+    expect([a, b].sort(byPosition).map((i) => i.id)).toEqual(['zzz', 'aaa']);
+    expect([b, a].sort(byPosition).map((i) => i.id)).toEqual(['zzz', 'aaa']);
+  });
+
+  it('falls back to id when position AND created_at are equal', () => {
+    const a = { position: 50, created_at: 'same', id: 'b' };
+    const b = { position: 50, created_at: 'same', id: 'a' };
+    expect([a, b].sort(byPosition).map((i) => i.id)).toEqual(['a', 'b']);
+  });
+});
+
+describe('needsRebalance', () => {
+  it('is false for an empty or single-item list', () => {
+    expect(needsRebalance([])).toBe(false);
+    expect(needsRebalance([{ position: 1000 }])).toBe(false);
+  });
+
+  it('is false when every gap is comfortably wide', () => {
+    expect(needsRebalance([{ position: 1000 }, { position: 2000 }, { position: 3000 }])).toBe(false);
+  });
+
+  it('is true once any adjacent gap drops below the threshold', () => {
+    const tiny = REBALANCE_MIN_GAP / 2;
+    expect(needsRebalance([{ position: 1000 }, { position: 1000 + tiny }])).toBe(true);
+  });
+
+  it('detects a collapsed gap regardless of input order', () => {
+    const tiny = REBALANCE_MIN_GAP / 4;
+    expect(needsRebalance([{ position: 5 + tiny }, { position: 1 }, { position: 5 }])).toBe(true);
+  });
+});
+
+describe('rebalancedPositions', () => {
+  it('renumbers to clean multiples of STEP in stable order, keeping the order', () => {
+    const items = [
+      { id: 'a', position: 1 },
+      { id: 'b', position: 1.0001 },
+      { id: 'c', position: 1.0002 },
+    ];
+    const changed = rebalancedPositions(items);
+    // Every row moves to a clean slot; order a→b→c is preserved.
+    expect(changed).toEqual([
+      { id: 'a', position: POSITION_STEP },
+      { id: 'b', position: 2 * POSITION_STEP },
+      { id: 'c', position: 3 * POSITION_STEP },
+    ]);
+  });
+
+  it('returns only the rows whose position actually changes', () => {
+    // 'a' already sits on its clean slot, so only 'b' needs a write.
+    const items = [
+      { id: 'a', position: POSITION_STEP },
+      { id: 'b', position: POSITION_STEP + 0.00001 },
+    ];
+    expect(rebalancedPositions(items)).toEqual([{ id: 'b', position: 2 * POSITION_STEP }]);
+  });
+
+  it('orders the renumber by the stable comparator (created_at tiebreak)', () => {
+    const items = [
+      { id: 'y', position: 500, created_at: '2026-01-02T00:00:00Z' },
+      { id: 'x', position: 500, created_at: '2026-01-01T00:00:00Z' },
+    ];
+    expect(rebalancedPositions(items)).toEqual([
+      { id: 'x', position: POSITION_STEP },
+      { id: 'y', position: 2 * POSITION_STEP },
+    ]);
   });
 });
 

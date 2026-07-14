@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -38,7 +38,9 @@ import {
   byPosition,
   cardsInColumn,
   isDoneColumn,
+  needsRebalance,
   positionBetween,
+  rebalancedPositions,
   sortColumns,
 } from './ordering';
 import {
@@ -218,6 +220,8 @@ export function Board({ projectId, accent, canEdit }: BoardProps) {
   const [dndContainers, setDndContainers] = useState<Containers | null>(null);
 
   const [openCardId, setOpenCardId] = useState<string | null>(null);
+  // Stable so the memoised BoardCard leaves don't re-render on every board render.
+  const handleOpenCard = useCallback((card: Card) => setOpenCardId(card.id), []);
   const [deletingColumn, setDeletingColumn] = useState<Column | null>(null);
   const [celebrateKey, setCelebrateKey] = useState(0);
 
@@ -335,7 +339,37 @@ export function Board({ projectId, accent, canEdit }: BoardProps) {
 
       const position = neighbourPosition(finalItems, activeIdStr, (id) => cardsById.get(id)?.position);
       const sourceColumnId = cardsById.get(activeIdStr)?.column_id;
-      moveCard.mutate({ id: activeIdStr, columnId: destContainer, position });
+
+      // Self-healing rebalance: repeated midpoint drops into the same gap shrink
+      // it toward the float-precision floor. Once the destination column's gaps
+      // collapse, renumber it to clean, evenly-spaced slots — a bounded burst of
+      // writes that restores head-room without changing the visible order. The
+      // moved card is written with its rebalanced position (never twice).
+      const destAfterMove = cards
+        .filter((card) => card.column_id === destContainer && card.id !== activeIdStr)
+        .map((card) => ({ id: card.id, position: card.position, created_at: card.created_at }));
+      destAfterMove.push({
+        id: activeIdStr,
+        position,
+        created_at: cardsById.get(activeIdStr)?.created_at ?? '',
+      });
+
+      if (needsRebalance(destAfterMove)) {
+        const changes = rebalancedPositions(destAfterMove);
+        const moved = changes.find((change) => change.id === activeIdStr);
+        moveCard.mutate({
+          id: activeIdStr,
+          columnId: destContainer,
+          position: moved?.position ?? position,
+        });
+        for (const change of changes) {
+          if (change.id !== activeIdStr) {
+            moveCard.mutate({ id: change.id, columnId: destContainer, position: change.position });
+          }
+        }
+      } else {
+        moveCard.mutate({ id: activeIdStr, columnId: destContainer, position });
+      }
 
       const enteredDone =
         sourceColumnId !== destContainer && isDoneColumn(columnsById.get(destContainer)?.name ?? '');
@@ -453,7 +487,7 @@ export function Board({ projectId, accent, canEdit }: BoardProps) {
                   onRename={(id, name) => renameColumn.mutate({ id, name })}
                   onDelete={setDeletingColumn}
                   onAddCard={handleAddCard}
-                  onOpenCard={(card) => setOpenCardId(card.id)}
+                  onOpenCard={handleOpenCard}
                 />
               );
             })}

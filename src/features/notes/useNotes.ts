@@ -1,5 +1,6 @@
-import { useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
+import { useQuery, type QueryKey } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
+import { useOptimisticMutation } from '@/lib/useOptimisticMutation';
 import type { Note } from '@/types/database';
 import { fetchNotes, insertNote, patchNote, removeNote } from './api';
 
@@ -13,10 +14,6 @@ import { fetchNotes, insertNote, patchNote, removeNote } from './api';
 
 const notesKey = (projectId: string): QueryKey => ['notes', projectId];
 
-interface NotesContext {
-  previous?: Note[];
-}
-
 export function useNotes(projectId: string) {
   return useQuery({
     queryKey: notesKey(projectId),
@@ -24,37 +21,19 @@ export function useNotes(projectId: string) {
   });
 }
 
-/** Shared optimistic plumbing: snapshot → patch → rollback-on-error → refetch. */
+/** Project-notes mutations over the shared optimistic primitive (patches from an
+ *  empty list before the first fetch). */
 function useNotesMutation<TData, TVariables>(
   projectId: string,
   mutationFn: (variables: TVariables) => Promise<TData>,
   patch: (notes: Note[], variables: TVariables) => Note[],
   reconcile?: (notes: Note[], result: TData, variables: TVariables) => Note[],
 ) {
-  const queryClient = useQueryClient();
-  const key = notesKey(projectId);
-
-  return useMutation<TData, Error, TVariables, NotesContext>({
+  return useOptimisticMutation<TData, TVariables, Note[]>({
+    queryKey: notesKey(projectId),
     mutationFn,
-    onMutate: async (variables) => {
-      await queryClient.cancelQueries({ queryKey: key });
-      const previous = queryClient.getQueryData<Note[]>(key);
-      queryClient.setQueryData<Note[]>(key, (old) => patch(old ?? [], variables));
-      return { previous };
-    },
-    onError: (_error, _variables, context) => {
-      if (context?.previous) queryClient.setQueryData(key, context.previous);
-    },
-    onSuccess: (result, variables) => {
-      if (reconcile) {
-        queryClient.setQueryData<Note[]>(key, (old) =>
-          old ? reconcile(old, result, variables) : old,
-        );
-      }
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: key });
-    },
+    patch: (old, variables) => patch(old ?? [], variables),
+    reconcile,
   });
 }
 

@@ -15,6 +15,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { ShareButton } from '@/features/sharing';
 import { EmojiPicker } from '@/components/forms/EmojiPicker';
 import { docToMarkdown } from '@/features/editor/serialize';
+import { TemplatesMenu } from '@/features/editor/TemplatesMenu';
+import { useSyncCustomTemplates } from '@/features/editor/useNoteTemplates';
 import type { Note } from '@/types/database';
 import { uploadNoteImage, useNoteMediaUrl } from './noteMedia';
 import { noteTitleSchema } from './schemas';
@@ -65,6 +67,9 @@ const AUTOSAVE_DELAY = 700;
  */
 export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: NoteEditorProps) {
   const { user } = useAuth();
+  // Keep the slash menu's "Your templates" section in sync with the user's saved
+  // templates for the duration this editor is open.
+  useSyncCustomTemplates();
   // A standalone note the current user owns can be shared with other users.
   const canShare = note.project_id === null && note.owner_id === user?.id;
 
@@ -172,9 +177,14 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
     runUpdate({ id: note.id, cover: null });
   }
 
+  // The note's current document, including unsaved edits — used by the export and
+  // the "save as template" action so both capture what the user sees now.
+  const currentDoc = (): JSONContent | null =>
+    docRef.current?.json ?? (note.content_json as JSONContent | null);
+
   // Export the current document (including unsaved edits) as a .md download.
   function handleExport() {
-    const doc = docRef.current?.json ?? (note.content_json as JSONContent | null);
+    const doc = currentDoc();
     const cleanTitle = title.trim() || 'Untitled note';
     const markdown = `# ${cleanTitle}\n\n${docToMarkdown(doc as Record<string, unknown> | null)}`;
     const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
@@ -285,6 +295,8 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
           >
             <Download size={16} />
           </button>
+          {/* Save-as-template + manager. Standalone notes only (personal, free). */}
+          {isStandalone && canEdit && <TemplatesMenu getDoc={currentDoc} />}
           {canEdit && (
             <>
               {canShare && (

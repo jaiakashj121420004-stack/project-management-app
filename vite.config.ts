@@ -1,7 +1,30 @@
 import { fileURLToPath, URL } from 'node:url';
-import { defineConfig } from 'vite';
+import { defineConfig, type PluginOption } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { visualizer } from 'rollup-plugin-visualizer';
+
+/**
+ * Split heavy third-party code out of the app + vendor bundle so the initial
+ * load ships only what a route needs. The two biggest offenders each get their
+ * own chunk that is only fetched when that feature mounts (both are already
+ * behind lazy routes): the **Tiptap/ProseMirror + Yjs** rich-text stack and the
+ * **Konva** canvas stack. Everything else in node_modules stays in one `vendor`
+ * chunk. Returning `undefined` leaves a module in Rollup's default chunk.
+ */
+function manualChunks(id: string): string | undefined {
+  if (!id.includes('node_modules')) return undefined;
+  if (id.includes('konva') || id.includes('perfect-freehand')) return 'canvas';
+  if (
+    id.includes('@tiptap') ||
+    id.includes('prosemirror') ||
+    id.includes('/yjs/') ||
+    id.includes('y-protocols')
+  ) {
+    return 'editor';
+  }
+  return 'vendor';
+}
 
 // https://vite.dev/config/
 // Phase 9: full Aurora PWA — installable manifest, branded icons, and a
@@ -54,12 +77,27 @@ export default defineConfig({
         // deep links (and offline reloads) render instead of a browser error.
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
-        // The main bundle is large (code-splitting is a Phase 10 item); lift the
-        // precache size cap so the shell is fully cached.
-        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+        // With the editor/canvas stacks split into their own chunks (see
+        // manualChunks), no single asset approaches the old 4 MB bundle, so the
+        // precache cap comes back down to 2 MB. Tighten further using the
+        // bundle-visualizer report (dist/stats.html) if a chunk grows.
+        maximumFileSizeToCacheInBytes: 2 * 1024 * 1024,
       },
     }),
+    // Emits dist/stats.html on every build — an interactive treemap of what's in
+    // each chunk, so bundle regressions are visible in review. Never affects the
+    // shipped app.
+    visualizer({
+      filename: 'dist/stats.html',
+      gzipSize: true,
+      brotliSize: true,
+    }) as PluginOption,
   ],
+  build: {
+    rollupOptions: {
+      output: { manualChunks },
+    },
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

@@ -428,6 +428,24 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
   });
   useEffect(() => () => flushRef.current(), []);
 
+  // Persist a pending change if the user leaves without a clean unmount — closing
+  // the tab (`beforeunload`) or backgrounding it (`visibilitychange` → hidden,
+  // the reliable signal on mobile where `beforeunload` often never fires). This
+  // matters most for the LAST peer on a collaborative canvas: without a flush,
+  // in-flight Yjs edits would be lost when the doc's final editor walks away.
+  useEffect(() => {
+    const flush = () => flushRef.current();
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') flush();
+    };
+    window.addEventListener('beforeunload', flush);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('beforeunload', flush);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, []);
+
   // ── viewport / camera ────────────────────────────────────────────────────────
 
   const handleViewportChange = useCallback((size: { width: number; height: number }) => {

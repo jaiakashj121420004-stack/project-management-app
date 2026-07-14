@@ -115,7 +115,7 @@ export function BoardColumn({
                 card={card}
                 face={faceByCardId.get(card.id)}
                 hidden={hiddenCardIds.has(card.id)}
-                onOpen={() => onOpenCard(card)}
+                onOpenCard={onOpenCard}
               />
             ))}
             {filtering && visibleCount === 0 && (

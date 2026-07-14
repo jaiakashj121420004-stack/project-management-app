@@ -1,5 +1,6 @@
 import type { Editor } from '@tiptap/core';
 import {
+  Bookmark,
   Heading1,
   Heading2,
   Heading3,
@@ -14,18 +15,23 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { NOTE_TEMPLATES } from '../noteTemplates';
+import { getCustomTemplates } from '../customTemplateStore';
 
 /** A block that can be inserted from the slash menu. */
 export interface SlashItem {
+  /** Stable identity for React keys (titles can collide across custom templates). */
+  key: string;
   title: string;
   subtitle: string;
   icon: LucideIcon;
   keywords: string[];
+  /** Groups the item under a labelled section in the menu (built-ins are ungrouped). */
+  section?: string;
   /** Applied at the caret; the trigger text ("/query") is already removed. */
   command: (editor: Editor) => void;
 }
 
-export const SLASH_ITEMS: readonly SlashItem[] = [
+const BLOCK_ITEMS: readonly Omit<SlashItem, 'key'>[] = [
   {
     title: 'Text',
     subtitle: 'Plain paragraph',
@@ -113,11 +119,43 @@ export const SLASH_ITEMS: readonly SlashItem[] = [
   })),
 ];
 
-/** Filter the menu by a query against each item's title + keywords. */
+/** The built-in blocks + templates, each given a stable key. */
+export const SLASH_ITEMS: readonly SlashItem[] = BLOCK_ITEMS.map((item, index) => ({
+  key: `block:${index}`,
+  ...item,
+}));
+
+const YOUR_TEMPLATES_SECTION = 'Your templates';
+
+/**
+ * The user's saved templates as slash items, grouped under a distinct section
+ * with the bookmark glyph. Read live from the module snapshot so a just-saved
+ * template appears without rebuilding the editor. `insertContent` drops the
+ * stored doc's blocks at the caret (see templateDocToBlocks).
+ */
+function customSlashItems(): SlashItem[] {
+  return getCustomTemplates().map((template) => ({
+    key: `custom:${template.id}`,
+    title: template.title,
+    subtitle: template.subtitle,
+    icon: Bookmark,
+    keywords: ['template', 'my', 'custom', ...template.title.toLowerCase().split(/\s+/)],
+    section: YOUR_TEMPLATES_SECTION,
+    command: (e: Editor) => e.chain().focus().insertContent(template.blocks).run(),
+  }));
+}
+
+/** Built-ins followed by the user's custom templates — the one merged list. */
+export function allSlashItems(): SlashItem[] {
+  return [...SLASH_ITEMS, ...customSlashItems()];
+}
+
+/** Filter the merged menu by a query against each item's title + keywords. */
 export function filterSlashItems(query: string): SlashItem[] {
+  const all = allSlashItems();
   const q = query.trim().toLowerCase();
-  if (!q) return [...SLASH_ITEMS];
-  return SLASH_ITEMS.filter(
+  if (!q) return all;
+  return all.filter(
     (item) =>
       item.title.toLowerCase().includes(q) ||
       item.keywords.some((keyword) => keyword.includes(q)),

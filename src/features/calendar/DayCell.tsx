@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { format, isSameMonth, isToday } from 'date-fns';
 import { cn } from '@/lib/cn';
@@ -23,8 +24,13 @@ interface DayCellProps {
 /**
  * One calendar day: a drop target (drag a chip here to reschedule) showing its
  * date and the day's card chips, with graceful overflow and an empty state.
+ *
+ * Memoised (below): a month grid mounts ~35 of these, and dragging a chip
+ * re-renders the page — without memo every cell re-rendered on each drag frame.
+ * Effective as long as the page passes stable `accentFor`/`onOpenCard`/`onPeek`
+ * and a stable empty-array reference for dayless cells (see CalendarGrid).
  */
-export function DayCell({
+function DayCellComponent({
   date,
   dateKey,
   cards,
@@ -86,3 +92,5 @@ export function DayCell({
     </div>
   );
 }
+
+export const DayCell = memo(DayCellComponent);

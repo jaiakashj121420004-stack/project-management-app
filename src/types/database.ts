@@ -449,6 +449,47 @@ export interface Database {
         };
         Relationships: [];
       };
+      note_templates: {
+        // User-authored note templates (Aurora Phase 5) — owner-scoped reusable
+        // note structures merged with the built-in slash-menu templates.
+        Row: {
+          id: string;
+          // Defaults to auth.uid(); immutable (note_templates_before_write).
+          owner_id: string;
+          title: string;
+          // Short menu description, or null.
+          subtitle: string | null;
+          // Optional emoji / lucide key for the manager UI, or null.
+          icon: string | null;
+          // The Tiptap block document (jsonb). Validated against the shared editor
+          // schema client-side before insert; typed loosely like notes.content_json.
+          content_json: Record<string, unknown>;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_id?: string;
+          // Defaults to 'Untitled template' in the DB.
+          title?: string;
+          subtitle?: string | null;
+          icon?: string | null;
+          content_json: Record<string, unknown>;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_id?: string;
+          title?: string;
+          subtitle?: string | null;
+          icon?: string | null;
+          content_json?: Record<string, unknown>;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       canvas_notes: {
         Row: {
           id: string;
@@ -1047,6 +1088,7 @@ export type TodoList = Database['public']['Tables']['todo_lists']['Row'];
 export type TodoItem = Database['public']['Tables']['todo_items']['Row'];
 export type Folder = Database['public']['Tables']['folders']['Row'];
 export type Note = Database['public']['Tables']['notes']['Row'];
+export type NoteTemplateRow = Database['public']['Tables']['note_templates']['Row'];
 export type CanvasNote = Database['public']['Tables']['canvas_notes']['Row'];
 export type CanvasMember = Database['public']['Tables']['canvas_members']['Row'];
 export type NoteMember = Database['public']['Tables']['note_members']['Row'];

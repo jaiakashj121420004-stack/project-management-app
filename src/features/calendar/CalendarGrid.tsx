@@ -4,6 +4,10 @@ import type { Card } from '@/types/database';
 import { DayCell } from './DayCell';
 import { WEEKDAYS, toDateKey, type CalendarView } from './dates';
 
+/** Stable reference for dayless cells so the memoised DayCell isn't re-rendered
+ *  by a fresh `[]` every time the page renders. */
+const NO_CARDS: Card[] = [];
+
 interface CalendarGridProps {
   days: Date[];
   variant: CalendarView;
@@ -48,7 +52,7 @@ export function CalendarGrid({
               key={key}
               date={date}
               dateKey={key}
-              cards={cardsByDate.get(key) ?? []}
+              cards={cardsByDate.get(key) ?? NO_CARDS}
               variant={variant}
               limit={limit}
               monthCursor={monthCursor}

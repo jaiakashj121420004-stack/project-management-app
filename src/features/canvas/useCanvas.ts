@@ -145,7 +145,14 @@ function seedEditorCache(
   queryClient: ReturnType<typeof useQueryClient>,
   summary: CanvasNoteSummary,
 ): void {
-  queryClient.setQueryData<CanvasNote>(canvasKey(summary.id), { ...summary, scene: {}, doc_state: null });
+  // A valid empty scene ({ elements: [] }) — NOT `{}`, which is an *empty* object,
+  // not a well-formed CanvasScene. A literal (rather than the CanvasScene-typed
+  // emptyScene()) keeps it assignable to the loosely-typed jsonb `scene` column.
+  queryClient.setQueryData<CanvasNote>(canvasKey(summary.id), {
+    ...summary,
+    scene: { elements: [] },
+    doc_state: null,
+  });
 }
 
 /** Create a canvas inside a project; optimistically prepends to the project list. */

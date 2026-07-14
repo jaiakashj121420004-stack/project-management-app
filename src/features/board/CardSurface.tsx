@@ -1,4 +1,4 @@
-import { forwardRef, type CSSProperties } from 'react';
+import { forwardRef, memo, type CSSProperties } from 'react';
 import {
   CalendarClock,
   CheckCircle2,
@@ -65,7 +65,7 @@ const DUE_PILL: Record<ReturnType<typeof dueStatus>, string> = {
  * Phase 5 detail at a glance: label swatches, a urgency-colored due pill, and
  * checklist progress.
  */
-export const CardSurface = forwardRef<HTMLDivElement, CardSurfaceProps>(function CardSurface(
+const CardSurfaceComponent = forwardRef<HTMLDivElement, CardSurfaceProps>(function CardSurface(
   { title, description, dueDate, priority, reviewStatus, labels, checklist, lifted = false, dimmed = false, className, style, onClick },
   ref,
 ) {
@@ -160,3 +160,11 @@ export const CardSurface = forwardRef<HTMLDivElement, CardSurfaceProps>(function
     </div>
   );
 });
+
+/**
+ * Memoised so a board/column re-render doesn't re-run this presentational tile
+ * for every card. Pure in its props (primitives + the memoised `labels`/
+ * `checklist` from the board's faceByCardId, plus a stable `onClick`), so the
+ * default shallow comparison is correct.
+ */
+export const CardSurface = memo(CardSurfaceComponent);

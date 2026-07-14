@@ -28,9 +28,13 @@ const DEFAULT_MUTATION_ERROR = "Couldn't save your changes. Please try again.";
  * cached app shell shows real boards/projects instead of empty skeletons.
  *
  * `gcTime` must outlive `maxAge` (below) or queries are garbage-collected before
- * they can be restored. Freshness is unchanged: `staleTime` stays at the default
- * 0, so when online every query still refetches on mount and Realtime keeps
- * invalidating — the persisted copy is purely a cold-start / offline fallback.
+ * they can be restored. A small default `staleTime` (30s) stops the redundant
+ * second fetch a write used to trigger: with `staleTime: 0`, a mutation's
+ * `onSettled` invalidate AND the remounting component AND the Realtime echo each
+ * refetched, so one edit could hit the network three times. Correctness is
+ * unaffected — `invalidateQueries` (used by every mutation + the Realtime
+ * subscriptions) refetches regardless of `staleTime`; the window only suppresses
+ * the incidental refetch-on-mount when data is already fresh.
  *
  * Privacy: the cache can hold another user's data on a shared device, so it is
  * wiped on sign-out (see AuthProvider + clearPersistedCache()).
@@ -46,6 +50,9 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       gcTime: PERSIST_MAX_AGE,
+      // Suppress the incidental refetch-on-mount right after a write (see above);
+      // Realtime + mutation invalidations still refetch immediately.
+      staleTime: 30_000,
     },
   },
   // Global write-failure feedback (Phase 2 resilience). Every mutation's optimistic

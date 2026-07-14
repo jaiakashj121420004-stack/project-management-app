@@ -1,4 +1,5 @@
-import { useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
+import { useQuery, type QueryKey } from '@tanstack/react-query';
+import { useOptimisticMutation } from '@/lib/useOptimisticMutation';
 import type { Card, Column } from '@/types/database';
 import {
   fetchBoard,
@@ -26,10 +27,6 @@ import {
 
 const boardKey = (projectId: string): QueryKey => ['board', projectId];
 
-interface BoardContext {
-  previous?: BoardData;
-}
-
 /** Columns + cards for a project (RLS returns only what the user can see). */
 export function useBoard(projectId: string | undefined) {
   return useQuery({
@@ -39,37 +36,23 @@ export function useBoard(projectId: string | undefined) {
   });
 }
 
-/** Shared optimistic plumbing: snapshot → patch → rollback-on-error → refetch. */
+/**
+ * Board mutations are optimistic over the single `['board', id]` snapshot. Thin
+ * adapter over the shared `useOptimisticMutation`: the board only ever patches an
+ * existing snapshot, so `patch` returns `old` untouched until the first fetch
+ * lands.
+ */
 function useBoardMutation<TData, TVariables>(
   projectId: string,
   mutationFn: (variables: TVariables) => Promise<TData>,
   patch: (board: BoardData, variables: TVariables) => BoardData,
   reconcile?: (board: BoardData, data: TData, variables: TVariables) => BoardData,
 ) {
-  const queryClient = useQueryClient();
-  const key = boardKey(projectId);
-
-  return useMutation<TData, Error, TVariables, BoardContext>({
+  return useOptimisticMutation<TData, TVariables, BoardData>({
+    queryKey: boardKey(projectId),
     mutationFn,
-    onMutate: async (variables) => {
-      await queryClient.cancelQueries({ queryKey: key });
-      const previous = queryClient.getQueryData<BoardData>(key);
-      queryClient.setQueryData<BoardData>(key, (old) => (old ? patch(old, variables) : old));
-      return { previous };
-    },
-    onError: (_error, _variables, context) => {
-      if (context?.previous) queryClient.setQueryData(key, context.previous);
-    },
-    onSuccess: (data, variables) => {
-      if (reconcile) {
-        queryClient.setQueryData<BoardData>(key, (old) =>
-          old ? reconcile(old, data, variables) : old,
-        );
-      }
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: key });
-    },
+    patch: (old, variables) => (old ? patch(old, variables) : old),
+    reconcile,
   });
 }
 

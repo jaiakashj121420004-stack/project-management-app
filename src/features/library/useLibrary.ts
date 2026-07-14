@@ -1,5 +1,6 @@
-import { useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
+import { useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
+import { useOptimisticMutation } from '@/lib/useOptimisticMutation';
 import type { Folder, Note } from '@/types/database';
 import {
   fetchStandaloneNotes,
@@ -41,11 +42,8 @@ export function useFolders() {
   });
 }
 
-interface FoldersContext {
-  previous?: Folder[];
-}
-
-/** Shared optimistic plumbing for folder mutations. */
+/** Folder mutations over the shared optimistic primitive, keyed to the caller's
+ *  own folder cache. */
 function useFoldersMutation<TData, TVariables>(
   mutationFn: (variables: TVariables) => Promise<TData>,
   patch: (folders: Folder[], variables: TVariables) => Folder[],
@@ -53,31 +51,12 @@ function useFoldersMutation<TData, TVariables>(
   onSettledExtra?: () => void,
 ) {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const key = foldersKey(user?.id);
-
-  return useMutation<TData, Error, TVariables, FoldersContext>({
+  return useOptimisticMutation<TData, TVariables, Folder[]>({
+    queryKey: foldersKey(user?.id),
     mutationFn,
-    onMutate: async (variables) => {
-      await queryClient.cancelQueries({ queryKey: key });
-      const previous = queryClient.getQueryData<Folder[]>(key);
-      queryClient.setQueryData<Folder[]>(key, (old) => patch(old ?? [], variables));
-      return { previous };
-    },
-    onError: (_error, _variables, context) => {
-      if (context?.previous) queryClient.setQueryData(key, context.previous);
-    },
-    onSuccess: (result, variables) => {
-      if (reconcile) {
-        queryClient.setQueryData<Folder[]>(key, (old) =>
-          old ? reconcile(old, result, variables) : old,
-        );
-      }
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: key });
-      onSettledExtra?.();
-    },
+    patch: (old, variables) => patch(old ?? [], variables),
+    reconcile,
+    onSettledExtra,
   });
 }
 
@@ -167,38 +146,17 @@ export function useLibraryNotes() {
   });
 }
 
-interface NotesContext {
-  previous?: Note[];
-}
-
 function useLibraryNotesMutation<TData, TVariables>(
   mutationFn: (variables: TVariables) => Promise<TData>,
   patch: (notes: Note[], variables: TVariables) => Note[],
   reconcile?: (notes: Note[], result: TData, variables: TVariables) => Note[],
 ) {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const key = libraryNotesKey(user?.id);
-
-  return useMutation<TData, Error, TVariables, NotesContext>({
+  return useOptimisticMutation<TData, TVariables, Note[]>({
+    queryKey: libraryNotesKey(user?.id),
     mutationFn,
-    onMutate: async (variables) => {
-      await queryClient.cancelQueries({ queryKey: key });
-      const previous = queryClient.getQueryData<Note[]>(key);
-      queryClient.setQueryData<Note[]>(key, (old) => patch(old ?? [], variables));
-      return { previous };
-    },
-    onError: (_error, _variables, context) => {
-      if (context?.previous) queryClient.setQueryData(key, context.previous);
-    },
-    onSuccess: (result, variables) => {
-      if (reconcile) {
-        queryClient.setQueryData<Note[]>(key, (old) => (old ? reconcile(old, result, variables) : old));
-      }
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: key });
-    },
+    patch: (old, variables) => patch(old ?? [], variables),
+    reconcile,
   });
 }
 
