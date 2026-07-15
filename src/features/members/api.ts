@@ -21,8 +21,10 @@ export interface MemberWithProfile {
 /**
  * Members of a project with their display name + avatar. Two queries rather than
  * a PostgREST embed: project_members.user_id points at auth.users (not profiles),
- * so there's no FK to embed across. Co-member profiles are readable thanks to the
- * Phase 8 "select co-members" policy.
+ * so there's no FK to embed across. Co-member display data comes from the
+ * `co_member_profiles` SECURITY DEFINER RPC, which returns ONLY id/display_name/
+ * avatar_url for users the caller may see — the base `profiles` table is own-row
+ * only, so billing/reminder PII is never exposed to co-members (M1).
  */
 export async function fetchMembers(projectId: string): Promise<MemberWithProfile[]> {
   const { data: members, error } = await supabase
@@ -35,10 +37,9 @@ export async function fetchMembers(projectId: string): Promise<MemberWithProfile
   const ids = members.map((member) => member.user_id);
   const profilesById = new Map<string, { display_name: string | null; avatar_url: string | null }>();
   if (ids.length > 0) {
-    const { data: profiles, error: profilesError } = await supabase
-      .from('profiles')
-      .select('id, display_name, avatar_url')
-      .in('id', ids);
+    const { data: profiles, error: profilesError } = await supabase.rpc('co_member_profiles', {
+      p_ids: ids,
+    });
     if (profilesError) throw profilesError;
     for (const profile of profiles) {
       profilesById.set(profile.id, {

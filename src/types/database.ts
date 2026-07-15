@@ -903,6 +903,17 @@ export interface Database {
         Args: Record<string, never>;
         Returns: number;
       };
+      // Co-member display data only (M1): id/display_name/avatar_url for users the
+      // caller may see (self or a project co-member). SECURITY DEFINER; the profiles
+      // base table is own-row-only so billing/reminder PII is never exposed.
+      co_member_profiles: {
+        Args: { p_ids: string[] };
+        Returns: {
+          id: string;
+          display_name: string | null;
+          avatar_url: string | null;
+        }[];
+      };
       // Invitation accept/decline (no auto-join): list my invites + accept one.
       my_pending_invitations: {
         Args: Record<string, never>;
