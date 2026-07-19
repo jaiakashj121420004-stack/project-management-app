@@ -1083,6 +1083,22 @@ export interface Database {
         Args: { p_ids: string[] };
         Returns: undefined;
       };
+      // Admin audit log (hardening pass, 2026-07-19): every admin action taken
+      // through the app is traceable. log_admin_action re-checks is_admin()
+      // itself; admin_list_feedback replaces the old un-audited direct select.
+      log_admin_action: {
+        Args: {
+          p_action: string;
+          p_target_table: string;
+          p_target_id?: string | null;
+          p_detail?: Record<string, unknown> | null;
+        };
+        Returns: undefined;
+      };
+      admin_list_feedback: {
+        Args: Record<string, never>;
+        Returns: Database['public']['Tables']['feedback']['Row'][];
+      };
     };
     Enums: Record<string, never>;
   };

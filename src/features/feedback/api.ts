@@ -36,14 +36,13 @@ export async function submitFeedback(input: NewFeedback): Promise<Feedback> {
 }
 
 /**
- * Every submission, newest first. RLS returns the full set only to the admin;
- * a regular user would just get their own rows.
+ * Every submission, newest first — admin only. Goes through the
+ * `admin_list_feedback` RPC (not a direct `.from('feedback').select()`) so the
+ * read itself is recorded in `admin_audit_log`; a regular user calling this
+ * RPC gets a permission error instead of silently getting only their own rows.
  */
 export async function fetchAllFeedback(): Promise<Feedback[]> {
-  const { data, error } = await supabase
-    .from('feedback')
-    .select('*')
-    .order('created_at', { ascending: false });
+  const { data, error } = await supabase.rpc('admin_list_feedback');
   if (error) throw error;
   return data;
 }
