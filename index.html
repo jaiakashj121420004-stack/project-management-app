@@ -36,7 +36,22 @@
     <script src="/theme-init.js"></script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!--
+        Static fallback content, visible only until React mounts and replaces it
+        (createRoot overwrites these children on first render). Exists so that
+        crawlers which don't execute JavaScript — e.g. Google OAuth branding
+        verification — see real text describing the app, not an empty shell.
+      -->
+      <main style="font-family: Georgia, serif; max-width: 40rem; margin: 4rem auto; padding: 0 1.5rem; color: #ECE4D6; background: #181210;">
+        <h1>Aurora</h1>
+        <p>Aurora, by Nvexis, is a modern project-management workspace: Kanban boards, a
+          Notion-style block editor, an infinite collaborative canvas, a calendar, notes,
+          and daily to-dos — installable on every device and synced in real time.</p>
+        <p><a href="/privacy" style="color:#C24A40;">Privacy Policy</a> ·
+           <a href="/terms" style="color:#C24A40;">Terms of Service</a></p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
