@@ -91,7 +91,9 @@ const ListStyle = Extension.create({
             default: null,
             parseHTML: (el: HTMLElement) => el.getAttribute('data-list-style'),
             renderHTML: (attrs: Record<string, unknown>) =>
-              attrs.listStyle ? { 'data-list-style': String(attrs.listStyle) } : {},
+              typeof attrs.listStyle === 'string'
+                ? { 'data-list-style': attrs.listStyle }
+                : {},
           },
         },
       },

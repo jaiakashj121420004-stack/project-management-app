@@ -22,7 +22,7 @@ export function CanvasLinkView({ node }: NodeViewProps) {
       params.set('note', noteRef.noteId);
       params.set('noteTitle', noteRef.noteTitle);
     }
-    navigate(`/library?${params.toString()}`);
+    void navigate(`/library?${params.toString()}`);
   };
 
   return (

@@ -198,6 +198,7 @@ The rule: **the frontend is untrusted; the database enforces the rules.**
 - **Validation:** Zod on the client for UX; Postgres constraints + RLS on the server as the real guarantee.
 - **Transport:** HTTPS everywhere (automatic on Cloudflare + Supabase).
 - **Before charging money:** rate limiting, Terms of Service + Privacy Policy, and **verify Dodo webhook signatures** (Standard Webhooks HMAC) before any DB write.
+- **Client-side storage / data retention (I3).** By design, `supabase-js` persists the **auth session (access + refresh tokens) in `localStorage`**, and the app keeps an **offline React Query cache** of the boards/notes the user has opened in `localStorage` too (so the PWA loads instantly and works offline). Both are **cleared on sign-out (`SIGNED_OUT`)** and the query cache carries a **24-hour max-age**. This is standard for this SPA/PWA architecture and is the reason a shared/public device should be signed out after use — call this out in the Privacy Policy / data-retention copy. Admin access is governed by the `admins` table (not a hardcoded email); billing/reminder PII on `profiles` is own-row only and never exposed to project co-members (co-member display data comes from the `co_member_profiles` accessor). See `SECURITY-REVIEW-2026-07-15.md` + `SECURITY-FIX-PLAN.md`.
 
 ---
 

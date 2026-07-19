@@ -54,27 +54,40 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-// Best-effort per-user rate limiting. Checkout creation is a rare, deliberate
-// action, so a tight fixed window is plenty to blunt accidental floods or a
-// stolen token spamming Dodo. State lives in the isolate's memory: it survives
-// across warm invocations and resets on cold start — good enough as a first line
-// without a shared store, and it fails open (never blocks a legitimate user for
-// long). Keyed by Supabase user id.
+// Per-user rate limiting. Checkout creation is a rare, deliberate action, so a
+// tight window is plenty to blunt accidental floods or a stolen token spamming
+// Dodo. Backed by a SHARED Postgres sliding-window counter (rate_limit_hit) so the
+// limit holds across isolates/cold starts, not just within one warm isolate. It
+// fails OPEN only if the counter query itself errors, so a DB hiccup never blocks a
+// legitimate upgrade.
 const RATE_LIMIT_MAX = 8;
-const RATE_LIMIT_WINDOW_MS = 60_000;
-const rateHits = new Map<string, number[]>();
+const RATE_LIMIT_WINDOW_SECONDS = 60;
 
-/** True when the user is over the limit; records this hit otherwise. */
-function isRateLimited(userId: string): boolean {
-  const now = Date.now();
-  const recent = (rateHits.get(userId) ?? []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
-  if (recent.length >= RATE_LIMIT_MAX) {
-    rateHits.set(userId, recent);
-    return true;
+/** True when the user is over the limit; records this hit otherwise (shared store). */
+async function isRateLimited(userId: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/rate_limit_hit`, {
+      method: 'POST',
+      headers: {
+        apikey: SERVICE_ROLE,
+        Authorization: `Bearer ${SERVICE_ROLE}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        p_key: `checkout:${userId}`,
+        p_max: RATE_LIMIT_MAX,
+        p_window_seconds: RATE_LIMIT_WINDOW_SECONDS,
+      }),
+    });
+    if (!res.ok) {
+      console.error(`rate_limit_hit failed: ${res.status} ${await res.text()}`);
+      return false; // fail open — never block a legitimate user on a limiter error
+    }
+    return (await res.json()) === true;
+  } catch (err) {
+    console.error('rate_limit_hit error', err);
+    return false; // fail open
   }
-  recent.push(now);
-  rateHits.set(userId, recent);
-  return false;
 }
 
 interface AuthedUser {
@@ -125,7 +138,7 @@ Deno.serve(async (req: Request) => {
     const user = await getAuthedUser(req);
     if (!user) return json({ error: 'Unauthorized' }, 401);
 
-    if (isRateLimited(user.id)) {
+    if (await isRateLimited(user.id)) {
       return json({ error: 'Too many requests. Please try again in a moment.' }, 429);
     }
 
@@ -175,7 +188,9 @@ Deno.serve(async (req: Request) => {
 
     return json({ url: data.checkout_url });
   } catch (err) {
+    // Log the real error server-side, but never leak internal topology / upstream
+    // status codes to the browser (M3) — return a generic message.
     console.error(err);
-    return json({ error: err instanceof Error ? err.message : String(err) }, 500);
+    return json({ error: 'Something went wrong. Please try again.' }, 500);
   }
 });

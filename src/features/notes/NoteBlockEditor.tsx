@@ -29,7 +29,7 @@ export default function NoteBlockEditor({
 }) {
   // Seed once per mount; the parent re-keys by note id, so a new note remounts.
   const [initial] = useState<JSONContent>(() =>
-    note.content_json ? (note.content_json as JSONContent) : markdownToDoc(note.content),
+    note.content_json ? note.content_json : markdownToDoc(note.content),
   );
 
   return (

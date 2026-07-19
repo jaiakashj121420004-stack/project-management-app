@@ -213,6 +213,6 @@ The engineering is done; these are the remaining launch blockers that Claude **c
 2. **KYC / merchant onboarding.** Complete Dodo's Merchant-of-Record KYC so payouts and live charges are enabled.
 3. **Legal.** Finalize Terms + Privacy for a paid multi-tenant product (data processing, subprocessors, refund/cancellation, GDPR/CCPA as applicable). The `/terms` and `/privacy` pages exist — get the copy reviewed.
 4. **External penetration test.** The audit's key assurance ask: commission **one external pen-test** before charging real money. RLS is dual-enforced and now regression-tested, but an outside probe is what turns "we think it's right" into "it was verified."
-5. **Production env hygiene.** Confirm prod Supabase project has all migrations applied (incl. Phase 6 `sharing_hardening`), the private storage buckets exist, `APP_URL`/cron secret set, and the anon key is the only key shipped to the browser.
+5. **Production env hygiene.** ✅ **DONE (2026-07-15)** — verified end-to-end against prod project `rpwklsrdfqyisogbcdgg` (see `memory.md` top entry): all 30 migrations applied (CLI history repaired via `migration repair`), `canvas-media` + `note-media` private buckets exist, all required Edge Function secrets set, pg_cron `aurora-due-reminders` running + succeeding, and anon-key-only confirmed in `src/`, `.env`, and Cloudflare Pages env. *Small remaining sub-item:* set a real `REMINDER_FROM_EMAIL` once a Resend sending domain is verified (currently on the `onboarding@resend.dev` fallback).
 
-Once §1–§5 are green and gates 1–5 are cleared, Aurora is go-live ready.
+Once §1–§5 are green and gates 1–4 are cleared (gate 5 done), Aurora is go-live ready.

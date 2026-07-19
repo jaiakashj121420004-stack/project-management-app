@@ -180,7 +180,7 @@ export function GlassSelect<T extends string | number>({
 
       <AnimatePresence>
         {open && (
-          <motion.ul
+          <motion.div
             id={listId}
             role="listbox"
             aria-label={label}
@@ -196,32 +196,31 @@ export function GlassSelect<T extends string | number>({
             )}
           >
             {options.map((option, i) => (
-              <li key={String(option.value)}>
-                <button
-                  id={optionId(i)}
-                  type="button"
-                  role="option"
-                  aria-selected={option.value === value}
-                  tabIndex={-1}
-                  onMouseEnter={() => setActiveIndex(i)}
-                  onClick={() => commit(i)}
-                  className={cn(
-                    'flex w-full items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-left text-sm font-medium transition-colors',
-                    i === activeIndex
-                      ? 'bg-[var(--glass-fill)] text-fg'
-                      : option.value === value
-                        ? 'text-fg'
-                        : 'text-fg-muted',
-                  )}
-                >
-                  <span className="truncate">{option.label}</span>
-                  {option.value === value && (
-                    <Check size={14} className="shrink-0 text-[var(--accent-from)]" aria-hidden />
-                  )}
-                </button>
-              </li>
+              <button
+                key={String(option.value)}
+                id={optionId(i)}
+                type="button"
+                role="option"
+                aria-selected={option.value === value}
+                tabIndex={-1}
+                onMouseEnter={() => setActiveIndex(i)}
+                onClick={() => commit(i)}
+                className={cn(
+                  'flex w-full items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-left text-sm font-medium transition-colors',
+                  i === activeIndex
+                    ? 'bg-[var(--glass-fill)] text-fg'
+                    : option.value === value
+                      ? 'text-fg'
+                      : 'text-fg-muted',
+                )}
+              >
+                <span className="truncate">{option.label}</span>
+                {option.value === value && (
+                  <Check size={14} className="shrink-0 text-[var(--accent-from)]" aria-hidden />
+                )}
+              </button>
             ))}
-          </motion.ul>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ChevronRight, FolderIcon, Home, Plus } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { EmojiPicker } from '@/components/forms/EmojiPicker';
@@ -33,15 +33,21 @@ export function FolderTree({
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   // Keep the path to the current folder open whenever the selection changes.
-  useEffect(() => {
+  // Done at render time (functional setState, not in an effect) so the ancestor
+  // chain expands without a cascading effect render.
+  const [prevPathKey, setPrevPathKey] = useState<string | null>(null);
+  const pathKey = `${currentFolderId ?? ''}|${folders.length}`;
+  if (pathKey !== prevPathKey) {
+    setPrevPathKey(pathKey);
     const ancestors = folderPath(folders, currentFolderId).map((f) => f.id);
-    if (ancestors.length === 0) return;
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      for (const id of ancestors) next.add(id);
-      return next;
-    });
-  }, [folders, currentFolderId]);
+    if (ancestors.length > 0) {
+      setExpanded((prev) => {
+        const next = new Set(prev);
+        for (const id of ancestors) next.add(id);
+        return next;
+      });
+    }
+  }
 
   function toggle(id: string) {
     setExpanded((prev) => {

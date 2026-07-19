@@ -34,16 +34,26 @@ export function NameDialog({
   const [value, setValue] = useState(initialValue);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Re-seed the draft whenever the dialog (re)opens, then focus + select.
+  // Re-seed the draft whenever the dialog (re)opens or its prefill changes.
+  // Done at render time (React's "adjust state while a prop changes" pattern,
+  // tracked with state not a ref) rather than in an effect.
+  const [prevOpen, setPrevOpen] = useState(open);
+  const [prevInitial, setPrevInitial] = useState(initialValue);
+  if (open !== prevOpen || initialValue !== prevInitial) {
+    setPrevOpen(open);
+    setPrevInitial(initialValue);
+    if (open) setValue(initialValue);
+  }
+
+  // Focus + select the input shortly after opening (a DOM side-effect only).
   useEffect(() => {
     if (!open) return;
-    setValue(initialValue);
     const id = window.setTimeout(() => {
       inputRef.current?.focus();
       inputRef.current?.select();
     }, 20);
     return () => window.clearTimeout(id);
-  }, [open, initialValue]);
+  }, [open]);
 
   const trimmed = value.trim();
 

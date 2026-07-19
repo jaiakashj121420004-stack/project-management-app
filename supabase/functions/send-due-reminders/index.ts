@@ -72,14 +72,32 @@ const CRON_SECRET = Deno.env.get('CRON_SECRET') ?? '';
 
 /**
  * Constant-time string comparison so the shared-secret check can't be defeated
- * by measuring how long a mismatch takes to reject. Returns false on any length
- * difference (the length itself is not secret here — the value is).
+ * by measuring how long a mismatch takes to reject.
  */
 function timingSafeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   let diff = 0;
   for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return diff === 0;
+}
+
+/**
+ * SHA-256 → 64-char hex. We hash both the provided header and the secret to a
+ * FIXED length before timingSafeEqual (L5), so the length short-circuit can never
+ * leak whether the supplied value matches the secret's length. The comparison then
+ * always runs over equal-length digests.
+ */
+async function sha256Hex(input: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+/** Constant-time secret check over fixed-length digests (see sha256Hex, L5). */
+async function secretMatches(provided: string, secret: string): Promise<boolean> {
+  if (!secret) return false;
+  return timingSafeEqual(await sha256Hex(provided), await sha256Hex(secret));
 }
 
 /** Call a SECURITY DEFINER RPC with the service role. */
@@ -319,8 +337,9 @@ async function runNotificationEmails(): Promise<number> {
 
 Deno.serve(async (req: Request) => {
   // Only the scheduler (which knows CRON_SECRET) may invoke this. Compare in
-  // constant time so a caller can't recover the secret byte-by-byte from timing.
-  if (!CRON_SECRET || !timingSafeEqual(req.headers.get('x-cron-secret') ?? '', CRON_SECRET)) {
+  // constant time over fixed-length digests so a caller can't recover the secret
+  // byte-by-byte — or even its length — from timing (L5).
+  if (!(await secretMatches(req.headers.get('x-cron-secret') ?? '', CRON_SECRET))) {
     return new Response('Unauthorized', { status: 401 });
   }
   if (!RESEND_API_KEY) {

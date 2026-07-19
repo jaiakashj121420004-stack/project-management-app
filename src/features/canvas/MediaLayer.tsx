@@ -130,6 +130,7 @@ function EmbedPlayer({ element }: { element: MediaElement }) {
       className="h-full w-full border-0"
       loading="lazy"
       referrerPolicy="strict-origin-when-cross-origin"
+      sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
       allowFullScreen
     />

@@ -35,6 +35,7 @@ export function NoteEmbedView({ node, updateAttributes, deleteNode, selected, ed
               height={166}
               loading="lazy"
               referrerPolicy="strict-origin-when-cross-origin"
+              sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
               allow="autoplay; encrypted-media"
               className="block w-full"
             />
@@ -45,6 +46,7 @@ export function NoteEmbedView({ node, updateAttributes, deleteNode, selected, ed
                 title={provider}
                 loading="lazy"
                 referrerPolicy="strict-origin-when-cross-origin"
+                sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
                 allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
                 allowFullScreen
                 className="absolute inset-0 h-full w-full"

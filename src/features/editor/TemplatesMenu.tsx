@@ -45,7 +45,7 @@ export function TemplatesMenu({ getDoc }: TemplatesMenuProps) {
 
   function saveTemplate(name: string) {
     const doc = getDoc();
-    if (!doc || isEmptyDoc(doc as Record<string, unknown>)) {
+    if (!doc || isEmptyDoc(doc)) {
       toast.error('Add some content before saving this note as a template.');
       return;
     }
@@ -62,7 +62,7 @@ export function TemplatesMenu({ getDoc }: TemplatesMenuProps) {
       title: parsed.data.title,
       subtitle: parsed.data.subtitle ?? null,
       icon: null,
-      content_json: parsed.data.content_json as Record<string, unknown>,
+      content_json: parsed.data.content_json,
       tempId: crypto.randomUUID(),
     });
     toast.success('Template saved.');

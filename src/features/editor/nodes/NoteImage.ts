@@ -35,7 +35,7 @@ export const NoteImage = Node.create({
           return w ? Number(w) : null;
         },
         renderHTML: (attrs: Record<string, unknown>) =>
-          attrs.width ? { 'data-width': String(attrs.width) } : {},
+          typeof attrs.width === 'number' ? { 'data-width': String(attrs.width) } : {},
       },
     };
   },

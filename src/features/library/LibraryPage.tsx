@@ -44,6 +44,11 @@ export function LibraryPage() {
   //   `/library?note=<id>`   opens that standalone note.
   //   `/library?folder=<id>` drills into that folder.
   // Params are cleared after handling so refresh/back won't re-trigger.
+  // This effect synchronises with an external system (the URL): it consumes a
+  // one-shot navigation intent from the query string, then strips it. Setting
+  // state directly here is the correct pattern, so the set-state-in-effect rule
+  // is intentionally disabled for this block.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const canvasId = searchParams.get('canvas');
     const noteId = searchParams.get('note');
@@ -66,6 +71,7 @@ export function LibraryPage() {
     next.delete('folder');
     setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Personal canvases only (project canvases live in their project's Canvas tab).
   const personalCanvases = useMemo(

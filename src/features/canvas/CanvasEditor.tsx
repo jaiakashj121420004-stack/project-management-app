@@ -310,6 +310,14 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
     ? scene.elements.find((el) => el.id === validSelectedIds[0])
     : undefined;
 
+  // The single selected frame, if exactly one frame is selected — drives the
+  // inline "Frame name" editor in the toolbar overlay. Derived here (not via an
+  // in-render IIFE) so the onChange stays a plain event handler.
+  const soleFrame =
+    editing && validSelectedIds.length === 1 && primaryElement?.type === 'frame'
+      ? primaryElement
+      : undefined;
+
   // Publish the local selection to collaborators (drives their selection halos).
   const selectionKey = validSelectedIds.join(',');
   useEffect(() => {
@@ -1049,24 +1057,18 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
               onSize={setEraserSize}
             />
           )}
-          {editing &&
-            selectedIds.length === 1 &&
-            (() => {
-              const sole = scene.elements.find((el) => el.id === selectedIds[0]);
-              if (!sole || sole.type !== 'frame') return null;
-              return (
-                <div className="glass-menu pointer-events-auto flex items-center gap-2 rounded-xl border border-[var(--glass-border)] px-2.5 py-1.5">
-                  <span className="text-xs font-medium text-fg-subtle">Frame</span>
-                  <input
-                    value={sole.label}
-                    onChange={(event) => changeElement(sole.id, { label: event.target.value })}
-                    placeholder="Frame name"
-                    aria-label="Frame name"
-                    className="w-44 bg-transparent text-sm text-fg placeholder:text-fg-subtle focus:outline-none"
-                  />
-                </div>
-              );
-            })()}
+          {soleFrame && (
+            <div className="glass-menu pointer-events-auto flex items-center gap-2 rounded-xl border border-[var(--glass-border)] px-2.5 py-1.5">
+              <span className="text-xs font-medium text-fg-subtle">Frame</span>
+              <input
+                value={soleFrame.label}
+                onChange={(event) => changeElement(soleFrame.id, { label: event.target.value })}
+                placeholder="Frame name"
+                aria-label="Frame name"
+                className="w-44 bg-transparent text-sm text-fg placeholder:text-fg-subtle focus:outline-none"
+              />
+            </div>
+          )}
         </div>
 
         {editing && showLayers && (

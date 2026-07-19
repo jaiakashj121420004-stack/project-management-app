@@ -52,7 +52,12 @@ export const EmojiCommand = Extension.create({
         allowSpaces: false,
         items: ({ query }) => filterEmojis(query),
         command: ({ editor, range, props }) => {
-          editor.chain().focus().deleteRange(range).insertContent(`${props.emoji} `).run();
+          editor
+            .chain()
+            .focus()
+            .deleteRange(range)
+            .insertContent(`${(props as EmojiChoice).emoji} `)
+            .run();
         },
         render: makeSuggestionRender<EmojiChoice>(EmojiList),
       }),

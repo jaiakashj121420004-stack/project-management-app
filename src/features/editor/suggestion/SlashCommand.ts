@@ -29,7 +29,7 @@ export const SlashCommand = Extension.create({
         items: ({ query }) => filterSlashItems(query),
         command: ({ editor, range, props }) => {
           editor.chain().focus().deleteRange(range).run();
-          props.command(editor);
+          (props as SlashItem).command(editor);
         },
         render: makeSuggestionRender<SlashItem>(SlashMenu),
       }),

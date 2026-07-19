@@ -41,7 +41,7 @@ export async function fetchMembers(projectId: string): Promise<MemberWithProfile
       p_ids: ids,
     });
     if (profilesError) throw profilesError;
-    for (const profile of profiles) {
+    for (const profile of profiles ?? []) {
       profilesById.set(profile.id, {
         display_name: profile.display_name,
         avatar_url: profile.avatar_url,

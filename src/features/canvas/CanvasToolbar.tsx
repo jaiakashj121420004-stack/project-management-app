@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   Clapperboard,
   ChevronDown,
@@ -16,6 +16,7 @@ import {
   Pen,
   Plus,
   Redo2,
+  SlidersHorizontal,
   Trash2,
   Type,
   Undo2,
@@ -106,13 +107,36 @@ export function CanvasToolbar({
   onToggleLayers,
   className,
 }: CanvasToolbarProps) {
+  // On phones the full tool row wraps into several lines and eats the canvas, so
+  // it collapses behind a "Tools" toggle by default. On sm+ it's always shown.
+  const [open, setOpen] = useState(false);
   return (
     <div
       className={cn(
-        'glass-menu flex max-w-full flex-wrap items-center justify-center gap-1 rounded-2xl border border-[var(--glass-border)] px-1.5 py-1 shadow-[0_14px_34px_-18px_rgba(0,0,0,0.7)]',
+        'glass-menu flex max-w-full flex-col items-stretch gap-1 rounded-2xl border border-[var(--glass-border)] px-1.5 py-1 shadow-[0_14px_34px_-18px_rgba(0,0,0,0.7)] sm:flex-row sm:flex-wrap sm:items-center sm:justify-center',
         className,
       )}
     >
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls="canvas-tools"
+        className="flex items-center justify-center gap-1.5 rounded-xl px-2 py-1.5 text-xs font-semibold text-fg-muted transition-colors hover:text-fg sm:hidden"
+      >
+        <SlidersHorizontal size={15} />
+        {open ? 'Hide tools' : 'Tools'}
+        {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+      </button>
+
+      <div
+        id="canvas-tools"
+        className={cn(
+          'flex-wrap items-center justify-center gap-1',
+          open ? 'flex' : 'hidden',
+          'sm:flex',
+        )}
+      >
       {canEdit && (
         <>
           <ToolButton
@@ -233,6 +257,7 @@ export function CanvasToolbar({
           </ToolButton>
         </>
       )}
+      </div>
     </div>
   );
 }

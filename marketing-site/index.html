@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="en" class="day">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Aurora — the calm home for everything you're building</title>
+<meta name="description" content="Aurora by Nvexis — boards, notes, canvas, calendar and reminders in one beautiful, installable workspace. Free to start. Pro when you're ready to scale." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap" />
+<style>
+  :root{
+    --parchment:#ECE4D6; --parchment-2:#E4DAC8; --ink:#181210; --ink-2:#2A211C;
+    --ox:#7A2A26; --ox-bright:#C24A40; --bone:#F3ECDD;
+    --muted:#6E6357; --line:rgba(24,18,16,.12); --glass:rgba(255,255,255,.42);
+    --shadow:0 24px 60px -28px rgba(40,20,14,.5); --shadow-sm:0 10px 30px -18px rgba(40,20,14,.45);
+    --maxw:1140px;
+  }
+  html.night{
+    --parchment:#181210; --parchment-2:#1F1712; --ink:#F0E7D8; --ink-2:#E7DCC9;
+    --ox:#C24A40; --ox-bright:#E0685C; --bone:#F3ECDD; --muted:#A89A88;
+    --line:rgba(240,231,216,.14); --glass:rgba(40,30,24,.42);
+    --shadow:0 24px 60px -28px rgba(0,0,0,.7);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--parchment); color:var(--ink);
+    font-family:'Spectral',Georgia,serif; font-size:18px; line-height:1.65;
+    -webkit-font-smoothing:antialiased; overflow-x:hidden;
+    background-image:radial-gradient(1200px 600px at 78% -8%, rgba(194,74,64,.10), transparent 60%),
+                     radial-gradient(900px 500px at 8% 12%, rgba(122,42,38,.06), transparent 55%);
+  }
+  /* subtle paper grain */
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/></svg>");}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px;position:relative;z-index:1}
+  h1,h2,h3,.display{font-family:'Fraunces',serif;font-weight:600;letter-spacing:-.01em;line-height:1.04;margin:0}
+  h1{font-size:clamp(2.6rem,6vw,4.7rem);font-weight:600}
+  h2{font-size:clamp(2rem,4vw,3.1rem)}
+  h3{font-size:1.32rem}
+  p{margin:0 0 1rem}
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--ox);font-weight:600}
+  a{color:inherit}
+  .muted{color:var(--muted)}
+  .accent{color:var(--ox)}
+
+  /* nav */
+  nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);background:linear-gradient(var(--parchment),color-mix(in srgb,var(--parchment) 78%,transparent));border-bottom:1px solid var(--line)}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;height:66px}
+  .brand{display:flex;align-items:center;gap:11px;font-family:'Fraunces';font-weight:700;font-size:1.3rem;color:var(--ox);text-decoration:none}
+  .brand svg{filter:drop-shadow(0 5px 12px rgba(0,0,0,.25))}
+  .nav-links{display:flex;gap:30px;align-items:center;font-size:.96rem}
+  .nav-links a{text-decoration:none;color:var(--ink-2);opacity:.85;transition:opacity .2s}
+  .nav-links a:hover{opacity:1;color:var(--ox)}
+  @media(max-width:820px){.nav-links a:not(.btn){display:none}}
+
+  .btn{display:inline-flex;align-items:center;gap:8px;font-family:'Spectral';font-weight:600;font-size:1rem;
+    padding:12px 22px;border-radius:14px;text-decoration:none;border:1px solid transparent;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,background .2s}
+  .btn-primary{background:linear-gradient(120deg,var(--ox),var(--ox-bright));color:var(--bone);box-shadow:0 12px 26px -12px rgba(122,42,38,.75)}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 18px 34px -12px rgba(122,42,38,.85)}
+  .btn-ghost{background:var(--glass);border-color:var(--line);color:var(--ink);backdrop-filter:blur(8px)}
+  .btn-ghost:hover{transform:translateY(-2px)}
+  .btn-lg{padding:16px 30px;font-size:1.08rem;border-radius:16px}
+
+  /* hero */
+  header.hero{padding:78px 0 40px;text-align:center}
+  .hero h1{max-width:16ch;margin:0 auto 22px}
+  .hero .sub{font-size:1.28rem;max-width:40ch;margin:0 auto 30px;color:var(--ink-2)}
+  .hero-cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:16px}
+  .trust{font-family:'IBM Plex Mono',monospace;font-size:.76rem;letter-spacing:.06em;color:var(--muted)}
+
+  /* app mock */
+  .mock{margin:52px auto 0;max-width:1000px;border-radius:22px;border:1px solid var(--line);overflow:hidden;box-shadow:var(--shadow);background:var(--parchment-2);position:relative}
+  .mock-bar{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--parchment) 70%,transparent)}
+  .dot{width:11px;height:11px;border-radius:50%}
+  .mock-body{display:grid;grid-template-columns:180px 1fr;min-height:340px}
+  .mock-side{border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:9px;background:color-mix(in srgb,var(--parchment) 55%,transparent)}
+  .mside-item{height:32px;border-radius:9px;display:flex;align-items:center;padding:0 10px;font-size:.82rem;color:var(--muted);gap:8px}
+  .mside-item.on{background:linear-gradient(120deg,var(--ox),var(--ox-bright));color:var(--bone)}
+  .mock-main{padding:22px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-content:start}
+  .mcol{background:var(--glass);border:1px solid var(--line);border-radius:14px;padding:10px;min-height:200px;backdrop-filter:blur(6px)}
+  .mcard{background:var(--parchment);border:1px solid var(--line);border-radius:10px;padding:9px 10px;margin-bottom:9px;box-shadow:var(--shadow-sm);font-size:.78rem}
+  .mcard .tag{display:inline-block;width:34px;height:5px;border-radius:3px;margin-bottom:7px;background:var(--ox-bright)}
+  @media(max-width:720px){.mock-body{grid-template-columns:1fr}.mock-side{display:none}.mock-main{grid-template-columns:1fr 1fr}}
+
+  section{padding:74px 0}
+  .center{text-align:center}
+  .section-head{max-width:34ch;margin:0 auto 46px}
+  .section-head.center{margin-left:auto;margin-right:auto}
+  .lead{font-size:1.15rem;color:var(--ink-2)}
+
+  /* logo strip / value chips */
+  .chips{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+  .chip{font-family:'IBM Plex Mono',monospace;font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;padding:9px 15px;border-radius:999px;border:1px solid var(--line);background:var(--glass);color:var(--ink-2)}
+
+  /* feature rows */
+  .frow{display:grid;grid-template-columns:1fr 1fr;gap:54px;align-items:center;margin-bottom:30px}
+  .frow.rev .ftext{order:2}
+  .ftext h2{margin-bottom:14px}
+  .fvisual{border-radius:20px;border:1px solid var(--line);background:var(--parchment-2);box-shadow:var(--shadow);padding:22px;min-height:280px;position:relative;overflow:hidden}
+  @media(max-width:860px){.frow{grid-template-columns:1fr;gap:26px}.frow.rev .ftext{order:0}}
+  .flist{list-style:none;padding:0;margin:14px 0 0}
+  .flist li{padding-left:28px;position:relative;margin-bottom:9px;font-size:1.02rem}
+  .flist li::before{content:"";position:absolute;left:0;top:.55em;width:12px;height:12px;border-radius:4px;background:linear-gradient(120deg,var(--ox),var(--ox-bright))}
+
+  /* mini mock elements inside visuals */
+  .slashmenu{background:var(--parchment);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-sm);padding:8px;font-size:.86rem;max-width:280px}
+  .slashmenu .cmd{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px}
+  .slashmenu .cmd.on{background:linear-gradient(120deg,rgba(194,74,64,.16),transparent);color:var(--ox);font-weight:600}
+  .slashmenu .k{font-family:'IBM Plex Mono';font-size:.7rem;color:var(--muted);margin-left:auto}
+  .ico{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;background:var(--glass);border:1px solid var(--line);flex:none}
+  .embedrow{display:flex;gap:10px;flex-wrap:wrap}
+  .embed{flex:1;min-width:120px;border-radius:12px;border:1px solid var(--line);background:var(--parchment);height:78px;display:grid;place-items:center;font-family:'IBM Plex Mono';font-size:.72rem;color:var(--muted);position:relative;overflow:hidden}
+  .embed::after{content:"▶";position:absolute;font-size:1.1rem;color:var(--ox);opacity:.85}
+  .noteblock{background:var(--parchment);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-bottom:8px;font-size:.85rem}
+  .tree{font-size:.9rem}
+  .tree .row{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:8px}
+  .tree .row.nest{margin-left:22px}
+  .swatches{display:flex;gap:9px;margin-top:6px}
+  .sw{width:26px;height:26px;border-radius:8px;border:2px solid var(--parchment);box-shadow:0 0 0 1px var(--line)}
+
+  /* comparison table */
+  .cmp{width:100%;border-collapse:collapse;background:var(--parchment-2);border-radius:18px;overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow)}
+  .cmp th,.cmp td{padding:15px 18px;text-align:left;border-bottom:1px solid var(--line);font-size:1rem}
+  .cmp thead th{font-family:'Fraunces';font-size:1.1rem}
+  .cmp thead th.pro{color:var(--ox)}
+  .cmp td.c,.cmp th.c{text-align:center;width:130px}
+  .cmp tr:last-child td{border-bottom:none}
+  .yes{color:var(--ox);font-weight:700}
+  .no{color:var(--muted);opacity:.6}
+  .cmp .feat{font-weight:600}
+  @media(max-width:640px){.cmp th,.cmp td{padding:11px 10px;font-size:.9rem}.cmp td.c,.cmp th.c{width:70px}}
+
+  /* pricing */
+  .toggle{display:inline-flex;align-items:center;gap:0;background:var(--glass);border:1px solid var(--line);border-radius:999px;padding:5px;margin:0 auto 12px;backdrop-filter:blur(8px)}
+  .toggle button{font-family:'Spectral';font-weight:600;font-size:.95rem;border:none;background:transparent;color:var(--ink-2);padding:9px 20px;border-radius:999px;cursor:pointer;transition:.2s}
+  .toggle button.on{background:linear-gradient(120deg,var(--ox),var(--ox-bright));color:var(--bone)}
+  .save-note{font-family:'IBM Plex Mono';font-size:.72rem;color:var(--ox);margin-bottom:30px}
+  .prices{display:grid;grid-template-columns:1fr 1fr;gap:26px;max-width:820px;margin:0 auto;align-items:stretch}
+  @media(max-width:720px){.prices{grid-template-columns:1fr}}
+  .pcard{background:var(--parchment-2);border:1px solid var(--line);border-radius:22px;padding:32px;box-shadow:var(--shadow-sm);display:flex;flex-direction:column}
+  .pcard.pro{border:1.5px solid var(--ox);box-shadow:var(--shadow);position:relative}
+  .badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:linear-gradient(120deg,var(--ox),var(--ox-bright));color:var(--bone);font-family:'IBM Plex Mono';font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;padding:6px 14px;border-radius:999px;white-space:nowrap}
+  .price{font-family:'Fraunces';font-size:3rem;font-weight:600;line-height:1;margin:10px 0 2px}
+  .price small{font-family:'Spectral';font-size:1rem;color:var(--muted);font-weight:400}
+  .pfeat{list-style:none;padding:0;margin:18px 0 24px;flex:1}
+  .pfeat li{padding-left:26px;position:relative;margin-bottom:10px;font-size:.98rem}
+  .pfeat li::before{content:"✓";position:absolute;left:0;color:var(--ox);font-weight:700}
+  .pfeat li.off{color:var(--muted)}
+  .pfeat li.off::before{content:"—";color:var(--muted)}
+
+  /* testimonials */
+  .quotes{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  @media(max-width:820px){.quotes{grid-template-columns:1fr}}
+  .quote{background:var(--glass);border:1px solid var(--line);border-radius:18px;padding:24px;backdrop-filter:blur(8px)}
+  .quote p{font-style:italic;font-size:1.05rem;margin-bottom:16px}
+  .who{display:flex;align-items:center;gap:11px}
+  .av{width:38px;height:38px;border-radius:50%;background:linear-gradient(120deg,var(--ox),var(--ox-bright));color:var(--bone);display:grid;place-items:center;font-family:'Fraunces';font-weight:700;font-size:.95rem}
+  .who b{font-family:'Fraunces'}
+  .who span{font-size:.82rem;color:var(--muted);display:block}
+
+  /* faq */
+  .faq{max-width:760px;margin:0 auto}
+  details{border-bottom:1px solid var(--line);padding:20px 4px}
+  summary{font-family:'Fraunces';font-size:1.15rem;cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:16px;align-items:center}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+";color:var(--ox);font-size:1.5rem;transition:transform .2s}
+  details[open] summary::after{transform:rotate(45deg)}
+  details p{margin-top:12px;color:var(--ink-2)}
+
+  /* final cta */
+  .final{background:linear-gradient(130deg,var(--ox),var(--ox-bright));color:var(--bone);border-radius:28px;padding:64px 34px;text-align:center;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .final h2{color:var(--bone);max-width:20ch;margin:0 auto 14px}
+  .final p{color:rgba(243,236,221,.9);max-width:44ch;margin:0 auto 26px;font-size:1.15rem}
+  .final .btn-primary{background:var(--bone);color:var(--ox);box-shadow:0 14px 30px -12px rgba(0,0,0,.4)}
+  .final .btn-ghost{background:transparent;border-color:rgba(243,236,221,.5);color:var(--bone)}
+
+  footer{padding:52px 0 40px;border-top:1px solid var(--line);margin-top:20px}
+  .foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px}
+  .foot .muted{font-size:.88rem}
+
+  /* reveal */
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
+  .reveal.in{opacity:1;transform:none}
+
+  .theme-toggle{background:var(--glass);border:1px solid var(--line);border-radius:12px;width:40px;height:40px;display:grid;place-items:center;cursor:pointer;color:var(--ink)}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="wrap nav-in">
+    <a class="brand" href="#top">
+      <svg width="30" height="30" viewBox="0 0 120 120"><rect x="8" y="8" width="104" height="104" rx="26" fill="var(--ox)"/><g fill="#F3ECDD"><polygon points="60,24 62,24 37,96 25,96"/><polygon points="58,24 60,24 101,96 77,96"/><rect x="44" y="66.5" width="29" height="8"/><rect x="18.5" y="91.5" width="27.5" height="6.5" rx="1.5"/><rect x="74" y="91.5" width="30" height="6.5" rx="1.5"/></g></svg>
+      Aurora
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#compare">Free vs Pro</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+      <button class="theme-toggle" id="themeBtn" aria-label="Toggle theme">☾</button>
+      <a href="#pricing" class="btn btn-primary">Start free</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="eyebrow" style="margin-bottom:18px">Aurora · by Nvexis</div>
+      <h1>The calm home for everything you're building.</h1>
+      <p class="sub">Boards, notes, an infinite canvas, calendar and reminders — woven into one beautiful workspace that installs like an app and syncs everywhere.</p>
+      <div class="hero-cta">
+        <a href="#pricing" class="btn btn-primary btn-lg">Start free — no card</a>
+        <a href="#features" class="btn btn-ghost btn-lg">See how it works</a>
+      </div>
+      <div class="trust">Free forever for up to 10 boards · Installable on phone &amp; desktop · Light &amp; dark</div>
+    </div>
+
+    <!-- app mock -->
+    <div class="mock reveal" aria-hidden="true">
+      <div class="mock-bar">
+        <span class="dot" style="background:#C24A40"></span><span class="dot" style="background:#d9a441"></span><span class="dot" style="background:#7a9a5a"></span>
+        <span style="margin-left:12px;font-family:'IBM Plex Mono';font-size:.72rem;color:var(--muted)">aurora — Product Launch</span>
+      </div>
+      <div class="mock-body">
+        <div class="mock-side">
+          <div class="mside-item on">▦ Boards</div>
+          <div class="mside-item">☑ To-Do</div>
+          <div class="mside-item">▤ Calendar</div>
+          <div class="mside-item">❏ Library</div>
+          <div class="mside-item">✎ Canvas</div>
+        </div>
+        <div class="mock-main">
+          <div class="mcol"><div class="mcard"><span class="tag"></span>Draft launch copy</div><div class="mcard"><span class="tag" style="background:#d9a441"></span>Wireframe hero</div></div>
+          <div class="mcol"><div class="mcard"><span class="tag" style="background:#7a9a5a"></span>QA the checkout</div><div class="mcard"><span class="tag"></span>Record demo video</div></div>
+          <div class="mcol"><div class="mcard"><span class="tag" style="background:#5a7a9a"></span>Ship v1.0 🎉</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- VALUE CHIPS -->
+<section style="padding-top:26px">
+  <div class="wrap center reveal">
+    <p class="muted" style="margin-bottom:20px">One workspace instead of five tabs.</p>
+    <div class="chips">
+      <span class="chip">Kanban boards</span><span class="chip">Notes &amp; docs</span><span class="chip">Infinite canvas</span>
+      <span class="chip">To-do planner</span><span class="chip">Calendar</span><span class="chip">Reminders</span>
+      <span class="chip">Folders &amp; library</span><span class="chip">Real-time collab</span>
+    </div>
+  </div>
+</section>
+
+<!-- NARRATIVE -->
+<section class="center" style="padding-top:40px">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <div class="eyebrow" style="margin-bottom:14px">Why Aurora</div>
+      <h2>Your ideas don't live in one app. Now your work doesn't have to either.</h2>
+      <p class="lead" style="margin-top:16px">A board for the plan. A doc for the thinking. A whiteboard for the messy middle. A calendar for the deadline. Aurora keeps them in one place, links them together, and never charges you to think.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURE DEEP DIVES -->
+<section id="features">
+  <div class="wrap">
+
+    <!-- Notes + slash -->
+    <div class="frow reveal">
+      <div class="ftext">
+        <div class="eyebrow">Notes &amp; docs</div>
+        <h2>A document that builds itself as you type.</h2>
+        <p class="muted">Press <b>/</b> and Aurora opens a menu of building blocks — headings, checklists, quotes, dividers, embeds, tables. No formatting toolbars to hunt through. Just write, and shape it in the same breath.</p>
+        <ul class="flist">
+          <li>Notion-style block editor with a <b>/ slash command</b> for everything</li>
+          <li>Rich text, checklists, callouts, code and cover images</li>
+          <li>Start blank or from a <b>template</b> you saved</li>
+        </ul>
+      </div>
+      <div class="fvisual">
+        <div class="noteblock"><b style="font-family:Fraunces">Launch plan</b></div>
+        <div class="noteblock muted">The rollout in three acts…</div>
+        <div class="slashmenu">
+          <div class="cmd on"><span class="ico">H</span> Heading <span class="k">/h1</span></div>
+          <div class="cmd"><span class="ico">☑</span> To-do list <span class="k">/todo</span></div>
+          <div class="cmd"><span class="ico">▤</span> Table <span class="k">/table</span></div>
+          <div class="cmd"><span class="ico">▶</span> Video embed <span class="k">/embed</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Templates -->
+    <div class="frow rev reveal">
+      <div class="ftext">
+        <div class="eyebrow">Templates</div>
+        <h2>Never start from a blank page again.</h2>
+        <p class="muted">Turn any note into a reusable template — meeting notes, a PRD, a weekly review, a content brief. Your best format, one click away, every time.</p>
+        <ul class="flist">
+          <li>Save any note as a custom template</li>
+          <li>Spin up a fresh copy instantly</li>
+          <li>Keep your team's docs consistent by default</li>
+        </ul>
+      </div>
+      <div class="fvisual">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="noteblock" style="min-height:90px">📋 Meeting notes</div>
+          <div class="noteblock" style="min-height:90px">📄 PRD</div>
+          <div class="noteblock" style="min-height:90px">🗓 Weekly review</div>
+          <div class="noteblock" style="min-height:90px;border:1.5px dashed var(--ox);color:var(--ox)">+ New template</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Boards + projects -->
+    <div class="frow reveal">
+      <div class="ftext">
+        <div class="eyebrow">Projects &amp; boards</div>
+        <h2>Every idea gets its own colorful space.</h2>
+        <p class="muted">Drag-and-drop Kanban boards with columns, cards, checklists, due dates and labels. Give each project its own accent so your workspace stays instantly legible.</p>
+        <ul class="flist">
+          <li>Fluid drag-and-drop with spring-smooth motion</li>
+          <li>Unlimited cards, columns and checklists — even on Free</li>
+          <li>Per-project accent colors for at-a-glance context</li>
+        </ul>
+      </div>
+      <div class="fvisual">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+          <div class="mcol" style="min-height:150px"><div class="mcard"><span class="tag"></span>Research</div><div class="mcard"><span class="tag"></span>Interviews</div></div>
+          <div class="mcol" style="min-height:150px"><div class="mcard"><span class="tag" style="background:#d9a441"></span>Design</div></div>
+          <div class="mcol" style="min-height:150px"><div class="mcard"><span class="tag" style="background:#7a9a5a"></span>Shipped ✓</div></div>
+        </div>
+        <div class="swatches"><span class="sw" style="background:#7A2A26"></span><span class="sw" style="background:#3f6b52"></span><span class="sw" style="background:#4a5f8a"></span><span class="sw" style="background:#9a6b2f"></span><span class="sw" style="background:#6a4a7a"></span></div>
+      </div>
+    </div>
+
+    <!-- Canvas + media -->
+    <div class="frow rev reveal">
+      <div class="ftext">
+        <div class="eyebrow">Notes Canvas · <span class="accent">Pro</span></div>
+        <h2>An infinite whiteboard that thinks with you.</h2>
+        <p class="muted">Sketch freehand, drop rich text, and pull in real media — record audio or video in-app, upload files, or embed YouTube, Vimeo, Loom and SoundCloud. Collaborate live, cursors and all.</p>
+        <ul class="flist">
+          <li>Freehand drawing, frames, pages and layers</li>
+          <li><b>Record, upload or embed</b> video &amp; audio right on the canvas</li>
+          <li>Real-time multiplayer with live cursors</li>
+        </ul>
+      </div>
+      <div class="fvisual">
+        <div class="embedrow">
+          <div class="embed">YouTube</div><div class="embed">Loom</div>
+        </div>
+        <div class="embedrow" style="margin-top:10px">
+          <div class="embed" style="height:56px">Vimeo</div><div class="embed" style="height:56px">SoundCloud</div>
+        </div>
+        <div style="position:absolute;right:18px;bottom:16px;font-family:'IBM Plex Mono';font-size:.7rem;color:var(--ox)">● 2 collaborators live</div>
+      </div>
+    </div>
+
+    <!-- Canvas ↔ notes linking -->
+    <div class="frow reveal">
+      <div class="ftext">
+        <div class="eyebrow">Connected thinking</div>
+        <h2>Link a canvas to a note. Link a note to everything.</h2>
+        <p class="muted">Drop a live canvas straight into a doc, or link a note from your whiteboard. Your rough sketch and your polished plan stay one click apart — no more hunting across apps.</p>
+        <ul class="flist">
+          <li>Embed a canvas inside a note, or link notes from a canvas</li>
+          <li>One connected graph of your thinking</li>
+          <li>Everything searchable from anywhere</li>
+        </ul>
+      </div>
+      <div class="fvisual">
+        <div class="noteblock">📄 Product spec</div>
+        <div class="noteblock" style="border:1.5px solid var(--ox);display:flex;align-items:center;gap:10px"><span class="ico" style="background:linear-gradient(120deg,var(--ox),var(--ox-bright));color:#fff">✎</span> Linked canvas · <span class="muted">Architecture sketch</span></div>
+        <div class="noteblock muted">…continues below ↓</div>
+      </div>
+    </div>
+
+    <!-- Folders + customizability -->
+    <div class="frow rev reveal">
+      <div class="ftext">
+        <div class="eyebrow">Library &amp; folders</div>
+        <h2>Organize the way your brain already works.</h2>
+        <p class="muted">Nest notes and canvases in folders, build a library that mirrors your projects, and theme the whole thing in warm light or deep dark. It's your workspace — it should feel like it.</p>
+        <ul class="flist">
+          <li>Create folders and a unified library tree</li>
+          <li>Full light &amp; dark themes, remembered per device</li>
+          <li>Installable PWA — launches full-screen, works offline</li>
+        </ul>
+      </div>
+      <div class="fvisual">
+        <div class="tree">
+          <div class="row" style="background:var(--glass)">📁 Product</div>
+          <div class="row nest">📄 Roadmap</div>
+          <div class="row nest">✎ Wireframes</div>
+          <div class="row">📁 Marketing</div>
+          <div class="row nest">📄 Launch plan</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reminders + calendar -->
+    <div class="frow reveal">
+      <div class="ftext">
+        <div class="eyebrow">Calendar &amp; reminders</div>
+        <h2>Nothing slips — even with the app closed.</h2>
+        <p class="muted">See every due date on a calendar, plan your day in the to-do view, and let Aurora nudge you. Free gets browser reminders; <span class="accent">Pro</span> adds emailed digests and precise timed reminders like "2 hours before".</p>
+        <ul class="flist">
+          <li>Month calendar + daily to-do planner</li>
+          <li>Browser due-date reminders on Free</li>
+          <li><b>Pro:</b> email digests &amp; custom timed reminders (2h, 15m before…)</li>
+        </ul>
+      </div>
+      <div class="fvisual">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-family:'IBM Plex Mono';font-size:.7rem;color:var(--muted)">
+          <div class="noteblock center">M</div><div class="noteblock center">T</div><div class="noteblock center" style="border:1.5px solid var(--ox);color:var(--ox)">W ●</div><div class="noteblock center">T</div>
+        </div>
+        <div class="noteblock" style="margin-top:12px;display:flex;gap:10px;align-items:center">✉ <span>Reminder: “Ship v1.0” is due in 2 hours</span></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- COMPARE -->
+<section id="compare" style="background:color-mix(in srgb,var(--parchment) 60%, var(--parchment-2))">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <div class="eyebrow" style="margin-bottom:12px">Free vs Pro</div>
+      <h2>Generous on Free. Unstoppable on Pro.</h2>
+    </div>
+    <div class="reveal" style="overflow-x:auto">
+      <table class="cmp">
+        <thead><tr><th>What you get</th><th class="c">Free</th><th class="c pro">Pro</th></tr></thead>
+        <tbody>
+          <tr><td class="feat">Project boards you own</td><td class="c">10</td><td class="c yes">Unlimited</td></tr>
+          <tr><td class="feat">Collaborators per board</td><td class="c">3</td><td class="c yes">Unlimited</td></tr>
+          <tr><td class="feat">Cards, columns &amp; checklists</td><td class="c yes">Unlimited</td><td class="c yes">Unlimited</td></tr>
+          <tr><td class="feat">Notes, / command &amp; templates</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+          <tr><td class="feat">Folders &amp; library</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+          <tr><td class="feat">Calendar &amp; to-do planner</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+          <tr><td class="feat">Browser due-date reminders</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+          <tr><td class="feat">Installable app · light &amp; dark</td><td class="c yes">✓</td><td class="c yes">✓</td></tr>
+          <tr><td class="feat">Notes Canvas (infinite whiteboard)</td><td class="c no">—</td><td class="c yes">✓</td></tr>
+          <tr><td class="feat">Canvas media — record / upload / embed</td><td class="c no">—</td><td class="c yes">✓</td></tr>
+          <tr><td class="feat">Email due-date digests</td><td class="c no">—</td><td class="c yes">✓</td></tr>
+          <tr><td class="feat">Custom timed reminders (2h, 15m…)</td><td class="c no">—</td><td class="c yes">✓</td></tr>
+          <tr><td class="feat">Priority support</td><td class="c no">—</td><td class="c yes">✓</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing" class="center">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <div class="eyebrow" style="margin-bottom:12px">Pricing</div>
+      <h2>One plan. Priced like a coffee, not a mortgage.</h2>
+    </div>
+    <div class="reveal">
+      <div class="toggle" role="tablist">
+        <button id="mBtn" class="on" onclick="setCycle('month')">Monthly</button>
+        <button id="yBtn" onclick="setCycle('year')">Yearly</button>
+      </div>
+      <div class="save-note" id="saveNote">&nbsp;</div>
+      <div class="prices">
+        <div class="pcard">
+          <h3 style="font-family:Fraunces">Free</h3>
+          <p class="muted" style="font-size:.95rem;margin:0">Everything you need to plan solo or with a small team.</p>
+          <div class="price">$0<small> forever</small></div>
+          <ul class="pfeat">
+            <li>Up to 10 project boards</li>
+            <li>Up to 3 collaborators per board</li>
+            <li>Unlimited cards, notes, templates &amp; folders</li>
+            <li>Calendar, to-dos &amp; browser reminders</li>
+            <li>Installable app · light &amp; dark</li>
+            <li class="off">Notes Canvas &amp; media</li>
+            <li class="off">Email &amp; custom timed reminders</li>
+          </ul>
+          <a href="https://project-management-app-dev.pages.dev/" class="btn btn-ghost">Start free</a>
+        </div>
+        <div class="pcard pro">
+          <span class="badge">Most popular · Founding price</span>
+          <h3 style="font-family:Fraunces" class="accent">Pro</h3>
+          <p class="muted" style="font-size:.95rem;margin:0">For power users &amp; teams who need room to scale.</p>
+          <div class="price"><span id="priceNum">$5.99</span><small id="priceUnit">/month</small></div>
+          <ul class="pfeat">
+            <li><b>Everything in Free</b>, plus…</li>
+            <li>Unlimited boards &amp; collaborators</li>
+            <li>Notes Canvas — infinite whiteboard</li>
+            <li>Canvas media: record, upload &amp; embed</li>
+            <li>Email due-date digests</li>
+            <li>Custom timed reminders</li>
+            <li>Priority support</li>
+          </ul>
+          <a href="https://project-management-app-dev.pages.dev/" class="btn btn-primary">Go Pro</a>
+        </div>
+      </div>
+      <p class="muted" style="margin-top:22px;font-size:.9rem">Prices in USD. Taxes handled at checkout. Cancel anytime — your data stays yours.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section style="background:color-mix(in srgb,var(--parchment) 60%, var(--parchment-2))">
+  <div class="wrap">
+    <div class="section-head center reveal"><h2>Made for people who juggle a lot.</h2></div>
+    <div class="quotes">
+      <div class="quote reveal"><p>“I stopped paying for three separate apps. The canvas alone replaced my whiteboard tool, and the notes replaced my docs.”</p><div class="who"><div class="av">S</div><div><b>Solo founder</b><span>building in public</span></div></div></div>
+      <div class="quote reveal"><p>“The / command and templates make my weekly reviews take five minutes. It feels faster than anything I've used.”</p><div class="who"><div class="av">P</div><div><b>Product manager</b><span>small startup team</span></div></div></div>
+      <div class="quote reveal"><p>“Free was genuinely enough to run my side projects. I upgraded for the canvas and the email reminders — worth it instantly.”</p><div class="who"><div class="av">D</div><div><b>Designer &amp; educator</b><span>freelance</span></div></div></div>
+    </div>
+    <p class="center muted" style="margin-top:20px;font-size:.82rem">Composite personas of Aurora's target users, shown for illustration.</p>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq">
+  <div class="wrap">
+    <div class="section-head center reveal"><h2>Questions, answered.</h2></div>
+    <div class="faq reveal">
+      <details open><summary>Is Free actually free?</summary><p>Yes — genuinely, forever. You get up to 10 boards, 3 collaborators per board, unlimited cards, notes, templates, folders, calendar, to-dos and browser reminders. No credit card, no trial clock.</p></details>
+      <details><summary>What exactly do I get with Pro?</summary><p>Unlimited boards and collaborators, the Notes Canvas (infinite collaborative whiteboard) with in-app recording, uploads and video/audio embeds, email due-date digests, custom timed reminders like “2 hours before”, and priority support.</p></details>
+      <details><summary>How much is Pro?</summary><p>$5.99/month, or $68.29/year (about $5.69/month — roughly 5% off). Prices are in USD and localized at checkout; taxes are handled for you.</p></details>
+      <details><summary>Can I use Aurora on my phone?</summary><p>Yes. Aurora installs as an app on both phone and desktop, launches full-screen, works offline, and syncs across all your devices.</p></details>
+      <details><summary>Is my data private and secure?</summary><p>Every workspace is protected by row-level security, so you only ever see your own data. Sign out on shared devices — your session and offline cache clear automatically.</p></details>
+      <details><summary>Can I cancel anytime?</summary><p>Anytime, in a click. You keep your data, and you simply drop back to the Free plan.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section>
+  <div class="wrap">
+    <div class="final reveal">
+      <div class="eyebrow" style="color:rgba(243,236,221,.85);margin-bottom:14px">Start in under a minute</div>
+      <h2>Bring your whole plan into one calm place.</h2>
+      <p>Start free today. Upgrade the day you want unlimited canvas, media and reminders — not a moment sooner.</p>
+      <div class="hero-cta" style="margin-bottom:0">
+        <a href="https://project-management-app-dev.pages.dev/" class="btn btn-primary btn-lg">Start free — no card</a>
+        <a href="#pricing" class="btn btn-ghost btn-lg">See Pro</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot">
+    <a class="brand" href="#top"><svg width="26" height="26" viewBox="0 0 120 120"><rect x="8" y="8" width="104" height="104" rx="26" fill="var(--ox)"/><g fill="#F3ECDD"><polygon points="60,24 62,24 37,96 25,96"/><polygon points="58,24 60,24 101,96 77,96"/><rect x="44" y="66.5" width="29" height="8"/><rect x="18.5" y="91.5" width="27.5" height="6.5" rx="1.5"/><rect x="74" y="91.5" width="30" height="6.5" rx="1.5"/></g></svg> Aurora</a>
+    <div class="muted">Aurora is a product of <b>Nvexis</b>. © 2026 Nvexis. Crafted by J. Jai Akash.</div>
+  </div>
+</footer>
+
+<script>
+  // theme
+  const html=document.documentElement, tbtn=document.getElementById('themeBtn');
+  function setTheme(t){html.classList.toggle('night',t==='night');html.classList.toggle('day',t!=='night');tbtn.textContent=t==='night'?'☀':'☾';try{localStorage.setItem('aurora-mkt-theme',t)}catch(e){}}
+  setTheme((()=>{try{return localStorage.getItem('aurora-mkt-theme')||'day'}catch(e){return 'day'}})());
+  tbtn.onclick=()=>setTheme(html.classList.contains('night')?'day':'night');
+
+  // pricing toggle
+  function setCycle(c){
+    const m=document.getElementById('mBtn'),y=document.getElementById('yBtn');
+    const num=document.getElementById('priceNum'),unit=document.getElementById('priceUnit'),note=document.getElementById('saveNote');
+    if(c==='year'){y.classList.add('on');m.classList.remove('on');num.textContent='$5.69';unit.textContent='/month, billed yearly';note.innerHTML='$68.29/year — save ~5% vs monthly';}
+    else{m.classList.add('on');y.classList.remove('on');num.textContent='$5.99';unit.textContent='/month';note.innerHTML='&nbsp;';}
+  }
+
+  // reveal on scroll
+  const io=new IntersectionObserver((es)=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>

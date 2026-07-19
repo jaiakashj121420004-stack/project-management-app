@@ -42,23 +42,37 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-// Best-effort per-user rate limiting (see dodo-create-checkout for the rationale;
-// state is per-isolate, fails open, keyed by Supabase user id).
+// Per-user rate limiting, backed by a SHARED Postgres sliding-window counter
+// (rate_limit_hit) so the limit holds across isolates/cold starts. Fails OPEN only
+// if the counter query itself errors. (See dodo-create-checkout for the rationale.)
 const RATE_LIMIT_MAX = 8;
-const RATE_LIMIT_WINDOW_MS = 60_000;
-const rateHits = new Map<string, number[]>();
+const RATE_LIMIT_WINDOW_SECONDS = 60;
 
-/** True when the user is over the limit; records this hit otherwise. */
-function isRateLimited(userId: string): boolean {
-  const now = Date.now();
-  const recent = (rateHits.get(userId) ?? []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
-  if (recent.length >= RATE_LIMIT_MAX) {
-    rateHits.set(userId, recent);
-    return true;
+/** True when the user is over the limit; records this hit otherwise (shared store). */
+async function isRateLimited(userId: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/rate_limit_hit`, {
+      method: 'POST',
+      headers: {
+        apikey: SERVICE_ROLE,
+        Authorization: `Bearer ${SERVICE_ROLE}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        p_key: `portal:${userId}`,
+        p_max: RATE_LIMIT_MAX,
+        p_window_seconds: RATE_LIMIT_WINDOW_SECONDS,
+      }),
+    });
+    if (!res.ok) {
+      console.error(`rate_limit_hit failed: ${res.status} ${await res.text()}`);
+      return false; // fail open
+    }
+    return (await res.json()) === true;
+  } catch (err) {
+    console.error('rate_limit_hit error', err);
+    return false; // fail open
   }
-  recent.push(now);
-  rateHits.set(userId, recent);
-  return false;
 }
 
 /**
@@ -98,7 +112,7 @@ Deno.serve(async (req: Request) => {
     const userId = await getAuthedUserId(req);
     if (!userId) return json({ error: 'Unauthorized' }, 401);
 
-    if (isRateLimited(userId)) {
+    if (await isRateLimited(userId)) {
       return json({ error: 'Too many requests. Please try again in a moment.' }, 429);
     }
 
@@ -126,7 +140,10 @@ Deno.serve(async (req: Request) => {
 
     return json({ url: data.link });
   } catch (err) {
+    // Log the real error server-side, but return a generic body so internal
+    // topology / upstream status codes never reach the browser (M3). The safe,
+    // expected "No billing account yet." case is handled above with its own 400.
     console.error(err);
-    return json({ error: err instanceof Error ? err.message : String(err) }, 500);
+    return json({ error: 'Something went wrong. Please try again.' }, 500);
   }
 });

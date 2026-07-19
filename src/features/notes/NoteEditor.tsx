@@ -113,7 +113,7 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
     } = { id: note.id };
     if (titleParse.success && titleParse.data !== savedTitle) patch.title = titleParse.data;
     if (docDirty && docRef.current) {
-      patch.content_json = docRef.current.json as Record<string, unknown>;
+      patch.content_json = docRef.current.json;
       patch.content = docRef.current.text;
     }
     return patch.title === undefined && patch.content_json === undefined ? null : patch;
@@ -179,14 +179,13 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
 
   // The note's current document, including unsaved edits — used by the export and
   // the "save as template" action so both capture what the user sees now.
-  const currentDoc = (): JSONContent | null =>
-    docRef.current?.json ?? (note.content_json as JSONContent | null);
+  const currentDoc = (): JSONContent | null => docRef.current?.json ?? note.content_json;
 
   // Export the current document (including unsaved edits) as a .md download.
   function handleExport() {
     const doc = currentDoc();
     const cleanTitle = title.trim() || 'Untitled note';
-    const markdown = `# ${cleanTitle}\n\n${docToMarkdown(doc as Record<string, unknown> | null)}`;
+    const markdown = `# ${cleanTitle}\n\n${docToMarkdown(doc)}`;
     const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');

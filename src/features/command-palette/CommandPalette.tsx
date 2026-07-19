@@ -49,6 +49,24 @@ export function CommandPalette() {
   // Trap + restore focus while the palette is open; Esc closes it.
   const dialogRef = useFocusTrap<HTMLDivElement>(open, { onEscape: closeCommandPalette });
 
+  // Reset the query + selection when the palette opens, and snap the selection
+  // back to the top whenever the query changes. Done at render time (React's
+  // "adjust state while a prop changes" pattern, tracked with state not a ref)
+  // rather than in an effect.
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) {
+      setQuery('');
+      setIndex(0);
+    }
+  }
+  const [prevQuery, setPrevQuery] = useState(query);
+  if (query !== prevQuery) {
+    setPrevQuery(query);
+    setIndex(0);
+  }
+
   // Workspace index for "find any project, note, canvas, or folder". Shared
   // caches (same query keys the Boards/Library pages use), so no duplicate fetch.
   const projects = useProjects();
@@ -68,14 +86,6 @@ export function CommandPalette() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  // Reset the query/selection each time it opens.
-  useEffect(() => {
-    if (open) {
-      setQuery('');
-      setIndex(0);
-    }
-  }, [open]);
-
   const navCommands = useMemo<Command[]>(
     () =>
       NAV_ITEMS.filter((item) => !item.adminOnly).map((item) => ({
@@ -83,7 +93,7 @@ export function CommandPalette() {
         label: item.label,
         hint: 'Go to',
         icon: item.icon,
-        run: () => navigate(item.to),
+        run: () => void navigate(item.to),
       })),
     [navigate],
   );
@@ -94,14 +104,14 @@ export function CommandPalette() {
       label: project.name,
       hint: 'Project',
       icon: Layers,
-      run: () => navigate(`/projects/${project.id}`),
+      run: () => void navigate(`/projects/${project.id}`),
     }));
     const noteCmds = (libraryNotes.data ?? []).map<Command>((note) => ({
       id: `note:${note.id}`,
       label: note.title || 'Untitled note',
       hint: 'Note',
       icon: StickyNote,
-      run: () => navigate(`/library?note=${note.id}`),
+      run: () => void navigate(`/library?note=${note.id}`),
     }));
     // Personal canvases only (project canvases open from their project's tab).
     const canvasCmds = (canvases.data ?? [])
@@ -111,14 +121,14 @@ export function CommandPalette() {
         label: canvas.title || 'Untitled canvas',
         hint: 'Canvas',
         icon: PenLine,
-        run: () => navigate(`/library?canvas=${canvas.id}`),
+        run: () => void navigate(`/library?canvas=${canvas.id}`),
       }));
     const folderCmds = (folders.data ?? []).map<Command>((folder) => ({
       id: `folder:${folder.id}`,
       label: folder.name,
       hint: 'Folder',
       icon: Folder,
-      run: () => navigate(`/library?folder=${folder.id}`),
+      run: () => void navigate(`/library?folder=${folder.id}`),
     }));
     return [...projectCmds, ...noteCmds, ...canvasCmds, ...folderCmds];
   }, [navigate, projects.data, libraryNotes.data, canvases.data, folders.data]);
@@ -132,8 +142,6 @@ export function CommandPalette() {
       .filter((command) => command.label.toLowerCase().includes(q))
       .slice(0, MAX_RESULTS);
   }, [navCommands, contentCommands, query]);
-
-  useEffect(() => setIndex(0), [query]);
 
   function choose(i: number) {
     const command = results[i];

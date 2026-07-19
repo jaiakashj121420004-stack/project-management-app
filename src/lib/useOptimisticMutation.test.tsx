@@ -64,9 +64,7 @@ describe('useOptimisticMutation', () => {
       () =>
         useOptimisticMutation<number, number, number[]>({
           queryKey: KEY,
-          mutationFn: async () => {
-            throw new Error('boom');
-          },
+          mutationFn: () => Promise.reject(new Error('boom')),
           patch: (old, v) => [...(old ?? []), v],
           meta: { suppressErrorToast: true },
         }),

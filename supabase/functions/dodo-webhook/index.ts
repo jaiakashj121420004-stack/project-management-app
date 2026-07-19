@@ -37,6 +37,13 @@ const PRO_PRODUCT_IDS = new Set(
 // When set, only events from this Dodo business are accepted.
 const EXPECTED_BUSINESS_ID = Deno.env.get('DODO_BUSINESS_ID') ?? '';
 
+// In live mode DODO_BUSINESS_ID is REQUIRED (fail closed): without it we can't
+// prove an event is for our business, so we reject rather than trust the HMAC
+// alone. Test/dev stays ergonomic — an unset id is allowed there (L2).
+const IS_LIVE = (Deno.env.get('DODO_PAYMENTS_ENVIRONMENT') ?? 'test')
+  .toLowerCase()
+  .startsWith('live');
+
 // Reject events whose timestamp is more than this far from now (replay defence).
 const TOLERANCE_SECONDS = 60 * 5;
 
@@ -143,6 +150,35 @@ async function patchProfile(filter: string, changes: Record<string, unknown>): P
 }
 
 /**
+ * Record this event's Standard-Webhooks `webhook-id` so a replay is a no-op (L3).
+ * Returns 'duplicate' when the id was already stored (unique-violation → 409),
+ * 'new' when freshly recorded, or 'error' on any store failure. On 'error' the
+ * caller proceeds anyway — the DB writes are already idempotent, so the store is a
+ * belt-and-braces optimisation and must not block a genuine event.
+ */
+async function markWebhookProcessed(webhookId: string): Promise<'new' | 'duplicate' | 'error'> {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/processed_webhooks`, {
+      method: 'POST',
+      headers: {
+        apikey: SERVICE_ROLE,
+        Authorization: `Bearer ${SERVICE_ROLE}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify({ webhook_id: webhookId }),
+    });
+    if (res.status === 201 || res.status === 204) return 'new';
+    if (res.status === 409) return 'duplicate';
+    console.error(`processed_webhooks insert unexpected status ${res.status}: ${await res.text()}`);
+    return 'error';
+  } catch (err) {
+    console.error('processed_webhooks insert error', err);
+    return 'error';
+  }
+}
+
+/**
  * Identify which profile an event refers to. The Supabase user id travels in the
  * checkout metadata (and stays on the subscription), so it's the primary key;
  * we fall back to the stored Dodo subscription / customer id for later events.
@@ -189,8 +225,25 @@ Deno.serve(async (req: Request) => {
   if (!event.business_id) {
     return new Response('Missing business_id', { status: 400 });
   }
-  if (EXPECTED_BUSINESS_ID && event.business_id !== EXPECTED_BUSINESS_ID) {
-    return new Response('Unexpected business_id', { status: 400 });
+  if (EXPECTED_BUSINESS_ID) {
+    if (event.business_id !== EXPECTED_BUSINESS_ID) {
+      return new Response('Unexpected business_id', { status: 400 });
+    }
+  } else if (IS_LIVE) {
+    // L2 — fail closed: in live mode we must know our own business id to accept.
+    console.error('DODO_BUSINESS_ID is not set in a live environment — rejecting webhook (L2).');
+    return new Response('Server not configured', { status: 500 });
+  }
+
+  // L3 — replay defence: if we've already processed this webhook-id, acknowledge
+  // and stop (no reprocessing). A store error is non-fatal — the writes below are
+  // idempotent — so we fall through and process as normal.
+  const seen = await markWebhookProcessed(id);
+  if (seen === 'duplicate') {
+    return new Response(JSON.stringify({ received: true, duplicate: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   try {
