@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { BillingInterval } from '@/lib/plans';
+import type { BillingInterval, PricedPlanId } from '@/lib/plans';
 
 /**
  * Billing data layer. These call the Dodo Payments Edge Functions, which run
@@ -29,12 +29,16 @@ async function invokeForUrl(
 }
 
 /**
- * Start a Dodo Checkout session for the Pro plan at the chosen billing interval
- * (monthly or yearly); resolves to its URL. The Edge Function maps the interval
- * to the right Dodo product.
+ * Start a Dodo Checkout session for `plan` (Pro or Team) at the chosen billing
+ * interval; resolves to its URL. The Edge Function maps plan + interval to the
+ * right Dodo product. 'free' is never a valid checkout target — narrowed out at
+ * the type level since only Pro/Team have a real Dodo product to check out.
  */
-export function createCheckoutUrl(interval: BillingInterval = 'month'): Promise<string> {
-  return invokeForUrl('dodo-create-checkout', { interval });
+export function createCheckoutUrl(
+  interval: BillingInterval = 'month',
+  plan: Exclude<PricedPlanId, 'free'> = 'pro',
+): Promise<string> {
+  return invokeForUrl('dodo-create-checkout', { interval, plan });
 }
 
 /** Open the Dodo customer portal for the current customer; resolves to its URL. */

@@ -3,6 +3,7 @@ import { Sparkles } from 'lucide-react';
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import { GradientButton } from '@/components/buttons/GradientButton';
 import { useProfile } from '@/features/auth/useProfile';
+import { isProOrAbove } from '@/lib/plans';
 import { UpgradeModal } from './UpgradeModal';
 
 interface ProGateProps {
@@ -36,7 +37,7 @@ export function ProGate({ children, title, reason, fallback, isPro }: ProGatePro
   const { data: profile, isLoading } = useProfile();
   const [modalOpen, setModalOpen] = useState(false);
 
-  const unlocked = isPro ?? profile?.plan === 'pro';
+  const unlocked = isPro ?? isProOrAbove(profile?.plan ?? 'free');
   // Only self-suppress while loading when WE own the plan check (no override).
   if (isPro === undefined && isLoading && !profile) return null;
   if (unlocked) return <>{children}</>;

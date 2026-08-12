@@ -1,10 +1,13 @@
 import { Sparkles } from 'lucide-react';
-import { PLANS, type PlanId } from '@/lib/plans';
+import { ENTERPRISE_DISPLAY, PLANS, isProOrAbove, type PlanId } from '@/lib/plans';
 import { cn } from '@/lib/cn';
 
-/** A small pill showing the user's plan. Pro gets the flowing accent gradient. */
+/** A small pill showing the user's plan. Any paid plan gets the flowing accent
+ * gradient. 'enterprise' has no `PLANS` entry (no self-serve pricing card), so
+ * it falls back to its own label rather than indexing the lookup table. */
 export function PlanBadge({ plan, className }: { plan: PlanId; className?: string }) {
-  const isPro = plan === 'pro';
+  const isPro = isProOrAbove(plan);
+  const label = plan === 'enterprise' ? ENTERPRISE_DISPLAY.name : PLANS[plan].name;
   return (
     <span
       className={cn(
@@ -16,7 +19,7 @@ export function PlanBadge({ plan, className }: { plan: PlanId; className?: strin
       )}
     >
       {isPro && <Sparkles size={12} aria-hidden />}
-      {PLANS[plan].name}
+      {label}
     </span>
   );
 }

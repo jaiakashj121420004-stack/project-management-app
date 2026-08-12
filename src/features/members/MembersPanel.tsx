@@ -11,7 +11,14 @@ import { useCancelInvitation, useInviteMember, useMembers, useRemoveMember, useU
 import { RoleBadge, RoleSelect, ROLE_LABEL } from './RoleControl';
 import { useLeaveProject } from './useInvitations';
 import { useProfile } from '@/features/auth/useProfile';
-import { FREE_MEMBER_LIMIT, isAtMemberLimit } from '@/lib/plans';
+import {
+  ENTERPRISE_CONTACT_EMAIL,
+  FREE_MEMBER_LIMIT,
+  PRO_MEMBER_LIMIT,
+  TEAM_MEMBER_LIMIT,
+  isAtMemberLimit,
+  type PlanId,
+} from '@/lib/plans';
 import { inviteSchema, fieldErrorsOf } from './schemas';
 
 interface MembersPanelProps {
@@ -88,7 +95,7 @@ export function MembersPanel({ projectId, isOwner, currentUserId, onlineUserIds 
 
       {isOwner ? (
         atMemberLimit ? (
-          <MemberLimitNotice />
+          <MemberLimitNotice plan={profile?.plan ?? 'free'} />
         ) : (
           <InviteForm projectId={projectId} />
         )
@@ -220,24 +227,55 @@ function InvitationRow({
   );
 }
 
-function MemberLimitNotice() {
+/** The three plans that can actually hit a member cap in this UI ('enterprise'
+ * is unlimited, so it never renders this notice). Copy branches per plan since
+ * each points to a different next step — see decision log, memory.md,
+ * 2026-08-12 (Pro/Team both gained real member caps that day). */
+function MemberLimitNotice({ plan }: { plan: PlanId }) {
+  const copy =
+    plan === 'team'
+      ? {
+          reached: `You've reached ${TEAM_MEMBER_LIMIT} members on the Team plan.`,
+          action: (
+            <a
+              href={`mailto:${ENTERPRISE_CONTACT_EMAIL}?subject=Aurora%20Enterprise`}
+              className="font-semibold text-[var(--accent-from)] hover:underline"
+            >
+              Contact us
+            </a>
+          ),
+          tail: ' about an Enterprise plan for larger teams.',
+        }
+      : plan === 'pro'
+        ? {
+            reached: `You've reached ${PRO_MEMBER_LIMIT} members on the Pro plan.`,
+            action: (
+              <Link to="/billing" className="font-semibold text-[var(--accent-from)] hover:underline">
+                Upgrade to Team
+              </Link>
+            ),
+            tail: ` for up to ${TEAM_MEMBER_LIMIT} collaborators per board.`,
+          }
+        : {
+            reached: `You've reached ${FREE_MEMBER_LIMIT} members on the Free plan.`,
+            action: (
+              <Link to="/billing" className="font-semibold text-[var(--accent-from)] hover:underline">
+                Upgrade to Pro
+              </Link>
+            ),
+            tail: ` for up to ${PRO_MEMBER_LIMIT} collaborators per board.`,
+          };
+
   return (
     <div className="flex flex-col gap-3 border-t border-[var(--glass-border)] pt-5">
       <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Invite someone</h3>
       <div className="flex items-start gap-3 rounded-2xl border border-[var(--accent-from)]/30 bg-[var(--glass-fill)] px-3.5 py-3">
         <Sparkles size={18} className="mt-0.5 shrink-0 text-[var(--accent-from)]" aria-hidden />
         <div className="text-sm">
-          <p className="font-medium text-fg">
-            You&apos;ve reached {FREE_MEMBER_LIMIT} members on the Free plan.
-          </p>
+          <p className="font-medium text-fg">{copy.reached}</p>
           <p className="mt-0.5 text-fg-muted">
-            <Link
-              to="/billing"
-              className="font-semibold text-[var(--accent-from)] hover:underline"
-            >
-              Upgrade to Pro
-            </Link>{' '}
-            for unlimited collaborators per board.
+            {copy.action}
+            {copy.tail}
           </p>
         </div>
       </div>

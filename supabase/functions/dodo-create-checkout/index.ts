@@ -18,6 +18,9 @@
 //   DODO_PRODUCT_PRO_MONTHLY  — Dodo product id for the MONTHLY Pro plan (pdt_…)
 //   DODO_PRODUCT_PRO_ANNUAL   — Dodo product id for the YEARLY Pro plan (pdt_…);
 //                               falls back to the monthly product if unset
+//   DODO_PRODUCT_TEAM_MONTHLY — Dodo product id for the MONTHLY Team plan (pdt_…)
+//   DODO_PRODUCT_TEAM_ANNUAL  — Dodo product id for the YEARLY Team plan (pdt_…);
+//                               falls back to the monthly product if unset
 //   APP_URL                   — site origin used for the post-checkout redirect
 //   DODO_PAYMENTS_ENVIRONMENT — 'test' (default) or 'live'; selects the API base
 // Provided automatically by the Edge runtime: SUPABASE_URL,
@@ -26,8 +29,10 @@
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const DODO_API_KEY = Deno.env.get('DODO_PAYMENTS_API_KEY')!;
-const PRODUCT_MONTHLY = Deno.env.get('DODO_PRODUCT_PRO_MONTHLY')!;
-const PRODUCT_ANNUAL = Deno.env.get('DODO_PRODUCT_PRO_ANNUAL') ?? PRODUCT_MONTHLY;
+const PRO_MONTHLY = Deno.env.get('DODO_PRODUCT_PRO_MONTHLY')!;
+const PRO_ANNUAL = Deno.env.get('DODO_PRODUCT_PRO_ANNUAL') ?? PRO_MONTHLY;
+const TEAM_MONTHLY = Deno.env.get('DODO_PRODUCT_TEAM_MONTHLY') ?? '';
+const TEAM_ANNUAL = Deno.env.get('DODO_PRODUCT_TEAM_ANNUAL') ?? TEAM_MONTHLY;
 const APP_URL = Deno.env.get('APP_URL')!;
 
 // Product ids differ between test and live, so the API host must match the key.
@@ -153,16 +158,28 @@ Deno.serve(async (req: Request) => {
           ...(profile?.display_name ? { name: profile.display_name } : {}),
         };
 
-    // Which billing interval the user picked (defaults to monthly). The annual
-    // product falls back to the monthly one if DODO_PRODUCT_PRO_ANNUAL is unset.
+    // Which plan + billing interval the user picked (defaults to Pro / monthly).
+    // Each annual product falls back to its monthly sibling if the ANNUAL secret
+    // is unset — a deliberate ergonomic default (see the secrets comment above).
     let interval: 'month' | 'year' = 'month';
+    let plan: 'pro' | 'team' = 'pro';
     try {
-      const body = (await req.json()) as { interval?: string } | null;
+      const body = (await req.json()) as { interval?: string; plan?: string } | null;
       if (body?.interval === 'year') interval = 'year';
+      if (body?.plan === 'team') plan = 'team';
     } catch {
-      // No or invalid JSON body → keep the monthly default.
+      // No or invalid JSON body → keep the Pro / monthly defaults.
     }
-    const productId = interval === 'year' ? PRODUCT_ANNUAL : PRODUCT_MONTHLY;
+
+    if (plan === 'team' && !TEAM_MONTHLY) {
+      // Team products haven't been created in Dodo yet for this environment —
+      // fail with a clear, specific message rather than silently charging the
+      // Pro price for a Team purchase.
+      return json({ error: 'The Team plan is not available yet. Please try again shortly.' }, 400);
+    }
+    const productId = plan === 'team'
+      ? (interval === 'year' ? TEAM_ANNUAL : TEAM_MONTHLY)
+      : (interval === 'year' ? PRO_ANNUAL : PRO_MONTHLY);
 
     const res = await fetch(`${DODO_BASE}/checkouts`, {
       method: 'POST',

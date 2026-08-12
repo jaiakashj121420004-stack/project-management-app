@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Check, Sparkles } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { GradientButton } from '@/components/buttons/GradientButton';
@@ -78,14 +79,19 @@ export function UpgradeModal({ open, onClose, reason }: UpgradeModalProps) {
           <GradientButton
             leftIcon={<Sparkles size={17} />}
             isLoading={pending === 'checkout'}
-            onClick={() => startCheckout(interval)}
+            onClick={() => startCheckout(interval, 'pro')}
           >
             {annual ? 'Get Pro yearly' : 'Upgrade to Pro'}
           </GradientButton>
         </div>
 
         <p className="text-center text-xs text-fg-subtle">
-          Secure checkout via Dodo Payments. Cancel anytime.
+          Secure checkout via Dodo Payments. Cancel anytime. Need more than 10
+          people on this board?{' '}
+          <Link to="/billing" className="font-semibold text-[var(--accent-from)] hover:underline">
+            See Team
+          </Link>
+          .
         </p>
       </div>
     </Modal>

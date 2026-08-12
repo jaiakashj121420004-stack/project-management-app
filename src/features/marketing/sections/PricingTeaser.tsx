@@ -5,23 +5,24 @@ import { PLANS, PLAN_ORDER } from '@/lib/plans';
 import { PlanCard } from '../PlanCard';
 import { SectionHeading } from './SectionHeading';
 
-/** Plan-id → accent + CTA copy for the two teaser cards. */
+/** Plan-id → accent + CTA copy for the teaser cards. */
 const CARD_META = {
   free: { accent: 'lagoon' as const, cta: 'Start free' },
   pro: { accent: 'bloom' as const, cta: 'Go Pro' },
+  team: { accent: 'sunset' as const, cta: 'Go Team' },
 };
 
-/** Free vs Pro headline cards on the landing page, sourced from `PLANS`. */
+/** Free / Pro / Team headline cards on the landing page, sourced from `PLANS`. */
 export function PricingTeaser() {
   return (
     <section id="pricing" className="scroll-mt-24 px-4 pt-24 sm:px-6">
       <SectionHeading
         eyebrow="Simple pricing"
         title="Start free, upgrade when you grow"
-        subtitle="No credit card to begin. Move to Pro any time for unlimited projects and email reminders."
+        subtitle="No credit card to begin. Move to Pro any time for unlimited projects and email reminders, or Team when your whole group needs to be on one board."
       />
 
-      <div className="mx-auto mt-12 grid max-w-3xl gap-5 sm:grid-cols-2">
+      <div className="mx-auto mt-12 grid max-w-5xl gap-5 sm:grid-cols-3">
         {PLAN_ORDER.map((id, i) => (
           <Reveal key={id} delay={i * 0.08}>
             <PlanCard

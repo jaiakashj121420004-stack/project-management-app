@@ -1,7 +1,9 @@
 import { useProfile } from '@/features/auth/useProfile';
+import { isProOrAbove } from '@/lib/plans';
 
 /**
- * True when the current user is on the Pro plan.
+ * True when the current user is on Pro, Team, or Enterprise (any plan at or
+ * above Pro — see `isProOrAbove`).
  *
  * This is a UX gate ONLY — the real enforcement is `project_is_pro()` in RLS and
  * the `canvas-media` Storage policies (plan.md §6, prompts.md P0). For a shared
@@ -13,5 +15,5 @@ import { useProfile } from '@/features/auth/useProfile';
  */
 export function useIsPro(): boolean {
   const { data: profile } = useProfile();
-  return profile?.plan === 'pro';
+  return isProOrAbove(profile?.plan ?? 'free');
 }

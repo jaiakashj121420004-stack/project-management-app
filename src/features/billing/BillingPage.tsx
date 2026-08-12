@@ -8,12 +8,17 @@ import { Reveal } from '@/components/motion/Reveal';
 import { Spinner } from '@/components/feedback/Spinner';
 import { useProfile } from '@/features/auth/useProfile';
 import {
+  ENTERPRISE_CONTACT_EMAIL,
+  ENTERPRISE_DISPLAY,
   PLANS,
+  TEAM_MEMBER_LIMIT,
   annualPerMonth,
+  isProOrAbove,
   planPrice,
   PRO_ANNUAL_DISCOUNT_PCT,
   type BillingInterval,
   type PlanId,
+  type PricedPlanId,
 } from '@/lib/plans';
 import { PlanBadge } from './PlanBadge';
 import { IntervalToggle } from './IntervalToggle';
@@ -29,7 +34,8 @@ export function BillingPage() {
   const status = params.get('status');
 
   // Returning from a successful checkout, the webhook may take a moment to flip
-  // the plan — refetch the profile so the page reflects Pro as soon as it does.
+  // the plan — refetch the profile so the page reflects the new plan as soon as
+  // it does.
   useEffect(() => {
     if (status === 'success') {
       void queryClient.invalidateQueries({ queryKey: ['profile'] });
@@ -37,8 +43,10 @@ export function BillingPage() {
   }, [status, queryClient]);
 
   const plan: PlanId = profile?.plan ?? 'free';
-  const current = PLANS[plan];
-  const isPro = plan === 'pro';
+  // 'enterprise' has no self-serve `PLANS` entry — fall back to its display copy.
+  const current = plan === 'enterprise' ? ENTERPRISE_DISPLAY : PLANS[plan];
+  const currentPriceMonthly = plan === 'enterprise' ? null : PLANS[plan].priceMonthly;
+  const isPaid = isProOrAbove(plan);
 
   function dismissBanner() {
     setParams(
@@ -60,8 +68,8 @@ export function BillingPage() {
 
       {status === 'success' && (
         <Banner tone="success" onDismiss={dismissBanner}>
-          You&apos;re on Pro — thank you! If your plan still shows Free, it&apos;ll update within a few
-          seconds.
+          You&apos;re upgraded — thank you! If your plan still shows Free, it&apos;ll update within a
+          few seconds.
         </Banner>
       )}
       {status === 'cancelled' && (
@@ -90,10 +98,14 @@ export function BillingPage() {
                   </p>
                 </div>
               </div>
-              <p className="text-fg-muted">
-                <span className="font-display text-title font-bold text-fg">${current.priceMonthly}</span>
-                {' / month'}
-              </p>
+              {currentPriceMonthly !== null && (
+                <p className="text-fg-muted">
+                  <span className="font-display text-title font-bold text-fg">
+                    ${currentPriceMonthly}
+                  </span>
+                  {' / month'}
+                </p>
+              )}
             </div>
 
             <p className="mt-4 text-sm text-fg-muted">{current.tagline}</p>
@@ -114,7 +126,7 @@ export function BillingPage() {
             )}
 
             <div className="mt-6 flex flex-wrap gap-3">
-              {isPro ? (
+              {isPaid ? (
                 <GradientButton
                   variant="secondary"
                   leftIcon={<CreditCard size={17} />}
@@ -127,13 +139,13 @@ export function BillingPage() {
                 <GradientButton
                   leftIcon={<Sparkles size={17} />}
                   isLoading={pending === 'checkout'}
-                  onClick={() => startCheckout('month')}
+                  onClick={() => startCheckout('month', 'pro')}
                 >
                   Upgrade to Pro
                 </GradientButton>
               )}
             </div>
-            {isPro && (
+            {isPaid && plan !== 'enterprise' && (
               <p className="mt-2 text-xs text-fg-subtle">
                 Update your card, download invoices, or cancel in the Dodo Payments portal.
               </p>
@@ -142,7 +154,30 @@ export function BillingPage() {
         )}
       </GlassPanel>
 
-      {!isLoading && !isPro && <ProUpsell onUpgrade={startCheckout} upgrading={pending === 'checkout'} />}
+      {!isLoading && plan === 'free' && (
+        <PlanUpsell
+          availablePlans={['pro', 'team']}
+          onUpgrade={startCheckout}
+          upgrading={pending === 'checkout'}
+        />
+      )}
+      {!isLoading && plan === 'pro' && (
+        <PlanUpsell availablePlans={['team']} onUpgrade={startCheckout} upgrading={pending === 'checkout'} />
+      )}
+      {!isLoading && plan === 'team' && (
+        <GlassPanel className="mt-6 flex flex-col gap-1 p-6 text-sm sm:p-8">
+          <p className="font-medium text-fg">Need more than {TEAM_MEMBER_LIMIT} people on one board?</p>
+          <p className="text-fg-muted">
+            <a
+              href={`mailto:${ENTERPRISE_CONTACT_EMAIL}?subject=Aurora%20Enterprise`}
+              className="font-semibold text-[var(--accent-from)] hover:underline"
+            >
+              Contact us
+            </a>{' '}
+            about an Enterprise plan built for your organization.
+          </p>
+        </GlassPanel>
+      )}
     </Reveal>
   );
 }
@@ -178,29 +213,56 @@ function Banner({
   );
 }
 
-/** A compact "why go Pro" card shown to free users under their current plan,
- *  with a Monthly / Annual switch (annual saves PRO_ANNUAL_DISCOUNT_PCT %). */
-function ProUpsell({
+/** A compact "why upgrade" card shown under the current plan, with a Monthly /
+ *  Annual switch (annual saves PRO_ANNUAL_DISCOUNT_PCT %). When `availablePlans`
+ *  has more than one entry (a free user, who could go straight to either Pro or
+ *  Team) it also shows a small plan switcher; a Pro user only ever sees Team. */
+function PlanUpsell({
+  availablePlans,
   onUpgrade,
   upgrading,
 }: {
-  onUpgrade: (interval: BillingInterval) => void;
+  availablePlans: PricedPlanId[];
+  onUpgrade: (interval: BillingInterval, plan: Exclude<PricedPlanId, 'free'>) => void;
   upgrading: boolean;
 }) {
   const [interval, setInterval] = useState<BillingInterval>('month');
-  const pro = PLANS.pro;
+  const [selected, setSelected] = useState<Exclude<PricedPlanId, 'free'>>(
+    availablePlans[0] as Exclude<PricedPlanId, 'free'>,
+  );
+  const target = PLANS[selected];
   const annual = interval === 'year';
-  const perMonth = annual ? (annualPerMonth('pro') ?? pro.priceMonthly) : pro.priceMonthly;
+  const perMonth = annual ? (annualPerMonth(selected) ?? target.priceMonthly) : target.priceMonthly;
 
   return (
     <GlassPanel className="mt-6 p-6 sm:p-8">
       <div className="flex items-center gap-2">
         <Sparkles size={18} className="text-[var(--accent-from)]" />
-        <h2 className="font-display text-title font-semibold text-fg">Go Pro</h2>
+        <h2 className="font-display text-title font-semibold text-fg">Go {target.name}</h2>
       </div>
-      <p className="mt-1 text-sm text-fg-muted">{pro.tagline}</p>
+      <p className="mt-1 text-sm text-fg-muted">{target.tagline}</p>
 
-      <div className="mt-4">
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        {availablePlans.length > 1 && (
+          <div className="glass inline-flex rounded-2xl p-1" role="group" aria-label="Plan">
+            {availablePlans.map((id) => (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={selected === id}
+                onClick={() => setSelected(id as Exclude<PricedPlanId, 'free'>)}
+                className={
+                  'rounded-xl px-3.5 py-1.5 text-sm font-medium transition-colors ' +
+                  (selected === id
+                    ? 'bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)] shadow-[0_8px_18px_-10px_var(--accent-glow)]'
+                    : 'text-fg-muted hover:text-fg')
+                }
+              >
+                {PLANS[id].name}
+              </button>
+            ))}
+          </div>
+        )}
         <IntervalToggle value={interval} onChange={setInterval} />
       </div>
 
@@ -212,12 +274,12 @@ function ProUpsell({
       </div>
       {annual && (
         <p className="mt-1 text-sm text-fg-muted">
-          ${planPrice('pro', 'year').toFixed(2)} billed yearly — save {PRO_ANNUAL_DISCOUNT_PCT}%
+          ${planPrice(selected, 'year').toFixed(2)} billed yearly — save {PRO_ANNUAL_DISCOUNT_PCT}%
         </p>
       )}
 
       <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
-        {pro.features.map((feature) => (
+        {target.features.map((feature) => (
           <li key={feature} className="flex items-start gap-2 text-sm text-fg">
             <Check size={16} className="mt-0.5 shrink-0 text-[var(--accent-from)]" />
             {feature}
@@ -228,11 +290,11 @@ function ProUpsell({
         <GradientButton
           leftIcon={<Sparkles size={17} />}
           isLoading={upgrading}
-          onClick={() => onUpgrade(interval)}
+          onClick={() => onUpgrade(interval, selected)}
         >
           {annual
-            ? `Get Pro — $${planPrice('pro', 'year').toFixed(2)}/yr`
-            : `Upgrade for $${pro.priceMonthly.toFixed(2)}/mo`}
+            ? `Get ${target.name} — $${planPrice(selected, 'year').toFixed(2)}/yr`
+            : `Upgrade for $${target.priceMonthly.toFixed(2)}/mo`}
         </GradientButton>
       </div>
     </GlassPanel>

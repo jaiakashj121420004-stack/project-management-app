@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import type { BillingInterval } from '@/lib/plans';
+import type { BillingInterval, PricedPlanId } from '@/lib/plans';
 import { createCheckoutUrl, createPortalUrl } from './api';
 
 type Pending = 'checkout' | 'portal' | null;
+type CheckoutPlan = Exclude<PricedPlanId, 'free'>;
 
 /**
  * Drives the two billing actions. Both end in a full-page redirect to Dodo
@@ -14,11 +15,16 @@ export function useBilling() {
   const [pending, setPending] = useState<Pending>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function go(kind: Exclude<Pending, null>, interval: BillingInterval): Promise<void> {
+  async function go(
+    kind: Exclude<Pending, null>,
+    interval: BillingInterval,
+    plan: CheckoutPlan,
+  ): Promise<void> {
     setPending(kind);
     setError(null);
     try {
-      const url = kind === 'checkout' ? await createCheckoutUrl(interval) : await createPortalUrl();
+      const url =
+        kind === 'checkout' ? await createCheckoutUrl(interval, plan) : await createPortalUrl();
       window.location.href = url;
     } catch {
       setError(
@@ -31,9 +37,11 @@ export function useBilling() {
   }
 
   return {
-    /** Begin Dodo Checkout for Pro at the given interval (defaults to monthly). */
-    startCheckout: (interval: BillingInterval = 'month') => void go('checkout', interval),
-    openPortal: () => void go('portal', 'month'),
+    /** Begin Dodo Checkout for `plan` (defaults to Pro) at the given interval
+     *  (defaults to monthly). */
+    startCheckout: (interval: BillingInterval = 'month', plan: CheckoutPlan = 'pro') =>
+      void go('checkout', interval, plan),
+    openPortal: () => void go('portal', 'month', 'pro'),
     pending,
     error,
   };

@@ -12,11 +12,13 @@
 //
 // Required secrets (set with `supabase secrets set`, never committed):
 //   DODO_WEBHOOK_SECRET — Standard Webhooks signing secret for this endpoint
-// Optional secrets (harden which subscriptions may grant Pro):
-//   DODO_PRODUCT_PRO_MONTHLY — Dodo product id for the MONTHLY Pro plan (pdt_…)
-//   DODO_PRODUCT_PRO_ANNUAL  — Dodo product id for the YEARLY Pro plan (pdt_…)
-//   DODO_BUSINESS_ID         — this endpoint's Dodo business id; when set, an
-//                              event from any other business is rejected
+// Optional secrets (harden which subscriptions may grant which plan):
+//   DODO_PRODUCT_PRO_MONTHLY  — Dodo product id for the MONTHLY Pro plan (pdt_…)
+//   DODO_PRODUCT_PRO_ANNUAL   — Dodo product id for the YEARLY Pro plan (pdt_…)
+//   DODO_PRODUCT_TEAM_MONTHLY — Dodo product id for the MONTHLY Team plan (pdt_…)
+//   DODO_PRODUCT_TEAM_ANNUAL  — Dodo product id for the YEARLY Team plan (pdt_…)
+//   DODO_BUSINESS_ID          — this endpoint's Dodo business id; when set, an
+//                               event from any other business is rejected
 // Provided automatically by the Edge runtime: SUPABASE_URL,
 // SUPABASE_SERVICE_ROLE_KEY.
 
@@ -24,15 +26,19 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const DODO_WEBHOOK_SECRET = Deno.env.get('DODO_WEBHOOK_SECRET')!;
 
-// The only products that may flip an account to Pro. A future, cheaper product
-// (or a typo'd id) must never grant Pro — so a grant event is honoured only when
-// its product_id is one of these. When neither secret is configured the set is
-// empty and NO product can grant Pro (fail closed), surfaced in the logs.
-const PRO_PRODUCT_IDS = new Set(
-  [Deno.env.get('DODO_PRODUCT_PRO_MONTHLY'), Deno.env.get('DODO_PRODUCT_PRO_ANNUAL')].filter(
-    (id): id is string => typeof id === 'string' && id.length > 0,
-  ),
-);
+// Maps a known product_id to the plan it grants. A future, cheaper product (or
+// a typo'd id) must never grant a paid plan — so a grant event is honoured only
+// when its product_id is a key here. When no product secrets are configured the
+// map is empty and NO product can grant anything (fail closed), surfaced in the
+// logs. 'enterprise' is intentionally absent — it's never granted by a Dodo
+// webhook, only assigned manually for negotiated deals.
+const PRODUCT_PLAN: Record<string, 'pro' | 'team'> = {};
+for (const id of [Deno.env.get('DODO_PRODUCT_PRO_MONTHLY'), Deno.env.get('DODO_PRODUCT_PRO_ANNUAL')]) {
+  if (id) PRODUCT_PLAN[id] = 'pro';
+}
+for (const id of [Deno.env.get('DODO_PRODUCT_TEAM_MONTHLY'), Deno.env.get('DODO_PRODUCT_TEAM_ANNUAL')]) {
+  if (id) PRODUCT_PLAN[id] = 'team';
+}
 
 // When set, only events from this Dodo business are accepted.
 const EXPECTED_BUSINESS_ID = Deno.env.get('DODO_BUSINESS_ID') ?? '';
@@ -256,15 +262,16 @@ Deno.serve(async (req: Request) => {
       case 'subscription.active':
       case 'subscription.renewed': {
         if (!filter) break;
-        // Only a KNOWN Pro product may grant Pro. Anything else (a future cheaper
+        // Only a KNOWN product may grant a plan. Anything else (a future cheaper
         // product, a mispriced test product, a typo) is acknowledged but never
         // upgrades the account.
-        if (!data.product_id || !PRO_PRODUCT_IDS.has(data.product_id)) {
+        const grantedPlan = data.product_id ? PRODUCT_PLAN[data.product_id] : undefined;
+        if (!grantedPlan) {
           console.warn(`Ignoring ${event.type} for unrecognised product_id: ${data.product_id}`);
           break;
         }
         await patchProfile(filter, {
-          plan: 'pro',
+          plan: grantedPlan,
           plan_status: 'active',
           dodo_customer_id: data.customer?.customer_id ?? null,
           dodo_subscription_id: data.subscription_id ?? null,
