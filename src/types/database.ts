@@ -903,6 +903,13 @@ export interface Database {
         Args: Record<string, never>;
         Returns: number;
       };
+      // RPC: total canvas-media bytes across every project the caller owns —
+      // powers the storage-used indicator + client-side quota pre-check
+      // (supabase/migrations/20260812010000_canvas_media_caps_and_quota.sql).
+      my_canvas_media_usage_bytes: {
+        Args: Record<string, never>;
+        Returns: number;
+      };
       // Co-member display data only (M1): id/display_name/avatar_url for users the
       // caller may see (self or a project co-member). SECURITY DEFINER; the profiles
       // base table is own-row-only so billing/reminder PII is never exposed.

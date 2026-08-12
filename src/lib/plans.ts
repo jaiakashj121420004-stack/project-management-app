@@ -42,12 +42,17 @@ export interface Plan {
   features: string[];
 }
 
-/** Free-tier caps. Keep in sync with the `projects` / `project_members` triggers. */
-export const FREE_PROJECT_LIMIT = 10;
-export const FREE_MEMBER_LIMIT = 3;
+/** Free-tier caps. Keep in sync with the `projects` / `project_members` triggers
+ * in `supabase/migrations/20260812000000_tighten_free_limits.sql`. Lowered from
+ * 10/3 on 2026-08-12 — the old limits let a full 3-person team run indefinitely
+ * on Free, which undercut conversion (decision log, memory.md). */
+export const FREE_PROJECT_LIMIT = 3;
+export const FREE_MEMBER_LIMIT = 2;
 
-/** Discount applied to annual billing vs. paying monthly for a full year. */
-export const PRO_ANNUAL_DISCOUNT_PCT = 5;
+/** Discount applied to annual billing vs. paying monthly for a full year.
+ * Raised from 5% on 2026-08-12 to make annual meaningfully cheaper AND more
+ * fee-efficient (Dodo's flat $0.40/transaction fee bites monthly harder). */
+export const PRO_ANNUAL_DISCOUNT_PCT = 33;
 
 export const PLANS: Record<PlanId, Plan> = {
   free: {
@@ -71,8 +76,8 @@ export const PLANS: Record<PlanId, Plan> = {
     id: 'pro',
     name: 'Pro',
     priceMonthly: 5.99,
-    // 5.99 × 12 = 71.88, less PRO_ANNUAL_DISCOUNT_PCT (5%) ≈ 68.29 (≈ $5.69/mo).
-    priceAnnual: 68.29,
+    // 5.99 × 12 = 71.88, less PRO_ANNUAL_DISCOUNT_PCT (33%) ≈ 47.99 (≈ $4.00/mo).
+    priceAnnual: 47.99,
     tagline: 'For power users and growing teams who need room to scale.',
     projectLimit: null,
     memberLimit: null,

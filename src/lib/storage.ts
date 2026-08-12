@@ -14,6 +14,7 @@
 import { supabase } from '@/lib/supabase';
 import {
   CANVAS_MEDIA_BUCKET,
+  CANVAS_MEDIA_QUOTA_BYTES,
   MEDIA_CAPS,
   formatBytes,
   mediaKindForMime,
@@ -23,6 +24,7 @@ import {
 export type MediaUploadErrorCode =
   | 'unsupported-type'
   | 'too-large'
+  | 'quota-exceeded'
   | 'upload-failed'
   | 'signed-url-failed';
 
@@ -69,6 +71,19 @@ export function validateCanvasMedia(file: File): void {
 }
 
 /**
+ * Total canvas-media bytes across every project the signed-in user owns. Backed
+ * by the `my_canvas_media_usage_bytes()` RPC (supabase/migrations/
+ * 20260812010000_canvas_media_caps_and_quota.sql). Used to show a "4.2 GB of
+ * 10 GB used" indicator and to fail fast on upload before hitting the network —
+ * the REAL quota gate is server-side (`canvas_media_quota_ok()` in Storage RLS).
+ */
+export async function getCanvasMediaUsageBytes(): Promise<number> {
+  const { data, error } = await supabase.rpc('my_canvas_media_usage_bytes');
+  if (error) throw error;
+  return typeof data === 'number' ? data : Number(data ?? 0);
+}
+
+/**
  * Upload a file to the canvas-media bucket and return its storage path. Validates
  * BEFORE hitting the network; surfaces RLS/Storage failures as MediaUploadError.
  */
@@ -79,6 +94,24 @@ export async function uploadCanvasMedia(
 ): Promise<{ path: string }> {
   validateCanvasMedia(file);
 
+  // Fail fast with a friendly message if this upload would blow the account's
+  // total canvas-media quota — a courtesy check only. If it's stale (another
+  // upload landed a second ago) or skipped, the Storage RLS still rejects the
+  // insert server-side, just with a less specific error.
+  try {
+    const used = await getCanvasMediaUsageBytes();
+    if (used + file.size > CANVAS_MEDIA_QUOTA_BYTES) {
+      throw new MediaUploadError(
+        'quota-exceeded',
+        `You've used ${formatBytes(used)} of your ${formatBytes(CANVAS_MEDIA_QUOTA_BYTES)} canvas media storage. Delete some media to free up space.`,
+      );
+    }
+  } catch (err) {
+    if (err instanceof MediaUploadError) throw err;
+    // Usage lookup failed for some other reason (network blip, RPC error) —
+    // don't block the upload on a courtesy check; the real gate still applies.
+  }
+
   const path = `${projectId}/${noteId}/${crypto.randomUUID()}.${extensionFor(file)}`;
   const { error } = await supabase.storage
     .from(CANVAS_MEDIA_BUCKET)
@@ -87,7 +120,7 @@ export async function uploadCanvasMedia(
   if (error) {
     throw new MediaUploadError(
       'upload-failed',
-      'Upload failed. You may not have permission, or the connection dropped — please try again.',
+      'Upload failed. You may not have permission, your storage quota may be full, or the connection dropped — please try again.',
     );
   }
   return { path };

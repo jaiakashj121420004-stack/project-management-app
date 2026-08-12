@@ -118,6 +118,15 @@ export const CANVAS_MEDIA_BUCKET = 'canvas-media';
 /** The largest per-type cap — mirrors the bucket's file_size_limit ceiling. */
 export const MAX_MEDIA_BYTES = MEDIA_CAPS.video.maxBytes;
 
+/**
+ * Total canvas-media a single account (board owner) may accumulate across every
+ * project they own — the real gate is `canvas_media_quota_ok()` in
+ * supabase/migrations/20260812010000_canvas_media_caps_and_quota.sql; this is
+ * only used client-side to fail fast with a friendly message before upload.
+ * Keep in sync with that migration's hard-coded 10737418240.
+ */
+export const CANVAS_MEDIA_QUOTA_BYTES = 10 * 1024 * MB; // 10 GiB
+
 /** Resolve a file's MIME type to its media kind, or `null` if not allowed. */
 export function mediaKindForMime(mime: string): MediaKind | null {
   const type = mime.toLowerCase();
