@@ -45,3 +45,21 @@ export function createCheckoutUrl(
 export function createPortalUrl(): Promise<string> {
   return invokeForUrl('dodo-portal');
 }
+
+/**
+ * Switch an EXISTING paid subscription's interval or tier in place (e.g. Pro
+ * monthly → Pro annual, or Pro → Team) via Dodo's Change Plan API. Unlike
+ * checkout, this never redirects — it resolves once Dodo accepts the change,
+ * and the plan value itself only flips once the webhook confirms it.
+ */
+export async function requestPlanChange(
+  interval: BillingInterval,
+  plan: Exclude<PricedPlanId, 'free'>,
+): Promise<void> {
+  const { data, error } = (await supabase.functions.invoke<{ ok?: boolean; error?: string }>(
+    'dodo-change-plan',
+    { body: { interval, plan } },
+  )) as { data: { ok?: boolean; error?: string } | null; error: Error | null };
+  if (error) throw error;
+  if (!data?.ok) throw new Error(data?.error ?? 'Could not update your plan.');
+}

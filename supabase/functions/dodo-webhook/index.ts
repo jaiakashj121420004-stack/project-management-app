@@ -257,10 +257,14 @@ Deno.serve(async (req: Request) => {
     const filter = resolveProfileFilter(data);
 
     switch (event.type) {
-      // Subscription is live (first activation) or successfully renewed — grant
-      // Pro and store the Dodo ids so later events can be mapped without metadata.
+      // Subscription is live (first activation), successfully renewed, or was
+      // just switched to a different product via the Change Plan API (interval
+      // switch or Pro↔Team move initiated from dodo-change-plan) — grant the
+      // plan the product_id maps to and store the Dodo ids so later events can
+      // be mapped without metadata.
       case 'subscription.active':
-      case 'subscription.renewed': {
+      case 'subscription.renewed':
+      case 'subscription.plan_changed': {
         if (!filter) break;
         // Only a KNOWN product may grant a plan. Anything else (a future cheaper
         // product, a mispriced test product, a typo) is acknowledged but never

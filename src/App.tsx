@@ -1,11 +1,13 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from '@/components/shell/AppShell';
 import { StyleGuide } from '@/pages/StyleGuide';
+import { SettingsPage } from '@/pages/SettingsPage';
 import { Placeholder } from '@/pages/Placeholder';
 import { useAuth } from '@/hooks/useAuth';
 import { ProjectsPage, ProjectPage } from '@/features/projects';
 import { CalendarPage } from '@/features/calendar';
 import { TodosPage } from '@/features/todos';
+import { TodayPage } from '@/features/today/TodayPage';
 import { LibraryPage } from '@/features/library';
 import { BillingPage } from '@/features/billing';
 import { CeoMessagePage } from '@/features/announcements';
@@ -55,6 +57,7 @@ export default function App() {
       {/* The authenticated app. */}
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
+          <Route path="today" element={<TodayPage />} />
           <Route path="boards" element={<ProjectsPage />} />
           <Route path="projects/:projectId" element={<ProjectPage />} />
           <Route path="calendar" element={<CalendarPage />} />
@@ -68,6 +71,9 @@ export default function App() {
           <Route path="feedback" element={<FeedbackPage />} />
           <Route path="billing" element={<BillingPage />} />
           <Route path="profile" element={<ProfilePage />} />
+          <Route path="settings" element={<SettingsPage />} />
+          {/* Dev-only component showcase — intentionally not in the nav; kept
+              reachable by direct URL for verifying primitives in both themes. */}
           <Route path="style-guide" element={<StyleGuide />} />
           <Route path="*" element={<Placeholder title="Not found" phase="a future phase" />} />
         </Route>

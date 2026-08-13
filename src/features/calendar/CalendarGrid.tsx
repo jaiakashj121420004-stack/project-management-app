@@ -1,18 +1,21 @@
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import type { AccentName } from '@/lib/accents';
-import type { Card } from '@/types/database';
+import type { Card, Project } from '@/types/database';
 import { DayCell } from './DayCell';
-import { WEEKDAYS, toDateKey, type CalendarView } from './dates';
+import { WEEKDAYS, toDateKey, type CalendarView, type DayTodoSummary } from './dates';
 
-/** Stable reference for dayless cells so the memoised DayCell isn't re-rendered
- *  by a fresh `[]` every time the page renders. */
+/** Stable references for dayless cells so the memoised DayCell isn't
+ *  re-rendered by a fresh `[]` every time the page renders. */
 const NO_CARDS: Card[] = [];
+const NO_MILESTONES: Project[] = [];
 
 interface CalendarGridProps {
   days: Date[];
   variant: CalendarView;
   monthCursor: Date;
   cardsByDate: Map<string, Card[]>;
+  todosByDate: Map<string, DayTodoSummary>;
+  projectsByDate: Map<string, Project[]>;
   accentFor: (projectId: string) => AccentName;
   onOpenCard: (card: Card) => void;
   onPeek: (dateKey: string) => void;
@@ -28,6 +31,8 @@ export function CalendarGrid({
   variant,
   monthCursor,
   cardsByDate,
+  todosByDate,
+  projectsByDate,
   accentFor,
   onOpenCard,
   onPeek,
@@ -53,6 +58,8 @@ export function CalendarGrid({
               date={date}
               dateKey={key}
               cards={cardsByDate.get(key) ?? NO_CARDS}
+              todos={todosByDate.get(key)}
+              milestones={projectsByDate.get(key) ?? NO_MILESTONES}
               variant={variant}
               limit={limit}
               monthCursor={monthCursor}

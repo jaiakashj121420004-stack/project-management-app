@@ -54,6 +54,7 @@ export function useCreateProject() {
         name: input.name,
         description: normalizeDescription(input.description),
         accent: input.accent,
+        targetDate: input.targetDate,
       });
     },
     onMutate: async (input) => {
@@ -66,6 +67,7 @@ export function useCreateProject() {
         name: input.name.trim(),
         description: normalizeDescription(input.description),
         accent: input.accent,
+        target_date: input.targetDate,
         created_at: new Date().toISOString(),
       };
       queryClient.setQueryData<Project[]>(key, (old) => [optimistic, ...(old ?? [])]);
@@ -102,6 +104,7 @@ export function useUpdateProject() {
         name: input.name,
         description: normalizeDescription(input.description),
         accent: input.accent,
+        targetDate: input.targetDate,
       }),
     onMutate: async ({ id, ...input }) => {
       await queryClient.cancelQueries({ queryKey: key });
@@ -110,6 +113,7 @@ export function useUpdateProject() {
         name: input.name.trim(),
         description: normalizeDescription(input.description),
         accent: input.accent,
+        target_date: input.targetDate,
       };
       queryClient.setQueryData<Project[]>(key, (old) =>
         (old ?? []).map((project) => (project.id === id ? { ...project, ...patch } : project)),

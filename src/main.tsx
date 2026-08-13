@@ -10,6 +10,7 @@ import { Toaster } from '@/components/feedback/Toaster';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { AuthProvider } from '@/features/auth';
 import { applyTheme, getInitialTheme } from '@/lib/theme';
+import { applyCustomTheme, getStoredCustomTheme } from '@/lib/customTheme';
 import {
   PERSIST_BUSTER,
   PERSIST_MAX_AGE,
@@ -20,6 +21,8 @@ import '@/styles/index.css';
 
 // Apply the saved theme before first paint to avoid a flash of the wrong theme.
 applyTheme(getInitialTheme());
+// Same reasoning for a saved font pairing / custom colors (Settings page).
+applyCustomTheme(getStoredCustomTheme());
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

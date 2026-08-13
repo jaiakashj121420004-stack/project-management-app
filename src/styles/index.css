@@ -15,6 +15,12 @@
 .dark {
   color-scheme: dark;
 
+  /* Personalization defaults (Settings page — src/lib/customTheme.ts). Shared
+     across both themes so switching Night/Day doesn't reset a chosen pairing;
+     overridden inline on <html> only when the user picks something else. */
+  --font-display: 'Fraunces';
+  --font-body: 'Spectral';
+
   --bg: 24 18 16; /* #181210 ink */
   --fg: 236 226 210; /* #ECE2D2 bone */
   --fg-muted: 199 186 169; /* #C7BAA9 body */

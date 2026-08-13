@@ -5,7 +5,8 @@ import {
   ListTodo,
   Megaphone,
   MessageSquareHeart,
-  Sparkles,
+  Settings,
+  Sun,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -23,11 +24,12 @@ export interface NavItem {
 
 /** Primary navigation. `bottomNav` items also appear in the mobile bottom bar. */
 export const NAV_ITEMS: readonly NavItem[] = [
+  { label: 'Today', to: '/today', icon: Sun, bottomNav: true },
   { label: 'Boards', to: '/boards', icon: LayoutGrid, end: true, bottomNav: true },
   { label: 'To-Do', to: '/todos', icon: ListTodo, bottomNav: true },
   { label: 'Calendar', to: '/calendar', icon: CalendarDays, bottomNav: true },
   { label: 'Library', to: '/library', icon: Library, bottomNav: true },
   { label: 'From the Founder', to: '/from-the-founder', icon: Megaphone },
   { label: 'Feedback/Features', to: '/feedback', icon: MessageSquareHeart },
-  { label: 'Style Guide', to: '/style-guide', icon: Sparkles },
+  { label: 'Settings', to: '/settings', icon: Settings },
 ];

@@ -1,23 +1,30 @@
-import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
+import { useMemo, useState, type KeyboardEvent } from 'react';
 import { cn } from '@/lib/cn';
-import { Check, Plus, Repeat, Trash2, X } from 'lucide-react';
+import { Check, CheckSquare, Pencil, Plus, Repeat, Square, Trash2, X } from 'lucide-react';
 import { GlassPanel } from '@/components/glass/GlassPanel';
+import { Tooltip } from '@/components/Tooltip';
+import { useIsPro } from '@/features/billing/useIsPro';
 import type { TodoItem, TodoList } from '@/types/database';
 import { todoItemTextSchema, todoListNameSchema } from './schemas';
 import { TodoItemRow } from './TodoItemRow';
+import { TodoPriorityPicker } from './TodoPriorityPicker';
+import { RecurrenceEditor } from './RecurrenceEditor';
+import { describeRule, type RecurrenceRule } from './recurrence';
 import {
   useAddTodoItem,
+  useBulkDeleteTodoItems,
+  useBulkUpdateTodoItems,
+  useCreateRecurrence,
+  useDeleteRecurrence,
   useDeleteTodoItem,
   useDeleteTodoList,
+  useLinkTodoListRecurrence,
   useMoveTodoItem,
+  useRecurrences,
   useRenameTodoList,
+  useUpdateRecurrence,
   useUpdateTodoItem,
 } from './useTodos';
-import {
-  isRecurring,
-  upsertRecurringTemplate,
-  removeRecurringTemplate,
-} from './recurringTemplates';
 
 interface TodoListCardProps {
   dateKey: string;
@@ -46,39 +53,68 @@ export function TodoListCard({ dateKey, list, items }: TodoListCardProps) {
   const renameList = useRenameTodoList(dateKey);
   const deleteList = useDeleteTodoList(dateKey);
 
+  const isPro = useIsPro();
+  const { data: recurrences } = useRecurrences();
+  const createRecurrence = useCreateRecurrence();
+  const updateRecurrenceRule = useUpdateRecurrence();
+  const deleteRecurrence = useDeleteRecurrence();
+  const linkRecurrence = useLinkTodoListRecurrence(dateKey);
+
+  const bulkUpdate = useBulkUpdateTodoItems(dateKey);
+  const bulkDelete = useBulkDeleteTodoItems(dateKey);
+
   const [renaming, setRenaming] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [recurring, setRecurring] = useState(() => isRecurring(list.name));
-  const [prevListName, setPrevListName] = useState(list.name);
+  const [repeatOpen, setRepeatOpen] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const sorted = useMemo(() => [...items].sort((a, b) => a.position - b.position), [items]);
+  const recurrence = useMemo(
+    () => recurrences?.find((r) => r.id === list.source_recurrence_id) ?? null,
+    [recurrences, list.source_recurrence_id],
+  );
+  const rule = (recurrence?.rule as RecurrenceRule | undefined) ?? null;
+  const savingRecurrence =
+    createRecurrence.isPending || updateRecurrenceRule.isPending || linkRecurrence.isPending;
+
+  // P1 first, then P2, … then unprioritised — position is only the tiebreaker
+  // within a tier, so drag/move-order still means something inside each tier.
+  const sorted = useMemo(
+    () =>
+      [...items].sort((a, b) => {
+        const pa = a.priority ?? Infinity;
+        const pb = b.priority ?? Infinity;
+        if (pa !== pb) return pa - pb;
+        return a.position - b.position;
+      }),
+    [items],
+  );
   const done = sorted.filter((item) => item.is_done).length;
   const total = sorted.length;
 
-  // Re-derive recurring when the list is renamed by adjusting state DURING render
-  // (React's recommended pattern) instead of in an effect — avoids the cascading
-  // render that react-hooks/set-state-in-effect warns about.
-  if (list.name !== prevListName) {
-    setPrevListName(list.name);
-    setRecurring(isRecurring(list.name));
+  function handleSaveRecurrence(nextRule: RecurrenceRule) {
+    const itemTexts = sorted.map((i) => i.text);
+    if (recurrence) {
+      updateRecurrenceRule.mutate(
+        { id: recurrence.id, name: list.name, items: itemTexts, rule: nextRule },
+        { onSuccess: () => setRepeatOpen(false) },
+      );
+    } else {
+      createRecurrence.mutate(
+        { name: list.name, items: itemTexts, rule: nextRule },
+        {
+          onSuccess: (created) => {
+            linkRecurrence.mutate({ id: list.id, recurrenceId: created.id });
+            setRepeatOpen(false);
+          },
+        },
+      );
+    }
   }
 
-  // Keep the stored template up-to-date whenever items change while recurring is on.
-  useEffect(() => {
-    if (!recurring) return;
-    upsertRecurringTemplate({ name: list.name, items: sorted.map((i) => i.text) });
-    // list.name intentionally excluded — name changes are handled by the rename path below.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sorted]);
-
-  function handleToggleRecurring() {
-    if (recurring) {
-      removeRecurringTemplate(list.name);
-      setRecurring(false);
-    } else {
-      upsertRecurringTemplate({ name: list.name, items: sorted.map((i) => i.text) });
-      setRecurring(true);
-    }
+  function handleRemoveRecurrence() {
+    if (recurrence) deleteRecurrence.mutate(recurrence.id);
+    setRepeatOpen(false);
   }
 
   function handleAdd(text: string) {
@@ -90,7 +126,10 @@ export function TodoListCard({ dateKey, list, items }: TodoListCardProps) {
     });
   }
 
-  /** Swap an item with its neighbour `delta` rows away (-1 up, +1 down). */
+  /** Swap an item with its neighbour `delta` rows away (-1 up, +1 down). Only
+   *  meaningful within the same priority tier — priority always outranks
+   *  manual order, so a swap across a tier boundary would silently do nothing
+   *  visually; `canReorder` below disables the button before that happens. */
   function move(index: number, delta: number) {
     const current = sorted[index];
     const neighbour = sorted[index + delta];
@@ -103,6 +142,43 @@ export function TodoListCard({ dateKey, list, items }: TodoListCardProps) {
     });
   }
 
+  /** True when the neighbour `delta` away shares this item's priority tier. */
+  function canReorder(index: number, delta: number): boolean {
+    const current = sorted[index];
+    const neighbour = sorted[index + delta];
+    if (!current || !neighbour) return false;
+    return (current.priority ?? null) === (neighbour.priority ?? null);
+  }
+
+  function toggleSelectMode() {
+    setSelectMode((on) => !on);
+    setSelectedIds(new Set());
+  }
+
+  function toggleSelected(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function handleBulkDone(isDone: boolean) {
+    bulkUpdate.mutate({ ids: [...selectedIds], is_done: isDone });
+    setSelectedIds(new Set());
+  }
+
+  function handleBulkPriority(priority: number | null) {
+    bulkUpdate.mutate({ ids: [...selectedIds], priority });
+    setSelectedIds(new Set());
+  }
+
+  function handleBulkDelete() {
+    bulkDelete.mutate({ ids: [...selectedIds] });
+    setSelectedIds(new Set());
+  }
+
   return (
     <GlassPanel className="flex flex-col gap-3 p-4">
       <div className="flex items-start justify-between gap-2">
@@ -110,12 +186,12 @@ export function TodoListCard({ dateKey, list, items }: TodoListCardProps) {
           <ListNameEditor
             initial={list.name}
             onSave={(name) => {
-              // Keep recurring template in sync when the list is renamed.
-              if (recurring && name !== list.name) {
-                removeRecurringTemplate(list.name);
-                upsertRecurringTemplate({ name, items: sorted.map((i) => i.text) });
-              }
               renameList.mutate({ id: list.id, name });
+              // The recurrence template keeps its own name in sync too, so it
+              // still reads sensibly wherever it's listed on its own.
+              if (recurrence && name !== list.name) {
+                updateRecurrenceRule.mutate({ id: recurrence.id, name });
+              }
               setRenaming(false);
             }}
             onCancel={() => setRenaming(false)}
@@ -125,7 +201,7 @@ export function TodoListCard({ dateKey, list, items }: TodoListCardProps) {
             type="button"
             onClick={() => setRenaming(true)}
             className="min-w-0 flex-1 truncate text-left text-base font-semibold text-fg hover:text-[var(--accent-from)]"
-            title="Rename list"
+            title="Click to rename"
           >
             {list.name}
           </button>
@@ -137,28 +213,72 @@ export function TodoListCard({ dateKey, list, items }: TodoListCardProps) {
               {done}/{total}
             </span>
           )}
-          <button
-            type="button"
-            aria-label={recurring ? 'Remove from daily routine' : 'Repeat daily'}
-            title={recurring ? 'Daily routine — click to remove' : 'Repeat this list every day'}
-            onClick={handleToggleRecurring}
-            className={cn(
-              'grid h-7 w-7 shrink-0 place-items-center rounded-lg transition-colors',
-              recurring
-                ? 'text-[var(--accent-from)] hover:bg-[var(--glass-fill)]'
-                : 'text-fg-subtle hover:bg-[var(--glass-fill)] hover:text-fg',
-            )}
-          >
-            <Repeat size={14} />
-          </button>
-          <button
-            type="button"
-            aria-label="Delete list"
-            onClick={() => setConfirmingDelete((open) => !open)}
-            className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-fg-subtle transition-colors hover:bg-danger/10 hover:text-danger"
-          >
-            <Trash2 size={14} />
-          </button>
+          {!renaming && total > 0 && (
+            <Tooltip label={selectMode ? 'Done selecting' : 'Select items'}>
+              <button
+                type="button"
+                aria-label={selectMode ? 'Exit select mode' : 'Select multiple items'}
+                aria-pressed={selectMode}
+                onClick={toggleSelectMode}
+                className={cn(
+                  'grid h-7 w-7 shrink-0 place-items-center rounded-lg transition-colors',
+                  selectMode
+                    ? 'text-[var(--accent-from)] hover:bg-[var(--glass-fill)]'
+                    : 'text-fg-subtle hover:bg-[var(--glass-fill)] hover:text-fg',
+                )}
+              >
+                {selectMode ? <CheckSquare size={14} /> : <Square size={14} />}
+              </button>
+            </Tooltip>
+          )}
+          {!renaming && (
+            <Tooltip label="Edit name">
+              <button
+                type="button"
+                aria-label="Edit list name"
+                onClick={() => setRenaming(true)}
+                className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-fg-subtle transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+              >
+                <Pencil size={13} />
+              </button>
+            </Tooltip>
+          )}
+          <RecurrenceEditor
+            open={repeatOpen}
+            onClose={() => setRepeatOpen(false)}
+            rule={rule}
+            isPro={isPro}
+            saving={savingRecurrence}
+            onSave={handleSaveRecurrence}
+            onRemove={handleRemoveRecurrence}
+            trigger={
+              <Tooltip label={rule ? describeRule(rule) : 'Repeat…'}>
+                <button
+                  type="button"
+                  aria-label={rule ? `Repeat: ${describeRule(rule)}` : 'Set up repeat'}
+                  onClick={() => setRepeatOpen((open) => !open)}
+                  className={cn(
+                    'grid h-7 w-7 shrink-0 place-items-center rounded-lg transition-colors',
+                    rule
+                      ? 'text-[var(--accent-from)] hover:bg-[var(--glass-fill)]'
+                      : 'text-fg-subtle hover:bg-[var(--glass-fill)] hover:text-fg',
+                  )}
+                >
+                  <Repeat size={14} />
+                </button>
+              </Tooltip>
+            }
+          />
+          <Tooltip label="Delete list">
+            <button
+              type="button"
+              aria-label="Delete list"
+              onClick={() => setConfirmingDelete((open) => !open)}
+              className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-fg-subtle transition-colors hover:bg-danger/10 hover:text-danger"
+            >
+              <Trash2 size={14} />
+            </button>
+          </Tooltip>
         </div>
       </div>
 
@@ -194,16 +314,48 @@ export function TodoListCard({ dateKey, list, items }: TodoListCardProps) {
               item={item}
               onToggle={(isDone) => updateItem.mutate({ id: item.id, is_done: isDone })}
               onDelete={() => deleteItem.mutate({ id: item.id })}
+              onPriorityChange={(priority) => updateItem.mutate({ id: item.id, priority })}
               onMoveUp={() => move(index, -1)}
               onMoveDown={() => move(index, 1)}
-              canMoveUp={index > 0}
-              canMoveDown={index < sorted.length - 1}
+              canMoveUp={canReorder(index, -1)}
+              canMoveDown={canReorder(index, 1)}
+              selectMode={selectMode}
+              selected={selectedIds.has(item.id)}
+              onToggleSelect={() => toggleSelected(item.id)}
             />
           ))}
         </ul>
       )}
 
-      <ItemComposer onAdd={handleAdd} />
+      {selectMode && selectedIds.size > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-fill)] px-3 py-2">
+          <span className="text-xs font-semibold text-fg-muted">{selectedIds.size} selected</span>
+          <button
+            type="button"
+            onClick={() => handleBulkDone(true)}
+            className="rounded-lg px-2 py-1 text-xs font-medium text-fg hover:bg-[var(--glass-fill)]"
+          >
+            Mark done
+          </button>
+          <button
+            type="button"
+            onClick={() => handleBulkDone(false)}
+            className="rounded-lg px-2 py-1 text-xs font-medium text-fg hover:bg-[var(--glass-fill)]"
+          >
+            Mark not done
+          </button>
+          <TodoPriorityPicker value={null} onChange={handleBulkPriority} />
+          <button
+            type="button"
+            onClick={handleBulkDelete}
+            className="ml-auto rounded-lg px-2 py-1 text-xs font-semibold text-danger hover:bg-danger/10"
+          >
+            Delete
+          </button>
+        </div>
+      )}
+
+      {!selectMode && <ItemComposer onAdd={handleAdd} />}
     </GlassPanel>
   );
 }

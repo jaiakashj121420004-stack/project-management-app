@@ -29,9 +29,18 @@ import { CalendarGrid } from './CalendarGrid';
 import { AgendaList } from './AgendaList';
 import { CardChip } from './CardChip';
 import { DayCardsModal } from './DayCardsModal';
-import { calendarDays, groupCardsByDate, periodLabel, type CalendarView } from './dates';
+import {
+  calendarDays,
+  groupCardsByDate,
+  groupProjectsByDate,
+  groupTodosByDate,
+  periodLabel,
+  toDateKey,
+  type CalendarView,
+} from './dates';
 import {
   useDatedCards,
+  useDatedTodos,
   useDeleteCalendarCard,
   useRescheduleCard,
   useUpdateCalendarCard,
@@ -77,6 +86,15 @@ export function CalendarPage() {
   const cardsByDate = useMemo(() => groupCardsByDate(scopedCards), [scopedCards]);
 
   const days = useMemo(() => calendarDays(view, cursor), [view, cursor]);
+  const rangeStart = useMemo(() => toDateKey(days[0] ?? cursor), [days, cursor]);
+  const rangeEnd = useMemo(() => toDateKey(days[days.length - 1] ?? cursor), [days, cursor]);
+  const { data: todosInRange } = useDatedTodos(rangeStart, rangeEnd);
+  const todosByDate = useMemo(
+    () => groupTodosByDate(todosInRange?.lists ?? [], todosInRange?.items ?? []),
+    [todosInRange],
+  );
+  const projectsByDate = useMemo(() => groupProjectsByDate(projectList), [projectList]);
+
   const pageAccent: AccentName = scope === 'all' ? 'aurora' : (projectsById.get(scope)?.accent ?? 'aurora');
 
   const sensors = useSensors(
@@ -131,6 +149,8 @@ export function CalendarPage() {
   const activeCard = activeCardId ? (cardsById.get(activeCardId) ?? null) : null;
   const peekDate = peekDateKey ? parseISO(peekDateKey) : null;
   const peekCards = peekDateKey ? (cardsByDate.get(peekDateKey) ?? []) : [];
+  const peekTodos = peekDateKey ? todosByDate.get(peekDateKey) : undefined;
+  const peekMilestones = peekDateKey ? (projectsByDate.get(peekDateKey) ?? []) : [];
 
   function openCardFromPeek(card: Card) {
     setPeekDateKey(null);
@@ -175,6 +195,8 @@ export function CalendarPage() {
               variant={view}
               monthCursor={cursor}
               cardsByDate={cardsByDate}
+              todosByDate={todosByDate}
+              projectsByDate={projectsByDate}
               accentFor={accentFor}
               onOpenCard={(card) => setOpenCardId(card.id)}
               onPeek={setPeekDateKey}
@@ -183,8 +205,11 @@ export function CalendarPage() {
             <AgendaList
               days={days}
               cardsByDate={cardsByDate}
+              todosByDate={todosByDate}
+              projectsByDate={projectsByDate}
               accentFor={accentFor}
               onOpenCard={(card) => setOpenCardId(card.id)}
+              onPeek={setPeekDateKey}
               emptyLabel={view === 'month' ? 'Nothing scheduled this month.' : 'Nothing scheduled this week.'}
             />
           )}
@@ -206,6 +231,8 @@ export function CalendarPage() {
         open={Boolean(peekDateKey)}
         date={peekDate}
         cards={peekCards}
+        todos={peekTodos}
+        milestones={peekMilestones}
         accentFor={accentFor}
         onClose={() => setPeekDateKey(null)}
         onOpenCard={openCardFromPeek}

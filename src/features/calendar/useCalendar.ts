@@ -2,7 +2,17 @@ import { useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/
 import type { Card } from '@/types/database';
 import { removeCard, updateCardDetail, type BoardData } from '@/features/board/api';
 import type { CardExtras } from '@/features/board/cardExtras.api';
-import { fetchDatedCards, updateCardDueDate } from './api';
+import { fetchDatedCards, fetchTodoListsInRange, updateCardDueDate, type CalendarTodos } from './api';
+
+/** Every to-do list (+ items) whose `list_date` falls in [startKey, endKey] —
+ *  used to show to-do chips on the Calendar. Re-fetches when the visible range
+ *  changes (month/week nav); RLS scopes it to the caller's own lists. */
+export function useDatedTodos(startKey: string, endKey: string) {
+  return useQuery<CalendarTodos>({
+    queryKey: ['calendar-todos', startKey, endKey],
+    queryFn: () => fetchTodoListsInRange(startKey, endKey),
+  });
+}
 
 /**
  * Calendar state lives in one cache entry, `['calendar-cards']` → Card[] (every

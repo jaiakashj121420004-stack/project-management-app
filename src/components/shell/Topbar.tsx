@@ -1,5 +1,7 @@
 import { Menu, Search } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { Tooltip } from '@/components/Tooltip';
+import { HelpPanel } from './HelpPanel';
 import { UserMenu } from '@/features/auth';
 import { NotificationBell } from '@/features/collaboration';
 import { openCommandPalette } from '@/features/command-palette/paletteStore';
@@ -9,14 +11,16 @@ import { cn } from '@/lib/cn';
 export function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
   return (
     <header className="glass z-20 flex h-16 items-center gap-3 rounded-2xl px-3 sm:px-4">
-      <button
-        type="button"
-        onClick={onOpenMenu}
-        aria-label="Open menu"
-        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg md:hidden"
-      >
-        <Menu size={20} />
-      </button>
+      <Tooltip label="Menu" side="bottom">
+        <button
+          type="button"
+          onClick={onOpenMenu}
+          aria-label="Open menu"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg md:hidden"
+        >
+          <Menu size={20} />
+        </button>
+      </Tooltip>
 
       <button
         type="button"
@@ -40,6 +44,7 @@ export function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
       </button>
 
       <div className="ml-auto flex items-center gap-2.5">
+        <HelpPanel />
         <NotificationBell />
         <ThemeToggle />
         <UserMenu />

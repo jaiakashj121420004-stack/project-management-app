@@ -19,6 +19,8 @@ export const projectFormSchema = z.object({
   // A tuple cast is required because z.enum wants string literals; ACCENT_NAMES
   // is the single source of truth for the six valid accents (plan.md §4.2).
   accent: z.enum(ACCENT_NAMES as [AccentName, ...AccentName[]]),
+  // Optional milestone date ('YYYY-MM-DD'), shown on the Calendar.
+  targetDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
 });
 
 export type ProjectFormInput = z.infer<typeof projectFormSchema>;

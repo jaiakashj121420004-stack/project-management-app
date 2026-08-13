@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
-import { addDays, format, isFuture, isToday, startOfToday } from 'date-fns';
+import { addDays, format, isFuture, isToday, parseISO, startOfToday } from 'date-fns';
+import { useSearchParams } from 'react-router-dom';
 import { CalendarDays, ChevronLeft, ChevronRight, ListTodo, Plus } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { GlassPanel } from '@/components/glass/GlassPanel';
@@ -9,10 +10,11 @@ import { GradientButton } from '@/components/buttons/GradientButton';
 import type { TodoItem } from '@/types/database';
 import { toDateKey } from '@/features/calendar/dates';
 import { todoListNameSchema } from './schemas';
-import { useAddTodoList, useTodos } from './useTodos';
+import { useAddTodoList, useRecurrences, useTodos } from './useTodos';
 import { TodoListCard } from './TodoListCard';
-import { getRecurringTemplates } from './recurringTemplates';
-import { insertTodoItem, insertTodoList } from './api';
+import { ruleMatchesDate, type RecurrenceRule } from './recurrence';
+import { insertRecurrence, insertTodoItem, insertTodoList, setTodoListRecurrence } from './api';
+import { STARTER_TEMPLATES, type StarterTemplate } from './starterTemplates';
 
 const STEP = 1000;
 
@@ -22,9 +24,38 @@ const STEP = 1000;
  * and items are private to the user (RLS) and live in one cache per day.
  */
 export function TodosPage() {
-  const [cursor, setCursor] = useState<Date>(() => startOfToday());
+  const [searchParams, setSearchParams] = useSearchParams();
+  // The Calendar's "New to-do list" / day-detail links in here with
+  // ?date=YYYY-MM-DD to jump straight to that day — read it once as the
+  // initial cursor, then strip it so later navigation isn't pinned to it.
+  const [cursor, setCursor] = useState<Date>(() => {
+    const wanted = searchParams.get('date');
+    if (wanted) {
+      try {
+        return parseISO(wanted);
+      } catch {
+        return startOfToday();
+      }
+    }
+    return startOfToday();
+  });
+  useEffect(() => {
+    if (!searchParams.has('date')) return;
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete('date');
+        return next;
+      },
+      { replace: true },
+    );
+    // Runs once on mount to consume the deep-link param — searchParams/setSearchParams
+    // are stable-enough router values and re-including them would re-fire this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const dateKey = toDateKey(cursor);
   const { data, isLoading, isError } = useTodos(dateKey);
+  const { data: recurrences } = useRecurrences();
   const addList = useAddTodoList(dateKey);
   const queryClient = useQueryClient();
   const seededRef = useRef<Set<string>>(new Set());
@@ -44,36 +75,38 @@ export function TodosPage() {
     return map;
   }, [data?.items]);
 
-  // Auto-seed recurring lists for today and future days.
+  // Auto-generate this day's lists from any recurrence rule that matches it —
+  // e.g. a "Mon/Wed/Fri" or "every 2 weeks" template. Evaluated lazily against
+  // whichever day is being viewed (no cron), and de-duped by
+  // `source_recurrence_id` so revisiting a day never creates a second copy,
+  // even if that day's list was renamed or emptied out.
   useEffect(() => {
-    // Only seed today and future days — don't touch past days.
+    // Only seed today and future days — don't rewrite history.
     if (!isToday(cursor) && !isFuture(cursor)) return;
-    // Wait until data has loaded and only seed once per dateKey.
     if (isLoading || isError || seededRef.current.has(dateKey)) return;
+    if (!recurrences) return; // wait for the recurrence list to load too
 
-    const templates = getRecurringTemplates();
-    if (templates.length === 0) {
-      seededRef.current.add(dateKey);
-      return;
-    }
-
-    const existingNames = new Set(lists.map((l) => l.name));
-    const missing = templates.filter((t) => !existingNames.has(t.name));
+    const generatedIds = new Set(
+      lists.map((l) => l.source_recurrence_id).filter((id): id is string => Boolean(id)),
+    );
+    const due = recurrences.filter(
+      (r) => !generatedIds.has(r.id) && ruleMatchesDate(r.rule as RecurrenceRule, dateKey),
+    );
 
     seededRef.current.add(dateKey);
-
-    if (missing.length === 0) return;
+    if (due.length === 0) return;
 
     const basePosition = lists.reduce((max, l) => Math.max(max, l.position), 0);
 
     void (async () => {
       let offset = 1;
-      for (const template of missing) {
+      for (const template of due) {
         try {
           const newList = await insertTodoList({
             dateKey,
             name: template.name,
             position: basePosition + offset * STEP,
+            sourceRecurrenceId: template.id,
           });
           let itemPos = 1;
           for (const text of template.items) {
@@ -83,17 +116,38 @@ export function TodosPage() {
           offset++;
         } catch (err) {
           console.error('[recurring] failed to seed list:', template.name, err);
-          // Remove from seeded so it can retry on next render.
-          seededRef.current.delete(dateKey);
+          seededRef.current.delete(dateKey); // allow a retry on next render
         }
       }
       void queryClient.invalidateQueries({ queryKey: ['todos', dateKey] });
     })();
-  }, [cursor, dateKey, isLoading, isError, lists, queryClient]);
+  }, [cursor, dateKey, isLoading, isError, lists, recurrences, queryClient]);
 
   function handleAddList(name: string) {
     const position = lists.reduce((max, list) => Math.max(max, list.position), 0) + STEP;
     addList.mutate({ name, position, tempId: crypto.randomUUID() });
+  }
+
+  /** Create a list from a starter template (Morning Routine, etc.), pre-filled
+   *  with its items and set to repeat daily — a routine is meant to recur, and
+   *  daily is the free tier, so this works for every plan out of the box. */
+  async function handleUseTemplate(template: StarterTemplate) {
+    const position = lists.reduce((max, list) => Math.max(max, list.position), 0) + STEP;
+    try {
+      const [newList, recurrence] = await Promise.all([
+        insertTodoList({ dateKey, name: template.name, position }),
+        insertRecurrence({ name: template.name, items: template.items, rule: { type: 'daily' } }),
+      ]);
+      let itemPos = 1;
+      for (const text of template.items) {
+        await insertTodoItem({ listId: newList.id, text, position: itemPos * STEP });
+        itemPos++;
+      }
+      await setTodoListRecurrence(newList.id, recurrence.id);
+    } finally {
+      void queryClient.invalidateQueries({ queryKey: ['todos', dateKey] });
+      void queryClient.invalidateQueries({ queryKey: ['todo-recurrences'] });
+    }
   }
 
   return (
@@ -164,15 +218,28 @@ export function TodosPage() {
               items={itemsByList.get(list.id) ?? []}
             />
           ))}
-          <AddListCard onAdd={handleAddList} hasLists={lists.length > 0} />
+          <AddListCard
+            onAdd={handleAddList}
+            hasLists={lists.length > 0}
+            onUseTemplate={(template) => void handleUseTemplate(template)}
+          />
         </div>
       )}
     </div>
   );
 }
 
-/** A composer card to start a new named list for the day. */
-function AddListCard({ onAdd, hasLists }: { onAdd: (name: string) => void; hasLists: boolean }) {
+/** A composer card to start a new named list for the day, plus one-tap
+ *  starter templates for common routines. */
+function AddListCard({
+  onAdd,
+  hasLists,
+  onUseTemplate,
+}: {
+  onAdd: (name: string) => void;
+  hasLists: boolean;
+  onUseTemplate: (template: StarterTemplate) => void;
+}) {
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -222,6 +289,23 @@ function AddListCard({ onAdd, hasLists }: { onAdd: (name: string) => void; hasLi
         </button>
       </div>
       {error && <p className="text-xs text-danger">{error}</p>}
+
+      <div className="mt-1 flex flex-col gap-1.5">
+        <p className="text-xs font-medium text-fg-subtle">Or start from a template</p>
+        <div className="flex flex-wrap gap-1.5">
+          {STARTER_TEMPLATES.map((template) => (
+            <button
+              key={template.id}
+              type="button"
+              onClick={() => onUseTemplate(template)}
+              className="flex items-center gap-1.5 rounded-full border border-[var(--glass-border)] px-2.5 py-1 text-xs font-medium text-fg-muted transition-colors hover:border-[color:var(--accent-from)] hover:text-fg"
+            >
+              <template.icon size={12} />
+              {template.name}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

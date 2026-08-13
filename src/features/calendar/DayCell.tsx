@@ -1,16 +1,19 @@
 import { memo } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { format, isSameMonth, isToday } from 'date-fns';
+import { ListChecks, Flag as MilestoneIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import type { AccentName } from '@/lib/accents';
-import type { Card } from '@/types/database';
+import { accentVars, type AccentName } from '@/lib/accents';
+import type { Card, Project } from '@/types/database';
 import { DraggableCardChip } from './CardChip';
-import type { CalendarView } from './dates';
+import type { CalendarView, DayTodoSummary } from './dates';
 
 interface DayCellProps {
   date: Date;
   dateKey: string;
   cards: Card[];
+  todos?: DayTodoSummary;
+  milestones?: Project[];
   variant: CalendarView;
   /** Max chips shown before collapsing into "+N more". */
   limit: number;
@@ -34,6 +37,8 @@ function DayCellComponent({
   date,
   dateKey,
   cards,
+  todos,
+  milestones,
   variant,
   limit,
   monthCursor,
@@ -46,6 +51,8 @@ function DayCellComponent({
   const outside = variant === 'month' && !isSameMonth(date, monthCursor);
   const visible = cards.slice(0, limit);
   const overflow = cards.length - visible.length;
+  const hasTodos = Boolean(todos && todos.listCount > 0);
+  const hasMilestones = Boolean(milestones && milestones.length > 0);
 
   return (
     <div
@@ -86,6 +93,32 @@ function DayCellComponent({
             className="rounded-lg px-1.5 py-0.5 text-left text-xs font-medium text-fg-subtle transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
           >
             +{overflow} more
+          </button>
+        )}
+
+        {(hasTodos || hasMilestones) && (
+          <button
+            type="button"
+            onClick={() => onPeek(dateKey)}
+            className="mt-auto flex flex-wrap items-center gap-1 pt-0.5"
+          >
+            {hasTodos && todos && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--glass-fill)] px-1.5 py-0.5 text-[0.65rem] font-medium text-fg-muted">
+                <ListChecks size={10} aria-hidden />
+                {todos.done}/{todos.total}
+              </span>
+            )}
+            {hasMilestones &&
+              milestones!.slice(0, 3).map((project) => (
+                <span
+                  key={project.id}
+                  title={project.name}
+                  style={accentVars(project.accent)}
+                  className="inline-flex items-center gap-1 rounded-full bg-[var(--glass-fill)] px-1.5 py-0.5 text-[0.65rem] font-medium text-[color:var(--accent-from)]"
+                >
+                  <MilestoneIcon size={10} aria-hidden />
+                </span>
+              ))}
           </button>
         )}
       </div>

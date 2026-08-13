@@ -30,8 +30,13 @@ export default {
         info: 'var(--info)', // umber (neutral info)
       },
       fontFamily: {
-        display: ['Fraunces', 'Georgia', 'serif'],
-        sans: ['Spectral', 'Georgia', 'serif'],
+        // Driven by CSS vars (default set in styles/index.css, overridable at
+        // runtime by the Settings page's font pairing picker — src/lib/customTheme.ts)
+        // so a personalization choice doesn't require touching this config.
+        display: ['var(--font-display)', 'Fraunces', 'Georgia', 'serif'],
+        sans: ['var(--font-body)', 'Spectral', 'Georgia', 'serif'],
+        // Mono is fixed — figures/eyebrows are a structural part of the Almanac
+        // system, not a personalization choice (CLAUDE.md design rules).
         mono: ['"IBM Plex Mono"', 'ui-monospace', 'monospace'],
       },
       fontSize: {

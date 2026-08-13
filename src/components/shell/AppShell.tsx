@@ -9,6 +9,7 @@ import { CommandPalette } from '@/features/command-palette/CommandPalette';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { BottomNav } from './BottomNav';
+import { OnboardingTour, hasSeenOnboarding } from './OnboardingTour';
 
 /**
  * Responsive app frame: a collapsible glass sidebar (drawer on mobile), a top
@@ -18,6 +19,7 @@ import { BottomNav } from './BottomNav';
 export function AppShell() {
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(() => !hasSeenOnboarding());
   const location = useLocation();
 
   // In-app due-date reminders (browser notifications) — opt-in, runs app-wide.
@@ -66,6 +68,7 @@ export function AppShell() {
       <OfflineBanner />
       <PWAReloadPrompt />
       <CommandPalette />
+      {showOnboarding && <OnboardingTour onDone={() => setShowOnboarding(false)} />}
     </div>
   );
 }

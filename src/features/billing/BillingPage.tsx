@@ -27,7 +27,7 @@ import { useBilling } from './useBilling';
 /** Account → Billing: shows the current plan and the upgrade / manage actions. */
 export function BillingPage() {
   const { data: profile, isLoading } = useProfile();
-  const { startCheckout, openPortal, pending, error } = useBilling();
+  const { startCheckout, openPortal, changePlan, pending, error, changed } = useBilling();
   const [params, setParams] = useSearchParams();
   const queryClient = useQueryClient();
 
@@ -161,22 +161,39 @@ export function BillingPage() {
           upgrading={pending === 'checkout'}
         />
       )}
+      {/* Pro and Team are already paying, so switching interval (or Pro → Team)
+          goes through changePlan — an in-place update to their existing Dodo
+          subscription — never back through Checkout, which would create a
+          second, parallel subscription and double-bill them. */}
       {!isLoading && plan === 'pro' && (
-        <PlanUpsell availablePlans={['team']} onUpgrade={startCheckout} upgrading={pending === 'checkout'} />
+        <PlanUpsell
+          availablePlans={['pro', 'team']}
+          onUpgrade={changePlan}
+          upgrading={pending === 'change'}
+          changed={changed}
+        />
       )}
       {!isLoading && plan === 'team' && (
-        <GlassPanel className="mt-6 flex flex-col gap-1 p-6 text-sm sm:p-8">
-          <p className="font-medium text-fg">Need more than {TEAM_MEMBER_LIMIT} people on one board?</p>
-          <p className="text-fg-muted">
-            <a
-              href={`mailto:${ENTERPRISE_CONTACT_EMAIL}?subject=Aurora%20Enterprise`}
-              className="font-semibold text-[var(--accent-from)] hover:underline"
-            >
-              Contact us
-            </a>{' '}
-            about an Enterprise plan built for your organization.
-          </p>
-        </GlassPanel>
+        <>
+          <PlanUpsell
+            availablePlans={['team']}
+            onUpgrade={changePlan}
+            upgrading={pending === 'change'}
+            changed={changed}
+          />
+          <GlassPanel className="mt-6 flex flex-col gap-1 p-6 text-sm sm:p-8">
+            <p className="font-medium text-fg">Need more than {TEAM_MEMBER_LIMIT} people on one board?</p>
+            <p className="text-fg-muted">
+              <a
+                href={`mailto:${ENTERPRISE_CONTACT_EMAIL}?subject=Aurora%20Enterprise`}
+                className="font-semibold text-[var(--accent-from)] hover:underline"
+              >
+                Contact us
+              </a>{' '}
+              about an Enterprise plan built for your organization.
+            </p>
+          </GlassPanel>
+        </>
       )}
     </Reveal>
   );
@@ -221,10 +238,14 @@ function PlanUpsell({
   availablePlans,
   onUpgrade,
   upgrading,
+  changed = false,
 }: {
   availablePlans: PricedPlanId[];
   onUpgrade: (interval: BillingInterval, plan: Exclude<PricedPlanId, 'free'>) => void;
   upgrading: boolean;
+  /** True right after an in-place plan change (changePlan) was accepted — shows
+   *  a short confirmation instead of assuming a redirect is about to happen. */
+  changed?: boolean;
 }) {
   const [interval, setInterval] = useState<BillingInterval>('month');
   const [selected, setSelected] = useState<Exclude<PricedPlanId, 'free'>>(
@@ -296,6 +317,11 @@ function PlanUpsell({
             ? `Get ${target.name} — $${planPrice(selected, 'year').toFixed(2)}/yr`
             : `Upgrade for $${target.priceMonthly.toFixed(2)}/mo`}
         </GradientButton>
+        {changed && !upgrading && (
+          <p className="mt-2.5 text-sm text-success">
+            Plan updated — this may take a few seconds to show up above.
+          </p>
+        )}
       </div>
     </GlassPanel>
   );

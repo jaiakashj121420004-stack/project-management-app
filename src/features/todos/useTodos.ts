@@ -1,13 +1,19 @@
 import { useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
-import type { TodoItem, TodoList } from '@/types/database';
+import type { TodoItem, TodoList, TodoRecurrence } from '@/types/database';
+import type { RecurrenceRule } from './recurrence';
 import {
+  fetchRecurrences,
   fetchTodos,
+  insertRecurrence,
   insertTodoItem,
   insertTodoList,
+  removeRecurrence,
   removeTodoItem,
   removeTodoList,
   renameTodoList,
+  setTodoListRecurrence,
   swapTodoItemPositions,
+  updateRecurrence,
   updateTodoItem,
   type TodosData,
 } from './api';
@@ -137,6 +143,7 @@ export function useAddTodoItem(dateKey: string) {
           text: text.trim(),
           is_done: false,
           position,
+          priority: null,
           created_at: new Date().toISOString(),
         },
       ],
@@ -149,10 +156,13 @@ export function useAddTodoItem(dateKey: string) {
 }
 
 export function useUpdateTodoItem(dateKey: string) {
-  return useTodosMutation<TodoItem, { id: string; text?: string; is_done?: boolean }>(
+  return useTodosMutation<
+    TodoItem,
+    { id: string; text?: string; is_done?: boolean; priority?: number | null }
+  >(
     dateKey,
     ({ id, ...patch }) => updateTodoItem(id, patch),
-    (data, { id, text, is_done }) => ({
+    (data, { id, text, is_done, priority }) => ({
       ...data,
       items: data.items.map((item) =>
         item.id === id
@@ -160,6 +170,7 @@ export function useUpdateTodoItem(dateKey: string) {
               ...item,
               ...(text !== undefined ? { text: text.trim() } : {}),
               ...(is_done !== undefined ? { is_done } : {}),
+              ...(priority !== undefined ? { priority } : {}),
             }
           : item,
       ),
@@ -200,4 +211,107 @@ export function useDeleteTodoItem(dateKey: string) {
       items: data.items.filter((item) => item.id !== id),
     }),
   );
+}
+
+/** Bulk-apply a done/priority patch to several items at once (the selection
+ *  action bar). Runs the same underlying single-item update in parallel — no
+ *  new endpoint needed, RLS already scopes each call to the caller's own items. */
+export function useBulkUpdateTodoItems(dateKey: string) {
+  return useTodosMutation<
+    TodoItem[],
+    { ids: string[]; is_done?: boolean; priority?: number | null }
+  >(
+    dateKey,
+    ({ ids, is_done, priority }) =>
+      Promise.all(ids.map((id) => updateTodoItem(id, { is_done, priority }))),
+    (data, { ids, is_done, priority }) => ({
+      ...data,
+      items: data.items.map((item) =>
+        ids.includes(item.id)
+          ? {
+              ...item,
+              ...(is_done !== undefined ? { is_done } : {}),
+              ...(priority !== undefined ? { priority } : {}),
+            }
+          : item,
+      ),
+    }),
+  );
+}
+
+/** Bulk-delete several items at once (the selection action bar). */
+export function useBulkDeleteTodoItems(dateKey: string) {
+  return useTodosMutation<void, { ids: string[] }>(
+    dateKey,
+    ({ ids }) => Promise.all(ids.map((id) => removeTodoItem(id))).then(() => undefined),
+    (data, { ids }) => ({
+      ...data,
+      items: data.items.filter((item) => !ids.includes(item.id)),
+    }),
+  );
+}
+
+/** Link (or unlink, with `recurrenceId: null`) a day's list to a recurrence
+ *  template — used when a user turns repeat on/off from an existing list. */
+export function useLinkTodoListRecurrence(dateKey: string) {
+  return useTodosMutation<TodoList, { id: string; recurrenceId: string | null }>(
+    dateKey,
+    ({ id, recurrenceId }) => setTodoListRecurrence(id, recurrenceId),
+    (data, { id, recurrenceId }) => ({
+      ...data,
+      lists: data.lists.map((list) =>
+        list.id === id ? { ...list, source_recurrence_id: recurrenceId } : list,
+      ),
+    }),
+  );
+}
+
+// --- Recurrences --------------------------------------------------------
+// User-global (one list of templates, not scoped to a day), so these live
+// under their own query key rather than the per-day todosKey.
+
+const recurrencesKey: QueryKey = ['todo-recurrences'];
+
+export function useRecurrences() {
+  return useQuery({ queryKey: recurrencesKey, queryFn: fetchRecurrences });
+}
+
+export function useCreateRecurrence() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { name: string; items: string[]; rule: RecurrenceRule }) =>
+      insertRecurrence(input),
+    onSuccess: (created) => {
+      queryClient.setQueryData<TodoRecurrence[]>(recurrencesKey, (old) => [...(old ?? []), created]);
+    },
+  });
+}
+
+export function useUpdateRecurrence() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { id: string; name?: string; items?: string[]; rule?: RecurrenceRule }) =>
+      updateRecurrence(input.id, input),
+    onSuccess: (updated) => {
+      queryClient.setQueryData<TodoRecurrence[]>(recurrencesKey, (old) =>
+        (old ?? []).map((r) => (r.id === updated.id ? updated : r)),
+      );
+    },
+  });
+}
+
+export function useDeleteRecurrence() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => removeRecurrence(id),
+    onSuccess: (_void, id) => {
+      queryClient.setQueryData<TodoRecurrence[]>(recurrencesKey, (old) =>
+        (old ?? []).filter((r) => r.id !== id),
+      );
+      // Every list this template had generated just had its link cleared
+      // server-side (ON DELETE SET NULL) — refetch any cached days so the
+      // Repeat toggle reflects "off" immediately rather than on next visit.
+      void queryClient.invalidateQueries({ queryKey: ['todos'] });
+    },
+  });
 }

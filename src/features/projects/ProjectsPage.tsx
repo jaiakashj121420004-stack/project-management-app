@@ -38,41 +38,49 @@ export function ProjectsPage() {
   // Bumped on every open so the form modal remounts and re-seeds from `initial`.
   const [formKey, setFormKey] = useState(0);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [presetTargetDate, setPresetTargetDate] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const plan = profile?.plan ?? 'free';
   const ownedCount = projects?.filter((project) => project.owner_id === user?.id).length ?? 0;
   const atProjectLimit = isAtProjectLimit(plan, ownedCount);
 
-  const openCreate = useCallback(() => {
-    // Free users at their project cap get the upgrade prompt instead of the form.
-    if (atProjectLimit) {
-      setUpgradeOpen(true);
-      return;
-    }
-    setEditing(null);
-    setFormKey((key) => key + 1);
-    setFormOpen(true);
-  }, [atProjectLimit]);
+  const openCreate = useCallback(
+    (targetDate: string | null = null) => {
+      // Free users at their project cap get the upgrade prompt instead of the form.
+      if (atProjectLimit) {
+        setUpgradeOpen(true);
+        return;
+      }
+      setEditing(null);
+      setPresetTargetDate(targetDate);
+      setFormKey((key) => key + 1);
+      setFormOpen(true);
+    },
+    [atProjectLimit],
+  );
 
-  // The sidebar's "New project" button navigates here with ?new=1 — open the
-  // create modal once, then strip the param so it doesn't re-trigger.
+  // The sidebar's "New project" button (or the Calendar's quick-create) navigates
+  // here with ?new=1 (and optionally &date=YYYY-MM-DD to preset the target date)
+  // — open the create modal once, then strip both params so they don't re-trigger.
   const wantsNew = searchParams.has('new');
+  const wantedDate = searchParams.get('date');
   useEffect(() => {
     if (!wantsNew) return;
     // Deliberate one-time, URL-driven side effect: ?new=1 opens the create modal
     // once, then we strip the param so it can't re-fire (not a render loop).
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    openCreate();
+    openCreate(wantedDate);
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);
         next.delete('new');
+        next.delete('date');
         return next;
       },
       { replace: true },
     );
-  }, [wantsNew, openCreate, setSearchParams]);
+  }, [wantsNew, wantedDate, openCreate, setSearchParams]);
 
   function openEdit(project: Project) {
     setEditing(project);
@@ -121,7 +129,7 @@ export function ProjectsPage() {
             </p>
           </div>
           <div className="flex flex-col items-center gap-1.5 sm:items-end">
-            <GradientButton leftIcon={<Plus size={18} />} onClick={openCreate}>
+            <GradientButton leftIcon={<Plus size={18} />} onClick={() => openCreate()}>
               New project
             </GradientButton>
             {plan === 'free' && (
@@ -165,8 +173,15 @@ export function ProjectsPage() {
         mode={editing ? 'edit' : 'create'}
         initial={
           editing
-            ? { name: editing.name, description: editing.description, accent: editing.accent }
-            : undefined
+            ? {
+                name: editing.name,
+                description: editing.description,
+                accent: editing.accent,
+                targetDate: editing.target_date,
+              }
+            : presetTargetDate
+              ? { name: '', description: null, accent: 'aurora', targetDate: presetTargetDate }
+              : undefined
         }
         onSubmit={handleSubmit}
         isPending={createProject.isPending || updateProject.isPending}

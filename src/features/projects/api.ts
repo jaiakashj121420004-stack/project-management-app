@@ -31,6 +31,7 @@ export interface NewProject {
   name: string;
   description: string | null;
   accent: AccentName;
+  targetDate: string | null;
 }
 
 /** Create a project. The DB trigger adds the creator as an owner member. */
@@ -42,6 +43,7 @@ export async function insertProject(input: NewProject): Promise<Project> {
       name: input.name,
       description: input.description,
       accent: input.accent,
+      target_date: input.targetDate,
     })
     .select('*')
     .single();
@@ -53,13 +55,19 @@ export interface ProjectPatch {
   name: string;
   description: string | null;
   accent: AccentName;
+  targetDate: string | null;
 }
 
 /** Update a project (owner only — enforced by RLS, not here). */
 export async function patchProject(id: string, patch: ProjectPatch): Promise<Project> {
   const { data, error } = await supabase
     .from('projects')
-    .update({ name: patch.name, description: patch.description, accent: patch.accent })
+    .update({
+      name: patch.name,
+      description: patch.description,
+      accent: patch.accent,
+      target_date: patch.targetDate,
+    })
     .eq('id', id)
     .select('*')
     .single();

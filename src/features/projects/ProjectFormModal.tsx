@@ -3,6 +3,7 @@ import { AlertCircle } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { Field } from '@/components/forms/Field';
 import { TextArea } from '@/components/forms/TextArea';
+import { DatePicker } from '@/components/forms/DatePicker';
 import { GradientButton } from '@/components/buttons/GradientButton';
 import type { AccentName } from '@/lib/accents';
 import { AccentPicker } from './AccentPicker';
@@ -12,7 +13,7 @@ interface ProjectFormModalProps {
   open: boolean;
   onClose: () => void;
   mode: 'create' | 'edit';
-  initial?: { name: string; description: string | null; accent: AccentName };
+  initial?: { name: string; description: string | null; accent: AccentName; targetDate?: string | null };
   onSubmit: (values: ProjectFormInput) => Promise<void>;
   isPending: boolean;
 }
@@ -33,13 +34,14 @@ export function ProjectFormModal({
   const [name, setName] = useState(initial?.name ?? '');
   const [description, setDescription] = useState(initial?.description ?? '');
   const [accent, setAccent] = useState<AccentName>(initial?.accent ?? 'aurora');
+  const [targetDate, setTargetDate] = useState<string | null>(initial?.targetDate ?? null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setFormError(null);
-    const parsed = projectFormSchema.safeParse({ name, description, accent });
+    const parsed = projectFormSchema.safeParse({ name, description, accent, targetDate });
     if (!parsed.success) {
       setErrors(fieldErrorsOf(parsed.error));
       return;
@@ -93,6 +95,12 @@ export function ProjectFormModal({
           maxLength={500}
         />
         <AccentPicker value={accent} onChange={setAccent} />
+        <DatePicker
+          label="Target date"
+          placeholder="No target date (optional)"
+          value={targetDate}
+          onChange={setTargetDate}
+        />
 
         <div className="mt-1 flex justify-end gap-2.5">
           <GradientButton type="button" variant="ghost" onClick={onClose} disabled={isPending}>

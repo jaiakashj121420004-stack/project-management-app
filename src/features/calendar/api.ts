@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { Card } from '@/types/database';
+import type { Card, TodoItem, TodoList } from '@/types/database';
 
 /**
  * Supabase data layer for the Calendar view. Like the rest of the app, every
@@ -21,6 +21,36 @@ export async function fetchDatedCards(): Promise<Card[]> {
     .order('due_date', { ascending: true });
   if (error) throw error;
   return data;
+}
+
+export interface CalendarTodos {
+  lists: TodoList[];
+  items: TodoItem[];
+}
+
+/**
+ * Every to-do list (+ its items) whose `list_date` falls within
+ * [startKey, endKey] (inclusive) — powers the Calendar's to-do chips. RLS
+ * already scopes this to the caller's own lists.
+ */
+export async function fetchTodoListsInRange(startKey: string, endKey: string): Promise<CalendarTodos> {
+  const { data: lists, error: listsError } = await supabase
+    .from('todo_lists')
+    .select('*')
+    .gte('list_date', startKey)
+    .lte('list_date', endKey);
+  if (listsError) throw listsError;
+  if (lists.length === 0) return { lists, items: [] };
+
+  const { data: items, error: itemsError } = await supabase
+    .from('todo_items')
+    .select('*')
+    .in(
+      'list_id',
+      lists.map((list) => list.id),
+    );
+  if (itemsError) throw itemsError;
+  return { lists, items };
 }
 
 /**

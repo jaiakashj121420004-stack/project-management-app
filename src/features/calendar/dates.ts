@@ -7,7 +7,7 @@ import {
   startOfMonth,
   startOfWeek,
 } from 'date-fns';
-import type { Card } from '@/types/database';
+import type { Card, Project, TodoItem, TodoList } from '@/types/database';
 
 /**
  * Date math for the Calendar view, built on date-fns — no heavy calendar
@@ -64,6 +64,50 @@ export function groupCardsByDate(cards: Card[]): Map<string, Card[]> {
   }
   for (const list of map.values()) {
     list.sort((a, b) => a.position - b.position || a.title.localeCompare(b.title));
+  }
+  return map;
+}
+
+export interface DayTodoSummary {
+  /** How many to-do lists are pinned to this day. */
+  listCount: number;
+  /** Total items across those lists. */
+  total: number;
+  /** How many of those items are done. */
+  done: number;
+}
+
+/** Summarise a day's to-do lists (list/item counts) for the Calendar's compact
+ *  chip — the full lists+items are handed to the day-detail modal separately. */
+export function groupTodosByDate(lists: TodoList[], items: TodoItem[]): Map<string, DayTodoSummary> {
+  const itemsByList = new Map<string, TodoItem[]>();
+  for (const item of items) {
+    const bucket = itemsByList.get(item.list_id);
+    if (bucket) bucket.push(item);
+    else itemsByList.set(item.list_id, [item]);
+  }
+  const map = new Map<string, DayTodoSummary>();
+  for (const list of lists) {
+    const listItems = itemsByList.get(list.id) ?? [];
+    const existing = map.get(list.list_date) ?? { listCount: 0, total: 0, done: 0 };
+    map.set(list.list_date, {
+      listCount: existing.listCount + 1,
+      total: existing.total + listItems.length,
+      done: existing.done + listItems.filter((i) => i.is_done).length,
+    });
+  }
+  return map;
+}
+
+/** Group projects with a `target_date` set by that date — powers the
+ *  Calendar's milestone chip. Projects without a target date are omitted. */
+export function groupProjectsByDate(projects: Project[]): Map<string, Project[]> {
+  const map = new Map<string, Project[]>();
+  for (const project of projects) {
+    if (!project.target_date) continue;
+    const list = map.get(project.target_date) ?? [];
+    list.push(project);
+    map.set(project.target_date, list);
   }
   return map;
 }
