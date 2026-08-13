@@ -97,8 +97,10 @@ export function RecurrenceEditor({
           <div className="flex flex-col gap-2">
             <p className="text-xs font-medium text-fg-muted">Repeats on</p>
             <div className="flex gap-1.5">
+              {/* WEEKDAY_LABELS and WEEKDAY_FULL_LABELS are both fixed 7-day
+                  tuples, so `day` (this map's own index) is always in bounds. */}
               {WEEKDAY_LABELS.map((label, day) => (
-                <Tooltip key={day} label={WEEKDAY_FULL_LABELS[day]}>
+                <Tooltip key={day} label={WEEKDAY_FULL_LABELS[day]!}>
                   <button
                     type="button"
                     disabled={!isPro}

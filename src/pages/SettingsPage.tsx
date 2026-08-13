@@ -6,7 +6,6 @@ import { Reveal } from '@/components/motion/Reveal';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { Tooltip } from '@/components/Tooltip';
 import { ProGate } from '@/features/billing/ProGate';
-import { useIsPro } from '@/features/billing/useIsPro';
 import { feedUrlForToken } from '@/features/calendar-feed/api';
 import { useEnableFeed, useFeedToken, useRevokeFeedToken, useRotateFeedToken } from '@/features/calendar-feed/useCalendarFeed';
 import { useTheme } from '@/hooks/useTheme';
@@ -40,7 +39,6 @@ const DEFAULT_FG: Record<'dark' | 'light', string> = {
 };
 
 export function SettingsPage() {
-  const isPro = useIsPro();
   const { theme } = useTheme();
   const [settings, setSettings] = useState<CustomThemeSettings>(() => getStoredCustomTheme());
 

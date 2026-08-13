@@ -78,7 +78,10 @@ function markOnboardingSeen(): void {
  */
 export function OnboardingTour({ onDone }: { onDone: () => void }) {
   const [index, setIndex] = useState(0);
-  const slide = SLIDES[index];
+  // index is always kept within [0, SLIDES.length - 1] by the Next/Skip
+  // handlers below, so this index access is always in bounds — the
+  // non-null assertion is safe (noUncheckedIndexedAccess can't know that).
+  const slide = SLIDES[index]!;
   const isLast = index === SLIDES.length - 1;
 
   function finish() {

@@ -14,7 +14,7 @@ import { useDatedCards, useDeleteCalendarCard, useUpdateCalendarCard } from '@/f
 import { CardChip } from '@/features/calendar/CardChip';
 import { TodoListCard } from '@/features/todos/TodoListCard';
 import { useAddTodoList, useTodos } from '@/features/todos/useTodos';
-import type { Card, TodoItem } from '@/types/database';
+import type { TodoItem } from '@/types/database';
 
 /**
  * "Today" — a single glance combining what's overdue/due soon across every

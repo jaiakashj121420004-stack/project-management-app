@@ -90,6 +90,7 @@ export function useAddTodoList(dateKey: string) {
           list_date: dateKey,
           name: name.trim(),
           position,
+          source_recurrence_id: null,
           created_at: new Date().toISOString(),
         },
       ],
