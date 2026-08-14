@@ -314,9 +314,14 @@
   will-change: transform;
 }
 /* Subtle film grain for premium texture (plan.md §4.4 micro-details). */
+/* Full-bleed paper-grain overlay LAYER — for <AuroraBackground> only, never as
+   a class on a content panel (it would stretch that panel over the whole route
+   and eat its clicks; see SettingsPage.tsx). `pointer-events: none` makes that
+   failure mode impossible rather than merely documented. */
 .aurora-grain {
   position: absolute;
   inset: 0;
+  pointer-events: none;
   opacity: 0.4;
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");

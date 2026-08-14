@@ -185,7 +185,14 @@ export function SettingsPage() {
         </ProGate>
       </GlassPanel>
 
-      <GlassPanel strong glow className="aurora-grain p-6 sm:p-8">
+      {/* NOTE: do NOT add `aurora-grain` here. That class is a full-bleed
+          decorative overlay LAYER (position:absolute; inset:0) meant only for
+          <AuroraBackground>; applied to a content panel it turns that panel
+          into a page-sized 40%-opacity sheet covering the whole route and
+          silently swallowing every click on it. That was the "Settings is
+          frozen" bug (2026-08-15). The grain is already visible through this
+          panel from the background behind it. */}
+      <GlassPanel strong glow className="p-6 sm:p-8">
         <p className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-fg-subtle">
           <Sparkles size={13} /> Live preview
         </p>
