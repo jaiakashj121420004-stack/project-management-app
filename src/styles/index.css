@@ -371,11 +371,12 @@
   }
 }
 
-/* View Transitions cross-fade for theme toggle (Chromium). */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: 0.5s;
-}
+/* View Transitions cross-fade for the theme toggle was removed 2026-08-13 —
+   it triggered a Chromium compositor bug with this app's pervasive
+   backdrop-filter blur (see ThemeProvider.tsx). Rule intentionally deleted,
+   not just unused, so it can't be silently reactivated by a future
+   `document.startViewTransition()` call elsewhere without someone noticing
+   this comment is gone. */
 
 /* =========================================================================
    Canvas rich text (P3.3). `.canvas-rich` styles BOTH the static rendered HTML
