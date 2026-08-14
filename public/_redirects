@@ -1,0 +1,10 @@
+# Cloudflare Pages SPA fallback — every path serves index.html (200, not a
+# redirect), so react-router-dom can handle routing client-side. Without this,
+# a direct/deep request for any non-root path (a shared board link, a password
+# reset link, refreshing on /calendar, or a first-load race before the service
+# worker's own navigateFallback is registered) gets Cloudflare's static-asset
+# 404 instead of the app shell — which is exactly what can strand a user on a
+# blank/dead page with no way back in. This file is the edge-level guarantee;
+# the workbox `navigateFallback` in vite.config.ts is the same protection at
+# the service-worker layer once a visit has installed one.
+/*  /index.html  200

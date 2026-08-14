@@ -65,6 +65,11 @@
         <p>Aurora, by Nvexis, is a modern project-management workspace: Kanban boards, a
           Notion-style block editor, an infinite collaborative canvas, a calendar, notes,
           and daily to-dos — installable on every device and synced in real time.</p>
+        <!-- If this static shell is still visible, the app's JavaScript hasn't
+             taken over yet (slow network, or React failed to mount) — always
+             give a way back to "/" so a deep link (e.g. /privacy or /terms)
+             can never be a dead end while that's happening. -->
+        <p><a href="/" style="color:#C24A40; font-weight:bold;">← Open Aurora</a></p>
         <p><a href="/privacy" style="color:#C24A40;">Privacy Policy</a> ·
            <a href="/terms" style="color:#C24A40;">Terms of Service</a></p>
       </main>
