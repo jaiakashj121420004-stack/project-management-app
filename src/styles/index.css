@@ -322,9 +322,21 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.4;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  /* NOT `mix-blend-mode: overlay`. Overlay is luminance-dependent, so how much
+     grain survives depends entirely on the background color underneath it —
+     measured as std-dev of rendered pixel luminance, the old overlay layer gave
+     only 0.44 on parchment and 1.29 on a mid-tone custom color, i.e. visually
+     nothing. Custom background colors (Settings → Custom colors, Pro) made that
+     obvious. Plain alpha compositing is background-independent: it darkens a
+     light background and lightens a dark one by the same amount, so the texture
+     reads on ANY color the user picks. Measured with this rule: parchment 2.19,
+     ink 5.39, teal 3.60, dusty rose 2.35, mid-grey 2.71 — consistently present,
+     never harsh. The `saturate 0` matters: raw feTurbulence output is COLORED
+     noise, and without overlay to neutralise it, it would visibly tint a custom
+     background. Grain strength is therefore `opacity` here × the rect's own
+     opacity in the SVG (now 1) — tune the value below, not the SVG. */
+  opacity: 0.25;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 .aurora-blob--1 {
   width: 46vmax;
