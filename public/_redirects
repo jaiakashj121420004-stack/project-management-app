@@ -7,4 +7,16 @@
 # blank/dead page with no way back in. This file is the edge-level guarantee;
 # the workbox `navigateFallback` in vite.config.ts is the same protection at
 # the service-worker layer once a visit has installed one.
-/*  /index.html  200
+#
+# ORDER MATTERS — first match wins, and Cloudflare only consults this file for
+# paths that don't match a real uploaded file. The /assets/* rule MUST stay
+# above the catch-all: build output is content-hashed, so when a stale
+# index.html (edge-cached or service-worker-cached) asks for an asset hash from
+# a previous deploy, that file no longer exists. Without this rule the catch-all
+# answers "200 OK" with index.html — so the browser receives HTML where it
+# expected CSS/JS, refuses to apply it (correct MIME enforcement), and the whole
+# app renders completely unstyled with no console error that names the cause.
+# That happened in production on 2026-08-15. A hard 404 here is honest: the
+# browser reports a failed asset, and the service worker / a reload can recover.
+/assets/*  /404.html  404
+/*         /index.html  200

@@ -1,27 +1,26 @@
-# Cloudflare Pages security headers (Remediation Phase 3 — M2, L6).
-# See SECURITY-REVIEW-2026-07-15.md M2/L6 and SECURITY-FIX-PLAN.md Phase 3.
+# Cloudflare Pages response headers.
 #
-# The CSP is built from the ONLY external origins this app legitimately uses:
-#   - Google Fonts: fonts.googleapis.com (stylesheet) + fonts.gstatic.com (font files)
-#   - Supabase (REST + Storage + Edge Functions over https, Realtime over wss):
-#     rpwklsrdfqyisogbcdgg.supabase.co
-#   - Embed players (iframes only): YouTube, Vimeo, Loom, SoundCloud
-# Dodo checkout is a full-page redirect (not fetch/iframe), so it needs no CSP entry.
+# The root cause of the 2026-08-15 "entire app renders unstyled" incident was a
+# STALE index.html being served after a fresh deploy: it still referenced the
+# previous build's content-hashed /assets/ files, which no longer existed.
 #
-# script-src is strict 'self' — the former inline theme script now lives in
-# /theme-init.js. style-src keeps 'unsafe-inline' because React/Framer/Tiptap/Konva
-# set element style attributes at runtime (style injection is low-risk; script
-# injection is what the strict script-src blocks).
-#
-# VERIFY after deploy: open DevTools console on the boards, a note with an embed,
-# a canvas with an embed, and after a realtime edit — there should be no CSP
-# violation errors, fonts should load, and Supabase REST + WebSocket should connect.
-# If a console error names a blocked origin, widen only that one directive.
+# Vite's build output is content-hashed, so /assets/* filenames change whenever
+# their contents change and can safely be cached forever. index.html must NOT
+# be — it is the pointer to whichever asset hashes are current, so a cached copy
+# of it is exactly what breaks a deploy. `no-cache` doesn't mean "never store";
+# it means "always revalidate before use", so the browser/edge still gets a fast
+# 304 when nothing changed, but can never serve a stale pointer.
+/index.html
+  Cache-Control: no-cache
 
-/*
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' blob: data: https://rpwklsrdfqyisogbcdgg.supabase.co; connect-src 'self' https://rpwklsrdfqyisogbcdgg.supabase.co wss://rpwklsrdfqyisogbcdgg.supabase.co; frame-src https://www.youtube.com https://player.vimeo.com https://www.loom.com https://w.soundcloud.com; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
-  X-Frame-Options: DENY
-  X-Content-Type-Options: nosniff
-  Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: geolocation=(), interest-cohort=()
-  Strict-Transport-Security: max-age=31536000; includeSubDomains
+/
+  Cache-Control: no-cache
+
+# Content-hashed build output — immutable by construction.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# The service worker itself must always be revalidated, otherwise a stale copy
+# keeps controlling the page and serving its own cached (old) index.html.
+/sw.js
+  Cache-Control: no-cache
