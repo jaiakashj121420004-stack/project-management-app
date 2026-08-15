@@ -185,6 +185,49 @@ async function markWebhookProcessed(webhookId: string): Promise<'new' | 'duplica
 }
 
 /**
+ * Record the funnel's one server-confirmed event: `checkout_completed`. This is
+ * the ONLY place that event is ever written — never the client redirect back to
+ * /billing?status=success, which merely means Dodo sent the browser home, not
+ * that the subscription is actually active (same "never trust the client
+ * redirect" principle as the plan flip itself). Writes directly to
+ * analytics_events with the service role, the same pattern this file already
+ * uses for `processed_webhooks` — best-effort: a failure here is logged but
+ * never allowed to affect the real job of this webhook (granting the plan).
+ */
+async function recordCheckoutCompleted(
+  data: DodoSubscriptionData,
+  grantedPlan: 'pro' | 'team',
+): Promise<void> {
+  const rawUserId = data.metadata?.user_id;
+  const rawAnonymousId = data.metadata?.anonymous_id;
+  const userId = isUuid(rawUserId) ? rawUserId : null;
+  const anonymousId = isUuid(rawAnonymousId) ? rawAnonymousId : null;
+  if (!userId && !anonymousId) return; // nothing to attribute this row to
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/analytics_events`, {
+      method: 'POST',
+      headers: {
+        apikey: SERVICE_ROLE,
+        Authorization: `Bearer ${SERVICE_ROLE}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify({
+        user_id: userId,
+        anonymous_id: anonymousId,
+        event_name: 'checkout_completed',
+        properties: { plan: grantedPlan, product_id: data.product_id ?? null },
+      }),
+    });
+    if (!res.ok) {
+      console.error(`analytics_events insert failed: ${res.status} ${await res.text()}`);
+    }
+  } catch (err) {
+    console.error('analytics_events insert error', err);
+  }
+}
+
+/**
  * Identify which profile an event refers to. The Supabase user id travels in the
  * checkout metadata (and stays on the subscription), so it's the primary key;
  * we fall back to the stored Dodo subscription / customer id for later events.
@@ -257,18 +300,39 @@ Deno.serve(async (req: Request) => {
     const filter = resolveProfileFilter(data);
 
     switch (event.type) {
-      // Subscription is live (first activation), successfully renewed, or was
-      // just switched to a different product via the Change Plan API (interval
-      // switch or Pro↔Team move initiated from dodo-change-plan) — grant the
-      // plan the product_id maps to and store the Dodo ids so later events can
-      // be mapped without metadata.
-      case 'subscription.active':
-      case 'subscription.renewed':
-      case 'subscription.plan_changed': {
+      // Subscription is live — this is Dodo's FIRST-ACTIVATION event, fired
+      // exactly once per new checkout (never again for the same subscription;
+      // renewals/plan-changes are their own event types below) — which makes it
+      // the one moment the funnel's `checkout_completed` (paid) event can be
+      // recorded server-side with confidence.
+      case 'subscription.active': {
         if (!filter) break;
         // Only a KNOWN product may grant a plan. Anything else (a future cheaper
         // product, a mispriced test product, a typo) is acknowledged but never
         // upgrades the account.
+        const grantedPlan = data.product_id ? PRODUCT_PLAN[data.product_id] : undefined;
+        if (!grantedPlan) {
+          console.warn(`Ignoring ${event.type} for unrecognised product_id: ${data.product_id}`);
+          break;
+        }
+        await patchProfile(filter, {
+          plan: grantedPlan,
+          plan_status: 'active',
+          dodo_customer_id: data.customer?.customer_id ?? null,
+          dodo_subscription_id: data.subscription_id ?? null,
+        });
+        await recordCheckoutCompleted(data, grantedPlan);
+        break;
+      }
+
+      // Successfully renewed, or just switched to a different product via the
+      // Change Plan API (interval switch or Pro↔Team move initiated from
+      // dodo-change-plan) — grant the plan the product_id maps to and store the
+      // Dodo ids so later events can be mapped without metadata. NOT a new
+      // checkout, so no analytics event here (see subscription.active above).
+      case 'subscription.renewed':
+      case 'subscription.plan_changed': {
+        if (!filter) break;
         const grantedPlan = data.product_id ? PRODUCT_PLAN[data.product_id] : undefined;
         if (!grantedPlan) {
           console.warn(`Ignoring ${event.type} for unrecognised product_id: ${data.product_id}`);

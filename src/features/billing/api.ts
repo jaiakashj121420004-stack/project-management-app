@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { getAnonymousId } from '@/lib/analytics';
 import type { BillingInterval, PricedPlanId } from '@/lib/plans';
 
 /**
@@ -38,7 +39,12 @@ export function createCheckoutUrl(
   interval: BillingInterval = 'month',
   plan: Exclude<PricedPlanId, 'free'> = 'pro',
 ): Promise<string> {
-  return invokeForUrl('dodo-create-checkout', { interval, plan });
+  // anonymous_id rides along in Dodo's checkout metadata (dodo-create-checkout
+  // forwards it) so the webhook can tag the eventual checkout_completed
+  // analytics event with the SAME browser id as every earlier funnel event —
+  // the only way to reconstruct landing → signup → paid as one thread, since
+  // the webhook fires server-side with no access to this browser's storage.
+  return invokeForUrl('dodo-create-checkout', { interval, plan, anonymous_id: getAnonymousId() });
 }
 
 /** Open the Dodo customer portal for the current customer; resolves to its URL. */

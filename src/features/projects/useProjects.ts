@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
+import { track } from '@/lib/analytics';
 import type { Project } from '@/types/database';
 import {
   fetchProject,
@@ -81,6 +82,13 @@ export function useCreateProject() {
       queryClient.setQueryData<Project[]>(key, (old) =>
         (old ?? []).map((project) => (project.id === context.tempId ? created : project)),
       );
+      // Funnel milestone: this is the user's first-ever board (the list was
+      // empty right before this optimistic insert). track() also self-guards
+      // against firing twice per browser (see ONCE_PER_BROWSER in analytics.ts)
+      // — this check just keeps the property honest for the common case.
+      if (!context.previous || context.previous.length === 0) {
+        track('first_board_created');
+      }
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: key });

@@ -35,6 +35,11 @@ const TEAM_MONTHLY = Deno.env.get('DODO_PRODUCT_TEAM_MONTHLY') ?? '';
 const TEAM_ANNUAL = Deno.env.get('DODO_PRODUCT_TEAM_ANNUAL') ?? TEAM_MONTHLY;
 const APP_URL = Deno.env.get('APP_URL')!;
 
+// Client-generated analytics anonymous id (src/lib/analytics.ts) — a random
+// UUID, never anything PII-derived. Validated below before it's allowed
+// anywhere near Dodo metadata.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // Product ids differ between test and live, so the API host must match the key.
 // Defaults to test mode; set DODO_PAYMENTS_ENVIRONMENT=live for production.
 const DODO_BASE = (Deno.env.get('DODO_PAYMENTS_ENVIRONMENT') ?? 'test')
@@ -163,10 +168,20 @@ Deno.serve(async (req: Request) => {
     // is unset — a deliberate ergonomic default (see the secrets comment above).
     let interval: 'month' | 'year' = 'month';
     let plan: 'pro' | 'team' = 'pro';
+    // Analytics-only: ties the eventual checkout_completed event (recorded by
+    // dodo-webhook, the only place that KNOWS payment succeeded) back to this
+    // browser's funnel thread. Purely additive — checkout still works exactly
+    // the same if this is absent or malformed, it's just not attributable.
+    let anonymousId: string | undefined;
     try {
-      const body = (await req.json()) as { interval?: string; plan?: string } | null;
+      const body = (await req.json()) as
+        | { interval?: string; plan?: string; anonymous_id?: string }
+        | null;
       if (body?.interval === 'year') interval = 'year';
       if (body?.plan === 'team') plan = 'team';
+      if (typeof body?.anonymous_id === 'string' && UUID_RE.test(body.anonymous_id)) {
+        anonymousId = body.anonymous_id;
+      }
     } catch {
       // No or invalid JSON body → keep the Pro / monthly defaults.
     }
@@ -191,8 +206,9 @@ Deno.serve(async (req: Request) => {
         product_cart: [{ product_id: productId, quantity: 1 }],
         customer,
         // metadata lets the webhook map the resulting subscription back to this
-        // Supabase user without trusting any client-supplied id.
-        metadata: { user_id: user.id },
+        // Supabase user without trusting any client-supplied id. anonymous_id is
+        // analytics-only (see above) — the webhook never uses it for billing logic.
+        metadata: { user_id: user.id, ...(anonymousId ? { anonymous_id: anonymousId } : {}) },
         return_url: `${APP_URL}/billing?status=success`,
         cancel_url: `${APP_URL}/billing?status=cancelled`,
       }),

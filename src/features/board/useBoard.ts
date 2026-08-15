@@ -1,5 +1,6 @@
 import { useQuery, type QueryKey } from '@tanstack/react-query';
 import { useOptimisticMutation } from '@/lib/useOptimisticMutation';
+import { track } from '@/lib/analytics';
 import type { Card, Column } from '@/types/database';
 import {
   fetchBoard,
@@ -161,10 +162,16 @@ export function useAddCard(projectId: string) {
         },
       ],
     }),
-    (board, created, { tempId }) => ({
-      ...board,
-      cards: board.cards.map((card) => (card.id === tempId ? created : card)),
-    }),
+    (board, created, { tempId }) => {
+      // Funnel milestone: fires at most once per browser (see ONCE_PER_BROWSER
+      // in analytics.ts) — this is a reconcile step (runs on mutation success),
+      // so the side effect only ever fires for a card that actually persisted.
+      track('first_card_created', { project_id: projectId });
+      return {
+        ...board,
+        cards: board.cards.map((card) => (card.id === tempId ? created : card)),
+      };
+    },
   );
 }
 

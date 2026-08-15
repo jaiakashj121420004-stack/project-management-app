@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Lock, Mail, User } from 'lucide-react';
 import { Field } from '@/components/forms/Field';
 import { GradientButton } from '@/components/buttons/GradientButton';
+import { track } from '@/lib/analytics';
 import { AuthLayout, AuthLink, OrDivider } from './AuthLayout';
 import { GoogleButton } from './GoogleButton';
 import { FormNotice } from './FormNotice';
@@ -29,12 +30,17 @@ export function SignUpPage() {
     }
     setErrors({});
     setSubmitting(true);
+    track('signup_started', { method: 'email' });
     const result = await signUpWithEmail(parsed.data);
     setSubmitting(false);
     if (result.error) {
       setFormError(result.error);
       return;
     }
+    // "Completed" = the account was created, regardless of whether email
+    // confirmation is still pending — that's the funnel-relevant milestone.
+    // needs_confirmation lets a later query separate the two cohorts.
+    track('signup_completed', { method: 'email', needs_confirmation: result.needsConfirmation });
     if (result.needsConfirmation) {
       setSentEmail(parsed.data.email);
     }
@@ -44,6 +50,12 @@ export function SignUpPage() {
   async function onGoogle() {
     setFormError(null);
     setGoogleLoading(true);
+    // Google is a redirect flow — the browser navigates away and back via
+    // Supabase's OAuth callback, which this component never sees again, so
+    // there's no reliable place here to fire signup_completed for it (and no
+    // way to distinguish a new signup from a returning Google login on
+    // return). "Started" is what's honestly measurable from this page.
+    track('signup_started', { method: 'google' });
     const result = await signInWithGoogle();
     if (result.error) {
       setFormError(result.error);

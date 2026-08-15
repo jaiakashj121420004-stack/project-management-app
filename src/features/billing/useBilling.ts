@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { track } from '@/lib/analytics';
 import type { BillingInterval, PricedPlanId } from '@/lib/plans';
 import { createCheckoutUrl, createPortalUrl, requestPlanChange } from './api';
 
@@ -28,6 +29,12 @@ export function useBilling() {
   ): Promise<void> {
     setPending(kind);
     setError(null);
+    if (kind === 'checkout') {
+      // "Started" = the user committed to checkout (clicked Upgrade), not just
+      // that the Dodo session was successfully created — a failed
+      // createCheckoutUrl call is still a real, countable drop-off point.
+      track('checkout_started', { plan, interval });
+    }
     try {
       const url =
         kind === 'checkout' ? await createCheckoutUrl(interval, plan) : await createPortalUrl();

@@ -1,8 +1,9 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Sparkles } from 'lucide-react';
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import { GradientButton } from '@/components/buttons/GradientButton';
 import { useProfile } from '@/features/auth/useProfile';
+import { track } from '@/lib/analytics';
 import { isProOrAbove } from '@/lib/plans';
 import { UpgradeModal } from './UpgradeModal';
 
@@ -39,7 +40,25 @@ export function ProGate({ children, title, reason, fallback, isPro }: ProGatePro
 
   const unlocked = isPro ?? isProOrAbove(profile?.plan ?? 'free');
   // Only self-suppress while loading when WE own the plan check (no override).
-  if (isPro === undefined && isLoading && !profile) return null;
+  const stillResolving = isPro === undefined && isLoading && !profile;
+  // Every ProGate in the app funnels through here, so this is the single place
+  // that catches "which limit triggered it" (the report's most useful funnel
+  // property) across every Pro-gated feature at once — canvas, collaboration,
+  // etc. — not just the two spots with their own dedicated upgrade UI (project
+  // limit in ProjectsPage, member limit in MembersPanel). Only the default
+  // upsell card counts as an "upgrade prompt" — a caller-supplied `fallback`
+  // might render something else entirely, so it's excluded. Guarded with a ref
+  // (not analytics.ts's ONCE_PER_BROWSER — this isn't a lifetime milestone) so
+  // a parent re-render that passes a new `fallback`/`children` reference can
+  // never re-fire this for the same mounted gate.
+  const trackedRef = useRef(false);
+  useEffect(() => {
+    if (stillResolving || unlocked || fallback || trackedRef.current) return;
+    trackedRef.current = true;
+    track('upgrade_prompt_shown', { limit: title ?? reason ?? 'pro_feature', source: 'pro_gate' });
+  }, [stillResolving, unlocked, fallback, title, reason]);
+
+  if (stillResolving) return null;
   if (unlocked) return <>{children}</>;
   if (fallback) return <>{fallback}</>;
 

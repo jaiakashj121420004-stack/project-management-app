@@ -1,10 +1,11 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AlertCircle, Check, LogOut, Mail, Sparkles, UserMinus, X } from 'lucide-react';
 import { Avatar } from '@/components/Avatar';
 import { Field } from '@/components/forms/Field';
 import { GradientButton } from '@/components/buttons/GradientButton';
 import { Spinner } from '@/components/feedback/Spinner';
+import { track } from '@/lib/analytics';
 import type { Invitation, InvitationRole } from '@/types/database';
 import type { MemberWithProfile } from './api';
 import { useCancelInvitation, useInviteMember, useMembers, useRemoveMember, useUpdateMemberRole } from './useMembers';
@@ -95,7 +96,7 @@ export function MembersPanel({ projectId, isOwner, currentUserId, onlineUserIds 
 
       {isOwner ? (
         atMemberLimit ? (
-          <MemberLimitNotice plan={profile?.plan ?? 'free'} />
+          <MemberLimitNotice plan={profile?.plan ?? 'free'} memberCount={data.members.length} />
         ) : (
           <InviteForm projectId={projectId} />
         )
@@ -231,7 +232,20 @@ function InvitationRow({
  * is unlimited, so it never renders this notice). Copy branches per plan since
  * each points to a different next step — see decision log, memory.md,
  * 2026-08-12 (Pro/Team both gained real member caps that day). */
-function MemberLimitNotice({ plan }: { plan: PlanId }) {
+function MemberLimitNotice({ plan, memberCount }: { plan: PlanId; memberCount: number }) {
+  // The report's own headline example ("3rd collaborator") — fires once per
+  // mount, not on every re-render, via the same ref-guard pattern as ProGate.
+  const trackedRef = useRef(false);
+  useEffect(() => {
+    if (trackedRef.current) return;
+    trackedRef.current = true;
+    track('upgrade_prompt_shown', {
+      limit: 'member_limit',
+      plan,
+      detail: `${memberCount + 1}th collaborator`,
+    });
+  }, [plan, memberCount]);
+
   const copy =
     plan === 'team'
       ? {

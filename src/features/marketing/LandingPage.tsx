@@ -1,5 +1,6 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { captureLandingAttribution, track } from '@/lib/analytics';
 import {
   ArrowRight,
   CalendarDays,
@@ -60,6 +61,15 @@ function Shot({ src, children }: { src: string; children: ReactNode }) {
  * folder keeps its internal name; nothing user-facing reads "Lodestar").
  */
 export function LandingPage() {
+  // First funnel moment: capture first-touch UTM/referrer once per browser (a
+  // no-op on repeat visits — see captureLandingAttribution), then record the
+  // view itself. This also fires for signed-in visitors on /preview, which is
+  // fine — it's a real page view either way, and the event carries no PII.
+  useEffect(() => {
+    captureLandingAttribution();
+    track('landing_page_viewed');
+  }, []);
+
   return (
     <div className="lode min-h-dvh bg-[color:var(--lode-night)] font-body antialiased">
       <Nav />

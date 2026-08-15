@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/features/auth/useProfile';
 import { PendingInvitations } from '@/features/members';
 import { UpgradeModal } from '@/features/billing';
+import { track } from '@/lib/analytics';
 import { FREE_PROJECT_LIMIT, isAtProjectLimit } from '@/lib/plans';
 import type { Project } from '@/types/database';
 import { ProjectCard } from './ProjectCard';
@@ -49,6 +50,13 @@ export function ProjectsPage() {
     (targetDate: string | null = null) => {
       // Free users at their project cap get the upgrade prompt instead of the form.
       if (atProjectLimit) {
+        // The single most useful property here (per the funnel report): WHICH
+        // limit triggered this prompt, e.g. "4th board" on the Free plan.
+        track('upgrade_prompt_shown', {
+          limit: 'project_limit',
+          plan,
+          detail: `${ownedCount + 1}th board`,
+        });
         setUpgradeOpen(true);
         return;
       }
@@ -57,7 +65,7 @@ export function ProjectsPage() {
       setFormKey((key) => key + 1);
       setFormOpen(true);
     },
-    [atProjectLimit],
+    [atProjectLimit, plan, ownedCount],
   );
 
   // The sidebar's "New project" button (or the Calendar's quick-create) navigates
@@ -100,6 +108,12 @@ export function ProjectsPage() {
       // The DB trigger is the real gate — surface the upgrade prompt if a free
       // user slipped past the client check (e.g. a stale project count).
       if (isProjectLimitError(error)) {
+        track('upgrade_prompt_shown', {
+          limit: 'project_limit',
+          plan,
+          detail: `${ownedCount + 1}th board`,
+          source: 'server_check',
+        });
         setFormOpen(false);
         setUpgradeOpen(true);
         return;
