@@ -1,5 +1,7 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { applyTheme, getInitialTheme, storeTheme, type Theme } from '@/lib/theme';
+import { useAuth } from '@/hooks/useAuth';
+import { useProfile, useUpdateProfile } from '@/features/auth/useProfile';
 import { ThemeContext, type ThemeContextValue } from './theme-context';
 
 /**
@@ -29,15 +31,51 @@ import { ThemeContext, type ThemeContextValue } from './theme-context';
  * production twice, the reliable fix is to not use it: theme changes are a
  * plain, instant class swap now, same as they always were for
  * reduced-motion users and for browsers without View Transitions support.
+ *
+ * Account sync (2026-08-15): `getInitialTheme()` above still runs
+ * synchronously before first paint (see main.tsx) — that instant boot path is
+ * unchanged. Once a signed-in user's profile loads via `useProfile`, if the
+ * account's last-saved `theme` differs from what's currently applied (e.g. a
+ * choice made on another device), this reconciles toward the SERVER value —
+ * but only ever a smooth, post-mount update, never the pre-paint flash guard.
+ * `theme` is null until a signed-in user changes it at least once (see the
+ * migration), which is what stops a brand-new profile from clobbering this
+ * device's local/OS-derived default on first login.
  */
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(getInitialTheme);
+  const { user } = useAuth();
+  const { data: profile } = useProfile();
+  const updateProfile = useUpdateProfile();
 
-  const setTheme = useCallback((next: Theme) => {
-    applyTheme(next);
-    setThemeState(next);
-    storeTheme(next);
-  }, []);
+  useEffect(() => {
+    if (!profile?.theme) return;
+    // Functional update so this depends only on the SERVER value — reading
+    // the latest local `theme` via the updater (rather than as a dependency)
+    // stops a fresh local toggle from being stomped by a stale `profile.theme`
+    // while our own write to the account is still in flight.
+    setThemeState((prev) => {
+      if (profile.theme === prev) return prev;
+      applyTheme(profile.theme as Theme);
+      storeTheme(profile.theme as Theme);
+      return profile.theme as Theme;
+    });
+  }, [profile?.theme]);
+
+  const setTheme = useCallback(
+    (next: Theme) => {
+      applyTheme(next);
+      setThemeState(next);
+      storeTheme(next);
+      // localStorage above is unchanged (instant local effect / signed-out
+      // fallback); this additionally writes through to the account so
+      // another device picks it up on next load. Fire-and-forget — a failure
+      // toasts via the global MutationCache handler (lib/queryClient.ts) and
+      // simply leaves the account's stored theme unchanged for next time.
+      if (user) updateProfile.mutate({ theme: next });
+    },
+    [user, updateProfile],
+  );
 
   const toggleTheme = useCallback(() => {
     setTheme(theme === 'dark' ? 'light' : 'dark');

@@ -14,8 +14,11 @@
  * clashing against the leftover brand oxblood (see personalizationPresets.ts
  * and `deriveAccentFromColor` below).
  *
- * Persisted to localStorage only (a per-device preference, like the theme
- * toggle) — not synced across devices via the account.
+ * Persisted to localStorage as the instant-paint boot cache (read
+ * synchronously before first render, same as the theme toggle — see
+ * main.tsx). 2026-08-15: also synced to the account when signed in, via
+ * CustomThemeProvider — see that file for the boot-vs-sync split and
+ * useProfile.ts / the `custom_theme` column for the server side.
  */
 import {
   PERSONALIZATION_PRESETS,
@@ -108,26 +111,44 @@ export const DEFAULT_CUSTOM_THEME: CustomThemeSettings = {
   text: null,
 };
 
+/**
+ * Coerce an arbitrary value (a `JSON.parse`d localStorage blob, or a jsonb
+ * value straight back from Supabase) into a well-formed `CustomThemeSettings`
+ * — unknown/missing/bad-shaped fields fall back to the default so a stale or
+ * hand-edited value can never crash `applyCustomTheme`.
+ */
+export function sanitizeCustomTheme(value: unknown): CustomThemeSettings {
+  const parsed = (value ?? {}) as Partial<CustomThemeSettings>;
+  return {
+    fontPairing:
+      parsed.fontPairing && parsed.fontPairing in FONT_PAIRINGS
+        ? parsed.fontPairing
+        : DEFAULT_CUSTOM_THEME.fontPairing,
+    preset:
+      typeof parsed.preset === 'string' && isPersonalizationPresetId(parsed.preset)
+        ? parsed.preset
+        : null,
+    bg: typeof parsed.bg === 'string' ? parsed.bg : null,
+    text: typeof parsed.text === 'string' ? parsed.text : null,
+  };
+}
+
 export function getStoredCustomTheme(): CustomThemeSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_CUSTOM_THEME;
-    const parsed = JSON.parse(raw) as Partial<CustomThemeSettings>;
-    return {
-      fontPairing:
-        parsed.fontPairing && parsed.fontPairing in FONT_PAIRINGS
-          ? parsed.fontPairing
-          : DEFAULT_CUSTOM_THEME.fontPairing,
-      preset:
-        typeof parsed.preset === 'string' && isPersonalizationPresetId(parsed.preset)
-          ? parsed.preset
-          : null,
-      bg: typeof parsed.bg === 'string' ? parsed.bg : null,
-      text: typeof parsed.text === 'string' ? parsed.text : null,
-    };
+    return sanitizeCustomTheme(JSON.parse(raw));
   } catch {
     return DEFAULT_CUSTOM_THEME;
   }
+}
+
+/** Deep-equal for two `CustomThemeSettings` — used to avoid a redundant
+ *  reconcile/write when the server value already matches what's applied. */
+export function customThemeEquals(a: CustomThemeSettings, b: CustomThemeSettings): boolean {
+  return (
+    a.fontPairing === b.fontPairing && a.preset === b.preset && a.bg === b.bg && a.text === b.text
+  );
 }
 
 export function storeCustomTheme(settings: CustomThemeSettings): void {

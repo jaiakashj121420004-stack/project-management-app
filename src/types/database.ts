@@ -63,6 +63,11 @@ export interface Database {
           // Opaque token for the public ICS calendar subscribe feed (Pro); set
           // only by the calendar-feed-token edge function (service role).
           calendar_feed_token: string | null;
+          // Account-synced Day/Night + personalization (2026-08-15). Null =
+          // never synced from an authenticated session; the client falls back
+          // to its localStorage cache — see src/lib/theme.ts / customTheme.ts.
+          theme: 'dark' | 'light' | null;
+          custom_theme: Record<string, unknown> | null;
           created_at: string;
         };
         Insert: {
@@ -76,6 +81,8 @@ export interface Database {
           dodo_subscription_id?: string | null;
           plan_status?: string | null;
           calendar_feed_token?: string | null;
+          theme?: 'dark' | 'light' | null;
+          custom_theme?: Record<string, unknown> | null;
           created_at?: string;
         };
         Update: {
@@ -89,6 +96,8 @@ export interface Database {
           dodo_subscription_id?: string | null;
           plan_status?: string | null;
           calendar_feed_token?: string | null;
+          theme?: 'dark' | 'light' | null;
+          custom_theme?: Record<string, unknown> | null;
           created_at?: string;
         };
         Relationships: [];

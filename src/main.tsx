@@ -8,6 +8,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import App from '@/App';
 import { Toaster } from '@/components/feedback/Toaster';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
+import { CustomThemeProvider } from '@/components/theme/CustomThemeProvider';
 import { AuthProvider } from '@/features/auth';
 import { applyTheme, getInitialTheme } from '@/lib/theme';
 import { applyCustomTheme, getStoredCustomTheme } from '@/lib/customTheme';
@@ -31,33 +32,43 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <ThemeProvider>
-      <PersistQueryClientProvider
-        client={queryClient}
-        persistOptions={{
-          persister,
-          maxAge: PERSIST_MAX_AGE,
-          buster: PERSIST_BUSTER,
-          // Only cache settled, successful queries — never errors or pending.
-          dehydrateOptions: {
-            shouldDehydrateQuery: (query) => query.state.status === 'success',
-          },
-        }}
-      >
-        <AuthProvider>
-          {/* Honor prefers-reduced-motion for ALL Framer motion (mount/exit
-              transforms the CSS guard can't stop): reducedMotion="user" drops
-              transform/layout animation, keeping only opacity. */}
-          <MotionConfig reducedMotion="user">
-            <BrowserRouter>
-              <App />
-            </BrowserRouter>
-            {/* App-wide toast host — surfaces global mutation-failure feedback
-                (see lib/queryClient MutationCache). Fixed overlay, router-independent. */}
-            <Toaster />
-          </MotionConfig>
-        </AuthProvider>
-      </PersistQueryClientProvider>
-    </ThemeProvider>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister,
+        maxAge: PERSIST_MAX_AGE,
+        buster: PERSIST_BUSTER,
+        // Only cache settled, successful queries — never errors or pending.
+        dehydrateOptions: {
+          shouldDehydrateQuery: (query) => query.state.status === 'success',
+        },
+      }}
+    >
+      <AuthProvider>
+        {/* ThemeProvider/CustomThemeProvider moved inside AuthProvider +
+            PersistQueryClientProvider (2026-08-15): both now sync to the
+            account via useProfile()/useUpdateProfile(), which need a
+            QueryClient and an auth session. This doesn't change what's
+            inside/outside either provider in practice — App (all routes) was
+            already nested inside AuthProvider before this change — and the
+            pre-paint boot flash guard above (applyTheme/applyCustomTheme) is
+            untouched, so there's still no flash on first load either way. */}
+        <ThemeProvider>
+          <CustomThemeProvider>
+            {/* Honor prefers-reduced-motion for ALL Framer motion (mount/exit
+                transforms the CSS guard can't stop): reducedMotion="user" drops
+                transform/layout animation, keeping only opacity. */}
+            <MotionConfig reducedMotion="user">
+              <BrowserRouter>
+                <App />
+              </BrowserRouter>
+              {/* App-wide toast host — surfaces global mutation-failure feedback
+                  (see lib/queryClient MutationCache). Fixed overlay, router-independent. */}
+              <Toaster />
+            </MotionConfig>
+          </CustomThemeProvider>
+        </ThemeProvider>
+      </AuthProvider>
+    </PersistQueryClientProvider>
   </StrictMode>,
 );

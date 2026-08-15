@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   AlertTriangle,
   Check,
@@ -20,18 +20,10 @@ import { ProGate } from '@/features/billing/ProGate';
 import { feedUrlForToken } from '@/features/calendar-feed/api';
 import { useEnableFeed, useFeedToken, useRevokeFeedToken, useRotateFeedToken } from '@/features/calendar-feed/useCalendarFeed';
 import { useTheme } from '@/hooks/useTheme';
+import { useCustomTheme } from '@/hooks/useCustomTheme';
 import { cn } from '@/lib/cn';
 import { AA_CONTRAST, contrastRatio, THEME_BG } from '@/lib/contrast';
-import {
-  DEFAULT_CUSTOM_THEME,
-  FONT_PAIRINGS,
-  applyCustomTheme,
-  getStoredCustomTheme,
-  resetCustomTheme,
-  storeCustomTheme,
-  type CustomThemeSettings,
-  type FontPairingId,
-} from '@/lib/customTheme';
+import { FONT_PAIRINGS, type FontPairingId } from '@/lib/customTheme';
 import type { PersonalizationPresetId } from '@/lib/personalizationPresets';
 
 /**
@@ -69,7 +61,11 @@ const DEFAULT_FG: Record<'dark' | 'light', string> = {
 
 export function SettingsPage() {
   const { theme } = useTheme();
-  const [settings, setSettings] = useState<CustomThemeSettings>(() => getStoredCustomTheme());
+  // Settings live in CustomThemeProvider now (2026-08-15), not local state —
+  // `setSettings` applies to <html>, persists to localStorage, AND (signed
+  // in) writes through to the account, so every change here is exactly what
+  // syncs to the user's other devices.
+  const { settings, setSettings, resetSettings } = useCustomTheme();
   // Open the Advanced disclosure by default only when it's already the active
   // customization (an Advanced pair from before this change, or from a prior
   // session) — otherwise the curated grid is the default, primary UI.
@@ -85,32 +81,26 @@ export function SettingsPage() {
   const contrast = contrastRatio(effectiveBg, effectiveText);
   const lowContrast = (settings.bg !== null || settings.text !== null) && contrast < AA_CONTRAST;
 
-  useEffect(() => {
-    applyCustomTheme(settings);
-    storeCustomTheme(settings);
-  }, [settings]);
-
   function setFontPairing(id: FontPairingId) {
-    setSettings((s) => ({ ...s, fontPairing: id }));
+    setSettings({ ...settings, fontPairing: id });
   }
 
   function setPreset(id: PersonalizationPresetId) {
     // Preset and Advanced are mutually exclusive — picking a preset clears
     // any Advanced bg/text so applyCustomTheme has one unambiguous source.
-    setSettings((s) => ({ ...s, preset: id, bg: null, text: null }));
+    setSettings({ ...settings, preset: id, bg: null, text: null });
   }
 
   function setBg(hex: string | null) {
-    setSettings((s) => ({ ...s, bg: hex, preset: null }));
+    setSettings({ ...settings, bg: hex, preset: null });
   }
 
   function setText(hex: string | null) {
-    setSettings((s) => ({ ...s, text: hex, preset: null }));
+    setSettings({ ...settings, text: hex, preset: null });
   }
 
   function handleReset() {
-    resetCustomTheme();
-    setSettings(DEFAULT_CUSTOM_THEME);
+    resetSettings();
     setAdvancedOpen(false);
   }
 
