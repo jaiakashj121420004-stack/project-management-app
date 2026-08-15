@@ -4,6 +4,7 @@ import { PanelLeftClose, PanelLeftOpen, Plus } from 'lucide-react';
 import { Brand } from './Brand';
 import { SidebarNav } from './SidebarNav';
 import { GradientButton } from '@/components/buttons/GradientButton';
+import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { springs } from '@/lib/motion';
 import { cn } from '@/lib/cn';
@@ -42,15 +43,19 @@ function Inner({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () 
 
       <SidebarNav collapsed={collapsed} onNavigate={onNavigate} />
 
-      <div className="mt-auto px-1.5 text-xs leading-relaxed text-fg-subtle">
-        {!collapsed && (
-          <>
-            <p>Aurora · v0.1 <span className="opacity-70">· by Nvexis</span></p>
-            <p className="mt-0.5">
-              Made by <span className="font-medium text-fg-muted">J. Jai Akash</span>
-            </p>
-          </>
-        )}
+      <div className={cn('mt-auto flex flex-col gap-3 px-1.5', collapsed && 'items-center px-0')}>
+        <InstallPrompt collapsed={collapsed} />
+
+        <div className="text-xs leading-relaxed text-fg-subtle">
+          {!collapsed && (
+            <>
+              <p>Aurora · v0.1 <span className="opacity-70">· by Nvexis</span></p>
+              <p className="mt-0.5">
+                Made by <span className="font-medium text-fg-muted">J. Jai Akash</span>
+              </p>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

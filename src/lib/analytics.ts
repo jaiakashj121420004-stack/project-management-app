@@ -26,6 +26,9 @@ export const ANALYTICS_EVENTS = [
   'upgrade_prompt_shown',
   'checkout_started',
   'checkout_completed',
+  'install_prompt_shown',
+  'install_accepted',
+  'install_dismissed',
 ] as const;
 
 export type AnalyticsEventName = (typeof ANALYTICS_EVENTS)[number];

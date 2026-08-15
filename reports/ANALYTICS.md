@@ -7,7 +7,7 @@
 
 ## What this is (and isn't)
 
-A thin, privacy-respecting funnel-tracking layer — eight allow-listed events,
+A thin, privacy-respecting funnel-tracking layer — eleven allow-listed events,
 one Postgres table, no dashboard. It exists to answer "where do people drop off
 between landing on the site and paying," not to be a general analytics
 platform. No page-view auto-tracking, no session replay, no click-heatmaps, no
@@ -46,6 +46,9 @@ can write it, and only a Studio SQL query (service/postgres role) can read it.
 | `upgrade_prompt_shown` | `ProGate.tsx` (generic, covers every Pro-gated feature), `ProjectsPage.tsx` (project limit), `MembersPanel.tsx` (member limit) | Whenever an upgrade CTA renders because of a plan limit | `limit` (e.g. `'project_limit'`, `'member_limit'`, or a `ProGate` feature title), `plan`, `detail` (e.g. `"4th board"`, `"3rd collaborator"`) — this is the single most useful property per the funnel report §4 |
 | `checkout_started` | `useBilling.ts` (`go()`) | When the user clicks Upgrade and checkout begins (before the redirect, so a failed session-creation call still counts) | `plan`, `interval` |
 | `checkout_completed` | `dodo-webhook/index.ts` (server, NOT the client redirect) | Once per new subscription, on Dodo's `subscription.active` first-activation event — never on renewals/plan-changes | `plan`, `product_id` |
+| `install_prompt_shown` | `components/pwa/InstallPrompt.tsx` (mount) | Whenever the "Install Aurora" affordance becomes visible — the browser has offered `beforeinstallprompt`, or it's iOS Safari | `platform: 'chromium' \| 'ios_safari'` |
+| `install_accepted` | `InstallPrompt.tsx` | Chrome/Edge/Android only, when the native install dialog's `userChoice` resolves `'accepted'` | `platform: 'chromium'` |
+| `install_dismissed` | `InstallPrompt.tsx` | Chrome/Edge/Android, when `userChoice` resolves `'dismissed'`; iOS Safari, when the instructions modal is closed without a way to confirm the user actually finished the manual steps | `platform: 'chromium' \| 'ios_safari'` |
 
 ### Notes on specific events
 
@@ -67,6 +70,12 @@ can write it, and only a Studio SQL query (service/postgres role) can read it.
   milestones (guarded in `src/lib/analytics.ts`, not per-project) — they answer
   "did this user activate at all," not "how many boards/cards has this user
   ever made."
+- **`install_accepted` has no true iOS equivalent.** iOS Safari exposes no API
+  to confirm a user actually completed "Add to Home Screen" after the
+  instructions modal opens (no `appinstalled` event fires there), so on iOS
+  `install_dismissed` fires whenever the modal closes — it can't distinguish
+  "gave up" from "installed successfully." Chrome/Edge/Android get a real
+  accepted/dismissed signal from `beforeinstallprompt`'s `userChoice`.
 
 ## Server-side allow-list & validation (`track-event` Edge Function)
 
