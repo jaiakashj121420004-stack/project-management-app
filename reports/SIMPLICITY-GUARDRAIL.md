@@ -1,0 +1,29 @@
+# Simplicity Guardrail
+
+> Run every future feature idea through this before building it — the same way security changes get checked against the RLS rules in `CLAUDE.md`. Aurora's non-negotiable constraint: a first-time user, including someone in their 60s who isn't especially tech-savvy, must be able to use every feature confidently within minutes, with no tutorial. It also has to stay genuinely full-featured — this checklist is about *how* a feature ships, not a license to refuse building things.
+>
+> Grounded in competitor research (see [FEATURE-GAP-ANALYSIS.md](./FEATURE-GAP-ANALYSIS.md)): "overwhelm" is the #1 stated reason people leave both Notion and ClickUp. Notion's own reviewers name a "building vs. using" trap — users spend more time architecting the tool than doing the work. ClickUp reviewers describe "feature overload" causing decision paralysis and a steep-enough first-run curve that new hires need a 14-page onboarding guide. Every question below traces back to one of those specific, named failure modes.
+
+1. **Does this add a new top-level nav item, or does it live inside something that already exists?** Every extra item in the Sidebar is a permanent tax on every future user's first five seconds in the app. If it can be a button inside an existing page (a card detail, a settings section, a context menu), it should be — not a new destination.
+
+2. **Can a first-time user understand what this button/feature does without a tooltip, an empty-state explainer, or a "learn more" link?** If the honest answer requires an explanation, the design isn't done — the feature needs a better default or a simpler shape, not better copy.
+
+3. **Does this feature have a sensible zero-config default, or does it force a setup step before it's useful?** Notion's core failure mode is exactly this: powerful primitives that do nothing until the user has architected them. Aurora's answer should always be "useful the moment you open it," with configuration available but optional (starter templates over blank canvases, curated presets over raw pickers — see how `AccentPicker.tsx`'s 6 curated options beat the raw custom-color hex picker it sits next to).
+
+4. **If we had to explain this in one sentence to a 60-year-old first-time user, could we?** Not "explain the UI" — explain what it's *for*, in plain language, with no jargon (no "workflow," "automation trigger," "relational field"). If the one-sentence version needs a second sentence to cover an edge case, the feature is probably doing too much.
+
+5. **Does this feature introduce a second way to do something Aurora already does?** Checklists already handle "break this into steps" — a separate subtasks system would be a second answer to the same question, and two answers to the same question is itself a source of confusion, independent of how good either one is on its own.
+
+6. **Is this a fixed, opinionated behavior, or does it require the user to configure rules/triggers/conditions?** A rule-builder ("if X then Y") is the single most direct path to ClickUp/Monday-style overwhelm found in this research. If the underlying need is real, ship 2-3 hardcoded behaviors with no configuration UI at all, not a builder.
+
+7. **Does shipping this add a genuinely new maintenance surface (a fourth view mode, a second editor, a rules engine) rather than extending one that already exists?** Every new *kind* of thing (not just new content within an existing kind) is a permanent cost — more surface to keep consistent, more places a bug can hide, more things a support answer has to cover.
+
+8. **Would this feature look "cheap" or "clashing" without deliberate curation, if we just exposed the raw underlying control to the user?** The custom-color lesson (Task 6 in the improvement plan): a raw hex picker with only a contrast check produces ugly, uncoordinated results even though nothing is technically broken. Curated options that are guaranteed to look intentional beat "maximum flexibility" almost every time for this audience.
+
+9. **Does this feature's absence currently push real users toward a workaround, or is it a "nice to have" copied from a competitor's spec sheet?** Time tracking and file attachments earned a spot in `FEATURE-GAP-ANALYSIS.md` because freelancer research names them as things people currently juggle a *second app* for. Goals/OKRs and Gantt views did not, because no research signal ties them to Aurora's actual small-team/freelancer audience — popularity on a competitor's feature list isn't itself evidence of need.
+
+10. **Can this ship inside Aurora's existing flat, non-per-seat pricing, or does it start a second pricing dimension?** Flat per-board pricing (not per-seat) is one of Aurora's few structural differentiators in this category. A feature that only makes sense as its own paid add-on (ClickUp's AI Brain, gated separately from its plan tiers) works against that positioning even if the feature itself is good.
+
+11. **If we removed this feature entirely, would a first-time user notice within their first week?** If not, it's a candidate for staying out of v1 regardless of how technically interesting it is to build — every shipped feature is something a future audit (see `reports/SIMPLICITY-AUDIT-2026-08.md` once it exists) has to re-justify.
+
+12. **Have we written down, in the feature's own memory.md decision entry, the specific thing we decided NOT to build alongside it — and why?** Every gap in this document paired an inclusion with an explicit rejection (time tracking yes, invoicing/billing no; recurring cards yes, dependencies no). That pairing is what keeps "yes" answers from silently drifting into ClickUp's scope over many small, individually-reasonable additions.
