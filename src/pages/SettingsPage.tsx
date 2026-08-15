@@ -1,7 +1,19 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, Check, Copy, Palette, RefreshCw, Rss, RotateCcw, Sparkles, Type } from 'lucide-react';
+import {
+  AlertTriangle,
+  Check,
+  ChevronDown,
+  Copy,
+  Palette,
+  RefreshCw,
+  Rss,
+  RotateCcw,
+  Sparkles,
+  Type,
+} from 'lucide-react';
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import { GradientButton } from '@/components/buttons/GradientButton';
+import { PersonalizationPresetGrid } from '@/components/theme/PersonalizationPresetGrid';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { Tooltip } from '@/components/Tooltip';
 import { ProGate } from '@/features/billing/ProGate';
@@ -20,14 +32,26 @@ import {
   type CustomThemeSettings,
   type FontPairingId,
 } from '@/lib/customTheme';
+import type { PersonalizationPresetId } from '@/lib/personalizationPresets';
 
 /**
  * Settings — app-wide theming (replaces the old dev-only Style Guide route in
- * the main nav). Font pairing is free; custom background/text colors are Pro
- * (gated by <ProGate>, matching every other Pro affordance in the app). Every
- * change here writes CSS custom properties on <html> immediately (see
+ * the main nav). Font pairing is free; custom colors are Pro (gated by
+ * <ProGate>, matching every other Pro affordance in the app). Every change
+ * here writes CSS custom properties on <html> immediately (see
  * lib/customTheme.ts), so the live preview panel below IS the real app —
  * nothing here is a mockup.
+ *
+ * CURATED-FIRST (2026-08-15): "Custom colors" now leads with a grid of eight
+ * coordinated personalization presets (`PersonalizationPresetGrid` +
+ * `lib/personalizationPresets.ts`) — a background, text, AND accent gradient
+ * per option, all AA-compliant by construction. The raw hex/color-wheel
+ * pickers still exist for a power user who wants full control, but now live
+ * behind an "Advanced: pick your own colors" disclosure, with the contrast
+ * warning kept as a safety net for that path specifically (presets never
+ * need it — they can't fail AA). Selecting a preset and editing an Advanced
+ * color are mutually exclusive — each clears the other, so there's always
+ * exactly one source of truth for `applyCustomTheme` to resolve.
  *
  * REBUILT 2026-08-15: a production report that nothing on this page responded
  * to clicks (no console errors, other pages fine) could not be reproduced by
@@ -46,7 +70,16 @@ const DEFAULT_FG: Record<'dark' | 'light', string> = {
 export function SettingsPage() {
   const { theme } = useTheme();
   const [settings, setSettings] = useState<CustomThemeSettings>(() => getStoredCustomTheme());
+  // Open the Advanced disclosure by default only when it's already the active
+  // customization (an Advanced pair from before this change, or from a prior
+  // session) — otherwise the curated grid is the default, primary UI.
+  const [advancedOpen, setAdvancedOpen] = useState(
+    () => settings.preset === null && (settings.bg !== null || settings.text !== null),
+  );
 
+  // Only meaningful for the Advanced pair — presets are AA-compliant by
+  // construction (see personalizationPresets.test.ts), so this stays 0/false
+  // whenever a preset is active (bg/text are null in that case).
   const effectiveBg = settings.bg ?? THEME_BG[theme];
   const effectiveText = settings.text ?? DEFAULT_FG[theme];
   const contrast = contrastRatio(effectiveBg, effectiveText);
@@ -61,20 +94,31 @@ export function SettingsPage() {
     setSettings((s) => ({ ...s, fontPairing: id }));
   }
 
+  function setPreset(id: PersonalizationPresetId) {
+    // Preset and Advanced are mutually exclusive — picking a preset clears
+    // any Advanced bg/text so applyCustomTheme has one unambiguous source.
+    setSettings((s) => ({ ...s, preset: id, bg: null, text: null }));
+  }
+
   function setBg(hex: string | null) {
-    setSettings((s) => ({ ...s, bg: hex }));
+    setSettings((s) => ({ ...s, bg: hex, preset: null }));
   }
 
   function setText(hex: string | null) {
-    setSettings((s) => ({ ...s, text: hex }));
+    setSettings((s) => ({ ...s, text: hex, preset: null }));
   }
 
   function handleReset() {
     resetCustomTheme();
     setSettings(DEFAULT_CUSTOM_THEME);
+    setAdvancedOpen(false);
   }
 
-  const isCustomized = settings.bg !== null || settings.text !== null || settings.fontPairing !== 'almanac';
+  const isCustomized =
+    settings.preset !== null ||
+    settings.bg !== null ||
+    settings.text !== null ||
+    settings.fontPairing !== 'almanac';
 
   return (
     <div className="flex flex-col gap-6">
@@ -151,24 +195,51 @@ export function SettingsPage() {
           <Palette size={18} className="text-[var(--accent-from)]" /> Custom colors
         </h2>
         <p className="mb-4 text-sm text-fg-muted">
-          Pick your own background and text color — the glass and grain stay exactly the same,
-          only the color underneath changes.
+          A curated set — background, text, and a matching accent for buttons and highlights, all
+          at once. The glass and grain stay exactly the same, only the color underneath changes.
         </p>
         <ProGate
           title="Custom colors are a Pro feature"
-          reason="Upgrade to Pro to pick your own background and text colors — everything else in Aurora stays free."
+          reason="Upgrade to Pro to personalize Aurora's colors — everything else stays free."
         >
-          <div className="grid gap-5 sm:grid-cols-2">
-            <ColorField label="Background" value={settings.bg} onChange={setBg} />
-            <ColorField label="Text" value={settings.text} onChange={setText} />
+          <PersonalizationPresetGrid value={settings.preset} onChange={setPreset} />
+
+          <div className="mt-5 border-t border-[var(--glass-border)] pt-4">
+            <button
+              type="button"
+              onClick={() => setAdvancedOpen((open) => !open)}
+              aria-expanded={advancedOpen}
+              className="flex items-center gap-1.5 text-sm font-medium text-fg-muted transition-colors hover:text-fg"
+            >
+              <ChevronDown
+                size={16}
+                className={cn('transition-transform duration-200', advancedOpen && 'rotate-180')}
+              />
+              Advanced: pick your own colors
+            </button>
+
+            {advancedOpen && (
+              <div className="mt-4">
+                <p className="mb-3 text-xs text-fg-subtle">
+                  Full control over background and text — a matching accent is still derived
+                  automatically, but nothing here is curated, so double-check the contrast warning
+                  below.
+                </p>
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <ColorField label="Background" value={settings.bg} onChange={setBg} />
+                  <ColorField label="Text" value={settings.text} onChange={setText} />
+                </div>
+                {lowContrast && (
+                  <p className="mt-4 flex items-start gap-2 rounded-xl border border-warning/30 bg-warning/10 px-3.5 py-2.5 text-sm text-warning">
+                    <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+                    This background/text combination is hard to read ({contrast.toFixed(1)}:1 —
+                    aim for at least {AA_CONTRAST}:1). Consider picking a lighter or darker text
+                    color.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
-          {lowContrast && (
-            <p className="mt-4 flex items-start gap-2 rounded-xl border border-warning/30 bg-warning/10 px-3.5 py-2.5 text-sm text-warning">
-              <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-              This background/text combination is hard to read ({contrast.toFixed(1)}:1 — aim for
-              at least {AA_CONTRAST}:1). Consider picking a lighter or darker text color.
-            </p>
-          )}
         </ProGate>
       </GlassPanel>
 
@@ -217,6 +288,21 @@ export function SettingsPage() {
               Subtle text
             </span>
           </Tooltip>
+        </div>
+        {/* The point of the curated-first rework: buttons and highlights are
+            no longer stuck on the brand oxblood — they pick up the same
+            preset/derived accent as the rest of this preview, live. */}
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <GradientButton size="sm">Sample button</GradientButton>
+          <span
+            style={{
+              background: 'linear-gradient(110deg, var(--accent-from), var(--accent-to))',
+              color: 'var(--accent-fg)',
+            }}
+            className="rounded-full px-3 py-1 text-xs font-semibold"
+          >
+            Highlight
+          </span>
         </div>
       </GlassPanel>
     </div>
