@@ -12,7 +12,7 @@ import { CardDetailModal, type CardDetailValues } from '@/features/board/CardDet
 import { toDateKey } from '@/features/calendar/dates';
 import { useDatedCards, useDeleteCalendarCard, useUpdateCalendarCard } from '@/features/calendar/useCalendar';
 import { CardChip } from '@/features/calendar/CardChip';
-import { TodoListCard } from '@/features/todos/TodoListCard';
+import { TodoListsGrid } from '@/features/todos/TodoListsGrid';
 import { useAddTodoList, useTodos } from '@/features/todos/useTodos';
 import type { TodoItem } from '@/types/database';
 
@@ -204,16 +204,7 @@ export function TodayPage() {
               </GlassPanel>
             </Reveal>
           ) : (
-            <div className="grid items-start gap-5 sm:grid-cols-2 xl:grid-cols-3">
-              {lists.map((list) => (
-                <TodoListCard
-                  key={list.id}
-                  dateKey={todayKey}
-                  list={list}
-                  items={itemsByList.get(list.id) ?? []}
-                />
-              ))}
-            </div>
+            <TodoListsGrid dateKey={todayKey} lists={lists} itemsByList={itemsByList} />
           )}
         </>
       )}

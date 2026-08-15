@@ -39,6 +39,7 @@ import {
   cardsInColumn,
   isDoneColumn,
   needsRebalance,
+  neighbourPosition,
   positionBetween,
   rebalancedPositions,
   sortColumns,
@@ -552,24 +553,6 @@ export function Board({ projectId, accent, canEdit }: BoardProps) {
       <Confetti fireKey={celebrateKey} />
     </div>
   );
-}
-
-/**
- * The position a moved item should take to sit at its new index: the midpoint of
- * the cache positions of the items that now straddle it (the moved item itself
- * is skipped). `order` is the final id order of the destination list.
- */
-function neighbourPosition(
-  order: string[],
-  movedId: string,
-  getPosition: (id: string) => number | undefined,
-): number {
-  const index = order.indexOf(movedId);
-  const beforeId = index > 0 ? order[index - 1] : undefined;
-  const afterId = index >= 0 && index < order.length - 1 ? order[index + 1] : undefined;
-  const before = beforeId !== undefined ? getPosition(beforeId) : undefined;
-  const after = afterId !== undefined ? getPosition(afterId) : undefined;
-  return positionBetween(before, after);
 }
 
 function BoardSkeleton() {

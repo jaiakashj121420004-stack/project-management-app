@@ -12,9 +12,9 @@ import {
   removeTodoList,
   renameTodoList,
   setTodoListRecurrence,
-  swapTodoItemPositions,
   updateRecurrence,
   updateTodoItem,
+  updateTodoListPosition,
   type TodosData,
 } from './api';
 
@@ -125,6 +125,19 @@ export function useDeleteTodoList(dateKey: string) {
   );
 }
 
+/** Move a whole list to a new fractional position (drag-reorder of the day's
+ *  named lists — Work, Personal, … — the list-level counterpart to item drag). */
+export function useMoveTodoList(dateKey: string) {
+  return useTodosMutation<TodoList, { id: string; position: number }>(
+    dateKey,
+    ({ id, position }) => updateTodoListPosition(id, position),
+    (data, { id, position }) => ({
+      ...data,
+      lists: data.lists.map((list) => (list.id === id ? { ...list, position } : list)),
+    }),
+  );
+}
+
 // --- Items ------------------------------------------------------------------
 
 export function useAddTodoItem(dateKey: string) {
@@ -156,14 +169,20 @@ export function useAddTodoItem(dateKey: string) {
   );
 }
 
+/**
+ * Patch an item's text/done/priority/position. `position` covers every
+ * fractional-position reorder — the up/down arrows, and drag-and-drop, both
+ * compute a target position (see `@/lib/ordering`'s `neighbourPosition`) and
+ * write it through this single mutation rather than a dedicated "move" call.
+ */
 export function useUpdateTodoItem(dateKey: string) {
   return useTodosMutation<
     TodoItem,
-    { id: string; text?: string; is_done?: boolean; priority?: number | null }
+    { id: string; text?: string; is_done?: boolean; priority?: number | null; position?: number }
   >(
     dateKey,
     ({ id, ...patch }) => updateTodoItem(id, patch),
-    (data, { id, text, is_done, priority }) => ({
+    (data, { id, text, is_done, priority, position }) => ({
       ...data,
       items: data.items.map((item) =>
         item.id === id
@@ -172,33 +191,10 @@ export function useUpdateTodoItem(dateKey: string) {
               ...(text !== undefined ? { text: text.trim() } : {}),
               ...(is_done !== undefined ? { is_done } : {}),
               ...(priority !== undefined ? { priority } : {}),
+              ...(position !== undefined ? { position } : {}),
             }
           : item,
       ),
-    }),
-  );
-}
-
-/**
- * Move an item up or down within its list by swapping `position` with its
- * neighbour. Optimistically swaps both positions in the day snapshot so the
- * reorder is instant, then reconciles on refetch.
- */
-export function useMoveTodoItem(dateKey: string) {
-  return useTodosMutation<
-    void,
-    { id: string; position: number; swapId: string; swapPosition: number }
-  >(
-    dateKey,
-    ({ id, position, swapId, swapPosition }) =>
-      swapTodoItemPositions({ id, position }, { id: swapId, position: swapPosition }),
-    (data, { id, position, swapId, swapPosition }) => ({
-      ...data,
-      items: data.items.map((item) => {
-        if (item.id === id) return { ...item, position: swapPosition };
-        if (item.id === swapId) return { ...item, position };
-        return item;
-      }),
     }),
   );
 }

@@ -1,9 +1,12 @@
-import { useState } from 'react';
-import { motion, useAnimation, type PanInfo } from 'framer-motion';
-import { Check, CheckCircle2, ChevronDown, ChevronUp, Pencil, Trash2, X } from 'lucide-react';
+import { useState, type PointerEvent as ReactPointerEvent, type TouchEvent as ReactTouchEvent } from 'react';
+import { motion, useAnimation, useReducedMotion, type PanInfo } from 'framer-motion';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { Check, CheckCircle2, ChevronDown, ChevronUp, GripVertical, Pencil, Trash2, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Tooltip } from '@/components/Tooltip';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { springs } from '@/lib/motion';
 import { TodoPriorityPicker } from './TodoPriorityPicker';
 import type { TodoItem } from '@/types/database';
 
@@ -28,15 +31,21 @@ interface TodoItemRowProps {
 const SWIPE_THRESHOLD = 72;
 
 /**
- * One to-do: a tick box, a priority flag (P1 first — see TodoListCard's sort),
- * the text (struck through when done), reorder (up/down) controls, and a
- * delete. The reorder buttons disable at the top/bottom of their priority tier
- * (priority always outranks manual order, so a cross-tier swap would silently
- * do nothing — see `canReorder` in TodoListCard).
+ * One to-do: a drag handle, a tick box, a priority flag (P1 first — see
+ * TodoListCard's sort), the text (struck through when done), reorder (up/down)
+ * controls, and a delete. Both the handle-drag and the reorder buttons refuse
+ * to cross a priority-tier boundary — priority always outranks manual order,
+ * so a cross-tier reorder would silently do nothing visually (see `sameTier`
+ * in ordering.ts and `canReorder` in TodoListCard).
  *
  * On touch devices (outside select mode) the row is also swipeable: right to
- * toggle done, left to delete — the native-feeling alternative to hunting for
- * the small action buttons on a phone.
+ * toggle done, left to delete. That gesture lives on the row body; dragging to
+ * reorder is a *dedicated grip handle* instead of the whole row, specifically
+ * so the two touch gestures never fight over the same pointer — the handle
+ * stops the swipe's pointer/touch events from ever reaching the row's drag
+ * listener (see the handle's event handlers below), and dnd-kit's TouchSensor
+ * (delay + tolerance, configured in TodoListCard) is a second layer of
+ * protection in case any bleed-through slips past that.
  */
 export function TodoItemRow({
   item,
@@ -53,12 +62,22 @@ export function TodoItemRow({
   onToggleSelect,
 }: TodoItemRowProps) {
   const isTouch = useMediaQuery('(pointer: coarse)');
+  const reducedMotion = useReducedMotion();
   const controls = useAnimation();
   const [dragX, setDragX] = useState(0);
   const [editingText, setEditingText] = useState(false);
   const [draft, setDraft] = useState(item.text);
 
-  function handleDragEnd(_e: unknown, info: PanInfo) {
+  const {
+    setNodeRef,
+    attributes,
+    listeners,
+    transform,
+    transition: dndTransition,
+    isDragging,
+  } = useSortable({ id: item.id, disabled: selectMode });
+
+  function handleSwipeEnd(_e: unknown, info: PanInfo) {
     const offset = info.offset.x;
     if (offset > SWIPE_THRESHOLD) {
       onToggle(!item.is_done);
@@ -86,8 +105,33 @@ export function TodoItemRow({
     setEditingText(false);
   }
 
+  // Stop the handle's own pointer/touch events from bubbling up to the row's
+  // `drag="x"` swipe gesture (see the class doc above) before handing them to
+  // dnd-kit's listener, which is what actually starts the reorder drag.
+  // dnd-kit's SyntheticListenerMap types each handler as a bare `Function`; cast
+  // once to a concrete signature so it can be invoked from React's own handlers.
+  const dndListeners = listeners as Record<string, (event: unknown) => void> | undefined;
+  function handlePointerDown(event: ReactPointerEvent<HTMLButtonElement>) {
+    event.stopPropagation();
+    dndListeners?.onPointerDown?.(event);
+  }
+  function handleMouseDown(event: ReactPointerEvent<HTMLButtonElement>) {
+    event.stopPropagation();
+    dndListeners?.onMouseDown?.(event);
+  }
+  function handleTouchStart(event: ReactTouchEvent<HTMLButtonElement>) {
+    event.stopPropagation();
+    dndListeners?.onTouchStart?.(event);
+  }
+
   return (
-    <li className="group relative overflow-hidden rounded-xl">
+    <motion.li
+      ref={setNodeRef}
+      layout={!reducedMotion && !isDragging}
+      transition={reducedMotion ? { duration: 0 } : springs.smooth}
+      style={{ transform: CSS.Transform.toString(transform), transition: dndTransition }}
+      className={cn('group relative overflow-hidden rounded-xl', isDragging && 'z-10 opacity-90')}
+    >
       {isTouch && !selectMode && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-between px-4">
           <span className={cn('flex items-center gap-1.5 text-success transition-opacity', dragX > 24 ? 'opacity-100' : 'opacity-0')}>
@@ -105,9 +149,27 @@ export function TodoItemRow({
         dragElastic={0.35}
         animate={controls}
         onDrag={(_e, info) => setDragX(info.offset.x)}
-        onDragEnd={handleDragEnd}
+        onDragEnd={handleSwipeEnd}
         className="relative flex items-center gap-2.5 rounded-xl bg-base px-3 py-2"
       >
+        {!selectMode && (
+          <button
+            type="button"
+            aria-label="Drag to reorder"
+            className={cn(
+              'grid h-7 w-5 shrink-0 cursor-grab touch-none place-items-center rounded-md text-fg-subtle transition-opacity hover:text-fg active:cursor-grabbing',
+              isTouch ? 'opacity-100' : 'opacity-0 focus-visible:opacity-100 group-hover:opacity-100',
+            )}
+            {...attributes}
+            onPointerDown={handlePointerDown}
+            onMouseDown={handleMouseDown}
+            onTouchStart={handleTouchStart}
+            onKeyDown={dndListeners?.onKeyDown}
+          >
+            <GripVertical size={14} aria-hidden />
+          </button>
+        )}
+
         {selectMode ? (
           <button
             type="button"
@@ -254,6 +316,6 @@ export function TodoItemRow({
           </div>
         )}
       </motion.div>
-    </li>
+    </motion.li>
   );
 }

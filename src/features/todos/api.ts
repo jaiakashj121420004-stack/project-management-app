@@ -86,6 +86,18 @@ export async function renameTodoList(id: string, name: string): Promise<TodoList
   return data;
 }
 
+/** Move a list to a new fractional position (drag-reorder of whole lists). */
+export async function updateTodoListPosition(id: string, position: number): Promise<TodoList> {
+  const { data, error } = await supabase
+    .from('todo_lists')
+    .update({ position })
+    .eq('id', id)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 /** Delete a list. Its items cascade-delete (ON DELETE CASCADE). */
 export async function removeTodoList(id: string): Promise<void> {
   const { error } = await supabase.from('todo_lists').delete().eq('id', id);
@@ -120,23 +132,6 @@ export async function updateTodoItem(
     .single();
   if (error) throw error;
   return data;
-}
-
-/**
- * Swap the positions of two items so one moves up/down past the other.
- * Both rows are updated; RLS still scopes each to the current user.
- */
-export async function swapTodoItemPositions(
-  a: { id: string; position: number },
-  b: { id: string; position: number },
-): Promise<void> {
-  // Give `a` b's slot and `b` a's slot.
-  const [resA, resB] = await Promise.all([
-    supabase.from('todo_items').update({ position: b.position }).eq('id', a.id),
-    supabase.from('todo_items').update({ position: a.position }).eq('id', b.id),
-  ]);
-  if (resA.error) throw resA.error;
-  if (resB.error) throw resB.error;
 }
 
 export async function removeTodoItem(id: string): Promise<void> {

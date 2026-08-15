@@ -11,7 +11,7 @@ import type { TodoItem } from '@/types/database';
 import { toDateKey } from '@/features/calendar/dates';
 import { todoListNameSchema } from './schemas';
 import { useAddTodoList, useRecurrences, useTodos } from './useTodos';
-import { TodoListCard } from './TodoListCard';
+import { TodoListsGrid } from './TodoListsGrid';
 import { ruleMatchesDate, type RecurrenceRule } from './recurrence';
 import { insertRecurrence, insertTodoItem, insertTodoList, setTodoListRecurrence } from './api';
 import { STARTER_TEMPLATES, type StarterTemplate } from './starterTemplates';
@@ -209,21 +209,13 @@ export function TodosPage() {
           Couldn&apos;t load your to-dos. Check your connection and try again.
         </GlassPanel>
       ) : (
-        <div className="grid items-start gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {lists.map((list) => (
-            <TodoListCard
-              key={list.id}
-              dateKey={dateKey}
-              list={list}
-              items={itemsByList.get(list.id) ?? []}
-            />
-          ))}
+        <TodoListsGrid dateKey={dateKey} lists={lists} itemsByList={itemsByList}>
           <AddListCard
             onAdd={handleAddList}
             hasLists={lists.length > 0}
             onUseTemplate={(template) => void handleUseTemplate(template)}
           />
-        </div>
+        </TodoListsGrid>
       )}
     </div>
   );
