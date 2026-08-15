@@ -2,13 +2,23 @@ import { useCallback, useEffect, useState } from 'react';
 
 /**
  * The `beforeinstallprompt` event (Chrome/Edge/Android — not in the DOM lib
- * typings). We preventDefault it and stash it here so it can be re-fired later
- * from a user click, instead of the browser's own (easy-to-miss) mini-infobar.
+ * typings). `public/pwa-install-capture.js` (loaded in index.html, before
+ * React) is the one place that actually listens for it and calls
+ * `preventDefault()` — see that file's header comment for why capturing it
+ * from inside a React hook is too late on a repeat visit. This hook only
+ * reads what that script already stashed.
  */
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
   readonly userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
   prompt(): Promise<void>;
+}
+
+declare global {
+  interface Window {
+    /** Set by public/pwa-install-capture.js the instant beforeinstallprompt fires. */
+    __auroraInstallPrompt?: BeforeInstallPromptEvent;
+  }
 }
 
 function isStandalone(): boolean {
@@ -54,36 +64,47 @@ export interface UseInstallPromptResult {
 
 /**
  * Surfaces whether "Install Aurora" should be offered right now, and how.
- * Never prompts automatically — `beforeinstallprompt` is always preventDefault'd
- * and only re-fired from `promptInstall()`, which callers wire to a user click.
+ * Never prompts automatically — `pwa-install-capture.js` always preventDefault's
+ * `beforeinstallprompt`, and the native prompt only fires from `promptInstall()`,
+ * which callers wire to a user click.
  */
 export function useInstallPrompt(): UseInstallPromptResult {
-  const [deferredEvent, setDeferredEvent] = useState<BeforeInstallPromptEvent | null>(null);
+  // Lazy-init from window.__auroraInstallPrompt: the capture script may have
+  // already stashed the event before this component ever mounted (it fires as
+  // soon as the browser validates installability, which can beat the auth
+  // check + provider tree in main.tsx to the punch on a repeat visit).
+  const [deferredEvent, setDeferredEvent] = useState<BeforeInstallPromptEvent | null>(
+    () => window.__auroraInstallPrompt ?? null,
+  );
   const [installed, setInstalled] = useState(isStandalone);
 
   useEffect(() => {
-    function onBeforeInstallPrompt(event: Event) {
-      event.preventDefault();
-      setDeferredEvent(event as BeforeInstallPromptEvent);
+    // Covers the event arriving AFTER this component mounts — the capture
+    // script dispatches this custom event right after stashing it.
+    function onCaptured() {
+      setDeferredEvent(window.__auroraInstallPrompt ?? null);
     }
     function onInstalled() {
       setInstalled(true);
       setDeferredEvent(null);
+      window.__auroraInstallPrompt = undefined;
     }
-    window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt);
+    window.addEventListener('aurora:beforeinstallprompt', onCaptured);
     window.addEventListener('appinstalled', onInstalled);
     return () => {
-      window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
+      window.removeEventListener('aurora:beforeinstallprompt', onCaptured);
       window.removeEventListener('appinstalled', onInstalled);
     };
   }, []);
 
   const promptInstall = useCallback(async (): Promise<'accepted' | 'dismissed' | null> => {
-    if (!deferredEvent) return null;
-    await deferredEvent.prompt();
-    const { outcome } = await deferredEvent.userChoice;
+    const event = deferredEvent ?? window.__auroraInstallPrompt ?? null;
+    if (!event) return null;
+    await event.prompt();
+    const { outcome } = await event.userChoice;
     // A prompt event can only be used once — clear it either way.
     setDeferredEvent(null);
+    window.__auroraInstallPrompt = undefined;
     return outcome;
   }, [deferredEvent]);
 

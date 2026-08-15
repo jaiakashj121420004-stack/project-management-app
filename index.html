@@ -52,6 +52,9 @@
          External (not inline) so the CSP can keep a strict `script-src 'self'`.
          Render-blocking in <head>, so it still runs before first paint. -->
     <script src="/theme-init.js"></script>
+    <!-- Captures beforeinstallprompt before React ever mounts — see the file's
+         header comment for why this can't just live inside a React hook. -->
+    <script src="/pwa-install-capture.js"></script>
   </head>
   <body>
     <div id="root">
