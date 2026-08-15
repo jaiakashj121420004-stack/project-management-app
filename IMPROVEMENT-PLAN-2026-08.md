@@ -67,7 +67,7 @@ session.
 
 ---
 
-## Task 2 — Remove the leftover pre-rebrand font dependencies
+## Task 2 — Remove the leftover pre-rebrand font dependencies [DONE 2026-08-15, see memory.md]
 
 **Session effort: Sonnet Low thinking** (mechanical, low-risk)
 **Depends on:** nothing.
