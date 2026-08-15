@@ -4,14 +4,20 @@
  * Everything here writes plain CSS custom properties onto `<html>` as an
  * INLINE style, which cascades over (and can be reset back to) the theme's
  * own `:root`/`.dark`/`.light` values in styles/index.css — so personalizing
- * colors changes exactly `--bg`/`--fg` (+ muted/subtle derivatives) plus the
- * accent tokens `--accent-from`/`--accent-to`/`--accent-fg`/`--ox`/
- * `--accent-glow`, and nothing about the glassmorphism layers
- * (`--glass-fill`/`--glass-border`) or the `.aurora-grain` noise texture,
- * which stay theme-driven. That's deliberate: "just a change in color" — now
- * a *coordinated* change in color, so buttons/nav-highlights/links read as
- * intentional against whatever background the user picked, instead of
- * clashing against the leftover brand oxblood (see personalizationPresets.ts
+ * colors changes `--bg`/`--fg` (+ muted/subtle derivatives), the accent
+ * tokens `--accent-from`/`--accent-to`/`--accent-fg`/`--ox`/`--accent-glow`,
+ * AND (2026-08-15, bugfix) the glass surface tokens `--glass-fill`/
+ * `--glass-fill-strong`/`--glass-border` — those used to stay hard-locked to
+ * the active Day/Night theme regardless of any override, which looked fine
+ * for a preset roughly as light/dark as the current theme but composited a
+ * badly mismatched, low-contrast glass tint whenever they diverged (e.g. a
+ * dark preset picked while in Day mode). `.aurora-grain` (the noise texture)
+ * still stays theme-driven — it's a decorative overlay, not a color surface
+ * text sits on, so it has no contrast implications. That's deliberate: "just
+ * a change in color" — now a *coordinated* change in color, so buttons/
+ * nav-highlights/links/glass panels all read as intentional against whatever
+ * background the user picked, instead of clashing against the leftover brand
+ * oxblood or a stale theme-locked glass tint (see personalizationPresets.ts
  * and `deriveAccentFromColor` below).
  *
  * Persisted to localStorage as the instant-paint boot cache (read
@@ -173,6 +179,34 @@ function mixHex(a: string, b: string, t: number): string {
   return `${mix(ar, br)} ${mix(ag, bg)} ${mix(ab, bb)}`;
 }
 
+/** Mix ratios (toward bg) for the muted/subtle text tiers derived from a
+ *  personalization text color — see the AA-safety comment in
+ *  `applyCustomTheme` for how these were chosen. Exported so
+ *  `customTheme.test.ts` can assert every curated preset clears AA at BOTH
+ *  ratios, not just the primary bg/text pair (`personalizationPresets.test.ts`). */
+export const FG_MUTED_RATIO = 0.28;
+export const FG_SUBTLE_RATIO = 0.3;
+
+/** Hex-string version of the muted/subtle derivation (same ratios/formula
+ *  `applyCustomTheme` writes as CSS vars) — for tests, which compare hex
+ *  colors via `contrastRatio`, not the "r g b" channel-string CSS var format. */
+export function deriveFgTiers(text: string, bg: string): { muted: string; subtle: string } {
+  return {
+    muted: mixHexToHex(text, bg, FG_MUTED_RATIO),
+    subtle: mixHexToHex(text, bg, FG_SUBTLE_RATIO),
+  };
+}
+
+/** Like `mixHex`, but returns a `#rrggbb` string instead of an "r g b"
+ *  channel triplet — used by `deriveFgTiers` (tests) and internally. */
+function mixHexToHex(a: string, b: string, t: number): string {
+  const [ar, ag, ab] = hexToRgb(a);
+  const [br, bg, bb] = hexToRgb(b);
+  const mix = (x: number, y: number) => Math.round(x + (y - x) * t);
+  const toHex2 = (v: number) => Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0');
+  return `#${toHex2(mix(ar, br))}${toHex2(mix(ag, bg))}${toHex2(mix(ab, bb))}`;
+}
+
 function hexToChannels(hex: string): string {
   const [r, g, b] = hexToRgb(hex);
   return `${r} ${g} ${b}`;
@@ -196,6 +230,9 @@ const VARS = [
   '--accent-fg',
   '--accent-glow',
   '--ox',
+  '--glass-fill',
+  '--glass-fill-strong',
+  '--glass-border',
 ] as const;
 
 interface ResolvedPersonalization {
@@ -272,9 +309,20 @@ export function applyCustomTheme(settings: CustomThemeSettings): void {
     root.setProperty('--fg', hexToChannels(resolved.text));
     // Derive muted/subtle by mixing toward the resolved bg (or a neutral grey
     // if no bg override is active) so text hierarchy still reads correctly.
+    // Ratios (2026-08-15, tightened from 0.28/0.46): 0.46 for subtle let a
+    // couple of the 8 curated presets (sage-parchment, terracotta-sun, …) dip
+    // to ~3.0:1 against their own flat bg — below the 4.5:1 AA that
+    // personalizationPresets.test.ts only ever checked for the primary
+    // bg/text pair, never these derived tiers. Verified via a standalone
+    // script sweeping every preset: 0.28 already clears AA for muted (worst
+    // case ~4.88:1); 0.30 is the first ratio that clears AA for subtle too
+    // (worst case ~4.61:1) — kept as close to the original 0.46 as AA allows,
+    // rather than over-correcting. Not a hard guarantee for the Advanced
+    // (arbitrary hex) path — that already has its own contrast-warning safety
+    // net on SettingsPage for the primary pair, same as before.
     const bg = resolved.bg ?? '#808080';
-    root.setProperty('--fg-muted', mixHex(resolved.text, bg, 0.28));
-    root.setProperty('--fg-subtle', mixHex(resolved.text, bg, 0.46));
+    root.setProperty('--fg-muted', mixHex(resolved.text, bg, FG_MUTED_RATIO));
+    root.setProperty('--fg-subtle', mixHex(resolved.text, bg, FG_SUBTLE_RATIO));
   } else {
     root.removeProperty('--fg');
     root.removeProperty('--fg-muted');
@@ -283,9 +331,7 @@ export function applyCustomTheme(settings: CustomThemeSettings): void {
 
   // Coordinated accent — buttons, nav active states, links, the Aurora mark
   // (--ox) and the button glow all move together with the chosen colors
-  // instead of staying pinned to the brand oxblood. Untouched:
-  // --glass-fill/--glass-border/.aurora-grain (glass + grain stay exactly the
-  // same — only the color underneath changes).
+  // instead of staying pinned to the brand oxblood.
   if (resolved) {
     root.setProperty('--accent-from', resolved.accentFrom);
     root.setProperty('--accent-to', resolved.accentTo);
@@ -298,6 +344,34 @@ export function applyCustomTheme(settings: CustomThemeSettings): void {
     root.removeProperty('--accent-fg');
     root.removeProperty('--accent-glow');
     root.removeProperty('--ox');
+  }
+
+  // Glass surfaces (2026-08-15 fix): --glass-fill/-strong were previously
+  // ALWAYS theme-driven (Night's warm dark brown or Day's cream), regardless
+  // of any personalization override. That's fine when the picked bg happens
+  // to be roughly the same lightness as the active Day/Night theme, but picks
+  // a dark preset (Deep Forest, Plum Study) while in Day mode — or a light
+  // preset (Amber Study, Terracotta Sun, …) while in Night mode — composites
+  // a wildly mismatched glass tint over the new bg (verified: a light-cream
+  // 62%-opacity fill over Deep Forest's near-black bg composites to a muddy
+  // mid-gray that --fg-muted/--fg-subtle, AA-verified only against the FLAT
+  // bg, fail against by a wide margin — this was the "words not visible" bug).
+  // Fix: derive the fill from the resolved bg ITSELF (translucent-over-itself
+  // composites back to the same bg color, so the muted/subtle AA verification
+  // against the flat bg holds for the actual rendered glass surface too), and
+  // the border from the coordinated accent (keeps the existing "tinted edge"
+  // character instead of a random leftover oxblood/bone hairline).
+  if (resolved?.bg) {
+    root.setProperty('--glass-fill', hexToRgba(resolved.bg, 0.55));
+    root.setProperty('--glass-fill-strong', hexToRgba(resolved.bg, 0.74));
+  } else {
+    root.removeProperty('--glass-fill');
+    root.removeProperty('--glass-fill-strong');
+  }
+  if (resolved) {
+    root.setProperty('--glass-border', hexToRgba(resolved.accentFrom, 0.32));
+  } else {
+    root.removeProperty('--glass-border');
   }
 }
 
