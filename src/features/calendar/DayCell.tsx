@@ -58,9 +58,10 @@ function DayCellComponent({
     <div
       ref={setNodeRef}
       className={cn(
-        'flex flex-col gap-1 rounded-xl border border-transparent p-1 transition-colors',
+        'flex flex-col gap-1 rounded-xl border border-[var(--glass-border)] p-1 transition-colors',
         variant === 'month' ? 'min-h-[6.5rem] sm:min-h-[7.5rem]' : 'min-h-[15rem]',
         outside && 'opacity-40',
+        today && 'border-[var(--accent-from)]/35 bg-[var(--accent-from)]/[0.06]',
         isOver && 'border-[var(--accent-from)]/60 bg-[var(--accent-from)]/10',
       )}
     >

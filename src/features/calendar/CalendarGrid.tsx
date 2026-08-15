@@ -41,7 +41,7 @@ export function CalendarGrid({
 
   return (
     <GlassPanel className="p-2 sm:p-3">
-      <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
+      <div className="grid grid-cols-7 gap-1 border-b border-[var(--glass-border)] pb-2 sm:gap-1.5">
         {WEEKDAYS.map((label) => (
           <div
             key={label}
@@ -50,6 +50,8 @@ export function CalendarGrid({
             {label}
           </div>
         ))}
+      </div>
+      <div className="grid grid-cols-7 gap-1 pt-2 sm:gap-1.5">
         {days.map((date) => {
           const key = toDateKey(date);
           return (
