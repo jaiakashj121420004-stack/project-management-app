@@ -109,7 +109,7 @@ export function SettingsPage() {
         <p className="mb-4 text-sm text-fg-muted">
           A curated set — every pairing keeps Aurora's editorial serif identity.
         </p>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {(Object.entries(FONT_PAIRINGS) as [FontPairingId, (typeof FONT_PAIRINGS)[FontPairingId]][]).map(
             ([id, pairing]) => (
               <button
@@ -127,11 +127,14 @@ export function SettingsPage() {
                 <span className="flex w-full items-center justify-between">
                   <span
                     style={{ fontFamily: `${pairing.display}, Georgia, serif` }}
-                    className="text-xl font-semibold text-fg"
+                    className="text-2xl font-semibold text-fg"
                   >
                     Aa
                   </span>
                   {settings.fontPairing === id && <Check size={16} className="text-[var(--accent-from)]" />}
+                </span>
+                <span className="font-mono text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-from)]">
+                  {pairing.category}
                 </span>
                 <span className="text-sm font-semibold text-fg">{pairing.label}</span>
                 <span style={{ fontFamily: `${pairing.body}, Georgia, serif` }} className="text-xs text-fg-muted">

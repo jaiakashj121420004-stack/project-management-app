@@ -25,7 +25,7 @@ function Inner({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () 
   }
 
   return (
-    <div className="flex h-full flex-col gap-6 p-3">
+    <div className="flex h-full flex-col gap-6 overflow-y-auto p-3">
       <div className={cn('px-1.5 pt-2', collapsed && 'flex justify-center px-0')}>
         <Brand collapsed={collapsed} />
       </div>

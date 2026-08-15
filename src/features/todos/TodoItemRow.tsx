@@ -85,7 +85,7 @@ export function TodoItemRow({
         animate={controls}
         onDrag={(_e, info) => setDragX(info.offset.x)}
         onDragEnd={handleDragEnd}
-        className="relative flex items-center gap-2.5 bg-base py-0.5"
+        className="relative flex items-center gap-2.5 rounded-xl bg-base px-3 py-2"
       >
         {selectMode ? (
           <button
@@ -95,10 +95,10 @@ export function TodoItemRow({
             aria-label={selected ? 'Deselect item' : 'Select item'}
             onClick={onToggleSelect}
             className={cn(
-              'grid h-5 w-5 shrink-0 place-items-center rounded-md border transition-colors',
+              'grid h-5 w-5 shrink-0 place-items-center rounded-md border-2 transition-colors',
               selected
                 ? 'border-transparent bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)]'
-                : 'border-[var(--glass-border)] text-transparent hover:border-[var(--accent-from)]',
+                : 'border-fg-subtle/55 bg-[var(--glass-fill)] text-transparent hover:border-[var(--accent-from)] hover:bg-[var(--glass-fill-strong)]',
             )}
           >
             <Check size={13} strokeWidth={3} aria-hidden />
@@ -111,10 +111,10 @@ export function TodoItemRow({
             aria-label={item.is_done ? 'Mark not done' : 'Mark done'}
             onClick={() => onToggle(!item.is_done)}
             className={cn(
-              'grid h-5 w-5 shrink-0 place-items-center rounded-md border transition-colors',
+              'grid h-5 w-5 shrink-0 place-items-center rounded-md border-2 transition-colors',
               item.is_done
                 ? 'border-transparent bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)]'
-                : 'border-[var(--glass-border)] text-transparent hover:border-[var(--accent-from)]',
+                : 'border-fg-subtle/55 bg-[var(--glass-fill)] text-transparent hover:border-[var(--accent-from)] hover:bg-[var(--glass-fill-strong)]',
             )}
           >
             <Check size={13} strokeWidth={3} aria-hidden />

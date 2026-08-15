@@ -26,7 +26,7 @@ export function AppShell() {
   useDueReminders();
 
   return (
-    <div className="relative min-h-dvh">
+    <div className="relative h-dvh overflow-hidden">
       {/* Keyboard/AT users can jump straight past the sidebar + top bar to the
           main content. Visually hidden until focused. */}
       <a
@@ -38,7 +38,12 @@ export function AppShell() {
 
       <AuroraBackground />
 
-      <div className="mx-auto flex min-h-dvh w-full max-w-[1500px] gap-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:pb-4 sm:pt-[max(1rem,env(safe-area-inset-top))] sm:pl-[max(1rem,env(safe-area-inset-left))] sm:pr-[max(1rem,env(safe-area-inset-right))]">
+      {/* The shell itself is pinned to the viewport height (h-dvh + overflow-
+          hidden) so the sidebar and top bar never scroll away — only <main>
+          below scrolls internally. Previously this row had no height cap, so
+          the whole page (sidebar + top bar + content) scrolled together and
+          the top bar slid out of view on any page taller than the viewport. */}
+      <div className="mx-auto flex h-dvh w-full max-w-[1500px] gap-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:pb-4 sm:pt-[max(1rem,env(safe-area-inset-top))] sm:pl-[max(1rem,env(safe-area-inset-left))] sm:pr-[max(1rem,env(safe-area-inset-right))]">
         <Sidebar
           collapsed={collapsed}
           onToggleCollapsed={() => setCollapsed((value) => !value)}
@@ -46,12 +51,12 @@ export function AppShell() {
           onCloseDrawer={() => setDrawerOpen(false)}
         />
 
-        <div className="flex min-w-0 flex-1 flex-col gap-4">
+        <div className="flex min-w-0 flex-1 flex-col gap-4 overflow-hidden">
           <Topbar onOpenMenu={() => setDrawerOpen(true)} />
           <main
             id="main-content"
             tabIndex={-1}
-            className="min-w-0 flex-1 scroll-mt-4 pb-[calc(7rem+env(safe-area-inset-bottom))] outline-none md:pb-2"
+            className="min-w-0 flex-1 scroll-mt-4 overflow-y-auto pb-[calc(7rem+env(safe-area-inset-bottom))] outline-none md:pb-2"
           >
             {/* Root crash boundary: a render error or failed lazy-chunk load in
                 any page shows the inline fallback instead of white-screening the

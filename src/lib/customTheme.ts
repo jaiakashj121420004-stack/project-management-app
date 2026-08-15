@@ -14,38 +14,63 @@
 
 const STORAGE_KEY = 'aurora-custom-theme';
 
-export type FontPairingId = 'almanac' | 'editorial' | 'modern-serif';
+export type FontPairingId = 'almanac' | 'modern-sans' | 'mono' | 'bold-editorial' | 'rounded';
 
 export interface FontPairing {
   label: string;
   description: string;
+  /** Short eyebrow shown on the picker card, e.g. "Serif" — makes the five
+   *  options easy to tell apart at a glance, not just by their sample text. */
+  category: string;
   display: string;
   body: string;
 }
 
-/** Curated, on-brand pairings only — never a free-text font field. The Aurora
- *  "Almanac" identity is a deliberately narrow serif-editorial palette (see
- *  CLAUDE.md design rules: "Never Inter"), so personalization stays inside
- *  that language instead of breaking it. Mono (IBM Plex Mono, figures/eyebrows)
- *  never changes — it's a structural part of the system, not a style choice. */
+/** Five deliberately distinct personalization choices — one from each of the
+ *  major type families (serif, sans-serif, monospace) plus two further-apart
+ *  alternatives, so picking one is an obviously different app, not a subtly
+ *  different shade of the same serif. "Almanac" stays the on-brand default;
+ *  the rest are free-tier personalization (see SettingsPage), same category
+ *  as the custom background/text colors below. Never Inter or Space Grotesk
+ *  here — those are the app's own retired identity per CLAUDE.md, not
+ *  available as a personalization choice. Mono (IBM Plex Mono used for
+ *  figures/eyebrows/kbd) is a separate, fixed structural token — untouched by
+ *  this picker even when "Mono" is selected as the display/body pairing. */
 export const FONT_PAIRINGS: Record<FontPairingId, FontPairing> = {
   almanac: {
     label: 'Almanac (default)',
-    description: 'Fraunces + Spectral — the classic Aurora look.',
+    description: 'Fraunces + Spectral — the classic Aurora serif look.',
+    category: 'Serif',
     display: 'Fraunces',
     body: 'Spectral',
   },
-  editorial: {
-    label: 'Editorial',
-    description: 'Fraunces + Newsreader — a little warmer and more literary.',
-    display: 'Fraunces',
-    body: 'Newsreader',
+  'modern-sans': {
+    label: 'Modern Sans',
+    description: 'Sora + Manrope — clean, geometric, contemporary.',
+    category: 'Sans-serif',
+    display: 'Sora',
+    body: 'Manrope',
   },
-  'modern-serif': {
-    label: 'Modern Serif',
-    description: 'Fraunces + Source Serif 4 — crisper and more contemporary.',
-    display: 'Fraunces',
-    body: '"Source Serif 4"',
+  mono: {
+    label: 'Mono',
+    description: 'IBM Plex Mono throughout — a code-inspired, technical look.',
+    category: 'Monospace',
+    display: '"IBM Plex Mono"',
+    body: '"IBM Plex Mono"',
+  },
+  'bold-editorial': {
+    label: 'Bold Editorial',
+    description: 'Playfair Display + Lora — dramatic, high-contrast serif.',
+    category: 'Serif',
+    display: '"Playfair Display"',
+    body: 'Lora',
+  },
+  rounded: {
+    label: 'Rounded',
+    description: 'Poppins + Nunito — soft, friendly, and approachable.',
+    category: 'Sans-serif',
+    display: 'Poppins',
+    body: 'Nunito',
   },
 };
 
