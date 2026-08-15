@@ -46,3 +46,18 @@ export function accentGradient(name: AccentName): string {
   const accent = ACCENTS[name];
   return `linear-gradient(110deg, ${accent.from}, ${accent.to})`;
 }
+
+/**
+ * `accentVars()` plus `--ox` — the token the Aurora mark/wordmark
+ * (`Brand.tsx`) and the global focus ring read. Scoped usages (a single
+ * `GradientButton`, a project panel) should keep using `accentVars()` so they
+ * don't also retint the brand mark; this is only for the AppShell wrapper that
+ * fully re-themes the shell to a project's accent while it's open (see
+ * `AppShell.tsx`).
+ */
+export function accentVarsWithBrand(name: AccentName): CSSProperties {
+  return {
+    ...accentVars(name),
+    '--ox': ACCENTS[name].from,
+  } as CSSProperties;
+}

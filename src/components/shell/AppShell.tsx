@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useMatch } from 'react-router-dom';
 import { AuroraBackground } from '@/components/AuroraBackground';
 import { RouteErrorBoundary } from '@/components/feedback/RouteErrorBoundary';
 import { OfflineBanner } from '@/components/pwa/OfflineBanner';
 import { PWAReloadPrompt } from '@/components/pwa/PWAReloadPrompt';
 import { useDueReminders } from '@/features/reminders';
 import { CommandPalette } from '@/features/command-palette/CommandPalette';
+import { useProject } from '@/features/projects/useProjects';
+import { accentVarsWithBrand } from '@/lib/accents';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { BottomNav } from './BottomNav';
@@ -25,8 +27,22 @@ export function AppShell() {
   // In-app due-date reminders (browser notifications) — opt-in, runs app-wide.
   useDueReminders();
 
+  // Full immersive per-project accent theming: while viewing a project, the
+  // whole shell (sidebar, top bar, brand mark/wordmark, nav active states,
+  // buttons) adopts that project's accent instead of just the project page's
+  // own content. `useProject` reads the same ['project', id] TanStack cache
+  // ProjectPage.tsx uses, so this costs no extra fetch and resolves in the
+  // same render pass — including on a hard refresh straight into a project
+  // URL, so it shows that project's color immediately rather than flashing
+  // oxblood first. Off a project route (or before it's loaded) `activeProject`
+  // is undefined, so no style is applied and the shell falls back to the
+  // theme root's default oxblood — the correct "reverted" state.
+  const projectMatch = useMatch('/projects/:projectId');
+  const { data: activeProject } = useProject(projectMatch?.params.projectId);
+  const accentStyle = activeProject ? accentVarsWithBrand(activeProject.accent) : undefined;
+
   return (
-    <div className="relative h-dvh overflow-hidden">
+    <div className="accent-scope relative h-dvh overflow-hidden" style={accentStyle}>
       {/* Keyboard/AT users can jump straight past the sidebar + top bar to the
           main content. Visually hidden until focused. */}
       <a

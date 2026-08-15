@@ -8,7 +8,6 @@ import { Spinner } from '@/components/feedback/Spinner';
 import { RouteErrorBoundary } from '@/components/feedback/RouteErrorBoundary';
 import { Reveal } from '@/components/motion/Reveal';
 import { useAuth } from '@/hooks/useAuth';
-import { accentVars } from '@/lib/accents';
 import { Board } from '@/features/board';
 import { NotesPanel } from '@/features/notes';
 import { MembersBar, useMyRole, useProjectRealtime } from '@/features/members';
@@ -26,6 +25,8 @@ const CanvasPanel = lazy(() =>
 type ProjectTab = 'board' | 'notes' | 'canvas' | 'activity';
 
 /** A single project: an accent-themed header above its Kanban board (Phase 4).
+ *  The accent itself comes from AppShell.tsx, which themes the whole shell
+ *  while this route is active — not just this page's own content.
  *  RLS guarantees that a project the user can't access simply isn't returned. */
 export function ProjectPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -92,7 +93,7 @@ export function ProjectPage() {
   const roleLabel = isOwner ? 'Owner' : role ? role[0]!.toUpperCase() + role.slice(1) : 'Shared';
 
   return (
-    <div className="flex flex-col gap-8" style={accentVars(project.accent)}>
+    <div className="flex flex-col gap-8">
       <Reveal>
         <header className="pt-2">
           <div className="flex flex-wrap items-start justify-between gap-4">

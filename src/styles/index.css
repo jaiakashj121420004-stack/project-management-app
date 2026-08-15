@@ -218,6 +218,22 @@
     box-shadow: var(--glass-shadow-lift);
   }
 
+  /* Full immersive per-project accent theming (AppShell.tsx). Cross-fades the
+     four accent tokens registered via @property below when they change on
+     this element (or an ancestor sets them inline) — e.g. opening a project,
+     switching between two differently-accented projects, or leaving a project
+     back to the default oxblood. Everything under this element that reads
+     var(--accent-from)/var(--accent-to)/var(--accent-glow)/var(--ox) — the
+     sidebar, top bar, brand mark/wordmark, nav active states, buttons —
+     re-renders each frame as these interpolate, no per-component transition
+     needed. prefers-reduced-motion is handled by the global transition-
+     duration override further down this file, same as the rest of the app. */
+  .accent-scope {
+    transition-property: --accent-from, --accent-to, --accent-glow, --ox;
+    transition-duration: 260ms;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
   /* Flowing accent gradient as text (plan.md §4.4). */
   .gradient-text {
     background-image: linear-gradient(
@@ -308,6 +324,34 @@
   syntax: '<angle>';
   initial-value: 0deg;
   inherits: false;
+}
+
+/* @property-registers the four accent tokens as animatable <color>s so
+   `.accent-scope` above can cross-fade them — including where they're used
+   inside a gradient/box-shadow/SVG fill, which a plain `transition:
+   background-color` can't reach. `inherits: true` matches how these already
+   behaved as plain custom properties (defined once on :root/.dark and .light,
+   read by everything underneath) — this only adds animatability, it doesn't
+   change the cascade. */
+@property --accent-from {
+  syntax: '<color>';
+  initial-value: #7a2a26;
+  inherits: true;
+}
+@property --accent-to {
+  syntax: '<color>';
+  initial-value: #9b3a33;
+  inherits: true;
+}
+@property --accent-glow {
+  syntax: '<color>';
+  initial-value: rgba(122, 42, 38, 0.22);
+  inherits: true;
+}
+@property --ox {
+  syntax: '<color>';
+  initial-value: #7a2a26;
+  inherits: true;
 }
 
 /* Aurora background blobs (plan.md §4.3) — drift continuously; JS adds pointer
