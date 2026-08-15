@@ -30,6 +30,22 @@ If these three are read, you have complete context. Do not duplicate their conte
    - It's fine (encouraged) to commit code **and** the `memory.md` update together.
 4. **Update `plan.md` only** when the architecture, scope, data model, security model, or design system actually changes — and say so in the commit + memory.md decision log.
 5. **Keep these docs lean.** `memory.md` is state, `plan.md` is spec, `CLAUDE.md` is rules. Put new info in exactly one place and link to it.
+6. **After every AI session that touches code or dependencies, run this on Windows (Command Prompt, in the project folder) before trusting the result:**
+   ```
+   npm install
+   npm run typecheck
+   npm run build
+   ```
+   Then, if all three succeed:
+   ```
+   git push
+   ```
+   This project's sandbox sessions cannot fully verify `npm run build` (a pre-existing `rolldown` native-binding
+   mismatch when `node_modules` is installed over the Windows-mounted folder bridge — see `memory.md` for the
+   original diagnosis). `npm run typecheck` runs clean in-sandbox and is checked every session, but `npm run build`
+   is the real gate before anything ships — always run it locally on Windows as the last step of every session,
+   even if the AI reports "typecheck clean." If `npm install` changed `package-lock.json` or any dependency,
+   run `npm install` first so `node_modules` matches before building.
 
 ## Coding standards (anti-slop)
 
