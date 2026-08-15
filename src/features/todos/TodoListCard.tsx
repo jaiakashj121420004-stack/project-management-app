@@ -314,6 +314,7 @@ export function TodoListCard({ dateKey, list, items }: TodoListCardProps) {
               item={item}
               onToggle={(isDone) => updateItem.mutate({ id: item.id, is_done: isDone })}
               onDelete={() => deleteItem.mutate({ id: item.id })}
+              onEditText={(text) => updateItem.mutate({ id: item.id, text })}
               onPriorityChange={(priority) => updateItem.mutate({ id: item.id, priority })}
               onMoveUp={() => move(index, -1)}
               onMoveDown={() => move(index, 1)}

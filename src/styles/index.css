@@ -31,7 +31,10 @@
   --glass-fill-strong: rgba(60, 46, 42, 0.72);
   /* Opaque surface for dropdown menus/popovers (no content bleed-through). */
   --menu-fill: linear-gradient(0deg, rgba(255, 246, 232, 0.06), rgba(255, 246, 232, 0.06)), rgb(var(--bg));
-  --glass-border: rgba(236, 226, 210, 0.14);
+  /* Both border tokens below carry a deliberate oxblood tint (not plain bone)
+     so every card edge and hairline in Night reads with a touch of the brand's
+     accent color, not just pure neutral — "add character", per design review. */
+  --glass-border: rgba(225, 180, 166, 0.2);
   --glass-highlight: rgba(236, 226, 210, 0.16);
   --glass-shadow:
     0 1px 0 0 var(--glass-highlight) inset, 0 18px 40px -16px rgba(0, 0, 0, 0.6),
@@ -39,7 +42,7 @@
   --glass-shadow-lift:
     0 1px 0 0 var(--glass-highlight) inset, 0 32px 60px -20px rgba(0, 0, 0, 0.66),
     0 12px 28px -10px rgba(0, 0, 0, 0.5);
-  --hairline: rgba(236, 226, 210, 0.12); /* ~ #352724 warm hairline */
+  --hairline: rgba(221, 174, 160, 0.16); /* oxblood-tinted hairline */
   --field-bg: rgba(236, 226, 210, 0.05);
 
   /* Background wash — warm oxblood/gilt only, low opacity. No rainbow. */
@@ -91,7 +94,10 @@
   --glass-fill: rgba(244, 238, 226, 0.62);
   --glass-fill-strong: rgba(244, 238, 226, 0.82);
   --menu-fill: linear-gradient(0deg, rgba(244, 238, 226, 0.85), rgba(244, 238, 226, 0.85)), rgb(var(--bg));
-  --glass-border: rgba(205, 191, 168, 0.75);
+  /* Both border tokens below lean warmer/redder than the plain parchment tan
+     they replaced, so Day's card edges and hairlines carry a bit more of the
+     brand's oxblood too — "add character", per design review. */
+  --glass-border: rgba(184, 154, 136, 0.75);
   --glass-highlight: rgba(255, 251, 243, 0.85);
   --glass-shadow:
     0 1px 0 0 var(--glass-highlight) inset, 0 20px 44px -20px rgba(74, 50, 30, 0.22),
@@ -99,7 +105,7 @@
   --glass-shadow-lift:
     0 1px 0 0 var(--glass-highlight) inset, 0 34px 64px -24px rgba(74, 50, 30, 0.28),
     0 12px 28px -12px rgba(74, 50, 30, 0.18);
-  --hairline: rgba(126, 42, 38, 0.14); /* #CDBFA8-ish, faint oxblood-warm */
+  --hairline: rgba(126, 42, 38, 0.2); /* faint oxblood-warm, a touch stronger */
   --field-bg: rgba(255, 251, 243, 0.6);
 
   --blob-1: rgba(122, 42, 38, 0.06);

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CreditCard, LogOut, MessageSquarePlus, User, type LucideIcon } from 'lucide-react';
+import { CreditCard, LogOut, MessageSquarePlus, Sparkles, User, type LucideIcon } from 'lucide-react';
 import { Avatar } from '@/components/Avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { springs } from '@/lib/motion';
@@ -125,6 +125,15 @@ export function UserMenu() {
               }}
             >
               Billing
+            </MenuItem>
+            <MenuItem
+              icon={Sparkles}
+              onClick={() => {
+                setOpen(false);
+                void navigate('/pro-vs-free');
+              }}
+            >
+              Pro vs Free
             </MenuItem>
             <MenuItem
               icon={MessageSquarePlus}

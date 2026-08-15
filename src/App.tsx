@@ -9,7 +9,7 @@ import { CalendarPage } from '@/features/calendar';
 import { TodosPage } from '@/features/todos';
 import { TodayPage } from '@/features/today/TodayPage';
 import { LibraryPage } from '@/features/library';
-import { BillingPage } from '@/features/billing';
+import { BillingPage, ProVsFreePage } from '@/features/billing';
 import { CeoMessagePage } from '@/features/announcements';
 import { FeedbackPage } from '@/features/feedback';
 import { LandingPage, PricingPage, TermsPage, PrivacyPage } from '@/features/marketing';
@@ -70,6 +70,7 @@ export default function App() {
           <Route path="from-the-founder" element={<CeoMessagePage />} />
           <Route path="feedback" element={<FeedbackPage />} />
           <Route path="billing" element={<BillingPage />} />
+          <Route path="pro-vs-free" element={<ProVsFreePage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="settings" element={<SettingsPage />} />
           {/* Dev-only component showcase — intentionally not in the nav; kept
