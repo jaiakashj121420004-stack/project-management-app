@@ -1320,6 +1320,27 @@ export interface Database {
         Args: Record<string, never>;
         Returns: Database['public']['Tables']['feedback']['Row'][];
       };
+      // Command palette full-text search (Improvement Plan Task 20). SECURITY
+      // INVOKER — relies entirely on cards/notes/projects' own RLS, never a
+      // hand-rolled membership check (20260817120000_content_search.sql).
+      search_workspace: {
+        Args: { p_query: string; p_limit?: number };
+        Returns: {
+          kind: 'card' | 'note';
+          id: string;
+          project_id: string | null;
+          project_name: string | null;
+          title: string;
+          snippet: string;
+          rank: number;
+        }[];
+      };
+      // Prefix-tsquery builder backing search_workspace; not called directly by
+      // the client, but callable (authenticated-only) like the rest of the RPCs.
+      ts_prefix_query: {
+        Args: { p_query: string };
+        Returns: unknown;
+      };
     };
     Enums: Record<string, never>;
   };

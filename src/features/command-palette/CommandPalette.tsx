@@ -1,9 +1,18 @@
 import { useEffect, useId, useMemo, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, type NavigateFunction } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Folder, Layers, PenLine, Search, StickyNote, type LucideIcon } from 'lucide-react';
+import {
+  Folder,
+  Layers,
+  LayoutGrid,
+  PenLine,
+  Search,
+  StickyNote,
+  type LucideIcon,
+} from 'lucide-react';
 import { NAV_ITEMS } from '@/components/shell/navItems';
+import { Spinner } from '@/components/feedback/Spinner';
 import { useProjects } from '@/features/projects/useProjects';
 import { useFolders, useLibraryNotes } from '@/features/library/useLibrary';
 import { useAllCanvases } from '@/features/canvas/useCanvas';
@@ -15,6 +24,8 @@ import {
   subscribeToPalette,
   toggleCommandPalette,
 } from './paletteStore';
+import { useContentSearch } from './useContentSearch';
+import type { ContentSearchResult } from './searchApi';
 
 interface Command {
   id: string;
@@ -22,10 +33,41 @@ interface Command {
   hint: string;
   icon: LucideIcon;
   run: () => void;
+  /** A ts_headline excerpt, shown as a second line — content-search matches only. */
+  snippet?: string;
 }
 
 /** Cap the typed-search result list so a large workspace can't flood the panel. */
 const MAX_RESULTS = 40;
+
+/** Turn one server-side search_workspace row into a palette Command that
+ *  deep-links straight to the card or note (not just its project). */
+function contentSearchCommand(result: ContentSearchResult, navigate: NavigateFunction): Command {
+  const isCard = result.kind === 'card';
+  const label = result.title || (isCard ? 'Untitled card' : 'Untitled note');
+  const hint = result.projectName
+    ? `${isCard ? 'Card' : 'Note'} · ${result.projectName}`
+    : isCard
+      ? 'Card'
+      : 'Note';
+  return {
+    id: `search:${result.kind}:${result.id}`,
+    label,
+    hint,
+    icon: isCard ? LayoutGrid : StickyNote,
+    snippet: result.snippet || undefined,
+    run: () => {
+      if (isCard) {
+        // Every card belongs to a project; project_id is non-null in practice.
+        if (result.projectId) navigate(`/projects/${result.projectId}?card=${result.id}`);
+      } else if (result.projectId) {
+        navigate(`/projects/${result.projectId}?tab=notes&note=${result.id}`);
+      } else {
+        navigate(`/library?note=${result.id}`);
+      }
+    },
+  };
+}
 
 /**
  * A ⌘K / Ctrl-K command palette. Opens over the app, filters the app's
@@ -73,6 +115,11 @@ export function CommandPalette() {
   const folders = useFolders();
   const libraryNotes = useLibraryNotes();
   const canvases = useAllCanvases();
+
+  // Server-side content search (Improvement Plan Task 20) — debounced
+  // query-as-you-type over cards.title/description + notes.content, shown as
+  // its own "Content matches" section below the instant results.
+  const contentSearch = useContentSearch(query);
 
   // Global open/toggle shortcut.
   useEffect(() => {
@@ -133,7 +180,7 @@ export function CommandPalette() {
     return [...projectCmds, ...noteCmds, ...canvasCmds, ...folderCmds];
   }, [navigate, projects.data, libraryNotes.data, canvases.data, folders.data]);
 
-  const results = useMemo(() => {
+  const localMatches = useMemo(() => {
     const q = query.trim().toLowerCase();
     // Empty query: keep it calm — just the app destinations. The full workspace
     // index (notes/canvases/folders) surfaces the moment the user types.
@@ -142,6 +189,17 @@ export function CommandPalette() {
       .filter((command) => command.label.toLowerCase().includes(q))
       .slice(0, MAX_RESULTS);
   }, [navCommands, contentCommands, query]);
+
+  // Content matches ride below the instant results, in their own capped
+  // section (useContentSearch already applies CONTENT_SEARCH_MAX_RESULTS and
+  // its own debounce — nothing left to cap here).
+  const serverMatches = useMemo(
+    () => contentSearch.results.map((result) => contentSearchCommand(result, navigate)),
+    [contentSearch.results, navigate],
+  );
+
+  // The full keyboard-navigable list — ↑/↓/Enter walk across both sections.
+  const results = useMemo(() => [...localMatches, ...serverMatches], [localMatches, serverMatches]);
 
   function choose(i: number) {
     const command = results[i];
@@ -162,6 +220,37 @@ export function CommandPalette() {
       choose(index);
     }
     // Escape is handled by the focus trap (which also restores focus).
+  }
+
+  function renderCommand(command: Command, i: number) {
+    const Icon = command.icon;
+    return (
+      <button
+        key={command.id}
+        id={optionId(i)}
+        type="button"
+        role="option"
+        aria-selected={i === index}
+        tabIndex={-1}
+        onMouseEnter={() => setIndex(i)}
+        onClick={() => choose(i)}
+        className={cn(
+          'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors',
+          i === index ? 'bg-[var(--glass-fill)] text-fg' : 'text-fg-muted',
+        )}
+      >
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[var(--accent-from)]/10 text-[var(--accent-from)]">
+          <Icon size={16} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-medium text-fg">{command.label}</span>
+          {command.snippet && (
+            <span className="block truncate text-xs text-fg-subtle">{command.snippet}</span>
+          )}
+        </span>
+        <span className="shrink-0 text-xs text-fg-subtle">{command.hint}</span>
+      </button>
+    );
   }
 
   return createPortal(
@@ -212,36 +301,28 @@ export function CommandPalette() {
               aria-label="Results"
               className="max-h-80 overflow-y-auto p-1.5"
             >
-              {results.length === 0 ? (
+              {results.length === 0 && !contentSearch.enabled ? (
                 <p className="px-3 py-6 text-center text-sm text-fg-subtle">No matches</p>
               ) : (
-                results.map((command, i) => {
-                  const Icon = command.icon;
-                  return (
-                    <button
-                      key={command.id}
-                      id={optionId(i)}
-                      type="button"
-                      role="option"
-                      aria-selected={i === index}
-                      tabIndex={-1}
-                      onMouseEnter={() => setIndex(i)}
-                      onClick={() => choose(i)}
-                      className={cn(
-                        'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors',
-                        i === index ? 'bg-[var(--glass-fill)] text-fg' : 'text-fg-muted',
+                <>
+                  {localMatches.map((command, i) => renderCommand(command, i))}
+
+                  {contentSearch.enabled && (
+                    <div>
+                      <div className="flex items-center gap-1.5 px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wide text-fg-subtle">
+                        Content matches
+                        {contentSearch.isLoading && <Spinner size={10} />}
+                      </div>
+                      {serverMatches.length === 0 && !contentSearch.isLoading ? (
+                        <p className="px-3 pb-2 text-xs text-fg-subtle">No content matches</p>
+                      ) : (
+                        serverMatches.map((command, i) =>
+                          renderCommand(command, localMatches.length + i),
+                        )
                       )}
-                    >
-                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[var(--accent-from)]/10 text-[var(--accent-from)]">
-                        <Icon size={16} />
-                      </span>
-                      <span className="flex-1 truncate text-sm font-medium text-fg">
-                        {command.label}
-                      </span>
-                      <span className="text-xs text-fg-subtle">{command.hint}</span>
-                    </button>
-                  );
-                })
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </motion.div>

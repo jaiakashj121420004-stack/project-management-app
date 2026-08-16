@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { NotebookPen, Plus } from 'lucide-react';
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import { GradientButton } from '@/components/buttons/GradientButton';
@@ -38,6 +39,22 @@ export function NotesPanel({ projectId, canEdit }: { projectId: string; canEdit:
   const deleteNote = useDeleteNote(projectId);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // Deep-link: `/projects/:id?tab=notes&note=<id>` (e.g. from the command
+  // palette's content-search results) selects that note directly. Only `note`
+  // is consumed/stripped here — `tab` stays, ProjectPage owns it. Same
+  // one-shot pattern as LibraryPage's `?note=`.
+  const [searchParams, setSearchParams] = useSearchParams();
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    const noteId = searchParams.get('note');
+    if (!noteId) return;
+    setSelectedId(noteId);
+    const next = new URLSearchParams(searchParams);
+    next.delete('note');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const notes = useMemo(
     () =>

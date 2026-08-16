@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   DndContext,
   DragOverlay,
@@ -224,6 +225,22 @@ export function Board({ projectId, accent, canEdit }: BoardProps) {
   const [openCardId, setOpenCardId] = useState<string | null>(null);
   // Stable so the memoised BoardCard leaves don't re-render on every board render.
   const handleOpenCard = useCallback((card: Card) => setOpenCardId(card.id), []);
+
+  // Deep-link: `/projects/:id?card=<id>` (e.g. from the command palette's
+  // content-search results) opens that card directly. Consumed once then
+  // stripped from the URL so refresh/back doesn't re-trigger it — same
+  // one-shot pattern as LibraryPage's `?note=`/`?canvas=`/`?folder=`.
+  const [searchParams, setSearchParams] = useSearchParams();
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    const cardId = searchParams.get('card');
+    if (!cardId) return;
+    setOpenCardId(cardId);
+    const next = new URLSearchParams(searchParams);
+    next.delete('card');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+  /* eslint-enable react-hooks/set-state-in-effect */
   const [deletingColumn, setDeletingColumn] = useState<Column | null>(null);
   const [deletingCard, setDeletingCard] = useState<Card | null>(null);
   // Stable so the memoised BoardCard leaves don't re-render on every board render.
