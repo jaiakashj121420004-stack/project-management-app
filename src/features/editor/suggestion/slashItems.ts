@@ -11,9 +11,11 @@ import {
   Code2,
   ChevronRight,
   Minus,
+  Table2,
   Type,
   type LucideIcon,
 } from 'lucide-react';
+import { DEFAULT_TABLE_ROWS, DEFAULT_TABLE_COLS } from '@/lib/table';
 import { NOTE_TEMPLATES } from '../noteTemplates';
 import { getCustomTemplates } from '../customTemplateStore';
 
@@ -108,6 +110,25 @@ const BLOCK_ITEMS: readonly Omit<SlashItem, 'key'>[] = [
     icon: Minus,
     keywords: ['divider', 'hr', 'rule', 'separator', 'line'],
     command: (e) => e.chain().focus().setHorizontalRule().run(),
+  },
+  {
+    title: 'Table',
+    subtitle: 'Rows and columns',
+    icon: Table2,
+    keywords: ['table', 'grid', 'rows', 'columns', 'spreadsheet'],
+    command: (e) => {
+      e.chain()
+        .focus()
+        .insertTable({ rows: DEFAULT_TABLE_ROWS, cols: DEFAULT_TABLE_COLS, withHeaderRow: true })
+        .run();
+      // Dynamic import (not a top-level `track` import): analytics.ts pulls in
+      // the Supabase client, which throws at module load if env vars aren't
+      // configured — a static import here would make importing this otherwise
+      // pure, unit-tested module (slashItems.test.ts) depend on Supabase being
+      // configured. Deferring to the click itself keeps the module import
+      // side-effect-free; `track()` is fire-and-forget by design either way.
+      void import('@/lib/analytics').then(({ track }) => track('table_inserted', { surface: 'notes' }));
+    },
   },
   // Ready-made note structures (meeting notes, journal, brief, weekly plan).
   ...NOTE_TEMPLATES.map((template) => ({

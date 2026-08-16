@@ -58,7 +58,10 @@ export function docToPlainText(body: Record<string, unknown> | null): string {
   if (!body) return '';
   const walk = (node: JSONContent): string => {
     if (node.type === 'text') return node.text ?? '';
-    return (node.content ?? []).map(walk).join('');
+    // Table cells are their own mini-documents — join their content with a
+    // space so adjacent cells don't smash together (e.g. "Cell1Cell2").
+    const sep = node.type === 'tableCell' || node.type === 'tableHeader' ? ' ' : '';
+    return (node.content ?? []).map(walk).join(sep);
   };
   const doc = body as JSONContent;
   return (doc.content ?? [])
@@ -177,9 +180,44 @@ function blockToMd(node: JSONContent): string | null {
     }
     case 'canvasLink':
       return `_[canvas: ${String(node.attrs?.title ?? 'Canvas')}]_`;
+    case 'table':
+      return tableToMd(node);
     default:
       return node.content ? inlineToMd(node.content) : null;
   }
+}
+
+/** A table cell's content flattened to one line of markdown (a cell is its own
+ *  mini-document, usually a single paragraph). Pipes/newlines are escaped so
+ *  the row stays a valid single markdown-table line. */
+function tableCellToMd(cell: JSONContent): string {
+  const text = (cell.content ?? [])
+    .map((child) => (child.type === 'paragraph' ? inlineToMd(child.content) : (blockToMd(child) ?? '')))
+    .join(' ');
+  return text.trim().replace(/\|/g, '\\|').replace(/\n+/g, ' ');
+}
+
+/** A `table` node → a GFM-style markdown table. The first row becomes the
+ *  header line (matching the editor's default "insert with header row"); a
+ *  dash separator is always emitted since GFM requires one for any table row
+ *  to render as a table. */
+function tableToMd(table: JSONContent): string | null {
+  const rows = (table.content ?? []).filter((r) => r.type === 'tableRow');
+  if (rows.length === 0) return null;
+  const rowCells = (row: JSONContent): string[] => (row.content ?? []).map(tableCellToMd);
+  const [headerRow, ...bodyRows] = rows;
+  const headerCells = headerRow ? rowCells(headerRow) : [];
+  const bodyCellRows = bodyRows.map(rowCells);
+  const colCount = Math.max(1, headerCells.length, ...bodyCellRows.map((r) => r.length));
+  const pad = (cells: string[]): string[] => {
+    const padded = [...cells];
+    while (padded.length < colCount) padded.push('');
+    return padded;
+  };
+  const toLine = (cells: string[]): string => '| ' + pad(cells).join(' | ') + ' |';
+  const separatorRow: string[] = Array.from({ length: colCount }, () => '---');
+  const lines = [toLine(headerCells), toLine(separatorRow), ...bodyCellRows.map(toLine)];
+  return lines.join('\n');
 }
 
 /** doc JSON → a Markdown string (note export). Private images and canvas links

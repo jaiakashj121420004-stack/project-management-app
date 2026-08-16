@@ -7,6 +7,7 @@ import { ElementNode } from './elementRenderers';
 import { PageBackground } from './PageBackground';
 import { TextLayer } from './TextLayer';
 import { MediaLayer } from './MediaLayer';
+import { TableLayer } from './TableLayer';
 import { RemotePresenceLayer } from './RemotePresenceLayer';
 import type { CaretUser } from './richText';
 import type { RemotePeer } from './collab/awareness';
@@ -704,6 +705,15 @@ export function CanvasStage({
     primaryElement?.type === 'image' ||
     (primaryElement?.type === 'media' && primaryElement.kind === 'video');
 
+  // A table's box is DERIVED (colWidths sum / rows * row height — see
+  // elements.ts's table* helpers), not free-form, so a corner-drag resize
+  // would desync the Konva hit-rect from the HTML grid it's supposed to
+  // track. Resizing a table only ever happens by dragging a column border
+  // (TableGrid's own resize handles) or adding/removing rows/columns — so the
+  // Transformer keeps rotate (still useful) but loses its resize handles
+  // whenever the sole selection is a table.
+  const resizeEnabled = !(selectedIds.length === 1 && primaryElement?.type === 'table');
+
   const transformerPadding = selectedIds.some(
     (id) => elements.find((el) => el.id === id)?.type === 'media',
   ) ? 6 : 0;
@@ -817,7 +827,9 @@ export function CanvasStage({
                     : undefined
                 }
                 onLiveChange={
-                  element.type === 'text' || element.type === 'media' ? setLiveBox : undefined
+                  element.type === 'text' || element.type === 'media' || element.type === 'table'
+                    ? setLiveBox
+                    : undefined
                 }
                 onGroupDragEnd={
                   isGroupDrag && selectedIds.includes(element.id) ? handleGroupDragEnd : undefined
@@ -828,6 +840,7 @@ export function CanvasStage({
               <Transformer
                 ref={transformerRef}
                 rotateEnabled
+                resizeEnabled={resizeEnabled}
                 keepRatio={keepRatio}
                 padding={transformerPadding}
                 ignoreStroke
@@ -882,6 +895,28 @@ export function CanvasStage({
           selectedId={primaryId}
           editing={canEdit}
           liveBox={liveBox}
+        />
+      )}
+
+      {size.width > 0 && size.height > 0 && (
+        <TableLayer
+          elements={elements}
+          camera={camera}
+          palette={palette}
+          selectedId={primaryId}
+          editing={canEdit}
+          liveBox={liveBox}
+          onCommit={(id, next) =>
+            onChangeElement(id, {
+              rows: next.rows,
+              cols: next.cols,
+              cells: next.cells,
+              colWidths: next.colWidths,
+              hasHeaderRow: next.hasHeaderRow,
+              width: next.width,
+              height: next.height,
+            })
+          }
         />
       )}
 

@@ -7,7 +7,7 @@
 
 ## What this is (and isn't)
 
-A thin, privacy-respecting funnel-tracking layer — eleven allow-listed events,
+A thin, privacy-respecting funnel-tracking layer — twelve allow-listed events,
 one Postgres table, no dashboard. It exists to answer "where do people drop off
 between landing on the site and paying," not to be a general analytics
 platform. No page-view auto-tracking, no session replay, no click-heatmaps, no
@@ -49,6 +49,7 @@ can write it, and only a Studio SQL query (service/postgres role) can read it.
 | `install_prompt_shown` | `components/pwa/InstallPrompt.tsx` (mount) | Whenever the "Install Aurora" affordance becomes visible — the browser has offered `beforeinstallprompt`, or it's iOS Safari | `platform: 'chromium' \| 'ios_safari'` |
 | `install_accepted` | `InstallPrompt.tsx` | Chrome/Edge/Android only, when the native install dialog's `userChoice` resolves `'accepted'` | `platform: 'chromium'` |
 | `install_dismissed` | `InstallPrompt.tsx` | Chrome/Edge/Android, when `userChoice` resolves `'dismissed'`; iOS Safari, when the instructions modal is closed without a way to confirm the user actually finished the manual steps | `platform: 'chromium' \| 'ios_safari'` |
+| `table_inserted` | `slashItems.ts` (Notes' `/table` slash command) and `CanvasEditor.tsx` (`addTable`) | Whenever a table block/node is inserted, either surface | `surface: 'notes' \| 'canvas'` |
 
 ### Notes on specific events
 

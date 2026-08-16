@@ -29,6 +29,7 @@ export const ANALYTICS_EVENTS = [
   'install_prompt_shown',
   'install_accepted',
   'install_dismissed',
+  'table_inserted',
 ] as const;
 
 export type AnalyticsEventName = (typeof ANALYTICS_EVENTS)[number];

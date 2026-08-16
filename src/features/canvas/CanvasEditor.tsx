@@ -20,6 +20,7 @@ import { useProjectIsPro } from '@/features/collaboration';
 import { PAGE_PATTERN_SPACING, type PageType } from '@/lib/canvasPages';
 import { MEDIA_CAPS, mediaKindForMime } from '@/lib/proFeatures';
 import { MediaUploadError, uploadCanvasMedia } from '@/lib/storage';
+import { track } from '@/lib/analytics';
 import type { CanvasNote } from '@/types/database';
 import { canvasTitleSchema } from './schemas';
 import { useCanvas, useDeleteCanvas, useSaveCanvas } from './useCanvas';
@@ -34,6 +35,7 @@ import {
   createMediaFileElement,
   createMediaEmbedElement,
   createFrame,
+  createTableElement,
   bringToFront,
   bringForward,
   sendBackward,
@@ -583,6 +585,19 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
     setSelectedIds([element.id]);
   }
 
+  /** Drop a small table at the centre of the view, on top of existing content,
+   *  and select it so it's immediately editable (per MediaLayer/TableLayer's
+   *  routing rule, a single selected element's grid becomes interactive). */
+  function addTable() {
+    const worldCx = (viewport.width / 2 - camera.x) / camera.scale;
+    const worldCy = (viewport.height / 2 - camera.y) / camera.scale;
+    const element = createTableElement(worldCx, worldCy, topZ(scene.elements));
+    commit({ elements: [...scene.elements, element] });
+    setTool('select');
+    setSelectedIds([element.id]);
+    track('table_inserted', { surface: 'canvas' });
+  }
+
   /** Drop a document-width writing column near the top-left of the view and start
    *  typing — Google-Docs-style long-form writing on the canvas. */
   function addPageText() {
@@ -1031,6 +1046,7 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
             onAdd={addText}
             onAddPage={addPageText}
             onAddFrame={addFrame}
+            onAddTable={addTable}
             onAddImage={projectId !== null ? addImage : undefined}
             onAddMedia={projectId !== null ? () => setMediaModalOpen(true) : undefined}
             hasSelection={hasSelection}

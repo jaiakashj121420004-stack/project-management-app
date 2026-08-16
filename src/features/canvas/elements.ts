@@ -14,6 +14,17 @@
  * this plain-data shape is intentionally CRDT-friendly (flat fields, no methods).
  */
 import { z } from 'zod';
+import {
+  DEFAULT_TABLE_ROWS,
+  DEFAULT_TABLE_COLS,
+  DEFAULT_TABLE_COL_WIDTH,
+  MIN_TABLE_ROWS,
+  MIN_TABLE_COLS,
+  MAX_TABLE_ROWS,
+  MAX_TABLE_COLS,
+  MIN_TABLE_COL_WIDTH,
+  TABLE_ROW_HEIGHT,
+} from '@/lib/table';
 
 /** Fields every element carries: a transform box + stacking + lock + visibility. */
 export interface CanvasElementBase {
@@ -104,13 +115,32 @@ export interface FrameElement extends CanvasElementBase {
   color: string;
 }
 
+/**
+ * A simple grid table — plain-text cells only, no formulas, no computed
+ * values, no per-column typed fields (see reports/SIMPLICITY-GUARDRAIL.md).
+ * `cells` is row-major (`cells[row][col]`); `colWidths` has one entry per
+ * column (world px) and is the ONLY resize mechanism (rows are a fixed
+ * height). The element's own `width`/`height` are always kept in sync with
+ * `colWidths`'s sum / `rows * TABLE_ROW_HEIGHT` — see the table* helpers
+ * below — so the Konva hit-rect and the HTML grid overlay never disagree.
+ */
+export interface TableElement extends CanvasElementBase {
+  type: 'table';
+  rows: number;
+  cols: number;
+  cells: string[][];
+  colWidths: number[];
+  hasHeaderRow: boolean;
+}
+
 /** The discriminated union of everything that can live on a canvas. */
 export type CanvasElement =
   | StrokeElement
   | TextBoxElement
   | ImageElement
   | MediaElement
-  | FrameElement;
+  | FrameElement
+  | TableElement;
 
 /** A canvas element's `type` tag. */
 export type CanvasElementType = CanvasElement['type'];
@@ -125,7 +155,8 @@ export type CanvasElementType = CanvasElement['type'];
 export type ElementPatch = Partial<CanvasElementBase> &
   Partial<Pick<StrokeElement, 'points' | 'size'>> &
   Partial<Pick<TextBoxElement, 'body' | 'text'>> &
-  Partial<Pick<FrameElement, 'label' | 'color'>>;
+  Partial<Pick<FrameElement, 'label' | 'color'>> &
+  Partial<Pick<TableElement, 'rows' | 'cols' | 'cells' | 'colWidths' | 'hasHeaderRow'>>;
 
 /** The persisted document body: just an ordered list of elements. */
 export interface CanvasScene {
@@ -191,12 +222,23 @@ const frameSchema = z.object({
   color: z.string(),
 });
 
+const tableSchema = z.object({
+  ...baseSchema,
+  type: z.literal('table'),
+  rows: z.number().int().min(MIN_TABLE_ROWS).max(MAX_TABLE_ROWS),
+  cols: z.number().int().min(MIN_TABLE_COLS).max(MAX_TABLE_COLS),
+  cells: z.array(z.array(z.string())),
+  colWidths: z.array(z.number().finite().positive()),
+  hasHeaderRow: z.boolean(),
+});
+
 const elementSchema: z.ZodType<CanvasElement> = z.discriminatedUnion('type', [
   strokeSchema,
   textBoxSchema,
   imageSchema,
   mediaSchema,
   frameSchema,
+  tableSchema,
 ]);
 
 /** An empty scene (what a fresh canvas and the `{}` default both resolve to). */
@@ -494,4 +536,98 @@ export function createTextBoxAt(
 export const PAGE_TEXT_WIDTH = 720;
 export function createPageTextAt(x: number, y: number, z: number): TextBoxElement {
   return createTextBoxAt(x, y, z, { width: PAGE_TEXT_WIDTH, height: 56 });
+}
+
+// ── Table element ─────────────────────────────────────────────────────────
+// Plain-text grid. Every mutator returns a NEW TableElement with `width`/
+// `height` recomputed from `colWidths`/`rows` so the Konva hit-rect and the
+// HTML overlay (TableGrid) never disagree about the element's box.
+
+function tableBox(colWidths: number[], rows: number): { width: number; height: number } {
+  return {
+    width: colWidths.reduce((sum, w) => sum + w, 0),
+    height: rows * TABLE_ROW_HEIGHT,
+  };
+}
+
+/** A default-sized table (DEFAULT_TABLE_ROWS × DEFAULT_TABLE_COLS), centred on
+ *  (cx, cy), with an empty string in every cell and a header row on. */
+export function createTableElement(cx: number, cy: number, z: number): TableElement {
+  const rows = DEFAULT_TABLE_ROWS;
+  const cols = DEFAULT_TABLE_COLS;
+  const colWidths = Array.from({ length: cols }, () => DEFAULT_TABLE_COL_WIDTH);
+  const { width, height } = tableBox(colWidths, rows);
+  return {
+    id: crypto.randomUUID(),
+    type: 'table',
+    x: cx - width / 2,
+    y: cy - height / 2,
+    width,
+    height,
+    rotation: 0,
+    z,
+    locked: false,
+    visible: true,
+    rows,
+    cols,
+    cells: Array.from({ length: rows }, () => Array.from({ length: cols }, () => '')),
+    colWidths,
+    hasHeaderRow: true,
+  };
+}
+
+/** Add a row at the bottom (no-op past MAX_TABLE_ROWS). */
+export function tableAddRow(el: TableElement): TableElement {
+  if (el.rows >= MAX_TABLE_ROWS) return el;
+  const rows = el.rows + 1;
+  const cells = [...el.cells, Array.from({ length: el.cols }, () => '')];
+  return { ...el, rows, cells, ...tableBox(el.colWidths, rows) };
+}
+
+/** Remove a row (no-op below MIN_TABLE_ROWS or an out-of-range index). */
+export function tableRemoveRow(el: TableElement, rowIndex: number): TableElement {
+  if (el.rows <= MIN_TABLE_ROWS || rowIndex < 0 || rowIndex >= el.rows) return el;
+  const rows = el.rows - 1;
+  const cells = el.cells.filter((_, i) => i !== rowIndex);
+  return { ...el, rows, cells, ...tableBox(el.colWidths, rows) };
+}
+
+/** Add a column at the right (no-op past MAX_TABLE_COLS). */
+export function tableAddColumn(el: TableElement): TableElement {
+  if (el.cols >= MAX_TABLE_COLS) return el;
+  const cols = el.cols + 1;
+  const colWidths = [...el.colWidths, DEFAULT_TABLE_COL_WIDTH];
+  const cells = el.cells.map((row) => [...row, '']);
+  return { ...el, cols, cells, colWidths, ...tableBox(colWidths, el.rows) };
+}
+
+/** Remove a column (no-op below MIN_TABLE_COLS or an out-of-range index). */
+export function tableRemoveColumn(el: TableElement, colIndex: number): TableElement {
+  if (el.cols <= MIN_TABLE_COLS || colIndex < 0 || colIndex >= el.cols) return el;
+  const cols = el.cols - 1;
+  const colWidths = el.colWidths.filter((_, i) => i !== colIndex);
+  const cells = el.cells.map((row) => row.filter((_, i) => i !== colIndex));
+  return { ...el, cols, cells, colWidths, ...tableBox(colWidths, el.rows) };
+}
+
+/** Edit one cell's text (pure — returns a new element). */
+export function tableSetCell(el: TableElement, row: number, col: number, value: string): TableElement {
+  if (row < 0 || row >= el.rows || col < 0 || col >= el.cols) return el;
+  const cells = el.cells.map((r, i) => (i === row ? r.map((c, j) => (j === col ? value : c)) : r));
+  return { ...el, cells };
+}
+
+/** Drag-resize one column border. Clamped to MIN_TABLE_COL_WIDTH. */
+export function tableResizeColumn(el: TableElement, colIndex: number, width: number): TableElement {
+  if (colIndex < 0 || colIndex >= el.cols) return el;
+  const clamped = Math.max(MIN_TABLE_COL_WIDTH, width);
+  const colWidths = el.colWidths.map((w, i) => (i === colIndex ? clamped : w));
+  return { ...el, colWidths, ...tableBox(colWidths, el.rows) };
+}
+
+/** Toggle whether the first row renders as a styled header row. Purely a
+ *  style flag — it doesn't move or duplicate data (see the header-row style
+ *  toggle scoped in the table-block task: "nothing beyond that"). */
+export function tableToggleHeaderRow(el: TableElement): TableElement {
+  return { ...el, hasHeaderRow: !el.hasHeaderRow };
 }

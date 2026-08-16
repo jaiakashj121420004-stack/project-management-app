@@ -210,6 +210,22 @@ function ElementVisual({ element, palette }: { element: CanvasElement; palette: 
     return <FrameVisual element={element} />;
   }
 
+  // A table renders ONLY its background rect here — the rect is the hit /
+  // transform / drag target, while the actual grid (borders, header tint,
+  // cell text/inputs) is drawn by the HTML TableLayer overlay, the same
+  // technique as the text box above (Konva can't host <input> cells).
+  if (element.type === 'table') {
+    return (
+      <Rect
+        width={width}
+        height={height}
+        cornerRadius={4}
+        fill="transparent"
+        perfectDrawEnabled={false}
+      />
+    );
+  }
+
   // Media (audio/video): Konva renders ONLY the background rect — the hit /
   // transform / drag target. The actual <audio>/<video> player or embed <iframe>
   // is drawn by the HTML MediaLayer overlay (Konva can't host them), layered on

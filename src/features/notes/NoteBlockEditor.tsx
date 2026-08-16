@@ -5,12 +5,14 @@ import { markdownToDoc } from '@/features/editor/serialize';
 import { CanvasLink } from '@/features/editor/nodes/CanvasLink';
 import { NoteImage } from '@/features/editor/nodes/NoteImage';
 import { NoteEmbed } from '@/features/editor/nodes/NoteEmbed';
+import { noteTableExtensions } from '@/features/editor/nodes/tableExtensions';
 import { NoteContext } from '@/features/editor/noteContext';
 import type { Note } from '@/types/database';
 
 // Note-only extensions (stable reference — the editor is built once). Insert
-// canvas + images + embeds live here so the canvas text editor never gets them.
-const NOTE_EXTENSIONS: AnyExtension[] = [CanvasLink, NoteImage, NoteEmbed];
+// canvas + images + embeds + tables live here so the canvas text editor never
+// gets them.
+const NOTE_EXTENSIONS: AnyExtension[] = [CanvasLink, NoteImage, NoteEmbed, ...noteTableExtensions];
 
 /**
  * Bridges a Note to the shared BlockEditor. Lives in the lazy chunk (Tiptap +

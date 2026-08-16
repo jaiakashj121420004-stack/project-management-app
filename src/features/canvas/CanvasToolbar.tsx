@@ -17,6 +17,7 @@ import {
   Plus,
   Redo2,
   SlidersHorizontal,
+  Table2,
   Trash2,
   Type,
   Undo2,
@@ -48,6 +49,8 @@ interface CanvasToolbarProps {
   onAddPage: () => void;
   /** Add a named frame region — a labeled box drawn behind content. */
   onAddFrame: () => void;
+  /** Add a table — a small resizable grid dropped at the centre of the view. */
+  onAddTable: () => void;
   /** Called when the user wants to add an image. `undefined` on personal canvases
    *  (no projectId → Storage RLS would reject the upload). */
   onAddImage: (() => void) | undefined;
@@ -92,6 +95,7 @@ export function CanvasToolbar({
   onAdd,
   onAddPage,
   onAddFrame,
+  onAddTable,
   onAddImage,
   onAddMedia,
   hasSelection,
@@ -175,6 +179,9 @@ export function CanvasToolbar({
           </ToolButton>
           <ToolButton label="Add frame — a named region" onClick={onAddFrame}>
             <Frame size={17} />
+          </ToolButton>
+          <ToolButton label="Add table" onClick={onAddTable}>
+            <Table2 size={17} />
           </ToolButton>
           {onAddImage && (
             <ToolButton label="Add image — or paste / drag-drop" onClick={onAddImage}>

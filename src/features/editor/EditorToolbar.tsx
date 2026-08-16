@@ -24,6 +24,7 @@ import {
   Shapes,
   Smile,
   Strikethrough,
+  Table2,
   Underline,
   Unlink,
 } from 'lucide-react';
@@ -90,7 +91,7 @@ const COMMON_EMOJIS: readonly string[] = [
   '❤️', '💯', '🎉', '🥲', '👀', '🤝', '⏰', '📅',
 ];
 
-type OpenPopover = 'color' | 'highlight' | 'link' | 'liststyle' | 'emoji' | null;
+type OpenPopover = 'color' | 'highlight' | 'link' | 'liststyle' | 'emoji' | 'table' | null;
 
 /**
  * The block editor's formatting toolbar. Buttons run Tiptap chain commands;
@@ -137,6 +138,7 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
   const inOrdered = editor.isActive('orderedList');
   const inList = inBullet || inOrdered;
   const listStyles = inOrdered ? ORDERED_LIST_STYLES : BULLET_LIST_STYLES;
+  const inTable = editor.isActive('table');
 
   const clearColor = useCallback(() => {
     editor.chain().focus().unsetColor().run();
@@ -412,6 +414,92 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
               {LIST_STYLE_LABELS[style]}
             </button>
           ))}
+        </div>
+      </Popover>
+
+      <Popover
+        open={open === 'table'}
+        onClose={close}
+        title="Table"
+        trigger={
+          <Btn
+            label="Table"
+            active={inTable || open === 'table'}
+            disabled={!inTable}
+            onRun={() => setOpen((o) => (o === 'table' ? null : 'table'))}
+          >
+            <Table2 size={16} />
+          </Btn>
+        }
+      >
+        <div className="flex w-44 flex-col">
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              editor.chain().focus().addRowAfter().run();
+              close();
+            }}
+            className="rounded-lg px-2 py-1.5 text-left text-sm text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+          >
+            Add row below
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              editor.chain().focus().addColumnAfter().run();
+              close();
+            }}
+            className="rounded-lg px-2 py-1.5 text-left text-sm text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+          >
+            Add column right
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              editor.chain().focus().toggleHeaderRow().run();
+              close();
+            }}
+            className="rounded-lg px-2 py-1.5 text-left text-sm text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+          >
+            Toggle header row
+          </button>
+          <span className="my-1 h-px bg-[var(--glass-border)]" aria-hidden />
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              editor.chain().focus().deleteRow().run();
+              close();
+            }}
+            className="rounded-lg px-2 py-1.5 text-left text-sm text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+          >
+            Delete row
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              editor.chain().focus().deleteColumn().run();
+              close();
+            }}
+            className="rounded-lg px-2 py-1.5 text-left text-sm text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+          >
+            Delete column
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              editor.chain().focus().deleteTable().run();
+              close();
+            }}
+            className="rounded-lg px-2 py-1.5 text-left text-sm text-danger transition-colors hover:bg-danger/10"
+          >
+            Delete table
+          </button>
         </div>
       </Popover>
 
