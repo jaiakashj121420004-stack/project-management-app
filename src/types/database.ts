@@ -19,6 +19,11 @@ export type ProjectRole = 'owner' | 'editor' | 'viewer';
 /** Roles that can be invited / assigned to others (never 'owner'). */
 export type InvitationRole = Exclude<ProjectRole, 'owner'>;
 
+/** A project template row's origin — Aurora's curated set ships as static
+ *  frontend data (projectTemplates.ts) and never writes 'system' rows today;
+ *  every row in the table is 'user'. See 20260816170000_project_templates.sql. */
+export type TemplateSource = 'system' | 'user';
+
 /** A member's permission on a shared canvas (the owner is canvas_notes.owner_id,
  *  never a member row). Mirrors InvitationRole. */
 export type CanvasRole = 'editor' | 'viewer';
@@ -193,6 +198,53 @@ export interface Database {
           created_by?: string;
           revoked_at?: string | null;
           created_at?: string;
+        };
+        Relationships: [];
+      };
+      project_templates: {
+        // A user's own "save as template" snapshot of a project's columns +
+        // starter card skeletons, plus schema room for a future 'system' row
+        // (see 20260816170000_project_templates.sql). Curated system
+        // templates ship as static data in projectTemplates.ts, not rows here.
+        Row: {
+          id: string;
+          // Defaults to auth.uid(); immutable (project_templates_before_write).
+          owner_id: string;
+          // Immutable after insert. Only 'user' is ever written by the app.
+          source: TemplateSource;
+          name: string;
+          // Short one-line description, or null.
+          description: string | null;
+          // Optional emoji for the manager grid, or null.
+          icon: string | null;
+          // { columns: [{ name, cards: [{ title, checklist?, labels? }] }] } —
+          // same shape as PROJECT_TEMPLATES' payload in projectTemplates.ts.
+          payload: Record<string, unknown>;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_id?: string;
+          // Defaults to 'user' in the DB; clients never send 'system'.
+          source?: TemplateSource;
+          name: string;
+          description?: string | null;
+          icon?: string | null;
+          payload: Record<string, unknown>;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_id?: string;
+          source?: TemplateSource;
+          name?: string;
+          description?: string | null;
+          icon?: string | null;
+          payload?: Record<string, unknown>;
+          created_at?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -1278,6 +1330,7 @@ export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type Project = Database['public']['Tables']['projects']['Row'];
 export type ProjectMember = Database['public']['Tables']['project_members']['Row'];
 export type ProjectShareLinkRow = Database['public']['Tables']['project_share_links']['Row'];
+export type ProjectTemplateRow = Database['public']['Tables']['project_templates']['Row'];
 export type Column = Database['public']['Tables']['columns']['Row'];
 export type Card = Database['public']['Tables']['cards']['Row'];
 export type ChecklistItem = Database['public']['Tables']['checklist_items']['Row'];

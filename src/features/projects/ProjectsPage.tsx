@@ -15,6 +15,7 @@ import type { Project } from '@/types/database';
 import { ProjectCard } from './ProjectCard';
 import { ProjectFormModal } from './ProjectFormModal';
 import { DeleteProjectDialog } from './DeleteProjectDialog';
+import { TemplatePickerModal } from './TemplatePickerModal';
 import {
   useCreateProject,
   useDeleteProject,
@@ -34,6 +35,7 @@ export function ProjectsPage() {
   const deleteProject = useDeleteProject();
 
   const [formOpen, setFormOpen] = useState(false);
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const [editing, setEditing] = useState<Project | null>(null);
   const [deleting, setDeleting] = useState<Project | null>(null);
   // Bumped on every open so the form modal remounts and re-seeds from `initial`.
@@ -46,9 +48,14 @@ export function ProjectsPage() {
   const ownedCount = projects?.filter((project) => project.owner_id === user?.id).length ?? 0;
   const atProjectLimit = isAtProjectLimit(plan, ownedCount);
 
+  // "New project" now opens the template picker (Blank project always first)
+  // rather than the name/accent form directly — see TemplatePickerModal.tsx.
+  // Picking "Blank project" there calls openBlankForm below, which is exactly
+  // this function's old body.
   const openCreate = useCallback(
     (targetDate: string | null = null) => {
-      // Free users at their project cap get the upgrade prompt instead of the form.
+      // Free users at their project cap get the upgrade prompt instead of the
+      // picker/form — checked once, up front, for either path.
       if (atProjectLimit) {
         // The single most useful property here (per the funnel report): WHICH
         // limit triggered this prompt, e.g. "4th board" on the Free plan.
@@ -60,13 +67,18 @@ export function ProjectsPage() {
         setUpgradeOpen(true);
         return;
       }
-      setEditing(null);
       setPresetTargetDate(targetDate);
-      setFormKey((key) => key + 1);
-      setFormOpen(true);
+      setTemplatePickerOpen(true);
     },
     [atProjectLimit, plan, ownedCount],
   );
+
+  function openBlankForm() {
+    setTemplatePickerOpen(false);
+    setEditing(null);
+    setFormKey((key) => key + 1);
+    setFormOpen(true);
+  }
 
   // The sidebar's "New project" button (or the Calendar's quick-create) navigates
   // here with ?new=1 (and optionally &date=YYYY-MM-DD to preset the target date)
@@ -179,6 +191,13 @@ export function ProjectsPage() {
       ) : (
         <EmptyState onCreate={openCreate} />
       )}
+
+      <TemplatePickerModal
+        open={templatePickerOpen}
+        onClose={() => setTemplatePickerOpen(false)}
+        onBlank={openBlankForm}
+        presetTargetDate={presetTargetDate}
+      />
 
       <ProjectFormModal
         key={formKey}

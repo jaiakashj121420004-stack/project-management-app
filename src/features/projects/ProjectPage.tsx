@@ -1,6 +1,14 @@
-import { lazy, Suspense, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { Activity, ArrowLeft, LayoutGrid, NotebookPen, PenTool } from 'lucide-react';
+import {
+  Activity,
+  ArrowLeft,
+  BookmarkPlus,
+  LayoutGrid,
+  MoreVertical,
+  NotebookPen,
+  PenTool,
+} from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import { Badge } from '@/components/Badge';
@@ -13,6 +21,7 @@ import { NotesPanel } from '@/features/notes';
 import { MembersBar, useMyRole, useProjectRealtime } from '@/features/members';
 import { ProGate } from '@/features/billing';
 import { ActivityFeed, useProjectIsPro } from '@/features/collaboration';
+import { SaveAsTemplateDialog } from './SaveAsTemplateDialog';
 import { useProject } from './useProjects';
 
 // Lazy-loaded so Konva/the canvas editor never ship to users who don't open a
@@ -32,6 +41,7 @@ export function ProjectPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const { user } = useAuth();
   const { data: project, isLoading } = useProject(projectId);
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   const tab: ProjectTab =
@@ -115,8 +125,9 @@ export function ProjectPage() {
               )}
             </div>
 
-            <div className="shrink-0 pt-1">
+            <div className="flex shrink-0 items-center gap-1.5 pt-1">
               <MembersBar projectId={project.id} accent={project.accent} isOwner={isOwner} />
+              <ProjectMenu onSaveAsTemplate={() => setSaveTemplateOpen(true)} />
             </div>
           </div>
 
@@ -188,6 +199,71 @@ export function ProjectPage() {
             <ActivityFeed projectId={project.id} />
           </ProGate>
         </GlassPanel>
+      )}
+
+      <SaveAsTemplateDialog
+        open={saveTemplateOpen}
+        onClose={() => setSaveTemplateOpen(false)}
+        projectId={project.id}
+        projectName={project.name}
+      />
+    </div>
+  );
+}
+
+/** The project header's overflow menu — a kebab button opening a small
+ *  glass-strong dropdown, the same open/outside-click/Escape pattern as the
+ *  Library's item action menu (LibraryItemCard.tsx). One item today (Save as
+ *  template); more project-level actions can land here later. */
+function ProjectMenu({ onSaveAsTemplate }: { onSaveAsTemplate: () => void }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: globalThis.PointerEvent) => {
+      if (rootRef.current && !rootRef.current.contains(event.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        aria-label="Project actions"
+        onClick={() => setOpen((value) => !value)}
+        className="grid h-9 w-9 place-items-center rounded-xl text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+      >
+        <MoreVertical size={17} />
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          className="glass-strong absolute right-0 top-11 z-20 w-52 overflow-hidden rounded-xl p-1 shadow-[0_18px_40px_-16px_rgba(0,0,0,0.5)]"
+        >
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              onSaveAsTemplate();
+            }}
+            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+          >
+            <BookmarkPlus size={15} className="shrink-0" />
+            Save as template
+          </button>
+        </div>
       )}
     </div>
   );
