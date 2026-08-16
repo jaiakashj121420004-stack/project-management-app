@@ -13,6 +13,7 @@ import { BillingPage, ProVsFreePage } from '@/features/billing';
 import { CeoMessagePage } from '@/features/announcements';
 import { FeedbackPage } from '@/features/feedback';
 import { LandingPage, PricingPage, TermsPage, PrivacyPage } from '@/features/marketing';
+import { SharedProjectPage } from '@/features/project-share';
 import {
   ForgotPasswordPage,
   LoginPage,
@@ -43,6 +44,10 @@ export default function App() {
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
+      {/* Public read-only board share link — no login, no app shell. Its own
+          minimal chrome (see SharedProjectPage) so nothing else on this route
+          leads to billing/settings/member surfaces. */}
+      <Route path="/share/:token" element={<SharedProjectPage />} />
 
       {/* Auth screens — only for signed-out visitors. */}
       <Route element={<PublicOnlyRoute />}>

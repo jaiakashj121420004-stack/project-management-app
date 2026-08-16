@@ -21,6 +21,7 @@ import {
   type PlanId,
 } from '@/lib/plans';
 import { inviteSchema, fieldErrorsOf } from './schemas';
+import { ShareLinkSection } from '@/features/project-share';
 
 interface MembersPanelProps {
   projectId: string;
@@ -123,6 +124,8 @@ export function MembersPanel({ projectId, isOwner, currentUserId, onlineUserIds 
           )}
         </div>
       )}
+
+      {isOwner && <ShareLinkSection projectId={projectId} />}
     </div>
   );
 }

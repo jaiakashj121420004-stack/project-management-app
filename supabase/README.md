@@ -347,3 +347,42 @@ the rest of this repo (no new infrastructure). `mcp-token` is capped like the
 other self-serve account endpoints (10/min); `mcp-server` allows 60 tool calls/
 minute per token — generous for an agentic client calling several tools per
 turn, real enough to stop a runaway loop.
+
+## Public read-only project share links (2026-08-16)
+
+Lets a project owner turn on a `/share/:token` link that anyone can open —
+no Aurora account — to see a stripped-down, read-only view of the board
+(columns/cards/labels/due dates only). One new migration, one new Edge
+Function. Full design rationale lives in the migration's own header comment.
+
+### 1. Apply the migration
+
+Run [`migrations/20260816150000_project_share_links.sql`](./migrations/20260816150000_project_share_links.sql)
+(SQL Editor or `db push`). Adds `project_share_links` with owner-only RLS
+(reuses the existing `is_project_owner()` helper — no new SECURITY DEFINER
+function needed) and a trigger that only allows revoking, never repointing,
+an existing link.
+
+### 2. Deploy the function
+
+```bash
+supabase functions deploy project-share --no-verify-jwt
+```
+
+`--no-verify-jwt` because the callers are anonymous browsers hitting a plain
+URL with no Supabase session (same reason as `calendar-feed`). Create/revoke
+themselves need **no** new function — they're plain RLS-gated table writes
+from the signed-in app, like any other owner-only mutation.
+
+### 3. Secrets
+
+Uses the same `APP_URL` secret already set for the other functions (CORS
+allow-list origin) plus the Edge-runtime-provided `SUPABASE_URL` /
+`SUPABASE_SERVICE_ROLE_KEY` — nothing new to set if you've deployed any other
+function in this project already.
+
+### Rate limiting
+
+Same shared `rate_limit_hit()` limiter, keyed by the caller's forwarded IP
+(there's no session to key on) — 30 requests/minute, generous for a real
+viewer, capped against token-guessing.
