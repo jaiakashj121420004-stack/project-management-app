@@ -60,6 +60,7 @@ const ALLOWED_EVENTS = new Set([
   'time_entry_started',
   'time_entry_stopped',
   'attachment_uploaded',
+  'import_completed',
 ]);
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

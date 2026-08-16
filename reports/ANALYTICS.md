@@ -7,7 +7,7 @@
 
 ## What this is (and isn't)
 
-A thin, privacy-respecting funnel-tracking layer — fourteen allow-listed events,
+A thin, privacy-respecting funnel-tracking layer — sixteen allow-listed events,
 one Postgres table, no dashboard. It exists to answer "where do people drop off
 between landing on the site and paying," not to be a general analytics
 platform. No page-view auto-tracking, no session replay, no click-heatmaps, no
@@ -53,6 +53,7 @@ can write it, and only a Studio SQL query (service/postgres role) can read it.
 | `time_entry_started` | `TimeTrackingSection.tsx` (`handleToggle`) | When a card's timer is started | `project_id` |
 | `time_entry_stopped` | `TimeTrackingSection.tsx` (`handleToggle`) | When a card's timer is stopped | `project_id` |
 | `attachment_uploaded` | `AttachmentsSection.tsx` (`handleFiles`, on upload success) | When a file attachment is successfully added to a card | `project_id`, `mime_type`, `size_bytes` |
+| `import_completed` | `ImportModal.tsx` (`handleImport`) | When a one-time Trello/CSV import finishes writing into the newly-created project | `source: 'trello' \| 'csv'`, `card_count` |
 
 ### Notes on specific events
 
@@ -83,7 +84,7 @@ can write it, and only a Studio SQL query (service/postgres role) can read it.
 
 ## Server-side allow-list & validation (`track-event` Edge Function)
 
-- `event_name` must be one of the eight events above — anything else is
+- `event_name` must be one of the events above — anything else is
   rejected with a deliberately vague error (no allow-list enumeration).
 - `properties` must be a flat object of ≤ 30 keys, each a string/number/
   boolean/null leaf (no nesting), string values ≤ 500 chars, serialized

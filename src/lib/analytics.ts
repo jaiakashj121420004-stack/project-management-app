@@ -33,6 +33,7 @@ export const ANALYTICS_EVENTS = [
   'time_entry_started',
   'time_entry_stopped',
   'attachment_uploaded',
+  'import_completed',
 ] as const;
 
 export type AnalyticsEventName = (typeof ANALYTICS_EVENTS)[number];

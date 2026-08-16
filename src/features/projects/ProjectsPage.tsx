@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { FolderPlus, Plus } from 'lucide-react';
+import { FolderPlus, Plus, Upload } from 'lucide-react';
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import { GradientButton } from '@/components/buttons/GradientButton';
 import { Skeleton } from '@/components/feedback/Skeleton';
@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/features/auth/useProfile';
 import { PendingInvitations } from '@/features/members';
 import { UpgradeModal } from '@/features/billing';
+import { ImportModal } from '@/features/import';
 import { track } from '@/lib/analytics';
 import { FREE_PROJECT_LIMIT, isAtProjectLimit } from '@/lib/plans';
 import type { Project } from '@/types/database';
@@ -16,12 +17,7 @@ import { ProjectCard } from './ProjectCard';
 import { ProjectFormModal } from './ProjectFormModal';
 import { DeleteProjectDialog } from './DeleteProjectDialog';
 import { TemplatePickerModal } from './TemplatePickerModal';
-import {
-  useCreateProject,
-  useDeleteProject,
-  useProjects,
-  useUpdateProject,
-} from './useProjects';
+import { useCreateProject, useDeleteProject, useProjects, useUpdateProject } from './useProjects';
 import type { ProjectFormInput } from './schemas';
 
 /** The Projects dashboard (plan.md §5, Phase 3): the user's workspaces as vivid
@@ -41,6 +37,7 @@ export function ProjectsPage() {
   // Bumped on every open so the form modal remounts and re-seeds from `initial`.
   const [formKey, setFormKey] = useState(0);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [presetTargetDate, setPresetTargetDate] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -155,9 +152,18 @@ export function ProjectsPage() {
             </p>
           </div>
           <div className="flex flex-col items-center gap-1.5 sm:items-end">
-            <GradientButton leftIcon={<Plus size={18} />} onClick={() => openCreate()}>
-              New project
-            </GradientButton>
+            <div className="flex items-center gap-2">
+              <GradientButton
+                variant="secondary"
+                leftIcon={<Upload size={16} />}
+                onClick={() => setImportOpen(true)}
+              >
+                Import
+              </GradientButton>
+              <GradientButton leftIcon={<Plus size={18} />} onClick={() => openCreate()}>
+                New project
+              </GradientButton>
+            </div>
             {plan === 'free' && (
               <p className="text-xs text-fg-subtle">
                 {ownedCount} / {FREE_PROJECT_LIMIT} projects used
@@ -213,7 +219,12 @@ export function ProjectsPage() {
                 targetDate: editing.target_date,
               }
             : presetTargetDate
-              ? { name: '', description: null, accent: 'aurora', targetDate: presetTargetDate }
+              ? {
+                  name: '',
+                  description: null,
+                  accent: 'aurora',
+                  targetDate: presetTargetDate,
+                }
               : undefined
         }
         onSubmit={handleSubmit}
@@ -233,6 +244,8 @@ export function ProjectsPage() {
         onClose={() => setUpgradeOpen(false)}
         reason={`You've reached the Free plan's ${FREE_PROJECT_LIMIT}-project limit. Go Pro for unlimited projects.`}
       />
+
+      <ImportModal open={importOpen} onClose={() => setImportOpen(false)} />
     </div>
   );
 }
