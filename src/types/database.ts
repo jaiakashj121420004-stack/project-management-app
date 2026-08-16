@@ -63,6 +63,12 @@ export interface Database {
           // Opaque token for the public ICS calendar subscribe feed (Pro); set
           // only by the calendar-feed-token edge function (service role).
           calendar_feed_token: string | null;
+          // Aurora MCP (Claude Desktop/Code) access token — SHA-256 hash only,
+          // the plaintext is never stored. Set only by the mcp-token edge
+          // function (service role); see 20260816120000_mcp_tokens.sql.
+          mcp_token_hash: string | null;
+          mcp_token_created_at: string | null;
+          mcp_token_last_used_at: string | null;
           // Account-synced Day/Night + personalization (2026-08-15). Null =
           // never synced from an authenticated session; the client falls back
           // to its localStorage cache — see src/lib/theme.ts / customTheme.ts.
@@ -81,6 +87,9 @@ export interface Database {
           dodo_subscription_id?: string | null;
           plan_status?: string | null;
           calendar_feed_token?: string | null;
+          mcp_token_hash?: string | null;
+          mcp_token_created_at?: string | null;
+          mcp_token_last_used_at?: string | null;
           theme?: 'dark' | 'light' | null;
           custom_theme?: Record<string, unknown> | null;
           created_at?: string;
@@ -96,6 +105,9 @@ export interface Database {
           dodo_subscription_id?: string | null;
           plan_status?: string | null;
           calendar_feed_token?: string | null;
+          mcp_token_hash?: string | null;
+          mcp_token_created_at?: string | null;
+          mcp_token_last_used_at?: string | null;
           theme?: 'dark' | 'light' | null;
           custom_theme?: Record<string, unknown> | null;
           created_at?: string;

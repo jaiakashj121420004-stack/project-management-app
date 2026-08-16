@@ -18,6 +18,8 @@ If these three are read, you have complete context. Do not duplicate their conte
 
 **First-time environment setup** (accounts, keys, git remote, Cloudflare) lives in [SETUP.md](./SETUP.md) — a one-time human checklist, separate from the build prompts.
 
+**Connecting Claude Desktop/Code to a user's Aurora account (MCP server)** is tracked in **[SETUP-MCP.md](./SETUP-MCP.md)** — the user-facing connect steps, the auth/hosting decision record, and a link to the deploy checklist in `supabase/README.md`.
+
 ## 🔴 Golden workflow rules (non-negotiable)
 
 1. **Before starting:** read `memory.md` (state) and the relevant section of `plan.md` (spec). Never start blind.

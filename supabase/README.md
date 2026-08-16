@@ -281,3 +281,69 @@ supabase functions deploy send-due-reminders --no-verify-jwt
 ```
 
 In-app notifications (the bell) need nothing server-side beyond the migration.
+
+## Aurora MCP server (Claude Desktop/Code integration, Pro)
+
+Lets a Pro+ user connect Claude Desktop or Claude Code straight to their Aurora
+account — Claude can list/read/write their boards, to-dos, and notes. Full
+design record (why a dedicated JWT signing key, why not OAuth/`generateLink`)
+and the end-user "how do I connect Claude" steps live in
+[SETUP-MCP.md](../SETUP-MCP.md). This section is the deploy checklist.
+
+Two Edge Functions, one migration, and one Supabase Dashboard step (a new,
+dedicated JWT signing key — do **not** reuse the project's default one).
+
+### 1. Apply the migration
+
+Run [`migrations/20260816120000_mcp_tokens.sql`](./migrations/20260816120000_mcp_tokens.sql)
+(SQL Editor or `db push`). It adds `mcp_token_hash` / `mcp_token_created_at` /
+`mcp_token_last_used_at` to `profiles` and a service-role-only write trigger,
+mirroring `protect_calendar_feed_token()`.
+
+### 2. Add a dedicated JWT signing key (one-time, dashboard)
+
+Dashboard → **Auth → JWT Signing Keys** → add a new key (a generated shared
+secret is fine; HS256). This is intentionally **separate** from the project's
+default session-signing key — `mcp-server` mints short-lived (5 min) tokens
+with this key only, so if the integration is ever compromised you can revoke
+just this key without signing out every real user session. Copy the secret
+(and the Key ID, if the dashboard shows one).
+
+### 3. Deploy the two functions
+
+```bash
+supabase functions deploy mcp-token
+supabase functions deploy mcp-server --no-verify-jwt
+```
+
+`mcp-token` stays JWT-verified (it's called by the signed-in app, like
+`calendar-feed-token`). `mcp-server` is `--no-verify-jwt` — its callers present
+Aurora's own access token, not a Supabase session JWT, so Supabase's platform
+JWT gate would otherwise reject them before `mcp-server`'s own auth ever runs
+(same reason as `calendar-feed` and `dodo-webhook`).
+
+### 4. Set the secrets
+
+`SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are
+injected by the Edge runtime automatically; you only set these:
+
+```bash
+npx supabase secrets set \
+  APP_URL="https://your-app.pages.dev" \
+  MCP_JWT_SIGNING_SECRET="<the secret from step 2>" \
+  MCP_JWT_SIGNING_KEY_ID="<the Key ID from step 2, if shown>"
+```
+
+| Secret | What it is |
+| ------ | ---------- |
+| `APP_URL` | Only used by `mcp-token` for CORS (it's called from the signed-in app). |
+| `MCP_JWT_SIGNING_SECRET` | The dedicated signing key's shared secret from step 2. `mcp-server` uses it to mint short-lived, per-request user access tokens so tool calls run under real Row Level Security — see the file header of `functions/mcp-server/index.ts` for the full rationale. |
+| `MCP_JWT_SIGNING_KEY_ID` | Optional — the signing key's Key ID, sent as the minted token's `kid` header so verification picks the right key on a project with more than one active signing key. Safe to omit on a single-key project. |
+
+### Rate limiting
+
+Both functions use the same shared `rate_limit_hit()` sliding-window limiter as
+the rest of this repo (no new infrastructure). `mcp-token` is capped like the
+other self-serve account endpoints (10/min); `mcp-server` allows 60 tool calls/
+minute per token — generous for an agentic client calling several tools per
+turn, real enough to stop a runaway loop.

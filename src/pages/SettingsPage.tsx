@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { format, parseISO } from 'date-fns';
 import {
   AlertTriangle,
+  Bot,
   Check,
   ChevronDown,
   Copy,
@@ -19,6 +21,7 @@ import { Tooltip } from '@/components/Tooltip';
 import { ProGate } from '@/features/billing/ProGate';
 import { feedUrlForToken } from '@/features/calendar-feed/api';
 import { useEnableFeed, useFeedToken, useRevokeFeedToken, useRotateFeedToken } from '@/features/calendar-feed/useCalendarFeed';
+import { useGenerateMcpToken, useMcpTokenStatus, useRevokeMcpToken, useRotateMcpToken } from '@/features/mcp-connect/useMcpToken';
 import { useTheme } from '@/hooks/useTheme';
 import { useCustomTheme } from '@/hooks/useCustomTheme';
 import { cn } from '@/lib/cn';
@@ -249,6 +252,22 @@ export function SettingsPage() {
         </ProGate>
       </GlassPanel>
 
+      <GlassPanel className="p-5 sm:p-6">
+        <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-semibold text-fg">
+          <Bot size={18} className="text-[var(--accent-from)]" /> Connect Claude
+        </h2>
+        <p className="mb-4 text-sm text-fg-muted">
+          Let Claude Desktop or Claude Code read and write your boards, to-dos, and notes directly
+          — generate a personal access token and paste it into Claude's config.
+        </p>
+        <ProGate
+          title="Connecting Claude is a Pro feature"
+          reason="Upgrade to Pro to connect Claude Desktop or Claude Code to your Aurora account."
+        >
+          <McpConnectSection />
+        </ProGate>
+      </GlassPanel>
+
       {/* NOTE: do NOT add `aurora-grain` here. That class is a full-bleed
           decorative overlay LAYER (position:absolute; inset:0) meant only for
           <AuroraBackground>; applied to a content panel it turns that panel
@@ -386,6 +405,186 @@ function CalendarFeedSection() {
         In Google Calendar: Other calendars → From URL. In Apple Calendar: File → New Calendar
         Subscription. Paste the link above.
       </p>
+    </div>
+  );
+}
+
+const MCP_SERVER_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mcp-server`;
+const TOKEN_PLACEHOLDER = '<paste-your-token-here>';
+
+/**
+ * Generate/regenerate/revoke the Aurora MCP access token that lets Claude
+ * Desktop/Code read and write the caller's own data (see SETUP-MCP.md). Unlike
+ * the calendar feed's token, the PLAINTEXT here is never stored server-side —
+ * `revealedToken` (local component state, not the query cache) is the only
+ * place it ever exists after generation, shown exactly once with an explicit
+ * "you won't see this again" warning, matching the mcp-token edge function's
+ * own one-time-return contract.
+ */
+function McpConnectSection() {
+  const { data: status, isLoading } = useMcpTokenStatus();
+  const generate = useGenerateMcpToken();
+  const rotate = useRotateMcpToken();
+  const revoke = useRevokeMcpToken();
+  const [revealedToken, setRevealedToken] = useState<string | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  async function handleCopy(field: string, text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(field);
+      setTimeout(() => setCopiedField((f) => (f === field ? null : f)), 2000);
+    } catch {
+      // Clipboard API can be denied/unavailable — the text is still selectable.
+    }
+  }
+
+  if (isLoading) {
+    return <p className="text-sm text-fg-muted">Loading…</p>;
+  }
+
+  const tokenForSnippets = revealedToken ?? TOKEN_PLACEHOLDER;
+  const claudeCodeCommand = `claude mcp add --transport http aurora ${MCP_SERVER_URL} --header "Authorization: Bearer ${tokenForSnippets}"`;
+  const claudeDesktopConfig = JSON.stringify(
+    {
+      mcpServers: {
+        aurora: {
+          command: 'npx',
+          args: [
+            '-y',
+            'mcp-remote',
+            MCP_SERVER_URL,
+            '--header',
+            `Authorization:Bearer ${tokenForSnippets}`,
+          ],
+        },
+      },
+    },
+    null,
+    2,
+  );
+
+  return (
+    <div className="flex flex-col gap-4">
+      {!status?.exists && !revealedToken && (
+        <GradientButton
+          leftIcon={<Bot size={16} />}
+          onClick={() => generate.mutate(undefined, { onSuccess: setRevealedToken })}
+          isLoading={generate.isPending}
+        >
+          Generate access token
+        </GradientButton>
+      )}
+
+      {revealedToken && (
+        <div className="flex flex-col gap-2 rounded-lg border border-[var(--accent-from)]/40 bg-[var(--accent-from)]/[0.06] p-3">
+          <p className="text-xs font-semibold text-fg">
+            Copy this token now — you won't be able to see it again.
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <input
+              type="text"
+              readOnly
+              value={revealedToken}
+              onFocus={(e) => e.currentTarget.select()}
+              aria-label="Aurora MCP access token"
+              className="h-10 flex-1 rounded-lg border bg-[var(--field-bg)] px-2.5 font-mono text-sm text-fg-muted focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
+            />
+            <button
+              type="button"
+              onClick={() => void handleCopy('token', revealedToken)}
+              className="btn-3d flex h-10 shrink-0 items-center gap-1.5 rounded-lg bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] px-3.5 text-sm font-semibold text-[var(--accent-fg)]"
+            >
+              <Copy size={15} /> {copiedField === 'token' ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {status?.exists && (
+        <div className="flex flex-col gap-3">
+          <p className="text-xs text-fg-subtle">
+            Connected
+            {status.createdAt && ` · generated ${format(parseISO(status.createdAt), 'MMM d, yyyy')}`}
+            {status.lastUsedAt
+              ? ` · last used ${format(parseISO(status.lastUsedAt), 'MMM d, h:mm a')}`
+              : ' · not used yet'}
+          </p>
+          <div className="flex flex-wrap items-center gap-4">
+            <Tooltip label="Get a fresh token; the old one stops working immediately">
+              <button
+                type="button"
+                onClick={() => rotate.mutate(undefined, { onSuccess: setRevealedToken })}
+                disabled={rotate.isPending}
+                className="flex items-center gap-1.5 text-xs font-medium text-fg-muted hover:text-fg disabled:opacity-50"
+              >
+                <RefreshCw size={13} /> Regenerate token
+              </button>
+            </Tooltip>
+            <button
+              type="button"
+              onClick={() => {
+                revoke.mutate();
+                setRevealedToken(null);
+              }}
+              disabled={revoke.isPending}
+              className="text-xs font-medium text-fg-muted hover:text-danger disabled:opacity-50"
+            >
+              Disconnect
+            </button>
+          </div>
+        </div>
+      )}
+
+      {(status?.exists || revealedToken) && (
+        <div className="flex flex-col gap-3 border-t border-[var(--glass-border)] pt-3">
+          <p className="text-xs text-fg-subtle">
+            {revealedToken
+              ? 'Paste one of these into Claude, depending on which app you use:'
+              : "Regenerate to get a fresh token to paste below — for reference, here's the config shape:"}
+          </p>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs font-semibold text-fg">Claude Code</span>
+            <div className="flex items-start gap-2">
+              <pre className="flex-1 overflow-x-auto rounded-lg border bg-[var(--field-bg)] p-2.5 font-mono text-xs text-fg-muted">
+                {claudeCodeCommand}
+              </pre>
+              <Tooltip label="Copy command">
+                <button
+                  type="button"
+                  onClick={() => void handleCopy('code', claudeCodeCommand)}
+                  className="flex h-8 shrink-0 items-center gap-1 rounded-lg border px-2 text-xs text-fg-muted hover:text-fg"
+                >
+                  <Copy size={13} /> {copiedField === 'code' ? 'Copied!' : 'Copy'}
+                </button>
+              </Tooltip>
+            </div>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs font-semibold text-fg">
+              Claude Desktop — <code className="text-[11px]">claude_desktop_config.json</code>
+            </span>
+            <div className="flex items-start gap-2">
+              <pre className="flex-1 overflow-x-auto rounded-lg border bg-[var(--field-bg)] p-2.5 font-mono text-xs text-fg-muted">
+                {claudeDesktopConfig}
+              </pre>
+              <Tooltip label="Copy config">
+                <button
+                  type="button"
+                  onClick={() => void handleCopy('desktop', claudeDesktopConfig)}
+                  className="flex h-8 shrink-0 items-center gap-1 rounded-lg border px-2 text-xs text-fg-muted hover:text-fg"
+                >
+                  <Copy size={13} /> {copiedField === 'desktop' ? 'Copied!' : 'Copy'}
+                </button>
+              </Tooltip>
+            </div>
+          </div>
+          <p className="text-xs text-fg-subtle">
+            Restart Claude Desktop after editing its config. Full setup guide: SETUP-MCP.md in the
+            project repo.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
