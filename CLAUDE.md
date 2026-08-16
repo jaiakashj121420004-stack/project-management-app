@@ -46,6 +46,7 @@ If these three are read, you have complete context. Do not duplicate their conte
    is the real gate before anything ships — always run it locally on Windows as the last step of every session,
    even if the AI reports "typecheck clean." If `npm install` changed `package-lock.json` or any dependency,
    run `npm install` first so `node_modules` matches before building.
+7. **Every new feature proposal gets checked against [reports/SIMPLICITY-GUARDRAIL.md](./reports/SIMPLICITY-GUARDRAIL.md) before being built** — the same way security changes get checked against the RLS rules below. Overwhelm, not missing features, is what actually drives users away from tools in this category.
 
 ## Coding standards (anti-slop)
 
