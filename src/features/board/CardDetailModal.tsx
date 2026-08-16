@@ -41,6 +41,7 @@ import { PriorityField } from './PriorityField';
 import { AssigneeField } from './AssigneeField';
 import { CardLabelsSection } from './CardLabelsSection';
 import { Checklist } from './Checklist';
+import { AttachmentsSection } from './AttachmentsSection';
 import { TimeTracking } from './TimeTrackingSection';
 import { formatHoursMinutes, totalSeconds } from './timeTracking';
 import { useMembers } from '@/features/members/useMembers';
@@ -162,6 +163,10 @@ function CardDetailForm({
     () => (extras?.timeEntries ?? []).filter((entry) => entry.card_id === card.id),
     [extras?.timeEntries, card.id],
   );
+  const attachments = useMemo(
+    () => (extras?.attachments ?? []).filter((attachment) => attachment.card_id === card.id),
+    [extras?.attachments, card.id],
+  );
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -260,6 +265,13 @@ function CardDetailForm({
       <Checklist projectId={projectId} cardId={card.id} items={checklistItems} />
 
       <TimeTracking projectId={projectId} cardId={card.id} entries={timeEntries} />
+
+      <AttachmentsSection
+        projectId={projectId}
+        cardId={card.id}
+        attachments={attachments}
+        canEdit
+      />
 
       {confirmingDelete ? (
         <div className="flex flex-col gap-3 border-t border-danger/30 pt-4">
@@ -412,6 +424,10 @@ function CardReadOnlyView({
     [extras?.timeEntries, card.id],
   );
   const trackedSeconds = totalSeconds(timeEntries, new Date());
+  const attachments = useMemo(
+    () => (extras?.attachments ?? []).filter((attachment) => attachment.card_id === card.id),
+    [extras?.attachments, card.id],
+  );
 
   return (
     <div className="-mr-2 flex max-h-[72vh] flex-col gap-5 overflow-y-auto pr-2">
@@ -510,6 +526,15 @@ function CardReadOnlyView({
             </span>
           </span>
         </div>
+      )}
+
+      {attachments.length > 0 && (
+        <AttachmentsSection
+          projectId={projectId}
+          cardId={card.id}
+          attachments={attachments}
+          canEdit={false}
+        />
       )}
 
       <CardCollaboration card={card} projectId={projectId} canEdit={false} />

@@ -993,6 +993,40 @@ export interface Database {
         };
         Relationships: [];
       };
+      card_attachments: {
+        Row: {
+          id: string;
+          card_id: string;
+          uploader_id: string;
+          // Path in the private card-attachments Storage bucket.
+          storage_path: string;
+          file_name: string;
+          mime_type: string;
+          size_bytes: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          card_id: string;
+          uploader_id: string;
+          storage_path: string;
+          file_name: string;
+          mime_type: string;
+          size_bytes: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          card_id?: string;
+          uploader_id?: string;
+          storage_path?: string;
+          file_name?: string;
+          mime_type?: string;
+          size_bytes?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -1268,3 +1302,4 @@ export type Reaction = Database['public']['Tables']['reactions']['Row'];
 export type ActivityEntry = Database['public']['Tables']['activity_log']['Row'];
 export type Notification = Database['public']['Tables']['notifications']['Row'];
 export type TimeEntry = Database['public']['Tables']['time_entries']['Row'];
+export type CardAttachment = Database['public']['Tables']['card_attachments']['Row'];

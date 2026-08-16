@@ -52,6 +52,7 @@ can write it, and only a Studio SQL query (service/postgres role) can read it.
 | `table_inserted` | `slashItems.ts` (Notes' `/table` slash command) and `CanvasEditor.tsx` (`addTable`) | Whenever a table block/node is inserted, either surface | `surface: 'notes' \| 'canvas'` |
 | `time_entry_started` | `TimeTrackingSection.tsx` (`handleToggle`) | When a card's timer is started | `project_id` |
 | `time_entry_stopped` | `TimeTrackingSection.tsx` (`handleToggle`) | When a card's timer is stopped | `project_id` |
+| `attachment_uploaded` | `AttachmentsSection.tsx` (`handleFiles`, on upload success) | When a file attachment is successfully added to a card | `project_id`, `mime_type`, `size_bytes` |
 
 ### Notes on specific events
 

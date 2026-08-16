@@ -32,6 +32,7 @@ export const ANALYTICS_EVENTS = [
   'table_inserted',
   'time_entry_started',
   'time_entry_stopped',
+  'attachment_uploaded',
 ] as const;
 
 export type AnalyticsEventName = (typeof ANALYTICS_EVENTS)[number];

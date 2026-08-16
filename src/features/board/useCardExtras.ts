@@ -1,12 +1,14 @@
 import { useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
-import type { ChecklistItem, Label, TimeEntry } from '@/types/database';
+import type { CardAttachment, ChecklistItem, Label, TimeEntry } from '@/types/database';
 import type { LabelColor } from '@/lib/labelColors';
 import {
+  addCardAttachment,
   attachLabel,
   detachLabel,
   fetchCardExtras,
   insertChecklistItem,
   insertLabel,
+  removeCardAttachment,
   removeChecklistItem,
   removeLabel,
   startTimeEntry,
@@ -16,12 +18,12 @@ import {
 } from './cardExtras.api';
 
 /**
- * Per-card extras (checklist items, project labels, attachments, time entries)
- * live in a single TanStack cache per project, `['card-extras', id]` →
- * CardExtras — the same one-snapshot strategy as the board (useBoard.ts). The
- * board reads it for card-face label pills + checklist progress; the card modal
- * reads and mutates the open card's slice. Optimistic patches render instantly
- * and roll back as a unit on error.
+ * Per-card extras (checklist items, project labels, label attachments, time
+ * entries, file attachments) live in a single TanStack cache per project,
+ * `['card-extras', id]` → CardExtras — the same one-snapshot strategy as the
+ * board (useBoard.ts). The board reads it for card-face label pills +
+ * checklist progress; the card modal reads and mutates the open card's slice.
+ * Optimistic patches render instantly and roll back as a unit on error.
  */
 
 const extrasKey = (projectId: string): QueryKey => ['card-extras', projectId];
@@ -258,6 +260,58 @@ export function useStopTimeEntry(projectId: string) {
   );
 }
 
+// --- Attachments --------------------------------------------------------------
+
+/**
+ * Upload + record a file attachment. Shows an optimistic placeholder (file
+ * name/size/type are known client-side before the upload finishes; storage_path
+ * is not, so the placeholder carries an empty one) while addCardAttachment
+ * uploads to Storage and inserts the row, then reconciles to the real row —
+ * same tempId pattern as useCreateLabel/useAddChecklistItem.
+ */
+export function useAddAttachment(projectId: string) {
+  return useExtrasMutation<
+    CardAttachment,
+    { cardId: string; uploaderId: string; file: File; tempId: string }
+  >(
+    projectId,
+    ({ cardId, uploaderId, file }) => addCardAttachment({ cardId, uploaderId, file }),
+    (extras, { cardId, uploaderId, file, tempId }) => ({
+      ...extras,
+      attachments: [
+        ...extras.attachments,
+        {
+          id: tempId,
+          card_id: cardId,
+          uploader_id: uploaderId,
+          storage_path: '',
+          file_name: file.name || 'Untitled',
+          mime_type: file.type || 'application/octet-stream',
+          size_bytes: file.size,
+          created_at: new Date().toISOString(),
+        },
+      ],
+    }),
+    (extras, created, { tempId }) => ({
+      ...extras,
+      attachments: extras.attachments.map((attachment) =>
+        attachment.id === tempId ? created : attachment,
+      ),
+    }),
+  );
+}
+
+export function useDeleteAttachment(projectId: string) {
+  return useExtrasMutation<void, { attachment: CardAttachment }>(
+    projectId,
+    ({ attachment }) => removeCardAttachment(attachment),
+    (extras, { attachment }) => ({
+      ...extras,
+      attachments: extras.attachments.filter((item) => item.id !== attachment.id),
+    }),
+  );
+}
+
 // --- Card removal cleanup ---------------------------------------------------
 
 /**
@@ -277,6 +331,7 @@ export function useRemoveCardExtras(projectId: string) {
             checklist: old.checklist.filter((item) => item.card_id !== cardId),
             cardLabels: old.cardLabels.filter((link) => link.card_id !== cardId),
             timeEntries: old.timeEntries.filter((entry) => entry.card_id !== cardId),
+            attachments: old.attachments.filter((attachment) => attachment.card_id !== cardId),
           }
         : old,
     );
