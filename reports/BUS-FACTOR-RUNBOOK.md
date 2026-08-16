@@ -52,28 +52,41 @@ Grouped by feature (full setup instructions for each are in
 - `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically
   into every Edge Function — never set these by hand.
 
-### 1b. ⚠️ Known outstanding secret-hygiene issue
+### 1b. ✅ RESOLVED (2026-08-16) — secret-hygiene incident, closed
 
-A file named **`Aurora DODO PAYMENTS ks.txt`** in the project root is
-**tracked in git** (committed in `c926f22`) and was still showing as a
-"leave this out of the commit" item in `memory.md` as of the latest entries.
-**If it contains a real Dodo API key or webhook secret, that secret is
-already in git history on GitHub.** This needs the account owner's direct
-review:
+`Aurora DODO PAYMENTS ks.txt` (tracked in git since `c926f22`) held a real
+live Dodo API key, the Dodo webhook signing secret, and the dedicated
+**MCP JWT signing secret** in plaintext. Confirmed exposed (git history on
+GitHub, and briefly in a chat transcript while diagnosing it). **Full
+remediation completed same day:**
 
-1. Open the file locally and check whether it holds real credentials.
-2. If yes: rotate the Dodo API key and webhook secret in the Dodo dashboard,
-   update the Supabase secrets (`DODO_PAYMENTS_API_KEY`,
-   `DODO_WEBHOOK_SECRET`) to the new values, then scrub the file from git
-   history (e.g. `git filter-repo` or BFG) and force-push, and delete/
-   gitignore the file going forward.
-3. Do **not** silently rewrite or delete this without doing the rotation
-   first — the exposure already happened at commit time regardless of what
-   you do next.
+1. **Rotated all three credentials at the source:**
+   - Dodo dashboard → Developer → API Keys: old live key revoked, new one
+     issued.
+   - Dodo dashboard → Developer → Webhooks: signing secret rotated
+     (new `whsec_...`).
+   - Supabase Dashboard → Auth → JWT Keys: the dedicated MCP standby key
+     was retired and revoked; a new HS256 standby key was created (imported
+     from a locally-generated random secret so the value was known
+     end-to-end), leaving the project's real session-signing **CURRENT KEY**
+     (ECC P-256) untouched throughout — no user was ever logged out.
+2. **New values set** via `npx supabase secrets set` for
+   `DODO_PAYMENTS_API_KEY`, `DODO_WEBHOOK_SECRET`,
+   `MCP_JWT_SIGNING_SECRET`, and `MCP_JWT_SIGNING_KEY_ID`.
+3. **File removed from the repo** and git-ignored going forward
+   (`Aurora*ks*.txt` pattern + exact filename added to `.gitignore`),
+   committed as `bdeb552` and pushed to `main`.
+4. `DODO_BUSINESS_ID` and the `pdt_...` product ids from the same file are
+   identifiers, not credentials — left unchanged, no rotation needed.
+
+**Optional remaining cleanup:** the *old, now-rotated* values still exist in
+git history prior to `bdeb552`. They're inert (rotated), so this is hygiene
+rather than urgent — a `git filter-repo`/BFG history scrub + force-push
+would fully remove them if desired.
 
 A second, similar file (`Aurora payment api.txt`) was found and safely
 deleted earlier because it was gitignored and untracked — no rotation was
-needed for that one. `Aurora DODO PAYMENTS ks.txt` is the one still open.
+needed for that one.
 
 ---
 
