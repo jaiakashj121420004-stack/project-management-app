@@ -167,35 +167,6 @@ export interface Database {
         };
         Relationships: [];
       };
-      project_share_links: {
-        Row: {
-          id: string;
-          project_id: string;
-          // DB-generated (gen_random_uuid()), never client-supplied — see
-          // 20260816140000_project_share_links.sql.
-          token: string;
-          created_by: string;
-          revoked_at: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          project_id: string;
-          token?: string;
-          created_by?: string;
-          revoked_at?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          project_id?: string;
-          token?: string;
-          created_by?: string;
-          revoked_at?: string | null;
-          created_at?: string;
-        };
-        Relationships: [];
-      };
       columns: {
         Row: {
           id: string;
@@ -965,6 +936,34 @@ export interface Database {
         };
         Relationships: [];
       };
+      time_entries: {
+        Row: {
+          id: string;
+          card_id: string;
+          user_id: string;
+          started_at: string;
+          // Null while the timer is running; set once, on stop.
+          ended_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          card_id: string;
+          user_id: string;
+          started_at?: string;
+          ended_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          card_id?: string;
+          user_id?: string;
+          started_at?: string;
+          ended_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -1215,7 +1214,6 @@ export interface Database {
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type Project = Database['public']['Tables']['projects']['Row'];
 export type ProjectMember = Database['public']['Tables']['project_members']['Row'];
-export type ProjectShareLinkRow = Database['public']['Tables']['project_share_links']['Row'];
 export type Column = Database['public']['Tables']['columns']['Row'];
 export type Card = Database['public']['Tables']['cards']['Row'];
 export type ChecklistItem = Database['public']['Tables']['checklist_items']['Row'];
@@ -1239,3 +1237,4 @@ export type CommentMention = Database['public']['Tables']['comment_mentions']['R
 export type Reaction = Database['public']['Tables']['reactions']['Row'];
 export type ActivityEntry = Database['public']['Tables']['activity_log']['Row'];
 export type Notification = Database['public']['Tables']['notifications']['Row'];
+export type TimeEntry = Database['public']['Tables']['time_entries']['Row'];

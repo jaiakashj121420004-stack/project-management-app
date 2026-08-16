@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
-import type { ChecklistItem, Label } from '@/types/database';
+import type { ChecklistItem, Label, TimeEntry } from '@/types/database';
 import type { LabelColor } from '@/lib/labelColors';
 import {
   attachLabel,
@@ -9,17 +9,19 @@ import {
   insertLabel,
   removeChecklistItem,
   removeLabel,
+  startTimeEntry,
+  stopTimeEntry,
   updateChecklistItem,
   type CardExtras,
 } from './cardExtras.api';
 
 /**
- * Per-card extras (checklist items, project labels, attachments) live in a
- * single TanStack cache per project, `['card-extras', id]` → CardExtras — the
- * same one-snapshot strategy as the board (useBoard.ts). The board reads it for
- * card-face label pills + checklist progress; the card modal reads and mutates
- * the open card's slice. Optimistic patches render instantly and roll back as a
- * unit on error.
+ * Per-card extras (checklist items, project labels, attachments, time entries)
+ * live in a single TanStack cache per project, `['card-extras', id]` →
+ * CardExtras — the same one-snapshot strategy as the board (useBoard.ts). The
+ * board reads it for card-face label pills + checklist progress; the card modal
+ * reads and mutates the open card's slice. Optimistic patches render instantly
+ * and roll back as a unit on error.
  */
 
 const extrasKey = (projectId: string): QueryKey => ['card-extras', projectId];
@@ -206,13 +208,64 @@ export function useDeleteChecklistItem(projectId: string) {
   );
 }
 
+// --- Time entries -------------------------------------------------------------
+
+/**
+ * Start a timer on this card for the current user. Optimistically stops any
+ * OTHER entry of theirs that's running (mirrors startTimeEntry's server-side
+ * sequencing — "one running entry per user at a time" is a whole-account rule,
+ * not just per-card) before adding the new running entry.
+ */
+export function useStartTimeEntry(projectId: string) {
+  return useExtrasMutation<TimeEntry, { cardId: string; userId: string; tempId: string }>(
+    projectId,
+    ({ cardId, userId }) => startTimeEntry({ cardId, userId }),
+    (extras, { cardId, userId, tempId }) => ({
+      ...extras,
+      timeEntries: [
+        ...extras.timeEntries.map((entry) =>
+          entry.user_id === userId && entry.ended_at === null
+            ? { ...entry, ended_at: new Date().toISOString() }
+            : entry,
+        ),
+        {
+          id: tempId,
+          card_id: cardId,
+          user_id: userId,
+          started_at: new Date().toISOString(),
+          ended_at: null,
+          created_at: new Date().toISOString(),
+        },
+      ],
+    }),
+    (extras, created, { tempId }) => ({
+      ...extras,
+      timeEntries: extras.timeEntries.map((entry) => (entry.id === tempId ? created : entry)),
+    }),
+  );
+}
+
+export function useStopTimeEntry(projectId: string) {
+  return useExtrasMutation<TimeEntry, { id: string }>(
+    projectId,
+    ({ id }) => stopTimeEntry(id),
+    (extras, { id }) => ({
+      ...extras,
+      timeEntries: extras.timeEntries.map((entry) =>
+        entry.id === id ? { ...entry, ended_at: new Date().toISOString() } : entry,
+      ),
+    }),
+  );
+}
+
 // --- Card removal cleanup ---------------------------------------------------
 
 /**
- * Drop a deleted card's checklist items and label attachments from the cache.
- * Deleting the card row cascades to these in the DB; this mirrors that in the
- * local snapshot immediately, so nothing dangles while we wait for a refetch.
- * Returns a stable callback the board calls after a card delete succeeds.
+ * Drop a deleted card's checklist items, label attachments, and time entries
+ * from the cache. Deleting the card row cascades to these in the DB; this
+ * mirrors that in the local snapshot immediately, so nothing dangles while we
+ * wait for a refetch. Returns a stable callback the board calls after a card
+ * delete succeeds.
  */
 export function useRemoveCardExtras(projectId: string) {
   const queryClient = useQueryClient();
@@ -223,6 +276,7 @@ export function useRemoveCardExtras(projectId: string) {
             ...old,
             checklist: old.checklist.filter((item) => item.card_id !== cardId),
             cardLabels: old.cardLabels.filter((link) => link.card_id !== cardId),
+            timeEntries: old.timeEntries.filter((entry) => entry.card_id !== cardId),
           }
         : old,
     );

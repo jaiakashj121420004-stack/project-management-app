@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   CalendarClock,
   Check,
+  Clock,
   History,
   ListChecks,
   Smile,
@@ -40,6 +41,8 @@ import { PriorityField } from './PriorityField';
 import { AssigneeField } from './AssigneeField';
 import { CardLabelsSection } from './CardLabelsSection';
 import { Checklist } from './Checklist';
+import { TimeTracking } from './TimeTracking';
+import { formatHoursMinutes, totalSeconds } from './timeTracking';
 import { useMembers } from '@/features/members/useMembers';
 
 export interface CardDetailValues {
@@ -155,6 +158,10 @@ function CardDetailForm({
       ),
     [extras?.cardLabels, card.id],
   );
+  const timeEntries = useMemo(
+    () => (extras?.timeEntries ?? []).filter((entry) => entry.card_id === card.id),
+    [extras?.timeEntries, card.id],
+  );
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -251,6 +258,8 @@ function CardDetailForm({
       />
 
       <Checklist projectId={projectId} cardId={card.id} items={checklistItems} />
+
+      <TimeTracking projectId={projectId} cardId={card.id} entries={timeEntries} />
 
       {confirmingDelete ? (
         <div className="flex flex-col gap-3 border-t border-danger/30 pt-4">
@@ -398,6 +407,11 @@ function CardReadOnlyView({
   const labels = (extras?.labels ?? []).filter((label) => attachedIds.has(label.id));
   const done = checklist.filter((item) => item.is_done).length;
   const total = checklist.length;
+  const timeEntries = useMemo(
+    () => (extras?.timeEntries ?? []).filter((entry) => entry.card_id === card.id),
+    [extras?.timeEntries, card.id],
+  );
+  const trackedSeconds = totalSeconds(timeEntries, new Date());
 
   return (
     <div className="-mr-2 flex max-h-[72vh] flex-col gap-5 overflow-y-auto pr-2">
@@ -484,6 +498,18 @@ function CardReadOnlyView({
             ))}
           </ul>
         </section>
+      )}
+
+      {trackedSeconds > 0 && (
+        <div className="flex items-center gap-2 text-sm text-fg-muted">
+          <Clock size={16} aria-hidden />
+          <span>
+            Time tracked:{' '}
+            <span className="font-mono font-medium text-fg">
+              {formatHoursMinutes(trackedSeconds)}
+            </span>
+          </span>
+        </div>
       )}
 
       <CardCollaboration card={card} projectId={projectId} canEdit={false} />
