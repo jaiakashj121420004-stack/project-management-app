@@ -4,7 +4,7 @@ import type { TimeEntry } from '@/types/database';
  * Duration math + formatting for per-card time tracking (plan.md §5). Entries
  * with `ended_at === null` are "currently running" (the same nullable-sentinel
  * pattern as `cards.due_at`) — every helper here takes `now` explicitly so a
- * live-ticking display (TimeTracking.tsx) can recompute on an interval without
+ * live-ticking display (TimeTrackingSection.tsx) can recompute on an interval without
  * re-deriving the sentinel logic at each call site.
  */
 

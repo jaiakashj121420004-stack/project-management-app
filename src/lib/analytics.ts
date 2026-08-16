@@ -30,6 +30,8 @@ export const ANALYTICS_EVENTS = [
   'install_accepted',
   'install_dismissed',
   'table_inserted',
+  'time_entry_started',
+  'time_entry_stopped',
 ] as const;
 
 export type AnalyticsEventName = (typeof ANALYTICS_EVENTS)[number];

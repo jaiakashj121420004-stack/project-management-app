@@ -41,7 +41,7 @@ import { PriorityField } from './PriorityField';
 import { AssigneeField } from './AssigneeField';
 import { CardLabelsSection } from './CardLabelsSection';
 import { Checklist } from './Checklist';
-import { TimeTracking } from './TimeTracking';
+import { TimeTracking } from './TimeTrackingSection';
 import { formatHoursMinutes, totalSeconds } from './timeTracking';
 import { useMembers } from '@/features/members/useMembers';
 
