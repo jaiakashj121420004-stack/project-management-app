@@ -21,6 +21,7 @@ interface BoardColumnProps {
   onDelete: (column: Column) => void;
   onAddCard: (columnId: string, title: string) => void;
   onOpenCard: (card: Card) => void;
+  onDeleteCard: (card: Card) => void;
 }
 
 /**
@@ -40,6 +41,7 @@ export function BoardColumn({
   onDelete,
   onAddCard,
   onOpenCard,
+  onDeleteCard,
 }: BoardColumnProps) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: column.id,
@@ -115,7 +117,9 @@ export function BoardColumn({
                 card={card}
                 face={faceByCardId.get(card.id)}
                 hidden={hiddenCardIds.has(card.id)}
+                canEdit={canEdit}
                 onOpenCard={onOpenCard}
+                onDeleteCard={onDeleteCard}
               />
             ))}
             {filtering && visibleCount === 0 && (

@@ -17,9 +17,13 @@ interface BoardCardProps {
   /** Filtered out by the board toolbar — kept mounted but visually hidden so
    *  drag ordering (which reads the full list) stays correct. */
   hidden?: boolean;
+  /** Owners/editors get a hover edit/delete pair; viewers don't. */
+  canEdit?: boolean;
   /** Stable (useCallback) open handler; the card is passed back so the parent
    *  needn't allocate one closure per card (keeps this memo effective). */
   onOpenCard: (card: Card) => void;
+  /** Stable (useCallback) delete-request handler; opens the confirm dialog. */
+  onDeleteCard?: (card: Card) => void;
 }
 
 /**
@@ -37,13 +41,14 @@ interface BoardCardProps {
  * so a quick tap opens the card and a vertical swipe still scrolls the column —
  * only a long-press starts a drag.
  */
-function BoardCardComponent({ card, face, hidden = false, onOpenCard }: BoardCardProps) {
+function BoardCardComponent({ card, face, hidden = false, canEdit = false, onOpenCard, onDeleteCard }: BoardCardProps) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: card.id,
     data: { type: 'card', columnId: card.column_id },
   });
 
   const handleOpen = useCallback(() => onOpenCard(card), [onOpenCard, card]);
+  const handleDeleteRequest = useCallback(() => onDeleteCard?.(card), [onDeleteCard, card]);
 
   return (
     <li
@@ -63,6 +68,8 @@ function BoardCardComponent({ card, face, hidden = false, onOpenCard }: BoardCar
         checklist={face?.checklist}
         dimmed={isDragging}
         onClick={handleOpen}
+        onEdit={canEdit ? handleOpen : undefined}
+        onDelete={canEdit && onDeleteCard ? handleDeleteRequest : undefined}
       />
     </li>
   );

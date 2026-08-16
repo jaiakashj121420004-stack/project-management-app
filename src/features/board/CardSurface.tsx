@@ -5,7 +5,9 @@ import {
   CheckSquare,
   Eye,
   Flag,
+  Pencil,
   RotateCcw,
+  Trash2,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -50,6 +52,10 @@ interface CardSurfaceProps {
   className?: string;
   style?: CSSProperties;
   onClick?: () => void;
+  /** Owners/editors get a quick edit + delete pair on hover/focus; viewers don't.
+   *  Omitted (undefined) on the DragOverlay clone, which has nothing to act on. */
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 const DUE_PILL: Record<ReturnType<typeof dueStatus>, string> = {
@@ -66,13 +72,29 @@ const DUE_PILL: Record<ReturnType<typeof dueStatus>, string> = {
  * checklist progress.
  */
 const CardSurfaceComponent = forwardRef<HTMLDivElement, CardSurfaceProps>(function CardSurface(
-  { title, description, dueDate, priority, reviewStatus, labels, checklist, lifted = false, dimmed = false, className, style, onClick },
+  {
+    title,
+    description,
+    dueDate,
+    priority,
+    reviewStatus,
+    labels,
+    checklist,
+    lifted = false,
+    dimmed = false,
+    className,
+    style,
+    onClick,
+    onEdit,
+    onDelete,
+  },
   ref,
 ) {
   const status = dueDate ? dueStatus(dueDate) : null;
   const hasChecklist = checklist && checklist.total > 0;
   const hasPriority = priority != null;
   const review = reviewStatus && reviewStatus !== 'none' ? REVIEW_PILL[reviewStatus] : null;
+  const showActions = Boolean(onEdit || onDelete);
 
   return (
     <div
@@ -80,7 +102,7 @@ const CardSurfaceComponent = forwardRef<HTMLDivElement, CardSurfaceProps>(functi
       onClick={onClick}
       style={style}
       className={cn(
-        'glass rounded-2xl p-3.5 text-left',
+        'group/card relative glass rounded-2xl p-3.5 text-left',
         'shadow-[var(--glass-shadow),0_10px_24px_-16px_var(--accent-glow)]',
         'transition-shadow duration-200',
         onClick && 'cursor-pointer',
@@ -90,6 +112,40 @@ const CardSurfaceComponent = forwardRef<HTMLDivElement, CardSurfaceProps>(functi
         className,
       )}
     >
+      {showActions ? (
+        <div
+          onPointerDown={(event) => event.stopPropagation()}
+          className="absolute right-2 top-2 flex items-center gap-0.5 rounded-lg bg-[var(--glass-bg)]/90 opacity-0 shadow-sm backdrop-blur-sm transition-opacity focus-within:opacity-100 group-hover/card:opacity-100"
+        >
+          {onEdit ? (
+            <button
+              type="button"
+              aria-label={`Edit ${title}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                onEdit();
+              }}
+              className="grid h-7 w-7 place-items-center rounded-lg text-fg-subtle transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+            >
+              <Pencil size={13} />
+            </button>
+          ) : null}
+          {onDelete ? (
+            <button
+              type="button"
+              aria-label={`Delete ${title}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                onDelete();
+              }}
+              className="grid h-7 w-7 place-items-center rounded-lg text-fg-subtle transition-colors hover:bg-danger/10 hover:text-danger"
+            >
+              <Trash2 size={13} />
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
       {labels && labels.length > 0 ? (
         <div className="mb-2 flex flex-wrap gap-x-3 gap-y-1">
           {labels.map((label) => (

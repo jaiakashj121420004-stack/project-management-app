@@ -30,6 +30,7 @@ import type { CardFace } from './BoardCard';
 import { AddColumn } from './AddColumn';
 import { CardSurface, type ChecklistProgress } from './CardSurface';
 import { CardDetailModal, type CardDetailValues } from './CardDetailModal';
+import { DeleteCardDialog } from './DeleteCardDialog';
 import { DeleteColumnDialog } from './DeleteColumnDialog';
 import { Confetti } from './Confetti';
 import { BoardToolbar, type DueFilter, type ReviewFilter } from './BoardToolbar';
@@ -224,6 +225,9 @@ export function Board({ projectId, accent, canEdit }: BoardProps) {
   // Stable so the memoised BoardCard leaves don't re-render on every board render.
   const handleOpenCard = useCallback((card: Card) => setOpenCardId(card.id), []);
   const [deletingColumn, setDeletingColumn] = useState<Column | null>(null);
+  const [deletingCard, setDeletingCard] = useState<Card | null>(null);
+  // Stable so the memoised BoardCard leaves don't re-render on every board render.
+  const handleDeleteCardRequest = useCallback((card: Card) => setDeletingCard(card), []);
   const [celebrateKey, setCelebrateKey] = useState(0);
 
   const sensors = useSensors(
@@ -408,6 +412,12 @@ export function Board({ projectId, accent, canEdit }: BoardProps) {
     setDeletingColumn(null);
   }
 
+  async function handleConfirmDeleteCard() {
+    if (!deletingCard) return;
+    await handleDeleteCard(deletingCard.id);
+    setDeletingCard(null);
+  }
+
   async function handleSaveCard(id: string, values: CardDetailValues) {
     await updateCard.mutateAsync({
       id,
@@ -489,6 +499,7 @@ export function Board({ projectId, accent, canEdit }: BoardProps) {
                   onDelete={setDeletingColumn}
                   onAddCard={handleAddCard}
                   onOpenCard={handleOpenCard}
+                  onDeleteCard={handleDeleteCardRequest}
                 />
               );
             })}
@@ -548,6 +559,14 @@ export function Board({ projectId, accent, canEdit }: BoardProps) {
         cardCount={deletingColumn ? (baseContainers[deletingColumn.id]?.length ?? 0) : 0}
         onConfirm={handleConfirmDeleteColumn}
         isPending={deleteColumn.isPending}
+      />
+
+      <DeleteCardDialog
+        open={Boolean(deletingCard)}
+        onClose={() => setDeletingCard(null)}
+        cardTitle={deletingCard?.title ?? ''}
+        onConfirm={handleConfirmDeleteCard}
+        isPending={deleteCard.isPending}
       />
 
       <Confetti fireKey={celebrateKey} />
