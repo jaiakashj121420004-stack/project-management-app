@@ -199,6 +199,74 @@ assignee, no carried-over comments/attachments/time entries) for every template
 card whose rule matches today and hasn't already fired today. To stop it:
 `select cron.unschedule('aurora-card-recurrences');`.
 
+## Automations (optional, Pro/Team)
+
+Rule-builder automations (Task 23 — "when a card moves to Done, assign it to
+nobody", etc.). Two of the three trigger types (a card moving to a column, a
+checklist reaching 100%) are plain Postgres triggers on `cards`/
+`checklist_items` — **already active as soon as the migration below is
+applied, no extra setup needed.** Only the third trigger, **a card's due date
+passing**, needs the same kind of cron as due-date reminders / recurring cards
+(nothing "writes" at the moment a date passes, so there's no row event to hook
+a trigger onto): **skip this section if you don't plan to use the
+"due date passes" trigger** — the other two automation triggers work fully
+without it.
+
+### 1. Apply the migration
+
+Run [`migrations/20260817140000_automation_rules.sql`](./migrations/20260817140000_automation_rules.sql)
+(SQL Editor or `db push`). It adds the `automation_rules` table + RLS
+(gated by `project_is_pro()` + `can_edit_project()` for create/update — see
+the migration's own comments), the two inline triggers, and the
+**service-role-only** SECURITY DEFINER RPC for the due-date path,
+`run_due_date_automations()`.
+
+### 2. Deploy the Edge Function
+
+The function lives in [`functions/run-automations/`](./functions/run-automations)
+— a thin, auth-checked trigger for the RPC above, same shape as
+`create-recurring-cards`/`send-due-reminders`. It also runs **without JWT
+verification**:
+
+```bash
+npx supabase functions deploy run-automations --no-verify-jwt
+```
+
+It only needs `CRON_SECRET` — reuse the **same value** already set for the
+other cron functions if you have more than one on (it's just a shared secret,
+not tied to one function):
+
+```bash
+npx supabase secrets set CRON_SECRET="$(openssl rand -hex 32)"
+```
+
+### 3. Schedule it (pg_cron + pg_net)
+
+Every 10 minutes is generous enough that "the due date passed" never feels
+delayed, while staying cheap to run:
+
+```sql
+create extension if not exists pg_cron;
+create extension if not exists pg_net;
+
+select cron.schedule(
+  'aurora-automations-due-date',
+  '*/10 * * * *',
+  $$
+  select net.http_post(
+    url     := 'https://<ref>.functions.supabase.co/run-automations',
+    headers := jsonb_build_object('x-cron-secret', '<CRON_SECRET>'),
+    body    := '{}'::jsonb
+  );
+  $$
+);
+```
+
+Each run fires the "due date passed" action at most once per (rule, card) —
+tracked in `automation_rule_fires`, the same one-shot-dedupe idea as
+`reminder_sent_for`/`recurrence_last_run_on`. To stop it:
+`select cron.unschedule('aurora-automations-due-date');`.
+
 ## Dodo Payments billing (optional)
 
 The app has a **Free** vs **Pro** plan. The free limits are enforced in the

@@ -8,6 +8,7 @@ import {
   MoreVertical,
   NotebookPen,
   PenTool,
+  Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { GlassPanel } from '@/components/glass/GlassPanel';
@@ -21,6 +22,7 @@ import { NotesPanel } from '@/features/notes';
 import { MembersBar, useMyRole, useProjectRealtime } from '@/features/members';
 import { ProGate } from '@/features/billing';
 import { ActivityFeed, useProjectIsPro } from '@/features/collaboration';
+import { AutomationsDialog } from '@/features/automations';
 import { SaveAsTemplateDialog } from './SaveAsTemplateDialog';
 import { useProject } from './useProjects';
 
@@ -42,6 +44,7 @@ export function ProjectPage() {
   const { user } = useAuth();
   const { data: project, isLoading } = useProject(projectId);
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
+  const [automationsOpen, setAutomationsOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   const tab: ProjectTab =
@@ -115,7 +118,9 @@ export function ProjectPage() {
                 <ArrowLeft size={16} /> Projects
               </Link>
               <div className="mt-3 flex flex-wrap items-center gap-3">
-                <h1 className="gradient-text font-display text-headline font-bold">{project.name}</h1>
+                <h1 className="gradient-text font-display text-headline font-bold">
+                  {project.name}
+                </h1>
                 <Badge tone={isOwner ? 'accent' : role === 'viewer' ? 'neutral' : 'info'}>
                   {roleLabel}
                 </Badge>
@@ -127,7 +132,13 @@ export function ProjectPage() {
 
             <div className="flex shrink-0 items-center gap-1.5 pt-1">
               <MembersBar projectId={project.id} accent={project.accent} isOwner={isOwner} />
-              <ProjectMenu onSaveAsTemplate={() => setSaveTemplateOpen(true)} />
+              <ProjectMenu
+                onSaveAsTemplate={() => setSaveTemplateOpen(true)}
+                // Fully hidden (not shown-but-disabled) below Pro/Team — a
+                // free-plan user never sees this entry point at all
+                // (guardrail item 1 + Task 23's hard-gate decision, memory.md).
+                onAutomations={isProBoard ? () => setAutomationsOpen(true) : undefined}
+              />
             </div>
           </div>
 
@@ -168,7 +179,9 @@ export function ProjectPage() {
         </header>
       </Reveal>
 
-      {tab === 'board' && <Board projectId={project.id} accent={project.accent} canEdit={canEdit} />}
+      {tab === 'board' && (
+        <Board projectId={project.id} accent={project.accent} canEdit={canEdit} />
+      )}
       {tab === 'notes' && <NotesPanel projectId={project.id} canEdit={canEdit} />}
       {tab === 'canvas' && (
         <ProGate
@@ -207,15 +220,31 @@ export function ProjectPage() {
         projectId={project.id}
         projectName={project.name}
       />
+
+      {isProBoard && (
+        <AutomationsDialog
+          open={automationsOpen}
+          onClose={() => setAutomationsOpen(false)}
+          projectId={project.id}
+          canEdit={canEdit}
+        />
+      )}
     </div>
   );
 }
 
 /** The project header's overflow menu — a kebab button opening a small
  *  glass-strong dropdown, the same open/outside-click/Escape pattern as the
- *  Library's item action menu (LibraryItemCard.tsx). One item today (Save as
- *  template); more project-level actions can land here later. */
-function ProjectMenu({ onSaveAsTemplate }: { onSaveAsTemplate: () => void }) {
+ *  Library's item action menu (LibraryItemCard.tsx). "Automations" only
+ *  appears when `onAutomations` is passed (i.e. the project is Pro/Team) — a
+ *  free-plan project's menu has just the one item, exactly as before. */
+function ProjectMenu({
+  onSaveAsTemplate,
+  onAutomations,
+}: {
+  onSaveAsTemplate: () => void;
+  onAutomations?: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -263,6 +292,20 @@ function ProjectMenu({ onSaveAsTemplate }: { onSaveAsTemplate: () => void }) {
             <BookmarkPlus size={15} className="shrink-0" />
             Save as template
           </button>
+          {onAutomations && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                onAutomations();
+              }}
+              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+            >
+              <Zap size={15} className="shrink-0" />
+              Automations
+            </button>
+          )}
         </div>
       )}
     </div>

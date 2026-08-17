@@ -7,7 +7,7 @@
 
 ## What this is (and isn't)
 
-A thin, privacy-respecting funnel-tracking layer — sixteen allow-listed events,
+A thin, privacy-respecting funnel-tracking layer — seventeen allow-listed events,
 one Postgres table, no dashboard. It exists to answer "where do people drop off
 between landing on the site and paying," not to be a general analytics
 platform. No page-view auto-tracking, no session replay, no click-heatmaps, no
@@ -54,6 +54,7 @@ can write it, and only a Studio SQL query (service/postgres role) can read it.
 | `time_entry_stopped` | `TimeTrackingSection.tsx` (`handleToggle`) | When a card's timer is stopped | `project_id` |
 | `attachment_uploaded` | `AttachmentsSection.tsx` (`handleFiles`, on upload success) | When a file attachment is successfully added to a card | `project_id`, `mime_type`, `size_bytes` |
 | `import_completed` | `ImportModal.tsx` (`handleImport`) | When a one-time Trello/CSV import finishes writing into the newly-created project | `source: 'trello' \| 'csv'`, `card_count` |
+| `automation_rule_created` | `useAutomations.ts` (`useCreateAutomationRule`) | When a Pro/Team project saves a new automation rule | `project_id`, `trigger_type` |
 
 ### Notes on specific events
 

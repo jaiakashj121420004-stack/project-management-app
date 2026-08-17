@@ -48,6 +48,16 @@ export type NotificationKind =
   | 'review_approved'
   | 'review_changes';
 
+/** Automations (Pro/Team, Task 23): a small, FIXED trigger enum — never an
+ *  open set. See 20260817140000_automation_rules.sql. */
+export type AutomationTriggerType =
+  | 'card_moved_to_column'
+  | 'checklist_completed'
+  | 'due_date_passed';
+
+/** Automations: a small, FIXED action enum — never an open set. */
+export type AutomationActionType = 'move_to_column' | 'add_label' | 'assign_user';
+
 export interface Database {
   public: {
     Tables: {
@@ -418,6 +428,51 @@ export interface Database {
         Update: {
           card_id?: string;
           label_id?: string;
+        };
+        Relationships: [];
+      };
+      automation_rules: {
+        // Small, fixed-shape "if X then Y" automations (Pro/Team only) — see
+        // 20260817140000_automation_rules.sql. trigger_config/action_config
+        // shapes (by type):
+        //   card_moved_to_column trigger -> { column_id: string }
+        //   checklist_completed / due_date_passed triggers -> {}
+        //   move_to_column action -> { column_id: string }
+        //   add_label action -> { label_id: string }
+        //   assign_user action -> { user_id: string | null }
+        Row: {
+          id: string;
+          project_id: string;
+          trigger_type: AutomationTriggerType;
+          trigger_config: Record<string, unknown>;
+          action_type: AutomationActionType;
+          action_config: Record<string, unknown>;
+          enabled: boolean;
+          // Defaults to auth.uid() in the DB; immutable after insert.
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          trigger_type: AutomationTriggerType;
+          trigger_config: Record<string, unknown>;
+          action_type: AutomationActionType;
+          action_config: Record<string, unknown>;
+          enabled?: boolean;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          trigger_type?: AutomationTriggerType;
+          trigger_config?: Record<string, unknown>;
+          action_type?: AutomationActionType;
+          action_config?: Record<string, unknown>;
+          enabled?: boolean;
+          created_by?: string | null;
+          created_at?: string;
         };
         Relationships: [];
       };
@@ -1392,3 +1447,4 @@ export type ActivityEntry = Database['public']['Tables']['activity_log']['Row'];
 export type Notification = Database['public']['Tables']['notifications']['Row'];
 export type TimeEntry = Database['public']['Tables']['time_entries']['Row'];
 export type CardAttachment = Database['public']['Tables']['card_attachments']['Row'];
+export type AutomationRule = Database['public']['Tables']['automation_rules']['Row'];
