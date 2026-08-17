@@ -2,6 +2,7 @@ import { useQuery, type QueryKey } from '@tanstack/react-query';
 import { useOptimisticMutation } from '@/lib/useOptimisticMutation';
 import { track } from '@/lib/analytics';
 import type { Card, Column } from '@/types/database';
+import type { RecurrenceRule } from '@/lib/recurrence';
 import {
   fetchBoard,
   insertCard,
@@ -157,6 +158,8 @@ export function useAddCard(projectId: string) {
           review_assignee_id: null,
           reviewed_by: null,
           reviewed_at: null,
+          recurrence_rule: null,
+          recurrence_last_run_on: null,
           position,
           created_at: new Date().toISOString(),
         },
@@ -186,16 +189,34 @@ export function useUpdateCard(projectId: string) {
       due_at: string | null;
       priority: number | null;
       assignee_id: string | null;
+      recurrence_rule: RecurrenceRule | null;
     }
   >(
     projectId,
-    ({ id, title, description, due_date, due_at, priority, assignee_id }) =>
-      updateCardDetail(id, { title, description, due_date, due_at, priority, assignee_id }),
-    (board, { id, title, description, due_date, due_at, priority, assignee_id }) => ({
+    ({ id, title, description, due_date, due_at, priority, assignee_id, recurrence_rule }) =>
+      updateCardDetail(id, {
+        title,
+        description,
+        due_date,
+        due_at,
+        priority,
+        assignee_id,
+        recurrence_rule,
+      }),
+    (board, { id, title, description, due_date, due_at, priority, assignee_id, recurrence_rule }) => ({
       ...board,
       cards: board.cards.map((card) =>
         card.id === id
-          ? { ...card, title: title.trim(), description, due_date, due_at, priority, assignee_id }
+          ? {
+              ...card,
+              title: title.trim(),
+              description,
+              due_date,
+              due_at,
+              priority,
+              assignee_id,
+              recurrence_rule,
+            }
           : card,
       ),
     }),

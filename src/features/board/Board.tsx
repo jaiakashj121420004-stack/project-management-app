@@ -444,6 +444,7 @@ export function Board({ projectId, accent, canEdit }: BoardProps) {
       due_at: values.due_at,
       priority: values.priority,
       assignee_id: values.assignee_id,
+      recurrence_rule: values.recurrence_rule,
     });
   }
 

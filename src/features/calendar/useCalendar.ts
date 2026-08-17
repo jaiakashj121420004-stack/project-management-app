@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
 import type { Card } from '@/types/database';
+import type { RecurrenceRule } from '@/lib/recurrence';
 import { removeCard, updateCardDetail, type BoardData } from '@/features/board/api';
 import type { CardExtras } from '@/features/board/cardExtras.api';
 import { fetchDatedCards, fetchTodoListsInRange, updateCardDueDate, type CalendarTodos } from './api';
@@ -97,11 +98,20 @@ export function useUpdateCalendarCard() {
       due_at: string | null;
       priority: number | null;
       assignee_id: string | null;
+      recurrence_rule: RecurrenceRule | null;
     },
     CardMutationContext
   >({
-    mutationFn: ({ id, title, description, due_date, due_at, priority, assignee_id }) =>
-      updateCardDetail(id, { title, description, due_date, due_at, priority, assignee_id }),
+    mutationFn: ({ id, title, description, due_date, due_at, priority, assignee_id, recurrence_rule }) =>
+      updateCardDetail(id, {
+        title,
+        description,
+        due_date,
+        due_at,
+        priority,
+        assignee_id,
+        recurrence_rule,
+      }),
     onMutate: async ({
       id,
       projectId,
@@ -111,11 +121,20 @@ export function useUpdateCalendarCard() {
       due_at,
       priority,
       assignee_id,
+      recurrence_rule,
     }) => {
       await queryClient.cancelQueries({ queryKey: calendarKey });
       const prevCalendar = queryClient.getQueryData<Card[]>(calendarKey);
       const prevBoard = queryClient.getQueryData<BoardData>(boardKey(projectId));
-      const patch = { title: title.trim(), description, due_date, due_at, priority, assignee_id };
+      const patch = {
+        title: title.trim(),
+        description,
+        due_date,
+        due_at,
+        priority,
+        assignee_id,
+        recurrence_rule,
+      };
       queryClient.setQueryData<Card[]>(calendarKey, (old) => patchCalendar(old, id, patch));
       queryClient.setQueryData<BoardData>(boardKey(projectId), (old) => patchBoard(old, id, patch));
       return { prevCalendar, prevBoard, projectId };

@@ -132,6 +132,73 @@ fires once per `due_at`. To stop it: `select cron.unschedule('aurora-due-reminde
 > -- then re-run the cron.schedule(...) above with '*/10 * * * *'
 > ```
 
+## Recurring Kanban cards (optional)
+
+A card can repeat (daily free, weekly/monthly/custom-interval Pro — same rule
+shape as to-do recurrence, see `src/lib/recurrence.ts`). Unlike to-dos, a card
+has no "day being viewed" to lazily reseed against, so this needs a real cron —
+same three pieces as due-date reminders above, and skippable for the same
+reason: **skip this section if you don't want cards to auto-repeat** — creating,
+editing, and viewing cards works fine without it; only the "next occurrence
+never gets created" bit needs this setup.
+
+### 1. Apply the migration
+
+Run [`migrations/20260817130000_card_recurrence.sql`](./migrations/20260817130000_card_recurrence.sql)
+(SQL Editor or `db push`). It adds `recurrence_rule` (jsonb) and
+`recurrence_last_run_on` (dedupe marker) to `cards`, the
+`enforce_card_recurrence_plan` gate (daily free, the rest need the project on
+Pro via `project_is_pro`), the SQL mirror of `ruleMatchesDate()`
+(`recurrence_rule_matches_date`), and the **service-role-only** SECURITY
+DEFINER RPC that does the actual work, `run_due_card_recurrences()`.
+
+### 2. Deploy the Edge Function
+
+The function lives in
+[`functions/create-recurring-cards/`](./functions/create-recurring-cards) — a
+thin, auth-checked trigger for the RPC above, same shape as
+`send-due-reminders`. It also runs **without JWT verification**:
+
+```bash
+npx supabase functions deploy create-recurring-cards --no-verify-jwt
+```
+
+It only needs `CRON_SECRET` — reuse the **same value** already set for
+`send-due-reminders` if you have both features on (it's just a shared secret,
+not tied to one function):
+
+```bash
+npx supabase secrets set CRON_SECRET="$(openssl rand -hex 32)"
+```
+
+### 3. Schedule it (pg_cron + pg_net)
+
+Unlike reminders, this only needs to run **once a day** — a card's recurrence is
+date-grained, not time-grained. Any time works; just after midnight UTC keeps
+"today" consistent with `due_date`'s convention elsewhere in the app:
+
+```sql
+create extension if not exists pg_cron;
+create extension if not exists pg_net;
+
+select cron.schedule(
+  'aurora-card-recurrences',
+  '5 0 * * *',                       -- once a day, 00:05 UTC
+  $$
+  select net.http_post(
+    url     := 'https://<ref>.functions.supabase.co/create-recurring-cards',
+    headers := jsonb_build_object('x-cron-secret', '<CRON_SECRET>'),
+    body    := '{}'::jsonb
+  );
+  $$
+);
+```
+
+Each run creates one fresh new card (unchecked checklist, same labels/priority/
+assignee, no carried-over comments/attachments/time entries) for every template
+card whose rule matches today and hasn't already fired today. To stop it:
+`select cron.unschedule('aurora-card-recurrences');`.
+
 ## Dodo Payments billing (optional)
 
 The app has a **Free** vs **Pro** plan. The free limits are enforced in the

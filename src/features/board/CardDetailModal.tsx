@@ -7,6 +7,7 @@ import {
   Clock,
   History,
   ListChecks,
+  Repeat2,
   Smile,
   Tags,
   Trash2,
@@ -20,6 +21,7 @@ import { Badge } from '@/components/Badge';
 import { cn } from '@/lib/cn';
 import { formatPriority, priorityPillClass } from '@/lib/priority';
 import { combineDueAt, dueAtDate, dueAtTime, formatDueTime } from '@/lib/dueAt';
+import { describeRule, type RecurrenceRule } from '@/lib/recurrence';
 import type { AccentName } from '@/lib/accents';
 import type { Card } from '@/types/database';
 import { useIsPro } from '@/features/billing';
@@ -44,6 +46,7 @@ import { Checklist } from './Checklist';
 import { AttachmentsSection } from './AttachmentsSection';
 import { TimeTracking } from './TimeTrackingSection';
 import { formatHoursMinutes, totalSeconds } from './timeTracking';
+import { RecurrenceField } from './RecurrenceField';
 import { useMembers } from '@/features/members/useMembers';
 
 export interface CardDetailValues {
@@ -54,6 +57,8 @@ export interface CardDetailValues {
   due_at: string | null;
   priority: number | null;
   assignee_id: string | null;
+  /** null = doesn't repeat. See RecurrenceField / src/lib/recurrence.ts. */
+  recurrence_rule: RecurrenceRule | null;
 }
 
 interface CardDetailModalProps {
@@ -129,6 +134,7 @@ function CardDetailForm({
   isDeleting: boolean;
 }) {
   const isPro = useIsPro();
+  const { data: isProBoard } = useProjectIsPro(projectId);
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description ?? '');
   const [dueDate, setDueDate] = useState<string | null>(
@@ -139,6 +145,9 @@ function CardDetailForm({
   );
   const [priority, setPriority] = useState<number | null>(card.priority);
   const [assigneeId, setAssigneeId] = useState<string | null>(card.assignee_id);
+  const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceRule | null>(
+    (card.recurrence_rule as RecurrenceRule | null) ?? null,
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -187,6 +196,7 @@ function CardDetailForm({
         due_at: combineDueAt(dueDate, dueTime),
         priority,
         assignee_id: assigneeId,
+        recurrence_rule: recurrenceRule,
       });
       onClose();
     } catch {
@@ -250,6 +260,12 @@ function CardDetailForm({
       />
 
       <RemindersSection cardId={card.id} dueAt={combineDueAt(dueDate, dueTime)} />
+
+      <RecurrenceField
+        rule={recurrenceRule}
+        isPro={Boolean(isProBoard)}
+        onChange={setRecurrenceRule}
+      />
 
       <PriorityField value={priority} onChange={setPriority} />
 
@@ -440,7 +456,7 @@ function CardReadOnlyView({
         )}
       </div>
 
-      {(card.due_date || card.priority != null) && (
+      {(card.due_date || card.priority != null || card.recurrence_rule) && (
         <div className="flex flex-wrap items-center gap-2">
           {card.due_date && (
             <Badge tone={DUE_TONE[dueStatus(card.due_date)]}>
@@ -457,6 +473,11 @@ function CardReadOnlyView({
             >
               {formatPriority(card.priority)}
             </span>
+          )}
+          {card.recurrence_rule && (
+            <Badge tone="neutral">
+              <Repeat2 size={13} /> {describeRule(card.recurrence_rule as RecurrenceRule)}
+            </Badge>
           )}
         </div>
       )}

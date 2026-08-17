@@ -41,6 +41,12 @@ export const labelNameSchema = z
   .min(1, { message: 'Give the label a name.' })
   .max(40, { message: 'Keep it under 40 characters.' });
 
+// Cards' `recurrence_rule` reuses the exact same rule shape as todos'
+// `todo_recurrences.rule` — see `@/lib/recurrence`'s module doc. Re-exported
+// here so board code can validate it via `from './schemas'` like every other
+// card field, without a second, drifting copy of the schema.
+export { recurrenceRuleSchema } from '@/lib/recurrence';
+
 /** First Zod issue per field, as `{ field: message }`. */
 export function fieldErrorsOf(error: z.ZodError): Record<string, string> {
   const out: Record<string, string> = {};

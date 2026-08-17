@@ -297,6 +297,17 @@ export interface Database {
           review_assignee_id: string | null;
           reviewed_by: string | null;
           reviewed_at: string | null;
+          // 2026-08-17: jsonb RecurrenceRule (same shape as todo_recurrences.rule
+          // — see src/lib/recurrence.ts) or null. This card IS the recurring
+          // template: `run_due_card_recurrences()` (cron, cards_recurrence
+          // migration) creates a fresh new card each time the rule matches
+          // today, and never sets recurrence_rule on the child it creates — only
+          // the original template card keeps regenerating.
+          recurrence_rule: Record<string, unknown> | null;
+          // Dedupe marker: the last calendar date (YYYY-MM-DD) this template
+          // card generated an occurrence for, so the cron never double-fires
+          // within the same day even if it runs more than once.
+          recurrence_last_run_on: string | null;
           position: number;
           created_at: string;
         };
@@ -315,6 +326,8 @@ export interface Database {
           review_assignee_id?: string | null;
           reviewed_by?: string | null;
           reviewed_at?: string | null;
+          recurrence_rule?: Record<string, unknown> | null;
+          recurrence_last_run_on?: string | null;
           position: number;
           created_at?: string;
         };
@@ -333,6 +346,8 @@ export interface Database {
           review_assignee_id?: string | null;
           reviewed_by?: string | null;
           reviewed_at?: string | null;
+          recurrence_rule?: Record<string, unknown> | null;
+          recurrence_last_run_on?: string | null;
           position?: number;
           created_at?: string;
         };

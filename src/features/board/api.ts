@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { Card, Column } from '@/types/database';
+import type { RecurrenceRule } from '@/lib/recurrence';
 
 /**
  * Thin Supabase data layer for the Kanban board. Every call is governed by Row
@@ -107,6 +108,9 @@ export async function updateCardDetail(
     due_at: string | null;
     priority: number | null;
     assignee_id: string | null;
+    // null = doesn't repeat. Validated by the `enforce_card_recurrence_plan`
+    // trigger (custom schedules need the project on Pro; daily is free).
+    recurrence_rule: RecurrenceRule | null;
   },
 ): Promise<Card> {
   const { data, error } = await supabase
@@ -118,6 +122,7 @@ export async function updateCardDetail(
       due_at: patch.due_at,
       priority: patch.priority,
       assignee_id: patch.assignee_id,
+      recurrence_rule: patch.recurrence_rule,
     })
     .eq('id', id)
     .select('*')
