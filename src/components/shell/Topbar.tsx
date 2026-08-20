@@ -10,7 +10,15 @@ import { cn } from '@/lib/cn';
 /** App top bar: mobile menu trigger, a search affordance, theme toggle, avatar. */
 export function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
   return (
-    <header className="glass z-20 flex h-16 items-center gap-3 rounded-2xl px-3 sm:px-4">
+    <header
+      id="app-topbar"
+      className="glass z-20 flex h-16 items-center gap-3 rounded-2xl px-3 sm:px-4"
+    >
+      {/* `id` is a deliberate measurement hook: floating overlays that must never
+          render above the top bar (e.g. the canvas text toolbar, RichTextBox.tsx)
+          read this element's real getBoundingClientRect().bottom instead of
+          guessing the bar's height/padding in CSS, so it stays correct even if
+          this bar's own sizing changes later. */}
       <Tooltip label="Menu" side="bottom">
         <button
           type="button"

@@ -1,4 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, type CSSProperties, type KeyboardEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+} from 'react';
 import type { XmlFragment } from 'yjs';
 import { EditorContent, useEditor } from '@tiptap/react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -16,8 +25,6 @@ interface RichTextBoxProps {
   user: CaretUser;
   /** Transform/size for the content box (world units, camera-scaled). */
   boxStyle: CSSProperties;
-  /** Screen-space position for the floating format toolbar. */
-  toolbarStyle: CSSProperties;
   /** Resolved ink colour for the text. */
   color: string;
   /** Ruled page: align each line to the rule spacing so text sits on the lines. */
@@ -46,7 +53,6 @@ export function RichTextBox({
   caretProvider,
   user,
   boxStyle,
-  toolbarStyle,
   color,
   ruled = false,
   onBodyChange,
@@ -150,19 +156,90 @@ export function RichTextBox({
   // grows and moves; dock it to a stable, full-width bar at the top of the screen
   // instead. Escapes the canvas overlay's clipping (no transformed ancestor here).
   const isMobile = useMediaQuery('(max-width: 640px)');
-  const mobileToolbarStyle: CSSProperties = {
-    position: 'fixed',
-    top: 'calc(0.5rem + env(safe-area-inset-top))',
-    left: '0.5rem',
-    right: '0.5rem',
-    zIndex: 50,
-  };
+
+  // The toolbar is positioned in real viewport coordinates (`position: fixed`,
+  // derived from the text box's own `getBoundingClientRect()`) rather than the
+  // camera-transformed world coordinates the caller used to compute — that
+  // approach couldn't tell where the app shell's top nav actually is, so a
+  // text box edited near the top of the canvas could push the toolbar up
+  // underneath (or, before the flip, behind) the top bar. Anchoring to the
+  // box's live viewport rect and to the top bar's own measured bottom edge
+  // (`#app-topbar`, set in Topbar.tsx) keeps it correct regardless of camera
+  // pan/zoom, canvas scroll position, or the shell's own layout changing.
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const [toolbarStyle, setToolbarStyle] = useState<CSSProperties | null>(null);
+
+  const recomputeToolbarPosition = useCallback(() => {
+    const boxNode = boxRef.current;
+    const toolbarNode = toolbarRef.current;
+    if (!boxNode || !toolbarNode) return;
+    const MARGIN = 8;
+    const boxRect = boxNode.getBoundingClientRect();
+    const toolbarRect = toolbarNode.getBoundingClientRect();
+    const toolbarHeight = toolbarRect.height || 44;
+    // The top nav's real bottom edge — never let the toolbar render above it.
+    const navBottom = document.getElementById('app-topbar')?.getBoundingClientRect().bottom ?? 0;
+    const minTop = navBottom + MARGIN;
+
+    if (isMobile) {
+      // Stable, full-width bar just below the nav (also escapes the canvas
+      // overlay's own clipping, since it's fixed to the viewport).
+      setToolbarStyle({ position: 'fixed', top: minTop, left: '0.5rem', right: '0.5rem', zIndex: 50 });
+      return;
+    }
+
+    const toolbarWidth = toolbarRect.width || 320;
+    const spaceAbove = boxRect.top - minTop;
+    const spaceBelow = window.innerHeight - boxRect.bottom;
+    // Prefer above the box (out of the way of typing); flip below it when
+    // there isn't room above but there is below.
+    const placeAbove = spaceAbove >= toolbarHeight + MARGIN && spaceAbove >= spaceBelow;
+    const rawTop = placeAbove ? boxRect.top - toolbarHeight - MARGIN : boxRect.bottom + MARGIN;
+    const top = Math.min(
+      Math.max(minTop, rawTop),
+      Math.max(minTop, window.innerHeight - toolbarHeight - MARGIN),
+    );
+    const left = Math.min(
+      Math.max(MARGIN, boxRect.left),
+      Math.max(MARGIN, window.innerWidth - toolbarWidth - MARGIN),
+    );
+    setToolbarStyle({ position: 'fixed', top, left, zIndex: 50 });
+  }, [isMobile]);
+
+  useLayoutEffect(() => {
+    if (!editor) return;
+    recomputeToolbarPosition();
+    // The toolbar's own size can change independent of the box (popovers,
+    // wrapping onto a second row) — that also invalidates the last computed
+    // position, so it gets its own observer alongside the box's.
+    const observer = new ResizeObserver(recomputeToolbarPosition);
+    if (boxRef.current) observer.observe(boxRef.current);
+    if (toolbarRef.current) observer.observe(toolbarRef.current);
+    window.addEventListener('resize', recomputeToolbarPosition);
+    // Capture phase: the canvas's scrollable ancestor (`<main>`) doesn't bubble.
+    window.addEventListener('scroll', recomputeToolbarPosition, true);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', recomputeToolbarPosition);
+      window.removeEventListener('scroll', recomputeToolbarPosition, true);
+    };
+  }, [editor, recomputeToolbarPosition]);
+
+  // `boxStyle` carries the box's on-screen transform and is a fresh object
+  // every render the parent produces from camera state — so this fires on
+  // every pan/zoom tick too. A pure camera pan translates the box via CSS
+  // transform without changing its pixel size, which the ResizeObserver
+  // above can't see, so it needs this separate trigger to stay anchored.
+  useLayoutEffect(() => {
+    recomputeToolbarPosition();
+  }, [boxStyle, recomputeToolbarPosition]);
 
   return (
     <>
       {editor && (
         <div
-          style={isMobile ? mobileToolbarStyle : toolbarStyle}
+          ref={toolbarRef}
+          style={toolbarStyle ?? { position: 'fixed', top: -9999, left: -9999, zIndex: 50 }}
           className="pointer-events-auto flex justify-center"
         >
           <TextFormatToolbar editor={editor} />

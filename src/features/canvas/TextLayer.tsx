@@ -78,13 +78,12 @@ export function TextLayer({
         };
 
         if (el.id === editingId) {
-          const above = screenY - 46;
-          const toolbarStyle: CSSProperties = {
-            position: 'absolute',
-            left: Math.max(4, screenX),
-            top: above < 4 ? screenY + box.height * scale + 8 : above,
-            zIndex: 2,
-          };
+          // The format toolbar positions itself in real viewport coordinates
+          // (see RichTextBox.tsx) — it needs the box's live on-screen rect,
+          // which it reads directly via its own ref, not a value computed
+          // here from camera state. That's what makes it possible to clamp
+          // the toolbar against the app shell's actual top nav instead of a
+          // value guessed from this layer's own (pre-transform) coordinates.
           return (
             <RichTextBox
               key={el.id}
@@ -92,7 +91,6 @@ export function TextLayer({
               caretProvider={caretProvider}
               user={caretUser}
               boxStyle={boxStyle}
-              toolbarStyle={toolbarStyle}
               color={palette.text}
               ruled={ruled}
               onBodyChange={(body, text) => onBodyChange(el.id, body, text)}

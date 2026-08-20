@@ -25,13 +25,39 @@ export function makeSuggestionRender<I>(
   return () => {
     let renderer: ReactRenderer<SuggestionListHandle, SuggestionProps<I>> | null = null;
     let container: HTMLDivElement | null = null;
+    const MARGIN = 8;
+    const FALLBACK_HEIGHT = 320; // best guess before the menu has painted/laid out
+    const FALLBACK_WIDTH = 280;
+
+    // `visualViewport` tracks the on-screen viewport shrunk by the mobile
+    // keyboard; `window.innerHeight`/`innerWidth` don't shrink, so using them
+    // alone can place (or leave) the menu underneath the keyboard.
+    const viewportHeight = () => window.visualViewport?.height ?? window.innerHeight;
+    const viewportWidth = () => window.visualViewport?.width ?? window.innerWidth;
 
     const place = (rect: DOMRect | null | undefined) => {
       if (!container || !rect) return;
-      const top = Math.min(rect.bottom + 6, window.innerHeight - 16);
-      const left = Math.min(rect.left, window.innerWidth - 288);
-      container.style.top = `${Math.max(8, top)}px`;
-      container.style.left = `${Math.max(8, left)}px`;
+      // Measure the actual rendered menu (it's already mounted at this point,
+      // even on the very first call in onStart — the ReactRenderer mounts
+      // synchronously), falling back to a reasonable guess only if that
+      // measurement isn't available yet (e.g. an empty item list).
+      const menuHeight = container.offsetHeight || FALLBACK_HEIGHT;
+      const menuWidth = container.offsetWidth || FALLBACK_WIDTH;
+      const vh = viewportHeight();
+      const vw = viewportWidth();
+
+      const spaceBelow = vh - rect.bottom;
+      const spaceAbove = rect.top;
+      // Prefer below the cursor (Notion-style); flip above it only when
+      // there isn't room below but there is above — never let it render
+      // partially off-screen either way.
+      const placeAbove = spaceBelow < menuHeight + MARGIN && spaceAbove > spaceBelow;
+      const rawTop = placeAbove ? rect.top - menuHeight - 6 : rect.bottom + 6;
+      const top = Math.min(Math.max(MARGIN, rawTop), Math.max(MARGIN, vh - menuHeight - MARGIN));
+      const left = Math.min(Math.max(MARGIN, rect.left), Math.max(MARGIN, vw - menuWidth - MARGIN));
+
+      container.style.top = `${top}px`;
+      container.style.left = `${left}px`;
     };
 
     return {
@@ -43,6 +69,9 @@ export function makeSuggestionRender<I>(
         container.appendChild(renderer.element);
         document.body.appendChild(container);
         place(props.clientRect?.());
+        // Re-place once more after layout settles (fonts/async item list can
+        // change the menu's real height right after mount).
+        requestAnimationFrame(() => place(props.clientRect?.()));
       },
       onUpdate: (props) => {
         renderer?.updateProps(props);
