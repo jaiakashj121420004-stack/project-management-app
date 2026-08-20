@@ -58,6 +58,10 @@ export type AutomationTriggerType =
 /** Automations: a small, FIXED action enum — never an open set. */
 export type AutomationActionType = 'move_to_column' | 'add_label' | 'assign_user';
 
+/** How a goal's progress bar is driven (Task 24 — simple goals, not enterprise
+ *  OKRs). See 20260820120000_goals.sql. */
+export type GoalProgressType = 'manual_percent' | 'linked_checklist';
+
 export interface Database {
   public: {
     Tables: {
@@ -472,6 +476,54 @@ export interface Database {
           action_config?: Record<string, unknown>;
           enabled?: boolean;
           created_by?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      goals: {
+        // A flat goal with one progress bar (Task 24 — not enterprise OKRs; no
+        // Objective/Key-Result split, no hierarchy). See
+        // 20260820120000_goals.sql's `goals_progress_shape` CHECK: exactly one
+        // of manual_percent / linked_card_id is meaningful, by progress_type —
+        //   manual_percent progress_type -> manual_percent set, linked_card_id null
+        //   linked_checklist progress_type -> manual_percent null, linked_card_id
+        //     may be null (not yet chosen, or its card was deleted — ON DELETE
+        //     SET NULL, not CASCADE, so the goal survives)
+        Row: {
+          id: string;
+          project_id: string;
+          owner_id: string;
+          title: string;
+          description: string | null;
+          // 'YYYY-MM-DD', or null for "no target date".
+          target_date: string | null;
+          progress_type: GoalProgressType;
+          manual_percent: number | null;
+          linked_card_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          owner_id: string;
+          title: string;
+          description?: string | null;
+          target_date?: string | null;
+          progress_type?: GoalProgressType;
+          manual_percent?: number | null;
+          linked_card_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          owner_id?: string;
+          title?: string;
+          description?: string | null;
+          target_date?: string | null;
+          progress_type?: GoalProgressType;
+          manual_percent?: number | null;
+          linked_card_id?: string | null;
           created_at?: string;
         };
         Relationships: [];
@@ -1448,3 +1500,4 @@ export type Notification = Database['public']['Tables']['notifications']['Row'];
 export type TimeEntry = Database['public']['Tables']['time_entries']['Row'];
 export type CardAttachment = Database['public']['Tables']['card_attachments']['Row'];
 export type AutomationRule = Database['public']['Tables']['automation_rules']['Row'];
+export type Goal = Database['public']['Tables']['goals']['Row'];

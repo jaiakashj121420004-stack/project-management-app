@@ -8,6 +8,7 @@ import {
   MoreVertical,
   NotebookPen,
   PenTool,
+  Target,
   Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -19,6 +20,7 @@ import { Reveal } from '@/components/motion/Reveal';
 import { useAuth } from '@/hooks/useAuth';
 import { Board } from '@/features/board';
 import { NotesPanel } from '@/features/notes';
+import { GoalsPanel } from '@/features/goals';
 import { MembersBar, useMyRole, useProjectRealtime } from '@/features/members';
 import { ProGate } from '@/features/billing';
 import { ActivityFeed, useProjectIsPro } from '@/features/collaboration';
@@ -33,7 +35,7 @@ const CanvasPanel = lazy(() =>
   import('@/features/canvas/CanvasPanel').then((module) => ({ default: module.CanvasPanel })),
 );
 
-type ProjectTab = 'board' | 'notes' | 'canvas' | 'activity';
+type ProjectTab = 'board' | 'goals' | 'notes' | 'canvas' | 'activity';
 
 /** A single project: an accent-themed header above its Kanban board (Phase 4).
  *  The accent itself comes from AppShell.tsx, which themes the whole shell
@@ -48,13 +50,15 @@ export function ProjectPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   const tab: ProjectTab =
-    tabParam === 'notes'
-      ? 'notes'
-      : tabParam === 'canvas'
-        ? 'canvas'
-        : tabParam === 'activity'
-          ? 'activity'
-          : 'board';
+    tabParam === 'goals'
+      ? 'goals'
+      : tabParam === 'notes'
+        ? 'notes'
+        : tabParam === 'canvas'
+          ? 'canvas'
+          : tabParam === 'activity'
+            ? 'activity'
+            : 'board';
 
   // Live collaboration for the active project: stream other members' changes into
   // the board/notes/members caches. Role drives read-only vs. editable.
@@ -155,6 +159,13 @@ export function ProjectPage() {
               Board
             </TabButton>
             <TabButton
+              active={tab === 'goals'}
+              onClick={() => selectTab('goals')}
+              icon={<Target size={15} />}
+            >
+              Goals
+            </TabButton>
+            <TabButton
               active={tab === 'notes'}
               onClick={() => selectTab('notes')}
               icon={<NotebookPen size={15} />}
@@ -182,6 +193,7 @@ export function ProjectPage() {
       {tab === 'board' && (
         <Board projectId={project.id} accent={project.accent} canEdit={canEdit} />
       )}
+      {tab === 'goals' && <GoalsPanel projectId={project.id} canEdit={canEdit} />}
       {tab === 'notes' && <NotesPanel projectId={project.id} canEdit={canEdit} />}
       {tab === 'canvas' && (
         <ProGate
