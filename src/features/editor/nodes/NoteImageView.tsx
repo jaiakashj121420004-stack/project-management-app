@@ -1,8 +1,10 @@
-import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { NodeViewWrapper, type NodeViewProps } from '@tiptap/react';
+import type { Transaction } from '@tiptap/pm/state';
 import { ImageOff, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useNoteMediaUrl } from '@/features/notes/noteMedia';
+import { NOTE_IMAGE_BACKSPACE_META } from './NoteImage';
 
 const SIZES = [25, 50, 75, 100] as const;
 const MIN_WIDTH_PCT = 15;
@@ -12,7 +14,7 @@ const MIN_WIDTH_PCT = 15;
  * editable note it can be resized — either via preset % buttons or by dragging
  * the right-edge handle — and deleted.
  */
-export function NoteImageView({ node, updateAttributes, deleteNode, selected, editor }: NodeViewProps) {
+export function NoteImageView({ node, updateAttributes, deleteNode, selected, editor, getPos }: NodeViewProps) {
   const path = typeof node.attrs.path === 'string' ? node.attrs.path : null;
   const alt = typeof node.attrs.alt === 'string' ? node.attrs.alt : '';
   const width = typeof node.attrs.width === 'number' ? node.attrs.width : null;
@@ -22,6 +24,31 @@ export function NoteImageView({ node, updateAttributes, deleteNode, selected, ed
   const containerRef = useRef<HTMLDivElement>(null);
   const dragValueRef = useRef<number | null>(null);
   const [dragWidth, setDragWidth] = useState<number | null>(null);
+
+  // Backspace-guard cue: NoteImage's addKeyboardShortcuts swallows the first
+  // couple of Backspace presses on a selected image and stamps a transaction
+  // meta instead of deleting; this listens for that meta (matched by this
+  // node's own position) to show a brief hint/shake rather than nothing
+  // visibly happening.
+  const [pressesLeft, setPressesLeft] = useState<number | null>(null);
+  const shakeTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const handleTransaction = ({ transaction }: { transaction: Transaction }) => {
+      const meta = transaction.getMeta(NOTE_IMAGE_BACKSPACE_META) as
+        | { pos: number; pressesLeft: number }
+        | undefined;
+      if (!meta || meta.pos !== getPos()) return;
+      setPressesLeft(meta.pressesLeft);
+      if (shakeTimeoutRef.current) window.clearTimeout(shakeTimeoutRef.current);
+      shakeTimeoutRef.current = window.setTimeout(() => setPressesLeft(null), 320);
+    };
+    editor.on('transaction', handleTransaction);
+    return () => {
+      editor.off('transaction', handleTransaction);
+      if (shakeTimeoutRef.current) window.clearTimeout(shakeTimeoutRef.current);
+    };
+  }, [editor, getPos]);
 
   const effectiveWidth = dragWidth ?? width;
 
@@ -65,6 +92,7 @@ export function NoteImageView({ node, updateAttributes, deleteNode, selected, ed
         className={cn(
           'relative my-2 max-w-full select-none overflow-hidden rounded-xl border',
           selected ? 'border-[var(--accent-from)] ring-1 ring-[var(--accent-from)]' : 'border-[var(--glass-border)]',
+          pressesLeft != null && 'motion-safe:animate-note-image-shake',
         )}
       >
         {loading ? (
@@ -78,6 +106,17 @@ export function NoteImageView({ node, updateAttributes, deleteNode, selected, ed
           </div>
         ) : (
           <img src={url} alt={alt} draggable={false} className="block max-h-[60vh] w-full object-contain" />
+        )}
+
+        {showTools && pressesLeft != null && (
+          <div
+            className="glass-strong absolute left-2 top-2 z-10 rounded-lg border border-[var(--glass-border)] px-2 py-1 text-[11px] text-fg-muted shadow-[0_10px_24px_-12px_rgba(0,0,0,0.6)]"
+            contentEditable={false}
+          >
+            {pressesLeft === 1
+              ? 'Press Backspace once more, or use ⌫ delete below'
+              : `Press Backspace ${pressesLeft} more times, or use ⌫ delete below`}
+          </div>
         )}
 
         {showTools && (

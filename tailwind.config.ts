@@ -68,12 +68,18 @@ export default {
           from: { opacity: '0' },
           to: { opacity: '1' },
         },
+        'note-image-shake': {
+          '0%, 100%': { transform: 'translateX(0)' },
+          '20%, 60%': { transform: 'translateX(-3px)' },
+          '40%, 80%': { transform: 'translateX(3px)' },
+        },
       },
       animation: {
         'gradient-flow': 'gradient-flow 6s ease-in-out infinite',
         'spin-slow': 'spin-slow 8s linear infinite',
         shimmer: 'shimmer 1.6s ease-in-out infinite',
         'fade-in': 'fade-in 0.4s ease both',
+        'note-image-shake': 'note-image-shake 0.32s ease-in-out',
       },
     },
   },
