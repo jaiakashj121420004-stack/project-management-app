@@ -150,6 +150,7 @@ export function useAddCard(projectId: string) {
           title: title.trim(),
           description: null,
           due_date: null,
+          start_date: null,
           due_at: null,
           assignee_id: null,
           priority: null,

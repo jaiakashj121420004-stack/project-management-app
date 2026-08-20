@@ -15,7 +15,7 @@ import type { Card, Project, TodoItem, TodoList } from '@/types/database';
  * everything off that same string, produced locally by `toDateKey`, so a card
  * lands on the exact day it was set to regardless of timezone.
  */
-export type CalendarView = 'month' | 'week';
+export type CalendarView = 'month' | 'week' | 'timeline';
 
 /** Column headers, starting Sunday (date-fns default week start). */
 export const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
@@ -38,14 +38,26 @@ export function weekDays(cursor: Date): Date[] {
   return eachDayOfInterval({ start: startOfWeek(cursor), end: endOfWeek(cursor) });
 }
 
+/**
+ * The Timeline's axis: just the days IN `cursor`'s month, no leading/trailing
+ * days from adjacent months. Unlike the month grid (which pads to full weeks
+ * for a rectangular 7-column layout), a Gantt axis is a horizontally
+ * scrollable strip — padding it would only add days no card can occupy.
+ */
+export function monthOnlyDays(cursor: Date): Date[] {
+  return eachDayOfInterval({ start: startOfMonth(cursor), end: endOfMonth(cursor) });
+}
+
 /** Days to render for the active view. */
 export function calendarDays(view: CalendarView, cursor: Date): Date[] {
-  return view === 'month' ? monthDays(cursor) : weekDays(cursor);
+  if (view === 'month') return monthDays(cursor);
+  if (view === 'week') return weekDays(cursor);
+  return monthOnlyDays(cursor);
 }
 
 /** Human label for the current period, e.g. "June 2026" or "Jun 15 – 21, 2026". */
 export function periodLabel(view: CalendarView, cursor: Date): string {
-  if (view === 'month') return format(cursor, 'MMMM yyyy');
+  if (view === 'month' || view === 'timeline') return format(cursor, 'MMMM yyyy');
   const start = startOfWeek(cursor);
   const end = endOfWeek(cursor);
   return isSameMonth(start, end)

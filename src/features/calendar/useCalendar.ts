@@ -3,7 +3,7 @@ import type { Card } from '@/types/database';
 import type { RecurrenceRule } from '@/lib/recurrence';
 import { removeCard, updateCardDetail, type BoardData } from '@/features/board/api';
 import type { CardExtras } from '@/features/board/cardExtras.api';
-import { fetchDatedCards, fetchTodoListsInRange, updateCardDueDate, type CalendarTodos } from './api';
+import { fetchDatedCards, fetchTodoListsInRange, updateCardDates, type CalendarTodos } from './api';
 
 /** Every to-do list (+ items) whose `list_date` falls in [startKey, endKey] —
  *  used to show to-do chips on the Calendar. Re-fetches when the visible range
@@ -52,22 +52,27 @@ function patchBoard(board: BoardData | undefined, id: string, patch: Partial<Car
   return { ...board, cards: board.cards.map((card) => (card.id === id ? { ...card, ...patch } : card)) };
 }
 
-/** Drag-to-reschedule: set a card's due date (optimistic across both caches).
- *  `dueAt` carries the card's time onto the new day (null if it had none). */
+/**
+ * Drag-to-reschedule: set a card's dates (optimistic across both caches).
+ * `dueAt` carries the card's time onto the new day (null if it had none).
+ * `startDate` is left `undefined` for Calendar's month/week grid (that drag
+ * never touches it); the Timeline view's whole-bar and start-handle drags pass
+ * it explicitly (see TimelineGrid/CalendarPage's onDragEnd).
+ */
 export function useRescheduleCard() {
   const queryClient = useQueryClient();
   return useMutation<
     Card,
     Error,
-    { id: string; projectId: string; dueDate: string | null; dueAt: string | null },
+    { id: string; projectId: string; dueDate: string | null; dueAt: string | null; startDate?: string | null },
     CardMutationContext
   >({
-    mutationFn: ({ id, dueDate, dueAt }) => updateCardDueDate(id, dueDate, dueAt),
-    onMutate: async ({ id, projectId, dueDate, dueAt }) => {
+    mutationFn: ({ id, dueDate, dueAt, startDate }) => updateCardDates(id, { dueDate, dueAt, startDate }),
+    onMutate: async ({ id, projectId, dueDate, dueAt, startDate }) => {
       await queryClient.cancelQueries({ queryKey: calendarKey });
       const prevCalendar = queryClient.getQueryData<Card[]>(calendarKey);
       const prevBoard = queryClient.getQueryData<BoardData>(boardKey(projectId));
-      const patch = { due_date: dueDate, due_at: dueAt };
+      const patch = { due_date: dueDate, due_at: dueAt, ...(startDate !== undefined ? { start_date: startDate } : {}) };
       queryClient.setQueryData<Card[]>(calendarKey, (old) => patchCalendar(old, id, patch));
       queryClient.setQueryData<BoardData>(boardKey(projectId), (old) => patchBoard(old, id, patch));
       return { prevCalendar, prevBoard, projectId };

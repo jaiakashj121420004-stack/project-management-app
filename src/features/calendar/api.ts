@@ -54,18 +54,25 @@ export async function fetchTodoListsInRange(startKey: string, endKey: string): P
 }
 
 /**
- * Reschedule a card to a new due date (drag-to-reschedule). `dueAt` carries the
- * card's time onto the new day (or null when the card had no due time), so a Pro
- * card's timed reminders re-arm against the new instant.
+ * Reschedule a card's dates (drag-to-reschedule, from Calendar's month/week
+ * grid and from the Timeline view). `dueAt` carries the card's time onto the
+ * new day (or null when the card had no due time), so a Pro card's timed
+ * reminders re-arm against the new instant. `startDate` is omitted entirely
+ * for a plain month/week reschedule (that drag never touches it — only
+ * Timeline's whole-bar/start-handle drags pass it, `undefined` meaning "leave
+ * unchanged" vs. `null` meaning "clear the explicit start").
  */
-export async function updateCardDueDate(
+export async function updateCardDates(
   id: string,
-  dueDate: string | null,
-  dueAt: string | null,
+  patch: { dueDate: string | null; dueAt: string | null; startDate?: string | null },
 ): Promise<Card> {
   const { data, error } = await supabase
     .from('cards')
-    .update({ due_date: dueDate, due_at: dueAt })
+    .update({
+      due_date: patch.dueDate,
+      due_at: patch.dueAt,
+      ...(patch.startDate !== undefined ? { start_date: patch.startDate } : {}),
+    })
     .eq('id', id)
     .select('*')
     .single();

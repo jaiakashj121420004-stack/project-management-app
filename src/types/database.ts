@@ -296,6 +296,11 @@ export interface Database {
           description: string | null;
           // ISO date (YYYY-MM-DD); what the board/calendar group by.
           due_date: string | null;
+          // Optional Gantt-bar start date (Task 25), paired with due_date as
+          // the bar's end. NULL = no explicit start; the Timeline view renders
+          // a single-day bar at due_date instead. See
+          // 20260820130000_card_start_date.sql / features/calendar/timeline.ts.
+          start_date: string | null;
           // Full deadline timestamp (timestamptz). Source of truth when present;
           // backfilled from due_date at 09:00 UTC, written from the user's local
           // date+time. Drives Pro timed reminders (P1, card_reminders).
@@ -332,6 +337,7 @@ export interface Database {
           title: string;
           description?: string | null;
           due_date?: string | null;
+          start_date?: string | null;
           due_at?: string | null;
           assignee_id?: string | null;
           priority?: number | null;
@@ -352,6 +358,7 @@ export interface Database {
           title?: string;
           description?: string | null;
           due_date?: string | null;
+          start_date?: string | null;
           due_at?: string | null;
           assignee_id?: string | null;
           priority?: number | null;

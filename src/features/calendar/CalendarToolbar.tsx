@@ -88,7 +88,7 @@ export function CalendarToolbar({
 function Segmented({ value, onChange }: { value: CalendarView; onChange: (view: CalendarView) => void }) {
   return (
     <div className="glass inline-flex rounded-2xl p-1">
-      {(['month', 'week'] as const).map((option) => (
+      {(['month', 'week', 'timeline'] as const).map((option) => (
         <button
           key={option}
           type="button"
