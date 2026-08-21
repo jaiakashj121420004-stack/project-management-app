@@ -7,13 +7,14 @@ import {
   useState,
   type ChangeEvent,
 } from 'react';
-import { AlertCircle, Check, Download, ImagePlus, Trash2 } from 'lucide-react';
+import { AlertCircle, Check, Download, Eye, ImagePlus, Pencil, Trash2 } from 'lucide-react';
 import type { JSONContent } from '@tiptap/core';
 import { Spinner } from '@/components/feedback/Spinner';
 import { RouteErrorBoundary } from '@/components/feedback/RouteErrorBoundary';
 import { useAuth } from '@/hooks/useAuth';
 import { ShareButton } from '@/features/sharing';
 import { EmojiPicker } from '@/components/forms/EmojiPicker';
+import { SegmentedToggle } from '@/components/forms/SegmentedToggle';
 import { docToMarkdown } from '@/features/editor/serialize';
 import { TemplatesMenu } from '@/features/editor/TemplatesMenu';
 import { useSyncCustomTemplates } from '@/features/editor/useNoteTemplates';
@@ -76,6 +77,9 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
   const [title, setTitle] = useState(note.title);
   const [savedTitle, setSavedTitle] = useState(note.title);
   const [docDirty, setDocDirty] = useState(false);
+  // Edit/View toggle (editors only — a viewer already gets the read-only render
+  // via `canEdit`, so this never applies to them).
+  const [viewMode, setViewMode] = useState<'edit' | 'view'>('edit');
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'error'>('idle');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   // Emoji icon + cover image (standalone Library notes only). Written immediately.
@@ -148,6 +152,13 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
     };
   });
   useEffect(() => () => flushRef.current(), []);
+
+  // Switching to View mid-edit should never strand an unsaved change — flush it
+  // immediately, the same way an unmount does.
+  function handleViewModeChange(next: 'edit' | 'view') {
+    if (viewMode === 'edit' && next === 'view') flushRef.current();
+    setViewMode(next);
+  }
 
   function handleDelete() {
     runDelete({ id: note.id });
@@ -315,6 +326,18 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
         </div>
       </div>
 
+      {canEdit && (
+        <SegmentedToggle
+          label="Note mode"
+          value={viewMode}
+          onChange={handleViewModeChange}
+          options={[
+            { value: 'edit', label: 'Edit', icon: <Pencil size={14} /> },
+            { value: 'view', label: 'View', icon: <Eye size={14} /> },
+          ]}
+        />
+      )}
+
       {confirmingDelete && canEdit && (
         <div className="flex items-center justify-between gap-2 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-fg-muted">
           <span>
@@ -348,7 +371,11 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
             </div>
           }
         >
-          <NoteBlockEditor note={note} editable={canEdit} onChange={handleDocChange} />
+          <NoteBlockEditor
+            note={note}
+            editable={canEdit && viewMode === 'edit'}
+            onChange={handleDocChange}
+          />
         </Suspense>
       </RouteErrorBoundary>
     </div>
