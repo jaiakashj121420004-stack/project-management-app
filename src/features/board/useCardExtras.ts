@@ -4,6 +4,7 @@ import type { LabelColor } from '@/lib/labelColors';
 import {
   addCardAttachment,
   attachLabel,
+  deleteTimeEntriesForCard,
   detachLabel,
   fetchCardExtras,
   insertChecklistItem,
@@ -255,6 +256,26 @@ export function useStopTimeEntry(projectId: string) {
       ...extras,
       timeEntries: extras.timeEntries.map((entry) =>
         entry.id === id ? { ...entry, ended_at: new Date().toISOString() } : entry,
+      ),
+    }),
+  );
+}
+
+/**
+ * "Reset" a card's timer: delete the calling user's own time entries on this
+ * card (see deleteTimeEntriesForCard's doc comment — the delete RLS policy
+ * only ever lets a user clear their own rows, never a teammate's). Optimistic
+ * patch mirrors that scope exactly, so the cache never shows a card as "reset"
+ * when only the current user's entries were actually cleared.
+ */
+export function useDeleteTimeEntries(projectId: string) {
+  return useExtrasMutation<void, { cardId: string; userId: string }>(
+    projectId,
+    ({ cardId, userId }) => deleteTimeEntriesForCard(cardId, userId),
+    (extras, { cardId, userId }) => ({
+      ...extras,
+      timeEntries: extras.timeEntries.filter(
+        (entry) => !(entry.card_id === cardId && entry.user_id === userId),
       ),
     }),
   );

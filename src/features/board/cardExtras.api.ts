@@ -187,6 +187,25 @@ export async function stopTimeEntry(id: string): Promise<TimeEntry> {
   return data;
 }
 
+/**
+ * "Reset" for a card's timer: delete every time entry tracked by the CALLING
+ * user on this card. Unlike checklist items / labels (any editor can delete
+ * any row), time_entries' delete RLS policy ("Time entries: delete own if
+ * member", 20260816140000_time_entries.sql) scopes deletes to `user_id =
+ * auth.uid()` — a member can only ever clear their own tracked time, never a
+ * teammate's. We filter by user_id here too so that's explicit in the code,
+ * not just an invisible RLS side effect, and so the query only ever targets
+ * rows this call could actually delete.
+ */
+export async function deleteTimeEntriesForCard(cardId: string, userId: string): Promise<void> {
+  const { error } = await supabase
+    .from('time_entries')
+    .delete()
+    .eq('card_id', cardId)
+    .eq('user_id', userId);
+  if (error) throw error;
+}
+
 // --- Attachments --------------------------------------------------------------
 
 /**
