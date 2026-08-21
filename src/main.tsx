@@ -11,6 +11,7 @@ import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { CustomThemeProvider } from '@/components/theme/CustomThemeProvider';
 import { AuthProvider } from '@/features/auth';
 import { applyTheme, getInitialTheme } from '@/lib/theme';
+import { setupChunkReloadRecovery } from '@/lib/chunkReloadRecovery';
 import { applyCustomTheme, getStoredCustomTheme } from '@/lib/customTheme';
 import {
   PERSIST_BUSTER,
@@ -19,6 +20,11 @@ import {
   queryClient,
 } from '@/lib/queryClient';
 import '@/styles/index.css';
+
+// Recover automatically if a code-split chunk 404s after a deploy (stale
+// service worker + a tab left open across a release) instead of leaving the
+// user stuck on a dead "Try again" button — see chunkReloadRecovery.ts.
+setupChunkReloadRecovery();
 
 // Apply the saved theme before first paint to avoid a flash of the wrong theme.
 applyTheme(getInitialTheme());
