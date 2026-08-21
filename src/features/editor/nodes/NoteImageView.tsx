@@ -18,6 +18,11 @@ export function NoteImageView({ node, updateAttributes, deleteNode, selected, ed
   const path = typeof node.attrs.path === 'string' ? node.attrs.path : null;
   const alt = typeof node.attrs.alt === 'string' ? node.attrs.alt : '';
   const width = typeof node.attrs.width === 'number' ? node.attrs.width : null;
+  // Set only while a Ctrl+V paste's upload is still in flight, or if it failed —
+  // see NoteImage.ts's addProseMirrorPlugins. Not present for images inserted via
+  // the toolbar's file picker, which only inserts the node once the path exists.
+  const uploading = node.attrs.uploading === true;
+  const uploadError = typeof node.attrs.uploadError === 'string' ? node.attrs.uploadError : null;
   const { url, loading, error } = useNoteMediaUrl(path);
   const showTools = selected && editor.isEditable;
 
@@ -95,7 +100,16 @@ export function NoteImageView({ node, updateAttributes, deleteNode, selected, ed
           pressesLeft != null && 'motion-safe:animate-note-image-shake',
         )}
       >
-        {loading ? (
+        {uploading ? (
+          <div className="grid h-40 place-items-center bg-[var(--glass-fill)] text-xs text-fg-subtle">
+            Uploading image…
+          </div>
+        ) : uploadError ? (
+          <div className="flex h-40 flex-col items-center justify-center gap-1 bg-[var(--glass-fill)] text-fg-subtle">
+            <ImageOff size={20} />
+            <span className="px-3 text-center text-xs">{uploadError}</span>
+          </div>
+        ) : loading ? (
           <div className="grid h-40 place-items-center bg-[var(--glass-fill)] text-xs text-fg-subtle">
             Loading image…
           </div>
