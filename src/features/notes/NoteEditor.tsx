@@ -309,9 +309,7 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
           {isStandalone && canEdit && <TemplatesMenu getDoc={currentDoc} />}
           {canEdit && (
             <>
-              {canShare && (
-                <ShareButton kind="note" targetId={note.id} title={note.title} className="hidden sm:inline-flex" />
-              )}
+              {canShare && <ShareButton kind="note" targetId={note.id} title={note.title} />}
               <SaveIndicator status={status} />
               <button
                 type="button"

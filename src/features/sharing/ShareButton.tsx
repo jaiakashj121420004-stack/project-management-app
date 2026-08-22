@@ -21,13 +21,14 @@ export function ShareButton({
     <>
       <button
         type="button"
+        aria-label={`Share "${title}"`}
         onClick={() => setOpen(true)}
         className={cn(
           'inline-flex items-center gap-1.5 rounded-xl border border-[var(--glass-border)] px-3 py-1.5 text-sm text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg',
           className,
         )}
       >
-        <Share2 size={15} /> Share
+        <Share2 size={15} /> <span className="hidden sm:inline">Share</span>
       </button>
       <SharePanel open={open} onClose={() => setOpen(false)} kind={kind} targetId={targetId} title={title} />
     </>

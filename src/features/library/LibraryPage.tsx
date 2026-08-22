@@ -4,8 +4,9 @@ import { ArrowLeft, Library as LibraryIcon, Search, X } from 'lucide-react';
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import { Spinner } from '@/components/feedback/Spinner';
 import { Reveal } from '@/components/motion/Reveal';
+import { useAuth } from '@/hooks/useAuth';
 import { useIsPro } from '@/features/billing';
-import { ShareButton } from '@/features/sharing';
+import { ShareButton, useSharedItemRole } from '@/features/sharing';
 import { useAllCanvases } from '@/features/canvas/useCanvas';
 import { FolderTree } from './FolderTree';
 import { LibraryContents } from './LibraryContents';
@@ -25,6 +26,7 @@ type OpenItem = { kind: 'note' | 'canvas'; id: string } | null;
  * canvas editor loads only when a canvas is opened).
  */
 export function LibraryPage() {
+  const { user } = useAuth();
   const folders = useFolders();
   const notes = useLibraryNotes();
   const canvases = useAllCanvases();
@@ -82,12 +84,25 @@ export function LibraryPage() {
   const openNote =
     open?.kind === 'note' ? (notes.data ?? []).find((note) => note.id === open.id) : undefined;
 
+  const openCanvas =
+    open?.kind === 'canvas' ? personalCanvases.find((canvas) => canvas.id === open.id) : undefined;
+
   const openTitle =
-    open?.kind === 'note'
-      ? (openNote?.title ?? 'Note')
-      : open?.kind === 'canvas'
-        ? (personalCanvases.find((canvas) => canvas.id === open.id)?.title ?? 'Canvas')
-        : '';
+    open?.kind === 'note' ? (openNote?.title ?? 'Note') : (openCanvas?.title ?? 'Canvas');
+
+  // `canEdit` for a personal canvas follows the viewer's REAL access: the owner
+  // edits while THEY are on Pro (canvas_is_pro governs by owner_id's plan, per
+  // plan.md §6 — `isPro` here is the owner viewing their own canvas, so it's the
+  // same person); a shared collaborator's access instead follows their
+  // canvas_members role, never the collaborator's own Pro plan, which the old
+  // `canEdit={isPro}` wrongly used for everyone.
+  const canvasShare = useSharedItemRole(
+    'canvas',
+    openCanvas?.id ?? '',
+    openCanvas?.owner_id ?? null,
+  );
+  const isCanvasOwner = Boolean(openCanvas && user && openCanvas.owner_id === user.id);
+  const canEditCanvas = !openCanvas ? false : isCanvasOwner ? isPro : canvasShare.canEdit;
 
   const isLoading = folders.isLoading || notes.isLoading || canvases.isLoading;
   const isError = folders.isError || notes.isError;
@@ -146,7 +161,7 @@ export function LibraryPage() {
                 <span className="text-fg-subtle">· {openTitle}</span>
               </button>
             )}
-            {open.kind === 'canvas' && (
+            {open.kind === 'canvas' && isCanvasOwner && (
               <ShareButton kind="canvas" targetId={open.id} title={openTitle} />
             )}
           </div>
@@ -159,8 +174,12 @@ export function LibraryPage() {
                 This note is no longer available.
               </GlassPanel>
             )
+          ) : openCanvas ? (
+            <OpenCanvas canvasId={open.id} canEdit={canEditCanvas} onBack={() => setOpen(null)} />
           ) : (
-            <OpenCanvas canvasId={open.id} canEdit={isPro} onBack={() => setOpen(null)} />
+            <GlassPanel className="p-6 text-center text-fg-muted">
+              This canvas is no longer available.
+            </GlassPanel>
           )}
         </div>
       ) : (

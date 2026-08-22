@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { PAGE_LABELS } from '@/lib/canvasPages';
 import { ProGate } from '@/features/billing';
 import { useMyRole } from '@/features/members';
+import { ShareButton, useSharedItemRole } from '@/features/sharing';
 import { useAllCanvases, useCreateIndependentCanvas, type AggregatedCanvas } from './useCanvas';
 import { canvasCreateErrorMessage } from './errors';
 
@@ -78,14 +79,22 @@ function CanvasWorkspace() {
   // The explicit choice if it still exists, else the most-recently edited canvas.
   const selected = sorted.find((canvas) => canvas.id === selectedId) ?? sorted[0];
 
-  // For a PROJECT canvas, edit rights follow the project role (disabled for a
-  // personal canvas, where ownership is the only path). RLS is the real gate.
+  // For a PROJECT canvas, edit rights follow the project role. For a PERSONAL
+  // canvas, they follow the owner's own note_members-style share: the owner
+  // always edits, a shared 'editor' collaborator edits, a shared 'viewer'
+  // gets the read-only render. RLS is the real gate either way.
   const role = useMyRole(selected && selected.project_id ? selected.project_id : undefined);
+  const personalShare = useSharedItemRole(
+    'canvas',
+    selected?.project_id === null ? selected.id : '',
+    selected?.project_id === null ? selected.owner_id : null,
+  );
   const canEdit = !selected
     ? false
     : selected.project_id === null
-      ? selected.owner_id === user?.id
+      ? personalShare.canEdit
       : role !== 'viewer';
+  const isOwner = Boolean(selected && selected.project_id === null && selected.owner_id === user?.id);
 
   function handleCreate() {
     // Select the real canvas once the insert resolves (avoids opening a temp id).
@@ -157,14 +166,19 @@ function CanvasWorkspace() {
             <span className="text-fg-subtle">· {sorted.length}</span>
           </span>
         </div>
-        <GradientButton
-          size="sm"
-          leftIcon={<Plus size={15} />}
-          onClick={handleCreate}
-          isLoading={createCanvas.isPending}
-        >
-          New
-        </GradientButton>
+        <div className="flex shrink-0 items-center gap-2">
+          {selected && isOwner && (
+            <ShareButton kind="canvas" targetId={selected.id} title={selected.title} />
+          )}
+          <GradientButton
+            size="sm"
+            leftIcon={<Plus size={15} />}
+            onClick={handleCreate}
+            isLoading={createCanvas.isPending}
+          >
+            New
+          </GradientButton>
+        </div>
       </div>
 
       {createCanvas.isError && (

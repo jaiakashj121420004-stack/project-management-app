@@ -76,3 +76,34 @@ export async function removeCollaborator(
   const { error } = await query;
   if (error) throw error;
 }
+
+/**
+ * The CALLING user's own membership role on a canvas/note they don't own —
+ * 'editor' | 'viewer', or null if they have no member row (no access, or
+ * they're the owner, which callers check separately via owner_id). Used to
+ * decide whether a shared collaborator gets edit or read-only UI; RLS
+ * (can_edit_note / can_edit_canvas) is still the real enforcement either way.
+ */
+export async function fetchMyRole(
+  kind: ShareKind,
+  targetId: string,
+  userId: string,
+): Promise<ShareRole | null> {
+  const query =
+    kind === 'canvas'
+      ? supabase
+          .from('canvas_members')
+          .select('role')
+          .eq('canvas_id', targetId)
+          .eq('user_id', userId)
+          .maybeSingle()
+      : supabase
+          .from('note_members')
+          .select('role')
+          .eq('note_id', targetId)
+          .eq('user_id', userId)
+          .maybeSingle();
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data?.role as ShareRole | undefined) ?? null;
+}
