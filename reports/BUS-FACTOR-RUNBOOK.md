@@ -27,7 +27,7 @@ commit.
 | Cloudflare account / DNS | Cloudflare dashboard | Also holds DNS for `nvexis.com` (nameservers cut over from Namecheap — see §1b). |
 | Domain registrar | Namecheap, registrant of `nvexis.com` | Nameservers now point at Cloudflare; renewal/ownership still lives at Namecheap. |
 | Dodo Payments (billing, Merchant of Record) | Dodo dashboard | Test mode is live and verified end-to-end (webhook → Pro upgrade). **Live mode is not yet active** — KYC (Individual account) was submitted and was under review as of 2026-07-19; check status before assuming live billing works. |
-| Resend (transactional email) | Resend dashboard | Used for due-date/reminder emails via the `send-due-reminders` function. No verified sending domain yet — falls back to `onboarding@resend.dev`. Setting a real `REMINDER_FROM_EMAIL` requires verifying a domain here first. |
+| Resend (transactional email) | Resend dashboard | Used for due-date/reminder emails via the `send-due-reminders` function. Sending domain `mail.nvexis.com` verified 2026-08-23 (DKIM/SPF/DMARC in Cloudflare DNS); `REMINDER_FROM_EMAIL` is set to `Aurora <reminders@mail.nvexis.com>` in Supabase Edge Function secrets. |
 | Google Cloud / Google OAuth | Google Cloud Console, project **`aurora-499806`** | Auth Platform → Branding holds the "Sign in with Google" app name/logo/authorized domain (`nvexis.com`) config. OAuth Client ID starts `594602749460-q15m...` — must match the Client ID configured in Supabase's Google auth provider. |
 | `.env` (local dev secrets) | Project root, gitignored | Copy from `.env.example`. Holds only the two `VITE_` values — nothing else belongs here (see the header comment in `.env.example` for the full list of what's deliberately excluded). |
 
@@ -36,8 +36,8 @@ commit.
 Grouped by feature (full setup instructions for each are in
 `supabase/README.md`):
 
-- **Email reminders:** `RESEND_API_KEY`, `REMINDER_FROM_EMAIL` (currently
-  unset/fallback), `CRON_SECRET`.
+- **Email reminders:** `RESEND_API_KEY`, `REMINDER_FROM_EMAIL` (set to
+  `Aurora <reminders@mail.nvexis.com>`, 2026-08-23), `CRON_SECRET`.
 - **Dodo Payments billing:** `DODO_PAYMENTS_API_KEY`, `DODO_WEBHOOK_SECRET`,
   `DODO_PRODUCT_PRO_MONTHLY`, `DODO_PRODUCT_PRO_ANNUAL`,
   `DODO_PRODUCT_TEAM_MONTHLY`, `DODO_PRODUCT_TEAM_ANNUAL`, `APP_URL`
