@@ -8,16 +8,25 @@
 ## What this is (and isn't)
 
 A thin, privacy-respecting funnel-tracking layer — seventeen allow-listed events,
-one Postgres table, no dashboard. It exists to answer "where do people drop off
-between landing on the site and paying," not to be a general analytics
-platform. No page-view auto-tracking, no session replay, no click-heatmaps, no
-third-party analytics vendor, no PII fields.
+one Postgres table, a minimal admin-only dashboard (added 2026-08-22). It exists
+to answer "where do people drop off between landing on the site and paying,"
+not to be a general analytics platform. No page-view auto-tracking, no session
+replay, no click-heatmaps, no third-party analytics vendor, no PII fields.
 
-**Querying:** there is no admin UI (deliberately out of scope for this change —
-a future task). Query `analytics_events` directly via Supabase Studio → SQL
-Editor. The table denies all client (anon/authenticated) reads and writes via
-RLS — only the `track-event` Edge Function and the Dodo webhook (service role)
-can write it, and only a Studio SQL query (service/postgres role) can read it.
+**Querying:** `/analytics` in the app (admin only, nav item hidden from
+everyone else) shows the core funnel — all-time and last-30-day counts per
+stage, landing through paid — plus two breakdowns: which plan limit drives
+`upgrade_prompt_shown` most (the property this doc already called "the single
+most useful property"), and `install_prompt_shown` by platform. It's deliberately
+not a general BI tool: two RPCs (`admin_analytics_funnel`, a fixed 6-stage view;
+`admin_analytics_breakdown`, a generic top-20-values-by-property query), both
+gated by `is_admin()` and logged to `admin_audit_log`
+(`supabase/migrations/20260822130000_analytics_dashboard.sql`), same pattern as
+`admin_list_feedback`. For anything outside those two views, query
+`analytics_events` directly via Supabase Studio → SQL Editor — the table still
+denies all client (anon/authenticated) reads and writes via RLS; only the
+`track-event` Edge Function, the Dodo webhook (service role), and the two admin
+RPCs above (whose function owner bypasses RLS, not the calling role) can touch it.
 
 ## How identity works
 

@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   CalendarDays,
   LayoutGrid,
   Library,
@@ -31,5 +32,6 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: 'Library', to: '/library', icon: Library, bottomNav: true },
   { label: 'From the Founder', to: '/from-the-founder', icon: Megaphone },
   { label: 'Feedback/Features', to: '/feedback', icon: MessageSquareHeart },
+  { label: 'Analytics', to: '/analytics', icon: BarChart3, adminOnly: true },
   { label: 'Settings', to: '/settings', icon: Settings },
 ];

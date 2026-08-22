@@ -1449,6 +1449,24 @@ export interface Database {
         Args: Record<string, never>;
         Returns: Database['public']['Tables']['feedback']['Row'][];
       };
+      // Admin analytics dashboard (2026-08-22): the acquisition funnel plus a
+      // generic property-breakdown RPC, both gated by is_admin() and logged to
+      // admin_audit_log, same as admin_list_feedback above. analytics_events
+      // itself has no client SELECT/INSERT grant (20260815120000_analytics_events.sql)
+      // — these functions' owner reads it, not the `authenticated` caller.
+      admin_analytics_funnel: {
+        Args: Record<string, never>;
+        Returns: {
+          stage: number;
+          event_name: string;
+          count_all_time: number;
+          count_last_30d: number;
+        }[];
+      };
+      admin_analytics_breakdown: {
+        Args: { p_event_name: string; p_property_key: string; p_days?: number };
+        Returns: { value: string; count: number }[];
+      };
       // Command palette full-text search (Improvement Plan Task 20). SECURITY
       // INVOKER — relies entirely on cards/notes/projects' own RLS, never a
       // hand-rolled membership check (20260817120000_content_search.sql).

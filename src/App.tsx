@@ -12,6 +12,7 @@ import { LibraryPage } from '@/features/library';
 import { BillingPage, ProVsFreePage } from '@/features/billing';
 import { CeoMessagePage } from '@/features/announcements';
 import { FeedbackPage } from '@/features/feedback';
+import { AnalyticsDashboard } from '@/features/admin-analytics';
 import { LandingPage, PricingPage, TermsPage, PrivacyPage } from '@/features/marketing';
 import { SharedProjectPage } from '@/features/project-share';
 import {
@@ -74,6 +75,7 @@ export default function App() {
           <Route path="canvas" element={<Navigate to="/library" replace />} />
           <Route path="from-the-founder" element={<CeoMessagePage />} />
           <Route path="feedback" element={<FeedbackPage />} />
+          <Route path="analytics" element={<AnalyticsDashboard />} />
           <Route path="billing" element={<BillingPage />} />
           <Route path="pro-vs-free" element={<ProVsFreePage />} />
           <Route path="profile" element={<ProfilePage />} />
