@@ -20,3 +20,7 @@ supabase/.temp/
 .vscode/
 .idea/
 Aurora api.txt
+
+# throwaway staging area for files the device bridge cannot delete outright
+# (mv-not-rm quirk) -- never commit its contents
+_to_delete/
