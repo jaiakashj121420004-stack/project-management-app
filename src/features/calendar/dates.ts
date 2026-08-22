@@ -15,7 +15,7 @@ import type { Card, Project, TodoItem, TodoList } from '@/types/database';
  * everything off that same string, produced locally by `toDateKey`, so a card
  * lands on the exact day it was set to regardless of timezone.
  */
-export type CalendarView = 'month' | 'week' | 'timeline';
+export type CalendarView = 'month' | 'week' | 'day' | 'timeline';
 
 /** Column headers, starting Sunday (date-fns default week start). */
 export const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
@@ -52,12 +52,14 @@ export function monthOnlyDays(cursor: Date): Date[] {
 export function calendarDays(view: CalendarView, cursor: Date): Date[] {
   if (view === 'month') return monthDays(cursor);
   if (view === 'week') return weekDays(cursor);
+  if (view === 'day') return [cursor];
   return monthOnlyDays(cursor);
 }
 
 /** Human label for the current period, e.g. "June 2026" or "Jun 15 – 21, 2026". */
 export function periodLabel(view: CalendarView, cursor: Date): string {
   if (view === 'month' || view === 'timeline') return format(cursor, 'MMMM yyyy');
+  if (view === 'day') return format(cursor, 'EEEE, MMMM d, yyyy');
   const start = startOfWeek(cursor);
   const end = endOfWeek(cursor);
   return isSameMonth(start, end)

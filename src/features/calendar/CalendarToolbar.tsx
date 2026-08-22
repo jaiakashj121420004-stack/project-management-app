@@ -3,6 +3,7 @@ import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { GradientButton } from '@/components/buttons/GradientButton';
 import { GlassSelect, type GlassSelectOption } from '@/components/forms/GlassSelect';
+import { accentVars } from '@/lib/accents';
 import type { Project } from '@/types/database';
 import type { CalendarView } from './dates';
 
@@ -81,6 +82,27 @@ export function CalendarToolbar({
           />
         </div>
       </div>
+
+      {/* Color-key legend: only useful with several projects in view at once —
+       *  once a single project is picked in the scope select above, its accent
+       *  is already obvious everywhere, so the legend would just be noise. */}
+      {scope === 'all' && projects.length > 1 && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          {projects.map((project) => (
+            <span
+              key={project.id}
+              style={accentVars(project.accent)}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-fg-muted"
+            >
+              <span
+                aria-hidden
+                className="h-2 w-2 shrink-0 rounded-full bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))]"
+              />
+              {project.name}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -88,7 +110,7 @@ export function CalendarToolbar({
 function Segmented({ value, onChange }: { value: CalendarView; onChange: (view: CalendarView) => void }) {
   return (
     <div className="glass inline-flex rounded-2xl p-1">
-      {(['month', 'week', 'timeline'] as const).map((option) => (
+      {(['month', 'week', 'day', 'timeline'] as const).map((option) => (
         <button
           key={option}
           type="button"

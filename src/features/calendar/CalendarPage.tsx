@@ -12,7 +12,7 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core';
 import { motion, useReducedMotion } from 'framer-motion';
-import { addMonths, addWeeks, differenceInCalendarDays, parseISO, startOfToday } from 'date-fns';
+import { addDays, addMonths, addWeeks, differenceInCalendarDays, parseISO, startOfToday } from 'date-fns';
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import { Spinner } from '@/components/feedback/Spinner';
 import { Reveal } from '@/components/motion/Reveal';
@@ -27,6 +27,7 @@ import { CardDetailModal, type CardDetailValues } from '@/features/board/CardDet
 import { CalendarToolbar } from './CalendarToolbar';
 import { CalendarGrid } from './CalendarGrid';
 import { AgendaList } from './AgendaList';
+import { DayView } from './DayView';
 import { CardChip } from './CardChip';
 import { TimelineBarFace } from './TimelineBar';
 import { TimelineGrid } from './TimelineGrid';
@@ -109,6 +110,7 @@ export function CalendarPage() {
   const projectsByDate = useMemo(() => groupProjectsByDate(projectList), [projectList]);
 
   const pageAccent: AccentName = scope === 'all' ? 'aurora' : (projectsById.get(scope)?.accent ?? 'aurora');
+  const cursorDateKey = useMemo(() => toDateKey(cursor), [cursor]);
 
   const sensors = useSensors(
     // A little travel before dragging so a clean click still opens the card.
@@ -182,10 +184,10 @@ export function CalendarPage() {
   }
 
   function goPrev() {
-    setCursor((c) => (view === 'week' ? addWeeks(c, -1) : addMonths(c, -1)));
+    setCursor((c) => (view === 'day' ? addDays(c, -1) : view === 'week' ? addWeeks(c, -1) : addMonths(c, -1)));
   }
   function goNext() {
-    setCursor((c) => (view === 'week' ? addWeeks(c, 1) : addMonths(c, 1)));
+    setCursor((c) => (view === 'day' ? addDays(c, 1) : view === 'week' ? addWeeks(c, 1) : addMonths(c, 1)));
   }
 
   async function handleSaveCard(id: string, values: CardDetailValues) {
@@ -252,7 +254,16 @@ export function CalendarPage() {
             setActiveKind('card');
           }}
         >
-          {view === 'timeline' ? (
+          {view === 'day' ? (
+            <DayView
+              date={cursor}
+              cards={cardsByDate.get(cursorDateKey) ?? []}
+              todos={todosByDate.get(cursorDateKey)}
+              milestones={projectsByDate.get(cursorDateKey) ?? []}
+              accentFor={accentFor}
+              onOpenCard={(card) => setOpenCardId(card.id)}
+            />
+          ) : view === 'timeline' ? (
             <TimelineGrid
               days={days}
               cards={scopedCards}
