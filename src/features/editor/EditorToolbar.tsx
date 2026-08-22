@@ -37,6 +37,7 @@ import { useIsPro, UpgradeModal } from '@/features/billing';
 import { uploadNoteImage } from '@/features/notes/noteMedia';
 import { DEFAULT_TABLE_ROWS, DEFAULT_TABLE_COLS } from '@/lib/table';
 import { safeLinkHref, BULLET_LIST_STYLES, ORDERED_LIST_STYLES } from './extensions';
+import { ToolbarShell } from './ToolbarShell';
 import { CanvasPickerModal } from './CanvasPickerModal';
 import { EmbedModal } from './EmbedModal';
 import { useNoteRef } from './noteContext';
@@ -95,7 +96,7 @@ const COMMON_EMOJIS: readonly string[] = [
   '❤️', '💯', '🎉', '🥲', '👀', '🤝', '⏰', '📅',
 ];
 
-type OpenPopover = 'color' | 'highlight' | 'link' | 'liststyle' | 'emoji' | 'table' | null;
+type OpenPopover = 'color' | 'highlight' | 'link' | 'liststyle' | 'emoji' | 'table' | 'formula' | null;
 
 /**
  * The block editor's formatting toolbar. Buttons run Tiptap chain commands;
@@ -211,14 +212,7 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
   const linkInvalid = linkValue.trim() !== '' && safeLinkHref(linkValue) === null;
 
   return (
-    <div
-      role="toolbar"
-      aria-label="Text formatting"
-      className={cn(
-        'glass-menu sticky top-0 z-10 flex max-w-full flex-wrap items-center gap-0.5 rounded-xl border border-[var(--glass-border)] px-1.5 py-1',
-        className,
-      )}
-    >
+    <ToolbarShell label="Text formatting" className={className}>
       <Btn label="Bold" active={editor.isActive('bold')} onRun={() => editor.chain().focus().toggleBold().run()}>
         <Bold size={15} />
       </Btn>
@@ -533,13 +527,47 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
         </div>
       </Popover>
 
-      <Btn
-        label="Formula"
-        active={editor.isActive('mathInline') || editor.isActive('mathBlock')}
-        onRun={() => editor.chain().focus().insertMathInline({ latex: '' }).run()}
+      <Popover
+        open={open === 'formula'}
+        onClose={close}
+        title="Formula"
+        trigger={
+          <Btn
+            label="Insert formula"
+            active={editor.isActive('mathInline') || editor.isActive('mathBlock') || open === 'formula'}
+            onRun={() => setOpen((o) => (o === 'formula' ? null : 'formula'))}
+          >
+            <Sigma size={16} />
+          </Btn>
+        }
       >
-        <Sigma size={16} />
-      </Btn>
+        <div className="flex w-52 flex-col">
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              editor.chain().focus().insertMathInline({ latex: '' }).run();
+              close();
+            }}
+            className="rounded-lg px-2 py-1.5 text-left text-sm text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+          >
+            Inline formula
+            <span className="block text-xs text-fg-subtle">Sits within a line of text, e.g. $x^2$</span>
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              editor.chain().focus().insertMathBlock({ latex: '' }).run();
+              close();
+            }}
+            className="rounded-lg px-2 py-1.5 text-left text-sm text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+          >
+            Block formula
+            <span className="block text-xs text-fg-subtle">Its own centred, standalone equation</span>
+          </button>
+        </div>
+      </Popover>
 
       <Divider />
 
@@ -632,7 +660,7 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
         reason="Upgrade to Pro to embed YouTube, Vimeo, Loom and SoundCloud in your notes."
       />
       {imageError && <span className="w-full px-1 text-xs text-danger">{imageError}</span>}
-    </div>
+    </ToolbarShell>
   );
 }
 
@@ -683,7 +711,7 @@ function Btn({
       onMouseDown={(e) => e.preventDefault()}
       onClick={onRun}
       className={cn(
-        'grid h-8 w-8 place-items-center rounded-lg transition-colors disabled:opacity-40',
+        'grid h-9 w-9 shrink-0 place-items-center rounded-lg transition-colors disabled:opacity-40 sm:h-8 sm:w-8',
         active
           ? 'bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)]'
           : 'text-fg-muted hover:bg-[var(--glass-fill)] hover:text-fg',
