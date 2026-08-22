@@ -272,6 +272,27 @@
   text-decoration: underline dotted;
 }
 
+/* Table of contents (TableOfContents.tsx): a brief highlight flash on the
+   heading a user just jumped to. The editor's ProseMirror content isn't
+   React-rendered, so the jump handler toggles this class directly on the DOM
+   node rather than through a NodeView/decoration — the simplest option for
+   flagging one already-existing heading briefly. Wrapped in the
+   reduced-motion query so a user with that preference just gets the scroll,
+   no flash. */
+@media (prefers-reduced-motion: no-preference) {
+  .block-editor .toc-heading-highlight {
+    animation: toc-heading-flash 1.1s ease-out;
+  }
+}
+@keyframes toc-heading-flash {
+  0% {
+    background-color: color-mix(in srgb, var(--accent-from) 28%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
 /* Placeholder (empty editor / empty first line). */
 .block-editor .ProseMirror .is-editor-empty:first-child::before,
 .block-editor .ProseMirror .is-empty::before {

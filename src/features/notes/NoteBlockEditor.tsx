@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { AnyExtension, JSONContent } from '@tiptap/core';
 import { BlockEditor } from '@/features/editor/BlockEditor';
 import { markdownToDoc } from '@/features/editor/serialize';
@@ -8,11 +8,6 @@ import { NoteEmbed } from '@/features/editor/nodes/NoteEmbed';
 import { noteTableExtensions } from '@/features/editor/nodes/tableExtensions';
 import { NoteContext } from '@/features/editor/noteContext';
 import type { Note } from '@/types/database';
-
-// Note-only extensions (stable reference — the editor is built once). Insert
-// canvas + images + embeds + tables live here so the canvas text editor never
-// gets them.
-const NOTE_EXTENSIONS: AnyExtension[] = [CanvasLink, NoteImage, NoteEmbed, ...noteTableExtensions];
 
 /**
  * Bridges a Note to the shared BlockEditor. Lives in the lazy chunk (Tiptap +
@@ -34,13 +29,27 @@ export default function NoteBlockEditor({
     note.content_json ? note.content_json : markdownToDoc(note.content),
   );
 
+  // Note-only extensions (Insert-canvas + images + embeds + tables — the
+  // canvas text editor never gets them). Rebuilt via useMemo keyed on note.id
+  // rather than a plain module constant: NoteImage needs `.configure({ noteId })`
+  // so a pasted image (Ctrl+V) uploads to THIS note's media path — a ProseMirror
+  // plugin has no access to the NoteContext React context the toolbar uses, so
+  // the id has to be baked into the extension itself. Still only built once per
+  // note mount (this component remounts per note.id, same as BlockEditor's own
+  // "built once" contract for extraExtensions).
+  const noteExtensions = useMemo<AnyExtension[]>(
+    () => [CanvasLink, NoteImage.configure({ noteId: note.id }), NoteEmbed, ...noteTableExtensions],
+    [note.id],
+  );
+
   return (
     <NoteContext.Provider value={{ noteId: note.id, noteTitle: note.title }}>
       <BlockEditor
         content={initial}
         editable={editable}
         onChange={onChange}
-        extraExtensions={NOTE_EXTENSIONS}
+        extraExtensions={noteExtensions}
+        showToc
       />
     </NoteContext.Provider>
   );

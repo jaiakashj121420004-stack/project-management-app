@@ -7,6 +7,8 @@ import { blockExtensions } from './extensions';
 import { EditorToolbar } from './EditorToolbar';
 import { SlashCommand } from './suggestion/SlashCommand';
 import { EmojiCommand } from './suggestion/EmojiCommand';
+import { NoteBlockDragHandle } from './nodes/blockDragHandle';
+import { TableOfContents } from './TableOfContents';
 import { docToPlainText } from './serialize';
 import './editor.css';
 
@@ -22,6 +24,18 @@ interface BlockEditorProps {
   /** Extra Tiptap extensions for this surface only (e.g. notes' Insert-canvas).
    *  Must be a stable reference (module constant) — the editor is built once. */
   extraExtensions?: AnyExtension[];
+  /** Notes-only left-margin block drag handle (Improvement Plan Task 31).
+   *  Off by default — canvas text boxes never pass this, so they never render
+   *  it. Needs the `editor` instance itself (a React component, not a Tiptap
+   *  extension), which is why this is a BlockEditor prop rather than another
+   *  entry in notes' `extraExtensions` — see NoteBlockEditor.tsx. */
+  dragHandle?: boolean;
+  /** Notes-only "Contents" jump-to-heading panel (see TableOfContents.tsx).
+   *  Off by default so canvas text boxes never render it. Deliberately NOT
+   *  gated on `editable` here — it must keep working in read-only View mode
+   *  and for a shared viewer, so the caller (NoteBlockEditor.tsx) always
+   *  passes this regardless of who's looking. */
+  showToc?: boolean;
   className?: string;
 }
 
@@ -37,6 +51,8 @@ export function BlockEditor({
   placeholder = 'Write something, or press “/” for blocks…',
   onChange,
   extraExtensions = [],
+  dragHandle = false,
+  showToc = false,
   className,
 }: BlockEditorProps) {
   const editor = useEditor({
@@ -68,7 +84,13 @@ export function BlockEditor({
     <div className={cn('flex min-h-0 flex-1 flex-col gap-2', className)}>
       {editable && editor && <EditorToolbar editor={editor} />}
       <div className="block-editor relative min-h-[40vh] flex-1 overflow-y-auto">
+        {showToc && editor && (
+          <div className="sticky top-0 z-30 flex justify-end pb-1 pr-1 pt-1">
+            <TableOfContents editor={editor} />
+          </div>
+        )}
         <EditorContent editor={editor} />
+        {dragHandle && editable && editor && <NoteBlockDragHandle editor={editor} />}
       </div>
     </div>
   );

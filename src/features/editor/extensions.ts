@@ -21,6 +21,7 @@ import { TaskItem } from '@tiptap/extension-task-item';
 import { Details, DetailsSummary, DetailsContent } from '@tiptap/extension-details';
 import { Collaboration } from '@tiptap/extension-collaboration';
 import { CollaborationCaret } from '@tiptap/extension-collaboration-caret';
+import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { MathInline, MathBlock } from './nodes/MathFormula';
 import type { AnyExtension } from '@tiptap/core';
 import type { XmlFragment } from 'yjs';
@@ -105,14 +106,98 @@ const ListStyle = Extension.create({
 });
 
 /**
+ * Generates a stable, URL-safe anchor id for a heading. Random rather than
+ * derived from the heading's text — a text-derived slug would change (and
+ * break every existing link to it) the moment someone edits the heading's
+ * wording, which defeats the point of a stable anchor. `crypto.randomUUID()`
+ * is this repo's existing convention for client-generated ids (see e.g.
+ * NoteImage.ts's uploadId, or any `tempId` in the mutation hooks).
+ */
+function generateHeadingId(): string {
+  return `heading-${crypto.randomUUID()}`;
+}
+
+/**
+ * Adds a stable `id` attribute to every heading, and keeps it populated:
+ *  - `onCreate` walks the doc once at mount and assigns an id to any heading
+ *    that doesn't have one yet — this is what lets an OLD document (saved
+ *    before this feature existed) get anchors "lazily on first render"
+ *    instead of needing a migration pass over every note.
+ *  - the `appendTransaction` plugin does the same on every doc-changing
+ *    transaction after that, so a heading created later (typing "# ", the
+ *    slash menu, a paste) gets its id the moment it's created too.
+ * Both are idempotent (skip headings that already have an id), so this never
+ * loops and never overwrites an existing anchor — the id is generated once
+ * and then just carried along with the node like any other attribute.
+ *
+ * NOTE: this only runs inside a live `Editor` instance (onCreate/appendTransaction
+ * both need an EditorView). `generateHTML` (serialize.ts's static render) builds
+ * HTML straight from stored JSON without creating a view, so it prints whatever
+ * id is already IN the stored doc and won't backfill a missing one — not an
+ * issue today since every note surface (edit, read-only View mode, and a
+ * shared viewer) renders through the live editor, never that static path (see
+ * NoteEditor.tsx) — but worth knowing if a static note render is added later.
+ */
+const HeadingId = Extension.create({
+  name: 'headingId',
+  addGlobalAttributes() {
+    return [
+      {
+        types: ['heading'],
+        attributes: {
+          id: {
+            default: null,
+            parseHTML: (el: HTMLElement) => el.getAttribute('id'),
+            renderHTML: (attrs: Record<string, unknown>) =>
+              typeof attrs.id === 'string' && attrs.id ? { id: attrs.id } : {},
+          },
+        },
+      },
+    ];
+  },
+  onCreate() {
+    const { state, view } = this.editor;
+    let tr = state.tr;
+    let changed = false;
+    state.doc.descendants((node, pos) => {
+      if (node.type.name === 'heading' && !node.attrs.id) {
+        tr = tr.setNodeMarkup(pos, undefined, { ...node.attrs, id: generateHeadingId() });
+        changed = true;
+      }
+    });
+    if (changed) view.dispatch(tr);
+  },
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        key: new PluginKey('headingIdAutoAssign'),
+        appendTransaction: (transactions, _oldState, newState) => {
+          if (!transactions.some((tr) => tr.docChanged)) return null;
+          const tr = newState.tr;
+          let changed = false;
+          newState.doc.descendants((node, pos) => {
+            if (node.type.name === 'heading' && !node.attrs.id) {
+              tr.setNodeMarkup(pos, undefined, { ...node.attrs, id: generateHeadingId() });
+              changed = true;
+            }
+          });
+          return changed ? tr : null;
+        },
+      }),
+    ];
+  },
+});
+
+/**
  * The shared block schema. StarterKit v3 bundles bold, italic, underline, strike,
  * code, headings, bullet/ordered lists, blockquote, code block and horizontal
  * rule; we add Highlight (multicolor), TextStyle + Color (custom colours),
  * SafeLink, Subscript/Superscript marks, task lists, collapsible Details blocks,
- * the list-style attribute, and inline/block math formulas (MathInline/
- * MathBlock — see nodes/MathFormula.ts). StarterKit's own Link is disabled in
- * favour of SafeLink. Headings go to 3 levels (notes are documents, unlike the
- * 2-level canvas text box of P3.3).
+ * the list-style attribute, stable per-heading anchor ids (HeadingId — powers
+ * the notes Contents/jump-to-heading panel), and inline/block math formulas
+ * (MathInline/MathBlock — see nodes/MathFormula.ts). StarterKit's own Link is
+ * disabled in favour of SafeLink. Headings go to 3 levels (notes are documents,
+ * unlike the 2-level canvas text box of P3.3).
  */
 export const blockExtensions: AnyExtension[] = [
   StarterKit.configure({
@@ -131,6 +216,7 @@ export const blockExtensions: AnyExtension[] = [
   DetailsSummary,
   DetailsContent,
   ListStyle,
+  HeadingId,
   MathInline,
   MathBlock,
 ];
@@ -168,6 +254,7 @@ export function collabBlockExtensions(opts: {
     DetailsSummary,
     DetailsContent,
     ListStyle,
+    HeadingId,
     MathInline,
     MathBlock,
     Collaboration.configure({ fragment: opts.fragment }),
