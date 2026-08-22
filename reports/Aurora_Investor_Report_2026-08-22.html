@@ -935,7 +935,7 @@
 <section id="checklist">
   <span class="eyebrow">11 — Pre-Launch Checklist</span>
   <h2>What's actually left before go-live</h2>
-  <p class="dek">Cross-referenced against <code>memory.md</code>'s Open Items, <code>CLAUDE.md</code>'s stated go-live gates, and the bus-factor/pentest-readiness documents. None of this blocks the product being feature-complete — these are the go-live gates, and §16's marketing plan runs in parallel with them, not after.</p>
+  <p class="dek"><strong>Updated 22 Aug 2026 (later same day):</strong> the two dev-session rows below (Windows verification pass, Task 31 drag-handle wiring) are now done and confirmed live on <code>origin/main</code> — this table isn't a static snapshot, it moved twice in one day. Cross-referenced against <code>memory.md</code>'s Open Items, <code>CLAUDE.md</code>'s stated go-live gates, and the bus-factor/pentest-readiness documents. None of this blocks the product being feature-complete — these are the go-live gates, and §16's marketing plan runs in parallel with them, not after. Six items remain open, and every one of them needs the founder personally — a KYC review, a DNS record, a legal engagement, a paid pentest vendor, a GitHub security setting, and a real-device browser session — nothing left here is code.</p>
 
   <div class="table-scroll">
   <table>
@@ -947,9 +947,9 @@
     <tr><td>Legal review of Terms of Service / Privacy Policy</td><td>Drafts exist; no confirmation of a qualified legal review found in the repo this session — treat as open until confirmed</td><td>Founder</td></tr>
     <tr><td>GitHub account MFA</td><td>Flagged as outstanding in the bus-factor runbook; unresolved per a direct check</td><td>Founder</td></tr>
     <tr><td>Old rotated secrets in git history</td><td>Low-urgency hygiene — credentials rotated 16 Aug 2026 and are inert; a history scrub would remove the stale values if desired</td><td>Founder</td></tr>
-    <tr><td>Windows verification pass for 5 uncommitted Aug 22 features</td><td><code>npm install &amp;&amp; npm run typecheck &amp;&amp; npm run build</code> needed for: note PDF export, note Word export, Calendar Day view + legend, the sharing bug-fix, and the Contents panel</td><td>Next dev session</td></tr>
-    <tr><td>Wire Task 31 (drag-and-drop note block reordering)</td><td>Built, not yet live — a documented two-line fix</td><td>Next dev session</td></tr>
-    <tr><td>Lighthouse / mobile / regression re-score</td><td>The executable checklist should be re-run since the newest features shipped after the last recorded run</td><td>Next dev session</td></tr>
+    <tr><td>Windows verification pass for 5 Aug 22 features</td><td><span class="tag yes">Done</span> <code>npm install &amp;&amp; npm run typecheck &amp;&amp; npm run build</code> ran clean and pushed to <code>origin/main</code> — note PDF export, note Word export, Calendar Day view + legend, the sharing bug-fix, and the Contents panel are all live. Confirmed 22 Aug 2026 by re-checking <code>git log origin/main</code> directly, not by re-trusting this file's own older prose.</td><td>Done</td></tr>
+    <tr><td>Wire Task 31 (drag-and-drop note block reordering)</td><td><span class="tag yes">Done</span> The two-line fix landed and is on <code>origin/main</code> as of 22 Aug 2026 — the drag handle is live in the running app, not just built.</td><td>Done</td></tr>
+    <tr><td>Lighthouse / mobile / regression re-score</td><td><span class="tag maybe">Still open</span> The executable checklist (<code>PHASE-7-VERIFICATION.md</code>) needs a real browser, a real phone, and human judgment (DevTools Lighthouse runs, install-prompt checks, on-device screenshots) — outside what an AI session can execute unattended. Newest features (mobile toolbar collapse, formula editor, the five 22 Aug features, Task 31) shipped after the last recorded run and aren't yet reflected in a fresh score.</td><td>Founder</td></tr>
   </table>
   </div>
 
