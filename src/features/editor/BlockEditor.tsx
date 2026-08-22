@@ -8,6 +8,7 @@ import { EditorToolbar } from './EditorToolbar';
 import { SlashCommand } from './suggestion/SlashCommand';
 import { EmojiCommand } from './suggestion/EmojiCommand';
 import { NoteBlockDragHandle } from './nodes/blockDragHandle';
+import { TableBubbleMenu } from './TableBubbleMenu';
 import { TableOfContents } from './TableOfContents';
 import { docToPlainText } from './serialize';
 import './editor.css';
@@ -90,6 +91,7 @@ export function BlockEditor({
           </div>
         )}
         <EditorContent editor={editor} />
+        {editable && editor && <TableBubbleMenu editor={editor} />}
         {dragHandle && editable && editor && <NoteBlockDragHandle editor={editor} />}
       </div>
     </div>
