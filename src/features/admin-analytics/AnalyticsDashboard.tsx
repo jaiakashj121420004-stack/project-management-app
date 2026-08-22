@@ -84,8 +84,17 @@ export function AnalyticsDashboard() {
   );
 }
 
+/** Renders whatever a thrown Error's `.message` is, falling back to a generic
+ *  line for a non-Error rejection. Surfacing the real message here — instead
+ *  of a fixed "couldn't load" string — is deliberate: it's what would have
+ *  told us in five seconds, from the page itself, exactly what's wrong. */
+function ErrorDetail({ error, fallback }: { error: unknown; fallback: string }) {
+  const message = error instanceof Error ? error.message : fallback;
+  return <p className="break-words text-sm text-fg-muted">{message}</p>;
+}
+
 function FunnelSection() {
-  const { data, isLoading, isError } = useAnalyticsFunnel();
+  const { data, isLoading, isError, error } = useAnalyticsFunnel();
 
   return (
     <GlassPanel className="p-6 sm:p-7">
@@ -99,7 +108,7 @@ function FunnelSection() {
           <Spinner size={28} />
         </div>
       ) : isError ? (
-        <p className="text-sm text-fg-muted">Couldn&apos;t load the funnel. Try again shortly.</p>
+        <ErrorDetail error={error} fallback="Couldn't load the funnel. Try again shortly." />
       ) : !data || data.length === 0 ? (
         <p className="text-sm text-fg-muted">No funnel events recorded yet.</p>
       ) : (
@@ -148,7 +157,7 @@ function BreakdownSection({
   eventName: string;
   propertyKey: string;
 }) {
-  const { data, isLoading, isError } = useAnalyticsBreakdown(eventName, propertyKey);
+  const { data, isLoading, isError, error } = useAnalyticsBreakdown(eventName, propertyKey);
 
   return (
     <GlassPanel className="p-6">
@@ -158,7 +167,7 @@ function BreakdownSection({
           <Spinner size={22} />
         </div>
       ) : isError ? (
-        <p className="text-sm text-fg-muted">Couldn&apos;t load this breakdown.</p>
+        <ErrorDetail error={error} fallback="Couldn't load this breakdown." />
       ) : !data || data.length === 0 ? (
         <p className="text-sm text-fg-muted">No data in the last 30 days.</p>
       ) : (
