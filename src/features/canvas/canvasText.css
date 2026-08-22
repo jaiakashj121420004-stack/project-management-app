@@ -210,6 +210,21 @@
   list-style: none;
 }
 
+/* Math formulas (inline + block — shared editor schema, see
+   src/features/editor/nodes/MathFormula.ts). Only the static render needs
+   this; the live NodeView's error state uses Tailwind classes directly. */
+.canvas-rich [data-math-block] {
+  display: block;
+  margin: 0.5em 0;
+  text-align: center;
+}
+.canvas-rich .math-render-error {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 0.85em;
+  color: var(--danger, #EF4444);
+  text-decoration: underline dotted;
+}
+
 /* =========================================================================
    Canvas table node (TableGrid, rendered by TableLayer). Colors come in via
    inline style from the JS-resolved CanvasPalette (Konva's canvas container

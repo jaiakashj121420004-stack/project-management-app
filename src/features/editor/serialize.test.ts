@@ -112,6 +112,71 @@ describe('sanitizeBlockHtml (XSS defense-in-depth)', () => {
   });
 });
 
+describe('renderBlockHtml (math formulas)', () => {
+  it('renders an inline formula as real KaTeX markup, not an empty tag', () => {
+    const doc = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [
+            { type: 'text', text: 'Answer: ' },
+            { type: 'mathInline', attrs: { latex: 'x^2' } },
+          ],
+        },
+      ],
+    };
+    const html = renderBlockHtml(doc);
+    // Regression guard: a math node missing from generateHTML's extension
+    // list renders as an empty `<span data-math-inline=""></span>` — the
+    // exact bug class just fixed for the Notes table block (an unknown/inert
+    // node silently vanishing from the read-only view). Assert the actual
+    // rendered formula markup is present, not just the wrapper tag.
+    expect(html).toContain('data-math-inline');
+    expect(html).toContain('class="katex"');
+  });
+
+  it('renders a block formula centred on its own line, with the data-latex source intact', () => {
+    const doc = {
+      type: 'doc',
+      content: [{ type: 'mathBlock', attrs: { latex: 'x^2+y^2=z^2' } }],
+    };
+    const html = renderBlockHtml(doc);
+    expect(html).toContain('data-math-block');
+    expect(html).toContain('data-latex="x^2+y^2=z^2"');
+    expect(html).toContain('class="katex"');
+  });
+
+  it('falls back to the raw LaTeX source (never throws) on invalid syntax', () => {
+    const doc = {
+      type: 'doc',
+      content: [{ type: 'paragraph', content: [{ type: 'mathInline', attrs: { latex: '\\notarealcommand{' } }] }],
+    };
+    expect(() => renderBlockHtml(doc)).not.toThrow();
+    const html = renderBlockHtml(doc);
+    expect(html).toContain('math-render-error');
+  });
+
+  it('an empty formula renders no KaTeX markup (nothing to show yet)', () => {
+    const doc = {
+      type: 'doc',
+      content: [{ type: 'paragraph', content: [{ type: 'mathInline', attrs: { latex: '' } }] }],
+    };
+    const html = renderBlockHtml(doc);
+    expect(html).toContain('data-math-inline');
+    expect(html).not.toContain('class="katex"');
+  });
+
+  it('survives the DOMPurify sanitize pass unchanged (KaTeX markup is not stripped)', () => {
+    const doc = {
+      type: 'doc',
+      content: [{ type: 'paragraph', content: [{ type: 'mathInline', attrs: { latex: 'a+b' } }] }],
+    };
+    const rendered = renderBlockHtml(doc);
+    expect(sanitizeBlockHtml(rendered)).toBe(rendered);
+  });
+});
+
 describe('markdownToDoc', () => {
   it('yields an empty doc for empty input', () => {
     expect(markdownToDoc('')).toEqual(emptyDoc());

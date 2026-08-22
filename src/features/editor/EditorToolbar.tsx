@@ -22,8 +22,11 @@ import {
   Palette,
   Quote,
   Shapes,
+  Sigma,
   Smile,
   Strikethrough,
+  Subscript as SubscriptIcon,
+  Superscript as SuperscriptIcon,
   Table2,
   Underline,
   Unlink,
@@ -32,6 +35,7 @@ import { cn } from '@/lib/cn';
 import { Spinner } from '@/components/feedback/Spinner';
 import { useIsPro, UpgradeModal } from '@/features/billing';
 import { uploadNoteImage } from '@/features/notes/noteMedia';
+import { DEFAULT_TABLE_ROWS, DEFAULT_TABLE_COLS } from '@/lib/table';
 import { safeLinkHref, BULLET_LIST_STYLES, ORDERED_LIST_STYLES } from './extensions';
 import { CanvasPickerModal } from './CanvasPickerModal';
 import { EmbedModal } from './EmbedModal';
@@ -168,6 +172,19 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
     setOpen(null);
   }, [editor]);
 
+  /** Inserts a fresh 3×3 table at the caret. Requires `.focus()` before the
+   *  table command — without it the chain runs against a stale selection and
+   *  silently no-ops when the editor DOM isn't already focused (the toolbar
+   *  button steals focus via `onMouseDown` preventDefault, so this is the one
+   *  place a missing `.focus()` actually bit). */
+  const insertTable = useCallback(() => {
+    editor
+      .chain()
+      .focus()
+      .insertTable({ rows: DEFAULT_TABLE_ROWS, cols: DEFAULT_TABLE_COLS, withHeaderRow: true })
+      .run();
+  }, [editor]);
+
   const applyListStyle = useCallback(
     (style: string) => {
       editor
@@ -213,6 +230,20 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
       </Btn>
       <Btn label="Strikethrough" active={editor.isActive('strike')} onRun={() => editor.chain().focus().toggleStrike().run()}>
         <Strikethrough size={15} />
+      </Btn>
+      <Btn
+        label="Subscript"
+        active={editor.isActive('subscript')}
+        onRun={() => editor.chain().focus().toggleSubscript().run()}
+      >
+        <SubscriptIcon size={15} />
+      </Btn>
+      <Btn
+        label="Superscript"
+        active={editor.isActive('superscript')}
+        onRun={() => editor.chain().focus().toggleSuperscript().run()}
+      >
+        <SuperscriptIcon size={15} />
       </Btn>
       <Popover
         open={open === 'highlight'}
@@ -418,15 +449,14 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
       </Popover>
 
       <Popover
-        open={open === 'table'}
+        open={open === 'table' && inTable}
         onClose={close}
         title="Table"
         trigger={
           <Btn
-            label="Table"
+            label={inTable ? 'Table' : 'Insert table'}
             active={inTable || open === 'table'}
-            disabled={!inTable}
-            onRun={() => setOpen((o) => (o === 'table' ? null : 'table'))}
+            onRun={() => (inTable ? setOpen((o) => (o === 'table' ? null : 'table')) : insertTable())}
           >
             <Table2 size={16} />
           </Btn>
@@ -502,6 +532,14 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
           </button>
         </div>
       </Popover>
+
+      <Btn
+        label="Formula"
+        active={editor.isActive('mathInline') || editor.isActive('mathBlock')}
+        onRun={() => editor.chain().focus().insertMathInline({ latex: '' }).run()}
+      >
+        <Sigma size={16} />
+      </Btn>
 
       <Divider />
 

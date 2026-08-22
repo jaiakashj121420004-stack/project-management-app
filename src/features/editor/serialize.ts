@@ -10,9 +10,17 @@
  * The render + plain-text walkers are defensive: a malformed body never throws
  * past this boundary.
  */
-import { generateHTML, type JSONContent } from '@tiptap/core';
+import { generateHTML, type AnyExtension, type JSONContent } from '@tiptap/core';
 import DOMPurify from 'isomorphic-dompurify';
 import { blockExtensions } from './extensions';
+import { noteTableExtensions } from './nodes/tableExtensions';
+
+// Static HTML render needs the table node schema too, or a saved table is an
+// unknown node to generateHTML and silently vanishes from the output — tables
+// are note-only (see tableExtensions.ts), but renderBlockHtml is also used to
+// render canvas text boxes, which never contain table nodes, so adding the
+// schema here is a no-op for that surface and a real fix for notes.
+const RENDER_EXTENSIONS: AnyExtension[] = [...blockExtensions, ...noteTableExtensions];
 
 export function emptyDoc(): JSONContent {
   return { type: 'doc', content: [{ type: 'paragraph' }] };
@@ -43,7 +51,7 @@ export function renderBlockHtml(body: Record<string, unknown> | null): string {
   const cached = htmlCache.get(body);
   if (cached !== undefined) return cached;
   try {
-    const html = sanitizeBlockHtml(generateHTML(body, blockExtensions));
+    const html = sanitizeBlockHtml(generateHTML(body, RENDER_EXTENSIONS));
     htmlCache.set(body, html);
     return html;
   } catch {

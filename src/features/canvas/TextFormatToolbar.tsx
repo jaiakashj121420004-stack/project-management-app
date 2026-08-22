@@ -12,7 +12,10 @@ import {
   ListOrdered,
   Palette,
   Quote,
+  Sigma,
   Strikethrough,
+  Subscript as SubscriptIcon,
+  Superscript as SuperscriptIcon,
   Underline,
   Unlink,
 } from 'lucide-react';
@@ -138,6 +141,20 @@ export function TextFormatToolbar({ editor, className }: TextFormatToolbarProps)
         onRun={() => editor.chain().focus().toggleStrike().run()}
       >
         <Strikethrough size={15} />
+      </FmtButton>
+      <FmtButton
+        label="Subscript"
+        active={editor.isActive('subscript')}
+        onRun={() => editor.chain().focus().toggleSubscript().run()}
+      >
+        <SubscriptIcon size={15} />
+      </FmtButton>
+      <FmtButton
+        label="Superscript"
+        active={editor.isActive('superscript')}
+        onRun={() => editor.chain().focus().toggleSuperscript().run()}
+      >
+        <SuperscriptIcon size={15} />
       </FmtButton>
       <Popover
         open={open === 'highlight'}
@@ -330,6 +347,13 @@ export function TextFormatToolbar({ editor, className }: TextFormatToolbarProps)
         onRun={() => editor.chain().focus().toggleBlockquote().run()}
       >
         <Quote size={15} />
+      </FmtButton>
+      <FmtButton
+        label="Formula"
+        active={editor.isActive('mathInline') || editor.isActive('mathBlock')}
+        onRun={() => editor.chain().focus().insertMathInline({ latex: '' }).run()}
+      >
+        <Sigma size={16} />
       </FmtButton>
     </div>
   );

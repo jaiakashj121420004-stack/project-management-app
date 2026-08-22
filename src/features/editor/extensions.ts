@@ -14,11 +14,14 @@ import { StarterKit } from '@tiptap/starter-kit';
 import { Highlight } from '@tiptap/extension-highlight';
 import { Color, TextStyle } from '@tiptap/extension-text-style';
 import { Link } from '@tiptap/extension-link';
+import Subscript from '@tiptap/extension-subscript';
+import Superscript from '@tiptap/extension-superscript';
 import { TaskList } from '@tiptap/extension-task-list';
 import { TaskItem } from '@tiptap/extension-task-item';
 import { Details, DetailsSummary, DetailsContent } from '@tiptap/extension-details';
 import { Collaboration } from '@tiptap/extension-collaboration';
 import { CollaborationCaret } from '@tiptap/extension-collaboration-caret';
+import { MathInline, MathBlock } from './nodes/MathFormula';
 import type { AnyExtension } from '@tiptap/core';
 import type { XmlFragment } from 'yjs';
 
@@ -105,9 +108,11 @@ const ListStyle = Extension.create({
  * The shared block schema. StarterKit v3 bundles bold, italic, underline, strike,
  * code, headings, bullet/ordered lists, blockquote, code block and horizontal
  * rule; we add Highlight (multicolor), TextStyle + Color (custom colours),
- * SafeLink, task lists, collapsible Details blocks and the list-style attribute.
- * StarterKit's own Link is disabled in favour of SafeLink. Headings go to 3
- * levels (notes are documents, unlike the 2-level canvas text box of P3.3).
+ * SafeLink, Subscript/Superscript marks, task lists, collapsible Details blocks,
+ * the list-style attribute, and inline/block math formulas (MathInline/
+ * MathBlock — see nodes/MathFormula.ts). StarterKit's own Link is disabled in
+ * favour of SafeLink. Headings go to 3 levels (notes are documents, unlike the
+ * 2-level canvas text box of P3.3).
  */
 export const blockExtensions: AnyExtension[] = [
   StarterKit.configure({
@@ -118,12 +123,16 @@ export const blockExtensions: AnyExtension[] = [
   TextStyle,
   Color,
   SafeLink,
+  Subscript,
+  Superscript,
   TaskList,
   TaskItem.configure({ nested: true }),
   Details.configure({ persist: true, HTMLAttributes: { class: 'tt-details' } }),
   DetailsSummary,
   DetailsContent,
   ListStyle,
+  MathInline,
+  MathBlock,
 ];
 
 /** The participant shown by the collaborative caret (name + cursor colour). */
@@ -151,12 +160,16 @@ export function collabBlockExtensions(opts: {
     TextStyle,
     Color,
     SafeLink,
+    Subscript,
+    Superscript,
     TaskList,
     TaskItem.configure({ nested: true }),
     Details.configure({ persist: true, HTMLAttributes: { class: 'tt-details' } }),
     DetailsSummary,
     DetailsContent,
     ListStyle,
+    MathInline,
+    MathBlock,
     Collaboration.configure({ fragment: opts.fragment }),
     CollaborationCaret.configure({ provider: opts.provider, user: opts.user }),
   ];

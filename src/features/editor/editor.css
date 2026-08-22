@@ -254,6 +254,24 @@
   opacity: 0.5;
 }
 
+/* Math formulas (inline + block, MathFormula.ts). Only the static/read-only
+   render needs this — the live NodeView's error state is styled with
+   Tailwind classes directly (see nodes/MathFormulaView.tsx). data-math-block
+   is set by MathFormula.ts's renderHTML so a display formula centres on its
+   own line in the read-only view the same way it does in the live editor
+   (MathFormulaView applies the equivalent classes itself while editing). */
+.block-editor [data-math-block] {
+  display: block;
+  margin: 0.6em 0;
+  text-align: center;
+}
+.block-editor .math-render-error {
+  font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  font-size: 0.85em;
+  color: var(--danger, #EF4444);
+  text-decoration: underline dotted;
+}
+
 /* Placeholder (empty editor / empty first line). */
 .block-editor .ProseMirror .is-editor-empty:first-child::before,
 .block-editor .ProseMirror .is-empty::before {
@@ -269,12 +287,82 @@
   background: color-mix(in srgb, var(--accent-from) 24%, transparent);
 }
 
-/* Drag handle gutter — leave room on the left so the floating handle (rendered
-   by @tiptap/extension-drag-handle-react) doesn't overlap the text. */
+/* Drag handle gutter (Improvement Plan Task 31, notes only) — leave room on
+   the left so the floating handle (rendered by
+   @tiptap/extension-drag-handle-react, mounted next to `.block-editor` by
+   NoteBlockDragHandle) doesn't overlap the text. */
 .block-editor .ProseMirror {
   padding-left: 1.25rem;
 }
-.tiptap-drag-handle,
-.block-editor + .tiptap-drag-handle {
+
+/* `.tiptap-drag-handle` is the plugin's own floating element — it sets
+   position/left/top/visibility inline via floating-ui, so this only adds
+   stacking + a stable box for the grip inside it. Hidden by default
+   (visibility set inline by the plugin); shown only when the pointer is near
+   a top-level block, so it's never permanently-visible clutter. */
+.tiptap-drag-handle {
   z-index: 5;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 0.15em; /* nudge toward the first text line, not the block's box edge */
+}
+.block-drag-handle {
+  position: relative;
+}
+.block-drag-handle__grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.75rem;
+  border-radius: 0.35rem;
+  border: none;
+  background: transparent;
+  color: rgb(var(--fg-subtle));
+  cursor: grab;
+  touch-action: none;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+.block-drag-handle__grip:hover {
+  background: var(--glass-fill);
+  color: rgb(var(--fg-muted));
+}
+.tiptap-drag-handle[data-dragging='true'] .block-drag-handle__grip {
+  cursor: grabbing;
+  background: var(--glass-fill-strong);
+  color: var(--accent-from);
+}
+
+/* Touch fallback menu (tap the grip instead of dragging it) — Up/Down, calls
+   the same moveBlockUp/moveBlockDown commands as the keyboard shortcut. */
+.block-drag-handle__menu {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  margin-left: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.2rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.6);
+  z-index: 6;
+}
+.block-drag-handle__menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 0.35rem;
+  border: none;
+  background: transparent;
+  color: rgb(var(--fg-muted));
+  cursor: pointer;
+}
+.block-drag-handle__menu-btn:hover {
+  background: var(--glass-fill);
+  color: var(--accent-from);
 }

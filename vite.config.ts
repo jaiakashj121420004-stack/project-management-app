@@ -9,8 +9,13 @@ import { visualizer } from 'rollup-plugin-visualizer';
  * load ships only what a route needs. The two biggest offenders each get their
  * own chunk that is only fetched when that feature mounts (both are already
  * behind lazy routes): the **Tiptap/ProseMirror + Yjs** rich-text stack and the
- * **Konva** canvas stack. Everything else in node_modules stays in one `vendor`
- * chunk. Returning `undefined` leaves a module in Rollup's default chunk.
+ * **Konva** canvas stack. **KaTeX** (math formulas, nodes/MathFormula.ts) joins
+ * the `editor` chunk too — it's only ever imported transitively through
+ * extensions.ts, which both lazy surfaces (notes + canvas) already pull in, so
+ * this doesn't add a new lazy boundary, it just keeps KaTeX's JS + fonts out of
+ * the `vendor` chunk every route pays for. Everything else in node_modules
+ * stays in one `vendor` chunk. Returning `undefined` leaves a module in
+ * Rollup's default chunk.
  */
 function manualChunks(id: string): string | undefined {
   if (!id.includes('node_modules')) return undefined;
@@ -19,7 +24,8 @@ function manualChunks(id: string): string | undefined {
     id.includes('@tiptap') ||
     id.includes('prosemirror') ||
     id.includes('/yjs/') ||
-    id.includes('y-protocols')
+    id.includes('y-protocols') ||
+    id.includes('katex')
   ) {
     return 'editor';
   }

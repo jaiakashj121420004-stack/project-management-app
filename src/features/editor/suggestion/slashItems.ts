@@ -11,6 +11,8 @@ import {
   Code2,
   ChevronRight,
   Minus,
+  Sigma,
+  SquareSigma,
   Table2,
   Type,
   type LucideIcon,
@@ -129,6 +131,20 @@ const BLOCK_ITEMS: readonly Omit<SlashItem, 'key'>[] = [
       // side-effect-free; `track()` is fire-and-forget by design either way.
       void import('@/lib/analytics').then(({ track }) => track('table_inserted', { surface: 'notes' }));
     },
+  },
+  {
+    title: 'Math formula',
+    subtitle: 'Inline LaTeX, e.g. $x^2$',
+    icon: Sigma,
+    keywords: ['math', 'formula', 'latex', 'equation', 'katex'],
+    command: (e) => e.chain().focus().insertMathInline({ latex: '' }).run(),
+  },
+  {
+    title: 'Math block',
+    subtitle: 'Standalone display equation',
+    icon: SquareSigma,
+    keywords: ['math', 'formula', 'latex', 'equation', 'block', 'display', 'katex'],
+    command: (e) => e.chain().focus().insertMathBlock({ latex: '' }).run(),
   },
   // Ready-made note structures (meeting notes, journal, brief, weekly plan).
   ...NOTE_TEMPLATES.map((template) => ({
