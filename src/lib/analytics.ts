@@ -161,6 +161,62 @@ function markFiredOnce(eventName: AnalyticsEventName): void {
   }
 }
 
+const GOOGLE_SIGNUP_INTENT_KEY = 'aurora-analytics-google-signup-intent';
+const SIGNAL_FRESHNESS_MS = 5 * 60 * 1000;
+
+/**
+ * 2026-08-22: closes a gap SignUpPage's onGoogle() has documented since it was
+ * written — Google is a redirect flow, so the component that calls track()
+ * never sees the browser come back, meaning signup_completed could never fire
+ * for a Google signup (confirmed in production: the admin analytics dashboard
+ * showed 0 completions even though real Google signups were succeeding).
+ *
+ * Call this right before redirecting to Google FROM THE SIGNUP PAGE specifically
+ * (never from a login page's Google button) to stamp "a signup attempt via
+ * Google is in flight" with a timestamp. AuthProvider reads it back on the
+ * next SIGNED_IN event — see markSignupCompletedIfGoogleIntent.
+ */
+export function markGoogleSignupIntent(): void {
+  const storage = safeStorage();
+  if (!storage) return;
+  try {
+    storage.setItem(GOOGLE_SIGNUP_INTENT_KEY, String(Date.now()));
+  } catch {
+    // Best-effort — worst case this one Google signup's completion is missed.
+  }
+}
+
+/**
+ * Call from AuthProvider on every SIGNED_IN event, passing the just-signed-in
+ * user's `created_at`. Fires signup_completed only when BOTH hold: (a) this
+ * browser set the intent flag above within the last 5 minutes (so this really
+ * followed a click on the signup page's Google button, not just any Google
+ * sign-in), and (b) the account itself was created within the last 5 minutes
+ * (so this is genuinely a new account, not an existing user who landed on
+ * /signup and used Google to log into their existing account instead). Either
+ * signal alone is ambiguous — see SignUpPage's onGoogle doc comment — but the
+ * two together can't produce a false positive. Consumes the flag unconditionally
+ * so a later plain login from the same browser never re-checks it.
+ */
+export function markSignupCompletedIfGoogleIntent(userCreatedAt: string): void {
+  const storage = safeStorage();
+  if (!storage) return;
+  try {
+    const raw = storage.getItem(GOOGLE_SIGNUP_INTENT_KEY);
+    if (!raw) return;
+    storage.removeItem(GOOGLE_SIGNUP_INTENT_KEY);
+
+    const now = Date.now();
+    const intentIsFresh = now - Number(raw) < SIGNAL_FRESHNESS_MS;
+    const accountIsNew = now - new Date(userCreatedAt).getTime() < SIGNAL_FRESHNESS_MS;
+    if (intentIsFresh && accountIsNew) {
+      track('signup_completed', { method: 'google' });
+    }
+  } catch {
+    // Best-effort — worst case this one Google signup's completion is missed.
+  }
+}
+
 /**
  * Record a funnel event. Fire-and-forget: call it inline, never `await` it,
  * never worry about it throwing. See the module doc comment for the full
@@ -188,10 +244,20 @@ export function track(eventName: AnalyticsEventName, properties: AnalyticsProper
     // supabase-js attaches the signed-in user's JWT if there is a session,
     // otherwise the anon key — either way the Edge Function accepts the call
     // and stamps user_id server-side from whichever it sees.
-    void supabase.functions.invoke('track-event', { body }).catch(() => {
-      // Analytics must never surface as a user-visible error.
+    //
+    // 2026-08-22: this used to swallow every failure completely silently
+    // (`.catch(() => {})`), which is exactly why the signup_completed gap in
+    // the admin dashboard was impossible to diagnose from the UI alone — a
+    // 500, a CORS failure, an aborted-by-navigation fetch, all looked
+    // identical to "nobody signed up." Logging to the console costs nothing
+    // (never throws, never surfaces as a user-visible error, never blocks the
+    // UI) and turns the next real failure into something visible in DevTools
+    // instead of invisible.
+    void supabase.functions.invoke('track-event', { body }).catch((err: unknown) => {
+      console.error(`[analytics] track('${eventName}') failed:`, err);
     });
-  } catch {
+  } catch (err) {
     // Belt-and-braces: track() must never throw into a call site.
+    console.error(`[analytics] track('${eventName}') threw synchronously:`, err);
   }
 }

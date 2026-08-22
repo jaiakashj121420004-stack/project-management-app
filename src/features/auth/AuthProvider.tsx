@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { clearPersistedCache } from '@/lib/queryClient';
+import { markSignupCompletedIfGoogleIntent } from '@/lib/analytics';
 import { AuthContext, type AuthContextValue } from './auth-context';
 
 /**
@@ -31,6 +32,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(nextSession);
       setLoading(false);
       if (event === 'PASSWORD_RECOVERY') setIsRecovery(true);
+      // Closes the Google-signup tracking gap documented in SignUpPage's
+      // onGoogle() — this is the one place in the app that sees every
+      // sign-in, redirect-based or not. A no-op unless this browser set the
+      // "Google signup in flight" flag within the last 5 minutes AND the
+      // account itself is that fresh; see the doc comment on
+      // markSignupCompletedIfGoogleIntent for why both checks are needed.
+      if (event === 'SIGNED_IN' && nextSession?.user) {
+        markSignupCompletedIfGoogleIntent(nextSession.user.created_at);
+      }
       if (event === 'SIGNED_OUT') {
         setIsRecovery(false);
         // Drop in-memory AND persisted user-scoped data so nothing leaks to the

@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Lock, Mail, User } from 'lucide-react';
 import { Field } from '@/components/forms/Field';
 import { GradientButton } from '@/components/buttons/GradientButton';
-import { track } from '@/lib/analytics';
+import { markGoogleSignupIntent, track } from '@/lib/analytics';
 import { AuthLayout, AuthLink, OrDivider } from './AuthLayout';
 import { GoogleButton } from './GoogleButton';
 import { FormNotice } from './FormNotice';
@@ -52,10 +52,13 @@ export function SignUpPage() {
     setGoogleLoading(true);
     // Google is a redirect flow — the browser navigates away and back via
     // Supabase's OAuth callback, which this component never sees again, so
-    // there's no reliable place here to fire signup_completed for it (and no
-    // way to distinguish a new signup from a returning Google login on
-    // return). "Started" is what's honestly measurable from this page.
+    // signup_completed can't fire from here. markGoogleSignupIntent() stamps a
+    // short-lived flag that AuthProvider checks on the resulting SIGNED_IN
+    // event instead, combined with the account's own created_at to rule out a
+    // returning user who logged into their existing account via this same
+    // button — see analytics.ts's markSignupCompletedIfGoogleIntent doc comment.
     track('signup_started', { method: 'google' });
+    markGoogleSignupIntent();
     const result = await signInWithGoogle();
     if (result.error) {
       setFormError(result.error);
