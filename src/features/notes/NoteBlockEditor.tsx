@@ -6,6 +6,7 @@ import { CanvasLink } from '@/features/editor/nodes/CanvasLink';
 import { NoteImage } from '@/features/editor/nodes/NoteImage';
 import { NoteEmbed } from '@/features/editor/nodes/NoteEmbed';
 import { noteTableExtensions } from '@/features/editor/nodes/tableExtensions';
+import { MoveBlock } from '@/features/editor/nodes/moveBlock';
 import { NoteContext } from '@/features/editor/noteContext';
 import type { Note } from '@/types/database';
 
@@ -38,7 +39,7 @@ export default function NoteBlockEditor({
   // note mount (this component remounts per note.id, same as BlockEditor's own
   // "built once" contract for extraExtensions).
   const noteExtensions = useMemo<AnyExtension[]>(
-    () => [CanvasLink, NoteImage.configure({ noteId: note.id }), NoteEmbed, ...noteTableExtensions],
+    () => [CanvasLink, NoteImage.configure({ noteId: note.id }), NoteEmbed, MoveBlock, ...noteTableExtensions],
     [note.id],
   );
 
@@ -50,6 +51,7 @@ export default function NoteBlockEditor({
         onChange={onChange}
         extraExtensions={noteExtensions}
         showToc
+        dragHandle
       />
     </NoteContext.Provider>
   );
