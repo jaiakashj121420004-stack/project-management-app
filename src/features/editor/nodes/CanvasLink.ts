@@ -26,7 +26,16 @@ export const CanvasLink = Node.create({
 
   addAttributes() {
     return {
-      canvasId: { default: null },
+      // data-* so it survives DOMPurify's default allow-list in serialize.ts's
+      // sanitizeBlockHtml (see NoteImage.ts for the full reasoning) — needed so
+      // the static/PDF renderer can build a link back to the canvas. `title` is
+      // a standard global HTML attribute and already survives unchanged.
+      canvasId: {
+        default: null,
+        parseHTML: (el: HTMLElement) => el.getAttribute('data-canvas-id'),
+        renderHTML: (attrs: Record<string, unknown>) =>
+          typeof attrs.canvasId === 'string' && attrs.canvasId ? { 'data-canvas-id': attrs.canvasId } : {},
+      },
       title: { default: 'Canvas' },
     };
   },

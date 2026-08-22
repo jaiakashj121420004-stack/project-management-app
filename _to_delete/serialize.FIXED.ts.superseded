@@ -14,26 +14,13 @@ import { generateHTML, type AnyExtension, type JSONContent } from '@tiptap/core'
 import DOMPurify from 'isomorphic-dompurify';
 import { blockExtensions } from './extensions';
 import { noteTableExtensions } from './nodes/tableExtensions';
-import { NoteImage } from './nodes/NoteImage';
-import { NoteEmbed } from './nodes/NoteEmbed';
-import { CanvasLink } from './nodes/CanvasLink';
 
-// Static HTML render needs the table AND note-only atom node schemas too, or a
-// saved table/image/embed/canvas-link is an unknown node to generateHTML and
-// silently vanishes from the output — the exact bug class this file's header
-// comment already warns about (first caught for tables, then math). Tables,
-// images, embeds and canvas links are note-only (see each node's own file),
-// but renderBlockHtml is also used to render canvas text boxes, which never
-// contain any of them, so adding the schemas here is a no-op for that surface
-// and a real fix for notes (in particular, the note PDF export in
-// exportNotePdf.ts depends on NoteImage actually appearing in this output).
-const RENDER_EXTENSIONS: AnyExtension[] = [
-  ...blockExtensions,
-  ...noteTableExtensions,
-  NoteImage,
-  NoteEmbed,
-  CanvasLink,
-];
+// Static HTML render needs the table node schema too, or a saved table is an
+// unknown node to generateHTML and silently vanishes from the output — tables
+// are note-only (see tableExtensions.ts), but renderBlockHtml is also used to
+// render canvas text boxes, which never contain table nodes, so adding the
+// schema here is a no-op for that surface and a real fix for notes.
+const RENDER_EXTENSIONS: AnyExtension[] = [...blockExtensions, ...noteTableExtensions];
 
 export function emptyDoc(): JSONContent {
   return { type: 'doc', content: [{ type: 'paragraph' }] };

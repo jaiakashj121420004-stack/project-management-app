@@ -7,7 +7,7 @@ import {
   useState,
   type ChangeEvent,
 } from 'react';
-import { AlertCircle, Check, Download, Eye, ImagePlus, Pencil, Trash2 } from 'lucide-react';
+import { AlertCircle, Check, Download, Eye, FileText, FileType, ImagePlus, Pencil, Trash2 } from 'lucide-react';
 import type { JSONContent } from '@tiptap/core';
 import { Spinner } from '@/components/feedback/Spinner';
 import { RouteErrorBoundary } from '@/components/feedback/RouteErrorBoundary';
@@ -15,10 +15,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { ShareButton } from '@/features/sharing';
 import { EmojiPicker } from '@/components/forms/EmojiPicker';
 import { SegmentedToggle } from '@/components/forms/SegmentedToggle';
+import { ProGate, UpgradeModal } from '@/features/billing';
 import { docToMarkdown } from '@/features/editor/serialize';
+import { exportNoteAsDocx } from '@/features/editor/docxExport';
 import { TemplatesMenu } from '@/features/editor/TemplatesMenu';
 import { useSyncCustomTemplates } from '@/features/editor/useNoteTemplates';
 import type { Note } from '@/types/database';
+import { exportNoteAsPdf } from './exportNotePdf';
 import { uploadNoteImage, useNoteMediaUrl } from './noteMedia';
 import { noteTitleSchema } from './schemas';
 
@@ -82,6 +85,19 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
   const [viewMode, setViewMode] = useState<'edit' | 'view'>('edit');
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'error'>('idle');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  // Word (.docx) export — Pro. `exportingWord` disables the button mid-export
+  // (asset fetch + rasterization can take a beat for an image/math-heavy
+  // note); `wordUpgradeOpen` drives the upsell modal for a free user, since
+  // this action gets its own compact ProGate `fallback` rather than the
+  // default full-panel upsell (see the header row below).
+  const [exportingWord, setExportingWord] = useState(false);
+  const [wordUpgradeOpen, setWordUpgradeOpen] = useState(false);
+  // PDF export — Pro. Same shape as the Word export state just above (its own
+  // busy flag + its own upsell-modal flag, since each export gets its own
+  // compact ProGate `fallback` icon button rather than the default full-panel
+  // upsell — see the header row below).
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [pdfUpgradeOpen, setPdfUpgradeOpen] = useState(false);
   // Emoji icon + cover image (standalone Library notes only). Written immediately.
   const [icon, setIcon] = useState<string | null>(note.icon ?? null);
   const [cover, setCover] = useState<string | null>(note.cover ?? null);
@@ -208,6 +224,40 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
     URL.revokeObjectURL(url);
   }
 
+  // Export the current document (including unsaved edits) as a real .docx
+  // download — Pro-gated, see the <ProGate> around the toolbar button below.
+  async function handleExportWord() {
+    if (exportingWord) return;
+    setExportingWord(true);
+    try {
+      await exportNoteAsDocx(currentDoc(), title);
+    } catch {
+      // Best-effort export — a failed fetch/rasterization step shouldn't crash
+      // the editor. There's no dedicated error UI for this yet (matching the
+      // existing Markdown export, which is likewise fire-and-forget); the
+      // download simply doesn't happen.
+    } finally {
+      setExportingWord(false);
+    }
+  }
+
+  // Export the current document (including unsaved edits) as a print-ready
+  // PDF via the browser's native print-to-PDF (renders the note's existing
+  // static HTML into a hidden iframe — see exportNotePdf.ts). Pro-gated, same
+  // fire-and-forget-on-failure convention as the Markdown/Word exports above
+  // (no dedicated error UI here either).
+  async function handleExportPdf() {
+    if (exportingPdf) return;
+    setExportingPdf(true);
+    try {
+      await exportNoteAsPdf(currentDoc(), title);
+    } catch {
+      // See handleExportWord's comment — same convention, no error UI yet.
+    } finally {
+      setExportingPdf(false);
+    }
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-4">
       {isStandalone && (cover || canEdit) && (
@@ -305,6 +355,77 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
           >
             <Download size={16} />
           </button>
+          {/* Export as Word (.docx) — Pro. Sits next to Markdown export (and,
+              once wired, PDF export/Task 35 — see exportNotePdf.ts) so every
+              export format lives in one place. Uses ProGate's `fallback` prop
+              (documented, previously-unused elsewhere in the app) to keep the
+              same compact icon-button footprint for a free user instead of
+              replacing it with the default full upsell panel. */}
+          <ProGate
+            title="Export to Word is a Pro feature"
+            reason="Export your notes as polished .docx files, ready for Word, Google Docs, or LibreOffice."
+            fallback={
+              <button
+                type="button"
+                aria-label="Export as Word (Pro)"
+                title="Export as Word — upgrade to Pro"
+                onClick={() => setWordUpgradeOpen(true)}
+                className="grid h-9 w-9 place-items-center rounded-xl text-fg-subtle transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+              >
+                <FileType size={16} />
+              </button>
+            }
+          >
+            <button
+              type="button"
+              aria-label="Export as Word"
+              title="Export as Word"
+              onClick={handleExportWord}
+              disabled={exportingWord}
+              className="grid h-9 w-9 place-items-center rounded-xl text-fg-subtle transition-colors hover:bg-[var(--glass-fill)] hover:text-fg disabled:opacity-50"
+            >
+              {exportingWord ? <Spinner size={14} /> : <FileType size={16} />}
+            </button>
+          </ProGate>
+          <UpgradeModal
+            open={wordUpgradeOpen}
+            onClose={() => setWordUpgradeOpen(false)}
+            reason="Export your notes as Word documents."
+          />
+          {/* Export as PDF — Pro. Same compact ProGate `fallback` pattern as
+              Word export just above (icon button in both the unlocked and
+              locked state, rather than the default full-panel upsell). */}
+          <ProGate
+            title="PDF export is a Pro feature"
+            reason="Export your notes as polished, print-ready PDFs — tables, math and images included."
+            fallback={
+              <button
+                type="button"
+                aria-label="Export as PDF (Pro)"
+                title="Export as PDF — upgrade to Pro"
+                onClick={() => setPdfUpgradeOpen(true)}
+                className="grid h-9 w-9 place-items-center rounded-xl text-fg-subtle transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+              >
+                <FileText size={16} />
+              </button>
+            }
+          >
+            <button
+              type="button"
+              aria-label="Export as PDF"
+              title="Export as PDF"
+              onClick={handleExportPdf}
+              disabled={exportingPdf}
+              className="grid h-9 w-9 place-items-center rounded-xl text-fg-subtle transition-colors hover:bg-[var(--glass-fill)] hover:text-fg disabled:opacity-50"
+            >
+              {exportingPdf ? <Spinner size={14} /> : <FileText size={16} />}
+            </button>
+          </ProGate>
+          <UpgradeModal
+            open={pdfUpgradeOpen}
+            onClose={() => setPdfUpgradeOpen(false)}
+            reason="Export your notes as polished, print-ready PDFs — tables, math and images included."
+          />
           {/* Save-as-template + manager. Standalone notes only (personal, free). */}
           {isStandalone && canEdit && <TemplatesMenu getDoc={currentDoc} />}
           {canEdit && (

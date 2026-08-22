@@ -29,6 +29,12 @@ function manualChunks(id: string): string | undefined {
   ) {
     return 'editor';
   }
+  // `docx` (Word/.docx export, Pro) is only ever reached via a dynamic
+  // import() triggered by clicking "Export as Word" (see docxExport.ts) — it
+  // must NOT fall into the catch-all 'vendor' chunk below, since that chunk
+  // loads eagerly on every route. Returning undefined here lets Rollup give
+  // it its own async chunk, split off purely because of how it's imported.
+  if (id.includes('/docx/') || id.includes('\\docx\\')) return undefined;
   return 'vendor';
 }
 

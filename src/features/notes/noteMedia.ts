@@ -78,6 +78,23 @@ function cachedSignedUrl(path: string): Promise<string> {
   return promise;
 }
 
+/**
+ * Plain (non-hook) resolver for a note-media storage path → a cached signed
+ * URL. Shares the same module-level cache as `useNoteMediaUrl`, so an image
+ * already visible on screen resolves instantly here too. Used by the PDF
+ * export (exportNotePdf.ts), which runs outside a component and needs to
+ * `await` every image before printing rather than re-rendering on a hook
+ * update. Returns `null` instead of throwing so one broken image never aborts
+ * the whole export.
+ */
+export async function resolveNoteMediaUrl(path: string): Promise<string | null> {
+  try {
+    return await cachedSignedUrl(path);
+  } catch {
+    return null;
+  }
+}
+
 export interface NoteMediaUrlState {
   url: string | null;
   loading: boolean;

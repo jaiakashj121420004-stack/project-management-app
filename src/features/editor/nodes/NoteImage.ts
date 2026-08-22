@@ -78,7 +78,19 @@ export const NoteImage = Node.create({
 
   addAttributes() {
     return {
-      path: { default: null },
+      // Rendered as `data-path` (not a bare `path` attribute) for two reasons:
+      // it matches the `width` → `data-width` pattern just below, and — the
+      // reason this actually matters — DOMPurify's default allow-list (used by
+      // serialize.ts's sanitizeBlockHtml on every static render) only keeps
+      // standard HTML attributes plus `data-*`/`aria-*`; a bare `path="…"`
+      // attribute would be silently stripped, leaving the PDF/read-only
+      // renderer with no way to resolve the image's signed URL.
+      path: {
+        default: null,
+        parseHTML: (el: HTMLElement) => el.getAttribute('data-path'),
+        renderHTML: (attrs: Record<string, unknown>) =>
+          typeof attrs.path === 'string' && attrs.path ? { 'data-path': attrs.path } : {},
+      },
       alt: { default: '' },
       // Display width as a percentage of the content column (null = full width).
       width: {
