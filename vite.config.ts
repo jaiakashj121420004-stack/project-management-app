@@ -109,6 +109,25 @@ export default defineConfig({
     rollupOptions: {
       output: { manualChunks },
     },
+    // By default Vite injects a `<link rel="modulepreload">` in index.html
+    // for every chunk reachable anywhere in the entry's dynamic-import graph
+    // — not just ones actually needed on first paint. Phase 7 Lighthouse
+    // audit (2026-08-23) traced the "526 KiB unused JavaScript" finding to
+    // exactly this: `dist/index.html` unconditionally modulepreloads
+    // canvas-*.js (Konva), editor-*.js (Tiptap/KaTeX), and vendor-*.js on
+    // EVERY page load — including the public landing page, which never
+    // imports any of that (App.tsx already lazy()-loads every authenticated
+    // route; this was an HTML-level leak the route-splitting fix couldn't
+    // touch). Filtering these three out of the auto-injected list means an
+    // anonymous visitor's browser no longer eagerly fetches ~660 KiB of
+    // editor/canvas/vendor JS it will very likely never execute; an
+    // authenticated user's real route-level lazy() import still fetches
+    // whichever of these it actually needs, just without the wasted
+    // speculative preload on every other route too.
+    modulePreload: {
+      resolveDependencies: (_filename, deps) =>
+        deps.filter((dep) => !/\/(canvas|editor|vendor)-/.test(dep)),
+    },
   },
   resolve: {
     alias: {

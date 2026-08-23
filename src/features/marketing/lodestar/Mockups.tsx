@@ -39,6 +39,27 @@ const PAPER = '#ece4d6';
 const MUTED = '#9a8d7c';
 const BONE = '#e7dcc9';
 
+/**
+ * Mixes a hex color 50% toward white. Used for tag-chip text: a chip's text
+ * used to be the SAME hex as its (20%-alpha) tinted background, e.g.
+ * `color: c.tagC` on `background: ${c.tagC}33`. Phase 7 Lighthouse audit
+ * (2026-08-23) flagged both the "Copy" (oxblood) and "Design" (teal) tags as
+ * real AA contrast failures — computing the actual composited background
+ * (tagC at 20% alpha over the card's INK2) by hand gives only ~2.7-2.9:1,
+ * well under the 4.5:1 minimum, because text and background share a hue.
+ * Lightening the text 50% toward white keeps it recognizably the same color
+ * family while clearing AA against that same composited background
+ * (verified ~6.8:1 for both tags in use here).
+ */
+function lighten(hex: string): string {
+  const n = parseInt(hex.slice(1), 16);
+  const r = (n >> 16) & 255;
+  const g = (n >> 8) & 255;
+  const b = n & 255;
+  const mix = (c: number) => Math.round((c + 255) / 2);
+  return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
+}
+
 const NAV = [
   ['Boards', LayoutGrid],
   ['To-Do', ListTodo],
@@ -54,7 +75,12 @@ function AppFrame({ active, children }: { active: string; children: ReactNode })
         <span className="lode-dot" style={{ background: '#e0605a' }} />
         <span className="lode-dot" style={{ background: '#e6b13e' }} />
         <span className="lode-dot" style={{ background: '#5aa06a' }} />
-        <span className="ml-2 font-mono text-[0.62rem] opacity-50">aurora.app</span>
+        {/* Was `opacity-50` on the inherited light text color — halving
+            opacity halved effective contrast too. Phase 7 Lighthouse audit
+            (2026-08-23) flagged this as a real AA failure. Explicit MUTED
+            (already verified ~5.9:1 on this dark background elsewhere in
+            this file) reads the same visually but clears AA. */}
+        <span className="ml-2 font-mono text-[0.62rem]" style={{ color: MUTED }}>aurora.app</span>
       </div>
       <div className="flex" style={{ minHeight: 268 }}>
         <aside
@@ -133,7 +159,7 @@ export function BoardMockup() {
               {col.cards.map((c) => (
                 <div key={c.t} className="rounded-md p-1.5" style={{ background: INK2, border: '1px solid rgba(255,245,225,0.06)' }}>
                   <p className="text-[9.5px] leading-snug" style={{ color: BONE }}>{c.t}</p>
-                  {c.tag && <span className="mt-1 inline-block rounded px-1 py-0.5 text-[7.5px] font-semibold" style={{ background: `${c.tagC}33`, color: c.tagC }}>{c.tag}</span>}
+                  {c.tag && <span className="mt-1 inline-block rounded px-1 py-0.5 text-[7.5px] font-semibold" style={{ background: `${c.tagC}33`, color: lighten(c.tagC ?? OX) }}>{c.tag}</span>}
                   {c.done && <span className="mt-1 block text-[8px]" style={{ color: '#5aa06a' }}>✓ Done</span>}
                 </div>
               ))}
@@ -155,7 +181,13 @@ export function EditorMockup() {
       <div className="space-y-1.5 text-[10px] leading-relaxed" style={{ color: BONE }}>
         <p>
           A single doc for the rollout — with{' '}
-          <span style={{ background: `${GOLD}55`, borderRadius: 2, padding: '0 2px', color: INK }}>highlights</span>,{' '}
+          {/* Was `${GOLD}55` (33% alpha) — too transparent for the dark INK
+              text to clear AA against the composited (still-dark) result;
+              Phase 7 Lighthouse audit (2026-08-23) flagged this as a real
+              failure (~2.3:1). `B3` (~70% alpha) lightens the highlight
+              enough for the same dark text to clear AA (~5.3:1) while still
+              reading as a translucent marker highlight, not a solid block. */}
+          <span style={{ background: `${GOLD}B3`, borderRadius: 2, padding: '0 2px', color: INK }}>highlights</span>,{' '}
           <span style={{ color: '#e07a54' }}>colour</span>, and{' '}
           <span style={{ background: `${OX}44`, borderRadius: 2, padding: '0 2px' }}>blocks</span>.
         </p>
