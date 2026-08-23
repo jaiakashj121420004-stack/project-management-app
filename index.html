@@ -1,10 +1,13 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en" class="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <!-- Single dynamic theme-color, kept in sync with the active theme by applyTheme(). -->
-    <meta name="theme-color" content="#181210" id="theme-color" />
+    <!-- Single dynamic theme-color, kept in sync with the active theme by applyTheme().
+         Static default is light/parchment (#ECE4D6) to match the new Day-by-default
+         brand direction (2026-08-23) — applyTheme() overwrites this before first
+         paint, this is just the correct starting value if that JS is ever delayed. -->
+    <meta name="theme-color" content="#ECE4D6" id="theme-color" />
     <meta
       name="description"
       content="Aurora — a modern project-management app with boards, calendar, notes, and collaboration."

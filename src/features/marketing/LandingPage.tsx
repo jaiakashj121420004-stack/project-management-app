@@ -20,6 +20,13 @@ import {
   PenTool,
   Library as LibraryIcon,
   LayoutGrid,
+  Target,
+  Zap,
+  Timer,
+  LayoutTemplate,
+  FileUp,
+  Share2,
+  Bot,
   type LucideIcon,
 } from 'lucide-react';
 import {
@@ -29,6 +36,7 @@ import {
   CalendarMockup,
   PaletteMockup,
 } from './lodestar/Mockups';
+import { PLANS, PLAN_ORDER, ENTERPRISE_CONTACT_EMAIL } from '@/lib/plans';
 import './lodestar.css';
 
 const MARK = '/brand/aurora-mark.svg';
@@ -342,6 +350,32 @@ const PILLARS: { icon: LucideIcon; title: string; intro: string; points: string[
       'Presence avatars show who’s viewing; changes sync live',
     ],
   },
+  {
+    icon: Target,
+    title: 'Goals, automations & time',
+    intro: 'Track the outcome, automate the busywork, and account for the hours — without a config screen in sight.',
+    points: [
+      'Lightweight progress-bar goals — not a heavyweight OKR system',
+      'Fixed, ready-made automations for the busywork you always do',
+      'Recurring cards on a schedule, wired to the same planner engine',
+      'Per-card time tracking: start/stop, a running total, one active timer at a time',
+      'Personal daily/weekly to-do planner with its own recurrence rules',
+      'Starter templates so a fresh board or list is never a blank page',
+    ],
+  },
+  {
+    icon: FileUp,
+    title: 'Import, connect & carry it with you',
+    intro: 'Bring your old tool’s work in, and let your own AI tools reach in when you want them to.',
+    points: [
+      'One-time Trello JSON / CSV import into a brand-new Aurora project',
+      'Connect Claude Desktop or Claude Code straight to your account (Pro+)',
+      'A client-facing, no-account read-only share link for any board',
+      'Full-text search across every card and note, right in ⌘K',
+      'Installable PWA with offline reading, on every platform',
+      'Themes and colour presets synced to your account, not just one device',
+    ],
+  },
 ];
 
 function DeepDive() {
@@ -403,6 +437,13 @@ const GRID: { icon: LucideIcon; title: string; body: string }[] = [
   { icon: MessagesSquare, title: 'Comments & @mentions', body: 'Discuss on cards; react with emoji.' },
   { icon: Users, title: 'Sharing & roles', body: 'Invite by email as editor or viewer.' },
   { icon: ShieldCheck, title: 'Private by default', body: 'Row-level security guards every row.' },
+  { icon: Target, title: 'Goals', body: 'A simple progress bar, not an OKR system.' },
+  { icon: Zap, title: 'Automations', body: 'Fixed, ready-made rules for the busywork.' },
+  { icon: Timer, title: 'Time tracking', body: 'Start/stop timers with a running total per card.' },
+  { icon: LayoutTemplate, title: 'Templates', body: 'Starter templates for boards, lists & notes.' },
+  { icon: FileUp, title: 'Trello & CSV import', body: 'Bring an old board in, one-time and one-way.' },
+  { icon: Share2, title: 'Client share links', body: 'A read-only link — no account needed to view.' },
+  { icon: Bot, title: 'Connect Claude (Pro+)', body: 'Link Claude Desktop/Code to your account.' },
 ];
 
 function FeatureGrid() {
@@ -459,22 +500,55 @@ function CollaborationBand() {
   );
 }
 
-/* ---- Pricing -------------------------------------------------------------- */
+/* ---- Pricing ----------------------------------------------------------------
+ * Sourced directly from `@/lib/plans` (the same source of truth the real
+ * /pricing page and the billing UI read from) rather than a second, hand-typed
+ * copy — a prior version of this section hardcoded "Pro $8/mo" and had no Team
+ * card at all, silently drifting from the real $5.99 Pro / $22 Team pricing as
+ * those changed on 2026-08-12. Sourcing from PLANS makes that class of drift
+ * structurally impossible: this section now shows whatever the app actually
+ * charges. */
+const PLAN_CTA: Record<'free' | 'pro' | 'team', string> = {
+  free: 'Start free',
+  pro: 'Go Pro',
+  team: 'Go Team',
+};
+
+function formatPrice(n: number): string {
+  return Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`;
+}
+
 function Pricing() {
-  const free = ['Unlimited boards, notes & to-dos', 'The full block editor & Library', 'Calendar, reminders, PWA + offline', 'Share notes with collaborators'];
-  const pro = ['Everything in Free', 'The infinite Canvas + media', 'Live real-time co-editing', 'Custom timed reminders & more'];
   return (
-    <section className="lode-paper px-4 py-20 sm:px-6">
+    <section id="pricing" className="lode-paper px-4 py-20 sm:px-6">
       <div className="mx-auto max-w-3xl text-center">
         <p className="lode-eyebrow text-[color:var(--lode-oxblood-deep)]">Simple pricing</p>
         <h2 className="mt-2 font-display text-3xl font-black text-[color:var(--lode-ink)] sm:text-4xl">
           Start free. Upgrade when you fly.
         </h2>
+        <p className="mx-auto mt-3 max-w-xl text-[color:rgba(34,26,20,0.7)]">
+          No credit card to begin. Move to Pro any time for the infinite Canvas and real-time
+          co-editing, or Team when your whole group needs to be on one board.
+        </p>
       </div>
-      <div className="mx-auto mt-10 grid max-w-3xl gap-4 sm:grid-cols-2">
-        <PlanCard name="Free" price="$0" tagline="For getting organised" points={free} cta="Start free" to="/signup" />
-        <PlanCard name="Pro" price="$8" period="/mo" tagline="For teams & big ideas" points={pro} cta="Go Pro" to="/signup" highlight />
+      <div className="mx-auto mt-10 grid max-w-4xl gap-4 sm:grid-cols-3">
+        {PLAN_ORDER.map((id) => (
+          <PlanCard
+            key={id}
+            name={PLANS[id].name}
+            price={formatPrice(PLANS[id].priceMonthly)}
+            period={PLANS[id].priceMonthly > 0 ? '/mo' : undefined}
+            tagline={PLANS[id].tagline}
+            points={PLANS[id].features}
+            cta={PLAN_CTA[id]}
+            to="/signup"
+            highlight={id === 'pro'}
+          />
+        ))}
       </div>
+      <p className="mx-auto mt-6 max-w-xl text-center text-xs text-[color:rgba(34,26,20,0.55)]">
+        Need more than {PLANS.team.memberLimit} people on one board? <a href={`mailto:${ENTERPRISE_CONTACT_EMAIL}`} className="underline decoration-[rgba(122,42,38,0.4)] underline-offset-2 hover:text-[color:var(--lode-oxblood-deep)]">Talk to us about Enterprise</a>.
+      </p>
     </section>
   );
 }

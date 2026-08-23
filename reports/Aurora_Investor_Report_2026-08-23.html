@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aurora by Nvexis — Investor Strategy Report (Aug 2026)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,800&family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --oxblood:#7A2A26; --bg:#ECE4D6; --fg:#221A14;
+    --paper-line:#d8cbb6; --paper-soft:#f6f1e6; --paper-mid:#efe6d4; --muted:#6E6357;
+    --good:#3f6b52; --warn:#8a6414; --bad:#7A2A26;
+    --glass:rgba(255,255,255,0.5); --glass-border:rgba(122,42,38,0.14);
+    --shadow: 0 10px 30px -12px rgba(90,60,40,0.28);
+    --radius:16px; --sidebar-w: 272px;
+    --good-bg:#eef2ea; --warn-bg:#f6efdd; --bad-bg:#f3ddda;
+    --ox-05:rgba(122,42,38,0.05); --ox-10:rgba(122,42,38,0.10); --ox-20:rgba(122,42,38,0.20);
+    --ox-35:rgba(122,42,38,0.35); --ox-55:rgba(122,42,38,0.55); --ox-75:rgba(122,42,38,0.75);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --oxblood:#C24A40; --bg:#181210; --fg:#EFE6D8;
+      --paper-line:#3a2e28; --paper-soft:#211a16; --paper-mid:#251e19; --muted:#a6968a;
+      --glass:rgba(40,30,26,0.55); --glass-border:rgba(194,74,64,0.22);
+      --shadow: 0 10px 30px -12px rgba(0,0,0,0.55);
+      --good-bg:#1c2620; --warn-bg:#2a2318; --bad-bg:#2c1c1a;
+      --ox-05:rgba(194,74,64,0.07); --ox-10:rgba(194,74,64,0.14); --ox-20:rgba(194,74,64,0.24);
+      --ox-35:rgba(194,74,64,0.40); --ox-55:rgba(194,74,64,0.58); --ox-75:rgba(194,74,64,0.78);
+    }
+  }
+  :root[data-theme="dark"]{
+    --oxblood:#C24A40; --bg:#181210; --fg:#EFE6D8;
+    --paper-line:#3a2e28; --paper-soft:#211a16; --paper-mid:#251e19; --muted:#a6968a;
+    --glass:rgba(40,30,26,0.55); --glass-border:rgba(194,74,64,0.22);
+    --shadow: 0 10px 30px -12px rgba(0,0,0,0.55);
+    --good-bg:#1c2620; --warn-bg:#2a2318; --bad-bg:#2c1c1a;
+    --ox-05:rgba(194,74,64,0.07); --ox-10:rgba(194,74,64,0.14); --ox-20:rgba(194,74,64,0.24);
+    --ox-35:rgba(194,74,64,0.40); --ox-55:rgba(194,74,64,0.58); --ox-75:rgba(194,74,64,0.78);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(194,74,64,0.10), transparent 60%),
+      radial-gradient(1000px 700px at 110% 10%, rgba(122,42,38,0.08), transparent 55%),
+      var(--bg);
+    color: var(--fg);
+    font-family: 'Spectral', Georgia, serif;
+    font-size: 16px;
+    line-height: 1.68;
+    transition: background-color .25s ease, color .25s ease;
+  }
+  h1,h2,h3,h4{ font-family:'Fraunces', Georgia, serif; color:var(--fg); line-height:1.15; font-weight:700; }
+  .eyebrow{ font-family:'IBM Plex Mono', monospace; letter-spacing:.14em; text-transform:uppercase; font-size:.72rem; color:var(--oxblood); font-weight:600;}
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+  a{ color:var(--oxblood); }
+  em{ font-style: italic; }
+  strong{ font-weight:700; }
+
+  /* ---- chrome ---- */
+  .chrome-bar{
+    position:fixed; top:0; left:0; right:0; height:56px; z-index:40;
+    display:flex; align-items:center; gap:10px; padding:0 14px;
+    background:var(--glass); backdrop-filter:blur(14px); border-bottom:1px solid var(--glass-border);
+  }
+  .chrome-bar .brand{ font-family:'IBM Plex Mono',monospace; font-size:.76rem; letter-spacing:.07em; text-transform:uppercase; color:var(--oxblood); font-weight:600; margin-right:auto; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .icon-btn{
+    display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px;
+    border-radius:10px; border:1px solid var(--glass-border); background:var(--paper-soft);
+    color:var(--fg); cursor:pointer; flex-shrink:0;
+  }
+  .icon-btn:hover{ border-color:var(--oxblood); }
+  .icon-btn svg{ width:18px; height:18px; }
+
+  .sidebar{
+    position:fixed; top:56px; left:0; bottom:0; width:var(--sidebar-w);
+    background:var(--glass); backdrop-filter:blur(16px); border-right:1px solid var(--glass-border);
+    overflow-y:auto; padding:18px 14px 40px; z-index:30;
+    transform:translateX(0); transition:transform .28s ease;
+  }
+  body.sidebar-closed .sidebar{ transform:translateX(calc(-1 * var(--sidebar-w))); }
+  .sidebar h4{ margin:4px 8px 10px; font-size:.68rem; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); }
+  .sidebar ol{ list-style:none; margin:0 0 10px; padding:0; counter-reset:sec; }
+  .sidebar a{
+    display:block; counter-increment:sec; text-decoration:none; color:var(--fg);
+    font-size:.84rem; padding:6px 8px; border-radius:8px; border-left:3px solid transparent;
+  }
+  .sidebar a::before{ content: counter(sec) ". "; font-family:'IBM Plex Mono',monospace; color:var(--muted); font-size:.76rem; margin-right:2px;}
+  .sidebar a:hover{ background:var(--paper-soft); }
+  .sidebar a.active{ border-left-color:var(--oxblood); color:var(--oxblood); background:var(--paper-soft); font-weight:600;}
+
+  .main{ margin-left:var(--sidebar-w); padding-top:56px; transition:margin-left .28s ease; }
+  body.sidebar-closed .main{ margin-left:0; }
+  @media (max-width: 980px){
+    .sidebar{ transform:translateX(calc(-1 * var(--sidebar-w))); box-shadow:var(--shadow); }
+    body.sidebar-open .sidebar{ transform:translateX(0); }
+    .main{ margin-left:0 !important; }
+    .scrim{ display:none; position:fixed; inset:56px 0 0 0; background:rgba(0,0,0,0.35); z-index:25;}
+    body.sidebar-open .scrim{ display:block; }
+  }
+
+  /* ---- cover ---- */
+  .cover{
+    min-height:calc(100vh - 56px); display:flex; flex-direction:column; justify-content:center;
+    padding: 7vh 8vw; position:relative; overflow:hidden;
+    background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0) 40%);
+    border-bottom: 1px solid var(--paper-line);
+  }
+  .cover::before{
+    content:""; position:absolute; inset:0; opacity:.5; pointer-events:none;
+    background-image: radial-gradient(circle at 1px 1px, rgba(122,42,38,0.06) 1px, transparent 0);
+    background-size: 22px 22px;
+  }
+  .mark{ width:60px; height:60px; border-radius:18px; background:var(--oxblood); display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow); margin-bottom:26px;}
+  .mark svg{ width:32px; height:32px; }
+  .cover h1{ font-size: clamp(2.1rem, 4.8vw, 3.6rem); max-width:19ch; margin:8px 0 16px; letter-spacing:-0.01em;}
+  .cover .sub{ font-size:1.16rem; color:var(--muted); max-width:58ch; font-weight:400;}
+  .rule{ width:64px; height:4px; background:var(--oxblood); margin:20px 0; border-radius:2px;}
+  .cover .meta{ margin-top:30px; font-size:.83rem; color:var(--muted); font-family:'IBM Plex Mono', monospace; line-height:1.9;}
+  .cover .badges{ display:flex; gap:10px; flex-wrap:wrap; margin-top:20px;}
+  .badge{ font-family:'IBM Plex Mono', monospace; font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; padding:6px 12px; border-radius:999px; background:var(--paper-soft); border:1px solid var(--paper-line); color:var(--fg);}
+  .confidential{ margin-top:26px; padding:13px 18px; border-radius:10px; border:1px solid var(--glass-border); background:var(--bad-bg); font-size:.83rem; max-width:56ch;}
+  .teaser-strip{ display:flex; flex-wrap:wrap; gap:22px; margin-top:34px; padding-top:24px; border-top:1px solid var(--paper-line); max-width:640px;}
+  .teaser-strip div{ min-width:110px; }
+  .teaser-strip .n{ font-family:'Fraunces',serif; font-size:1.5rem; font-weight:700; color:var(--oxblood); }
+  .teaser-strip .l{ font-size:.72rem; color:var(--muted); font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:.03em;}
+
+  /* ---- layout ---- */
+  .wrap{ max-width: 920px; margin:0 auto; padding: 0 6vw 10vh; }
+  section{ margin: 78px 0; scroll-margin-top: 76px;}
+  section > .eyebrow{ display:block; margin-bottom:8px; }
+  section h2{ font-size: clamp(1.55rem, 3vw, 2.15rem); margin:0 0 6px; }
+  section .dek{ color:var(--muted); font-size:1.04rem; max-width:64ch; margin: 6px 0 30px; }
+  h3{ font-size:1.24rem; margin: 34px 0 10px; color:var(--oxblood); }
+  h4{ font-size:.92rem; margin:20px 0 8px; text-transform:uppercase; letter-spacing:.04em; color:var(--oxblood);}
+  p{ margin: 0 0 14px; }
+  ul,ol.plain{ padding-left:1.3em; margin:0 0 16px;}
+  li{ margin-bottom:6px; }
+  .pullquote{ font-family:'Fraunces',serif; font-size:1.35rem; font-weight:600; line-height:1.35; color:var(--fg); border-left:3px solid var(--oxblood); padding:4px 0 4px 22px; margin:28px 0; max-width:56ch;}
+  .pullquote cite{ display:block; font-family:'IBM Plex Mono',monospace; font-style:normal; font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-top:8px;}
+
+  .card{
+    background: var(--glass); border:1px solid var(--glass-border); border-radius: var(--radius);
+    padding: 24px 26px; box-shadow: var(--shadow); backdrop-filter: blur(10px); margin: 18px 0;
+  }
+  .callout{ border-left:4px solid var(--oxblood); background:var(--paper-soft); padding:14px 18px; border-radius:0 10px 10px 0; margin:18px 0;}
+  .callout.warn{ border-left-color:var(--warn); background:var(--warn-bg); }
+  .callout.good{ border-left-color:var(--good); background:var(--good-bg); }
+  .callout.bad{ border-left-color:var(--bad); background:var(--bad-bg); }
+  .callout p:last-child{ margin-bottom:0; }
+
+  .table-scroll{ overflow-x:auto; margin:18px 0 26px; border-radius:12px; -webkit-overflow-scrolling:touch;}
+  table{ width:100%; border-collapse:collapse; font-size:.89rem; background:rgba(255,255,255,0.04); min-width:560px;}
+  th,td{ border:1px solid var(--paper-line); padding:9px 12px; text-align:left; vertical-align:top;}
+  th{ background:var(--paper-mid); font-family:'IBM Plex Mono',monospace; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--fg);}
+  tr:nth-child(even) td{ background:var(--paper-soft);}
+  td.num, th.num{ text-align:right; font-family:'IBM Plex Mono',monospace; }
+  td.center, th.center{ text-align:center; }
+
+  .tag{ display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:.65rem; letter-spacing:.05em; text-transform:uppercase; padding:3px 9px; border-radius:999px; }
+  .tag.yes{ background:var(--good-bg); color:var(--good);} .tag.no{ background:var(--bad-bg); color:var(--bad);} .tag.maybe{ background:var(--warn-bg); color:var(--warn);}
+  .tag.fact{ background:var(--good-bg); color:var(--good);} .tag.research{ background:#dde6f3; color:#2f4d78;} .tag.est{ background:var(--warn-bg); color:var(--warn);}
+  :root[data-theme="dark"] .tag.research{ background:#1d2a3a; color:#9db8dd;}
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .tag.research{ background:#1d2a3a; color:#9db8dd;} }
+  .check{ color:var(--good); font-weight:700; }
+  .cross{ color:var(--muted); }
+  .dot-aurora{ display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--oxblood); margin-right:4px;}
+
+  .kpis{ display:grid; grid-template-columns: repeat(auto-fit, minmax(155px,1fr)); gap:14px; margin:24px 0;}
+  .kpi{ border:1px solid var(--paper-line); border-radius:12px; padding:16px 16px; background:var(--paper-soft);}
+  .kpi .n{ font-family:'Fraunces',serif; font-size:1.55rem; color:var(--oxblood); font-weight:700; line-height:1.1;}
+  .kpi .l{ font-size:.75rem; color:var(--muted); margin-top:6px; }
+
+  .bars{ display:flex; flex-direction:column; gap:10px; margin: 18px 0 26px;}
+  .bar-row{ display:grid; grid-template-columns: 132px 1fr 96px; align-items:center; gap:10px; font-size:.85rem;}
+  .bar-track{ background:var(--paper-mid); border-radius:8px; height:16px; overflow:hidden; border:1px solid var(--paper-line);}
+  .bar-fill{ height:100%; border-radius:8px 0 0 8px; background:var(--oxblood); }
+  .bar-fill.aurora{ background: repeating-linear-gradient(135deg, var(--oxblood), var(--oxblood) 6px, var(--ox-75) 6px, var(--ox-75) 12px); }
+  .bar-row .val{ text-align:right; font-family:'IBM Plex Mono',monospace; font-size:.78rem; color:var(--muted); }
+
+  .swot-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin: 20px 0 26px; }
+  .swot-cell{ border-radius:12px; padding:18px 20px; border:1px solid var(--paper-line);}
+  .swot-cell h4{ margin-top:0; }
+  .swot-cell.s{ background:var(--good-bg); } .swot-cell.w{ background:var(--warn-bg); }
+  .swot-cell.o{ background:var(--good-bg); } .swot-cell.t{ background:var(--bad-bg); }
+  .swot-cell ul{ margin-bottom:0; padding-left:1.1em; }
+  .swot-cell li{ margin-bottom:5px; font-size:.92rem;}
+
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  .grid3{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  .persona{ border:1px solid var(--paper-line); border-radius:14px; padding:22px 24px; background:var(--paper-soft); margin:18px 0;}
+  .persona h4{ margin-top:0; color:var(--fg); font-size:1.08rem; text-transform:none; letter-spacing:0; font-family:'Fraunces',serif; font-weight:700;}
+  .persona .role{ font-family:'IBM Plex Mono',monospace; font-size:.7rem; color:var(--oxblood); text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px;}
+  .persona .hook{ font-family:'IBM Plex Mono',monospace; font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-top:14px; padding-top:12px; border-top:1px dashed var(--paper-line);}
+
+  @media (max-width: 760px){
+    .swot-grid, .grid2, .grid3{ grid-template-columns:1fr; }
+    .bar-row{ grid-template-columns: 92px 1fr 76px; }
+  }
+
+  .footnote{ font-size:.79rem; color:var(--muted); }
+  .divider{ height:1px; background:linear-gradient(90deg,transparent,var(--paper-line),transparent); margin:58px 0; }
+  footer{ text-align:center; padding:50px 6vw 80px; color:var(--muted); font-size:.84rem; font-family:'IBM Plex Mono',monospace; }
+  .num-badge{ display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; background:var(--oxblood); color:#fff; font-family:'IBM Plex Mono',monospace; font-size:.74rem; font-weight:600; margin-right:8px; flex-shrink:0;}
+  .legend{ display:flex; gap:14px; flex-wrap:wrap; margin:14px 0 22px; font-size:.8rem; color:var(--muted);}
+  .legend span{ display:inline-flex; align-items:center; gap:6px;}
+
+  /* ---- feature cards ---- */
+  .feature-group{ margin: 34px 0 10px; }
+  .feature-group-label{ font-family:'IBM Plex Mono',monospace; font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:14px; display:flex; align-items:center; gap:10px;}
+  .feature-group-label::after{ content:""; flex:1; height:1px; background:var(--paper-line); }
+  .feature-card{
+    border:1px solid var(--paper-line); border-radius:14px; background:var(--paper-soft); margin:12px 0; overflow:hidden;
+  }
+  .feature-head{ display:flex; align-items:flex-start; gap:14px; padding:18px 20px; cursor:pointer; list-style:none; }
+  .feature-head::-webkit-details-marker{ display:none; }
+  .feature-head:hover{ background:var(--ox-05); }
+  .feature-icon{ flex-shrink:0; width:38px; height:38px; border-radius:10px; background:var(--ox-10); color:var(--oxblood); display:flex; align-items:center; justify-content:center;}
+  .feature-icon svg{ width:20px; height:20px; }
+  .feature-title-row{ flex:1; min-width:0; }
+  .feature-title-row h4{ margin:0; text-transform:none; letter-spacing:0; font-size:1.05rem; color:var(--fg); font-family:'Fraunces',serif; font-weight:700;}
+  .feature-hook{ font-size:.9rem; color:var(--muted); margin-top:3px; }
+  .feature-chevron{ flex-shrink:0; color:var(--muted); transition:transform .2s ease; margin-top:8px;}
+  details[open] .feature-chevron{ transform:rotate(90deg); }
+  .feature-body{ padding:0 20px 20px 72px; font-size:.94rem; }
+  .feature-body p:last-child{ margin-bottom:0; }
+  .expand-all-row{ display:flex; justify-content:flex-end; margin: 0 0 4px; }
+  .expand-all-btn{ font-family:'IBM Plex Mono',monospace; font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--oxblood); background:none; border:1px solid var(--glass-border); border-radius:999px; padding:6px 14px; cursor:pointer; }
+  .expand-all-btn:hover{ background:var(--ox-05); }
+
+  /* ---- timeline ---- */
+  .timeline-scroll{ overflow-x:auto; padding:8px 0 20px; margin: 22px 0; }
+  .timeline{ display:flex; min-width:760px; position:relative; padding-top:10px; }
+  .timeline::before{ content:""; position:absolute; top:28px; left:0; right:0; height:2px; background:var(--paper-line); }
+  .t-stop{ flex:1; position:relative; padding:0 8px; text-align:center; }
+  .t-dot{ width:14px; height:14px; border-radius:50%; background:var(--oxblood); border:3px solid var(--bg); margin:20px auto 10px; position:relative; z-index:2; box-shadow:0 0 0 1px var(--paper-line);}
+  .t-stop.milestone .t-dot{ width:18px; height:18px; }
+  .t-date{ font-family:'IBM Plex Mono',monospace; font-size:.68rem; color:var(--muted); text-transform:uppercase; }
+  .t-label{ font-size:.82rem; font-weight:600; margin-top:3px; }
+  .t-sub{ font-size:.74rem; color:var(--muted); margin-top:2px; }
+
+  /* ---- 90-day plan weeks ---- */
+  .phase-block{ border:1px solid var(--paper-line); border-radius:14px; margin: 20px 0; overflow:hidden; }
+  .phase-head{ background:var(--ox-10); padding:16px 22px; display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px;}
+  .phase-head h3{ margin:0; color:var(--fg); }
+  .phase-head .phase-when{ font-family:'IBM Plex Mono',monospace; font-size:.75rem; color:var(--oxblood); text-transform:uppercase; letter-spacing:.04em;}
+  .phase-body{ padding:18px 22px; }
+  .week-row{ border-top:1px solid var(--paper-line); padding: 6px 0; }
+  .week-row summary{ list-style:none; cursor:pointer; padding:10px 4px; display:flex; align-items:center; gap:12px; }
+  .week-row summary::-webkit-details-marker{ display:none; }
+  .week-num{ font-family:'IBM Plex Mono',monospace; font-size:.72rem; color:#fff; background:var(--oxblood); border-radius:6px; padding:3px 8px; flex-shrink:0; }
+  .week-title{ font-weight:600; flex:1; }
+  .week-chevron{ color:var(--muted); transition:transform .2s ease; }
+  .week-row[open] .week-chevron{ transform:rotate(90deg); }
+  .week-detail{ padding: 4px 4px 16px 56px; font-size:.92rem; }
+  .week-detail ul{ margin-bottom:8px; }
+  .gate-box{ background:var(--warn-bg); border:1px solid var(--paper-line); border-radius:10px; padding:14px 18px; margin:16px 0; font-size:.9rem; }
+  .gate-box strong{ color:var(--warn); }
+
+  /* ---- FAQ ---- */
+  .faq-item{ border-bottom:1px solid var(--paper-line); padding: 4px 0; }
+  .faq-item summary{ list-style:none; cursor:pointer; padding:16px 4px; font-weight:600; font-family:'Fraunces',serif; font-size:1.05rem; display:flex; justify-content:space-between; align-items:center; gap:14px;}
+  .faq-item summary::-webkit-details-marker{ display:none; }
+  .faq-item .q-chevron{ flex-shrink:0; color:var(--oxblood); transition:transform .2s ease; }
+  .faq-item[open] .q-chevron{ transform:rotate(45deg); }
+  .faq-answer{ padding: 0 4px 18px; font-size:.95rem; }
+  .faq-answer p:last-child{ margin-bottom:0; }
+
+  /* ---- risk matrix ---- */
+  .risk-badge{ font-family:'IBM Plex Mono',monospace; font-size:.68rem; text-transform:uppercase; letter-spacing:.04em; padding:3px 9px; border-radius:6px; display:inline-block; }
+  .risk-badge.high{ background:var(--bad-bg); color:var(--bad); }
+  .risk-badge.med{ background:var(--warn-bg); color:var(--warn); }
+  .risk-badge.low{ background:var(--good-bg); color:var(--good); }
+
+  /* ---- architecture diagram ---- */
+  .arch-diagram{ display:flex; flex-direction:column; gap:10px; margin:22px 0; }
+  .arch-row{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+  .arch-box{ flex:1; min-width:150px; border:1.5px solid var(--oxblood); border-radius:10px; padding:12px 14px; text-align:center; background:var(--paper-soft); font-size:.82rem; }
+  .arch-box .t{ font-weight:700; font-family:'IBM Plex Mono',monospace; font-size:.72rem; text-transform:uppercase; letter-spacing:.03em; color:var(--oxblood); margin-bottom:4px;}
+  .arch-arrow{ text-align:center; color:var(--muted); font-size:.8rem; font-family:'IBM Plex Mono',monospace;}
+
+  @media print{
+    .chrome-bar, .sidebar, .scrim, .expand-all-row{ display:none !important; }
+    .main{ margin-left:0 !important; padding-top:0 !important; }
+    .cover{ min-height:auto; }
+    section{ margin: 26px 0; break-inside: avoid-page; }
+    body{ background:#fff; color:#111; }
+    details{ display:block !important; }
+    .feature-body, .week-detail, .faq-answer{ display:block !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="chrome-bar">
+  <button class="icon-btn" id="sidebarToggle" aria-label="Toggle table of contents" title="Toggle table of contents">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <span class="brand">Aurora — Investor Strategy Report</span>
+  <button class="icon-btn" id="themeToggle" aria-label="Toggle light and dark theme" title="Toggle light and dark theme">
+    <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+  </button>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<nav class="sidebar" id="sidebar">
+  <h4>Contents</h4>
+  <ol id="tocList">
+    <li><a href="#cover">Cover</a></li>
+    <li><a href="#snapshot">Snapshot</a></li>
+    <li><a href="#exec">Executive Summary</a></li>
+    <li><a href="#team">Team &amp; Operating Model</a></li>
+    <li><a href="#state">Present State &amp; Roadmap</a></li>
+    <li><a href="#product">Product Overview</a></li>
+    <li><a href="#personas">Target User Personas</a></li>
+    <li><a href="#market">Market Research</a></li>
+    <li><a href="#psychology">Buyer Psychology</a></li>
+    <li><a href="#competition">Competitive Analysis</a></li>
+    <li><a href="#swot">SWOT &amp; Risk Register</a></li>
+    <li><a href="#tech">Technology &amp; Security</a></li>
+    <li><a href="#checklist">Pre-Launch Checklist</a></li>
+    <li><a href="#cost">Cost Model</a></li>
+    <li><a href="#revenue">Revenue &amp; Profit</a></li>
+    <li><a href="#marketing">90-Day Marketing Plan</a></li>
+    <li><a href="#stores">App/Play Store Feasibility</a></li>
+    <li><a href="#faq">Investor FAQ</a></li>
+    <li><a href="#sources">Sources &amp; Methodology</a></li>
+  </ol>
+</nav>
+
+<div class="main">
+
+<div class="cover" id="cover">
+  <div class="mark"><svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"><g fill="#F3ECDD"><polygon points="60,24 62,24 37,96 25,96"/><polygon points="58,24 60,24 101,96 77,96"/><rect x="44" y="66.5" width="29" height="8"/><rect x="18.5" y="91.5" width="27.5" height="6.5" rx="1.5"/><rect x="74" y="91.5" width="30" height="6.5" rx="1.5"/></g></svg></div>
+  <span class="eyebrow">Aurora — a product of Nvexis — Confidential Investor Strategy Report</span>
+  <h1>Nine weeks, one operator, a full project-management platform. Here's the honest version.</h1>
+  <p class="sub">A ground-up, source-cited assessment of the product, the market, the security posture, the unit economics, and a real 90-day go-to-market plan — written to be checked line by line, not skimmed.</p>
+  <div class="rule"></div>
+  <div class="meta">
+    Prepared 23 August 2026 · v3, updated — supersedes the 22 August 2026 edition (kept on file as history)<br>
+    Aurora is a product of Nvexis · Built by Akash
+  </div>
+  <div class="badges">
+    <span class="badge">Pre-revenue</span>
+    <span class="badge">Feature-complete for launch</span>
+    <span class="badge">Solo-operator built</span>
+  </div>
+  <div class="confidential">
+    <strong>Confidential.</strong> Internal financial estimates, security posture detail, and infrastructure specifics inside. Prepared for direct review by the founder and named recipients only.
+  </div>
+  <div class="teaser-strip">
+    <div><div class="n">56</div><div class="l">DB migrations, 9 weeks</div></div>
+    <div><div class="n">13</div><div class="l">edge functions live</div></div>
+    <div><div class="n">$5.99</div><div class="l">vs. $7–17.50 competitors</div></div>
+    <div><div class="n">$0</div><div class="l">spent on marketing to date</div></div>
+    <div><div class="n">$8.7–12.2B</div><div class="l">2026 category size</div></div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<section id="snapshot">
+  <span class="eyebrow">00 — Snapshot</span>
+  <h2>The whole report in one screen</h2>
+  <p class="dek">For the reader who wants the shape of the argument before the 15,000 words. Every number below is unpacked, sourced, and (where it's an estimate) labeled as one, later in this document.</p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="n">26</div><div class="l">shipped feature areas, verified against <code>src/features/*</code></div></div>
+    <div class="kpi"><div class="n">56 / 13</div><div class="l">DB migrations / Edge Functions — 9 weeks of continuous shipping</div></div>
+    <div class="kpi"><div class="n">19</div><div class="l">automated pgTAP security assertions, CI-enforced on every migration</div></div>
+    <div class="kpi"><div class="n">$5.99</div><div class="l">Aurora Pro, flat per board — cheapest per-seat-equivalent in its field for any team of 3+</div></div>
+    <div class="kpi"><div class="n">~$25<span style="font-size:.9rem;">/mo</span></div><div class="l">verified infra cost to run Aurora at its first 100 users</div></div>
+    <div class="kpi"><div class="n">$8.7–12.2B</div><div class="l">2026 category size, 3 independent research firms, 11.1–18.5% CAGR</div></div>
+    <div class="kpi"><div class="n">0</div><div class="l">paying customers today — pre-revenue, by design, until go-live gates clear</div></div>
+    <div class="kpi"><div class="n">0</div><div class="l">of the 2 code-completion gaps this report named at first publish — both wired, verified, and pushed the same morning; see §3</div></div>
+  </div>
+
+  <div class="callout">
+    <p><strong>The one-sentence version:</strong> Aurora is a genuinely broad, security-serious project-management PWA — built solo, in nine weeks, at a pace and completeness that would normally take a funded team a quarter or two — entering a $9–12B, double-digit-growth category with a pricing model none of its six named competitors currently match, still pre-revenue, with a short and specific list of things standing between here and launch (§11), and a go-to-market plan gated on real signal rather than hope (§14).</p>
+  </div>
+</section>
+
+<section id="exec">
+  <span class="eyebrow">01 — Executive Summary</span>
+  <h2>Where Aurora stands, and the three questions this report answers</h2>
+  <p class="dek">No number below is rounded in Aurora's favor without saying so.</p>
+
+  <p><strong>Aurora</strong> (by Nvexis) is a multi-tenant, installable Progressive Web App for project management — Kanban boards, a daily to-do planner, a unified calendar, a Notion-style notes editor, and a real-time collaborative whiteboard canvas, plus a genuinely deep team layer: goals, fixed-rule automations, time tracking, file attachments, a client-facing share link, project templates, one-time Trello/CSV import, an MCP server that connects Claude Desktop/Code directly to a user's account, and funnel analytics. It runs on React 19 + TypeScript + Vite, Supabase (Postgres + Auth + Realtime + Storage + Edge Functions), Cloudflare Pages, and Dodo Payments as Merchant of Record — built and operated day to day by one person (Akash) working with AI coding agents under a documented engineering discipline (<code>CLAUDE.md</code>'s "golden workflow"), with 56 database migrations and 13 Edge Functions shipped between 18 June and 22 August 2026.</p>
+
+  <div class="pullquote">"Is the product good? Is there a real edge? What will it realistically earn?" — the three questions a financially literate reader actually wants answered, in that order.</div>
+
+  <ul>
+    <li><strong>Is the product good?</strong> Yes, and unusually broad for a one-person team — §4 walks every feature area with the "why it matters," not a changelog dump. It also carries real, named weaknesses this report does not soften: a genuine solo-maintainer bus-factor risk that a runbook mitigates but doesn't remove, no admin dashboard for analytics, and zero brand awareness pre-launch — see §9. (Two code-completion gaps flagged when this report was first drafted — Task 31's drag-handle wiring and a pending Windows build pass — were closed and pushed to <code>origin/main</code> the same morning; see §3.)</li>
+    <li><strong>Who's the competition, and is there a real edge?</strong> Trello, Asana, ClickUp, Monday.com, Notion, and Todoist all compete for the same buyer to varying degrees, and every one of their current prices was re-checked directly against their own pricing pages this session (§8) — not carried forward from a stale figure. Aurora's most defensible, quantifiable edge — flat per-board pricing instead of per-seat — is unmatched by any of them today.</li>
+    <li><strong>What will it realistically earn, and how will it be marketed?</strong> A credible one-year target for a disciplined solo operator is low five figures in ARR, not a hockey stick (§13). The go-to-market plan (§14) is a real week-by-week calendar, not a bullet list — free/organic-first, with paid spend gated on Dodo confirming actual paying subscribers, not a date on a calendar.</li>
+  </ul>
+
+  <div class="callout">
+    <p><strong>What changed since the 13 August 2026 edition:</strong> a large amount of real product surface shipped in the intervening nine days — goals, automations, time tracking, file attachments, full-text search, project templates with a custom builder, Trello/CSV import, recurring cards, a client share link, the MCP connector, a Calendar Timeline/Gantt and Day view, table blocks, math formulas, note export to three formats, a funnel-analytics layer that didn't exist on 13 August, a written bus-factor runbook, and a scoped pentest plan. This edition doesn't just add those — it re-verifies every material figure from the prior report against a primary source, and corrects two of them outright (§8's Asana pricing, §13's India pricing) rather than repeating them.</p>
+  </div>
+
+  <div class="callout good">
+    <p><strong>What changed since the 22 August 2026 edition:</strong> four real, verifiable items closed in the day since — <strong>GitHub account MFA is now enabled</strong> (passkey, closing the bus-factor runbook's outstanding hardening item), <strong>the Resend sending domain (<code>mail.nvexis.com</code>) is DNS-verified and live</strong> (DKIM/SPF/DMARC in Cloudflare, retiring the <code>onboarding@resend.dev</code> fallback), and the <strong>admin analytics dashboard named as a gap in the prior edition has shipped</strong> — built, then two real bugs (an RLS-transaction-mode rejection and a Google-OAuth funnel blind spot) were found by actually loading it and fixed the same day, migration applied live. Separately, this session also closed out a mobile-performance finding from the prior edition's own §11 (Lighthouse re-score item): a render-blocking CSS chunk on the public landing page was deferred, moving mobile Performance from 63 to 70 on PageSpeed Insights — still short of the desktop score and not claimed as fully resolved (see §11). The public marketing site also began a rebrand pass toward Nvexis's light-mode, parchment-and-oxblood visual identity — in progress, not yet independently verified live by the founder as of this edition.</p>
+  </div>
+</section>
+
+<section id="team">
+  <span class="eyebrow">02 — Team &amp; Operating Model</span>
+  <h2>Who's building this, and how</h2>
+  <p class="dek">Short by design — this is what's actually verifiable, not a biography.</p>
+
+  <p>Aurora is built and operated by <strong>Akash</strong>, working solo with AI coding agents (Claude Code / Claude Cowork sessions) under a self-imposed, written engineering discipline rather than ad hoc vibes: every session reads the current state before touching anything, updates a living state document after every change, and commits immediately — the exact rule set is in <code>CLAUDE.md</code> and has been followed consistently enough to produce a real, traceable commit history rather than a black box. That process is the honest explanation for how one person shipped 56 migrations and 13 Edge Functions in nine weeks: it is not a claim that a solo operator moves as fast as a funded team on every axis, it's a specific, checkable claim about <em>this</em> operating model's output.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h4 style="margin-top:0; text-transform:none; letter-spacing:0; font-family:'Fraunces',serif; font-size:1.05rem; color:var(--fg);">What this model is good at</h4>
+      <p style="margin-bottom:0;">Fast, coherent iteration on a single codebase with one voice deciding architecture — no cross-team coordination tax, no committee-designed features. The Simplicity Guardrail process (§8) is a direct product of this: a solo decision-maker can actually enforce a "no" consistently, which is a genuine, unusual advantage in a category whose biggest competitors are named for the opposite problem.</p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0; text-transform:none; letter-spacing:0; font-family:'Fraunces',serif; font-size:1.05rem; color:var(--fg);">What this model is honestly exposed to</h4>
+      <p style="margin-bottom:0;">Everything bottlenecks on one person — support, roadmap velocity, incident response, and simple availability. This is named plainly in the SWOT (§9) as a real, unresolved weakness. The response so far is a written bus-factor runbook (§11) covering credential recovery, redeploy-from-scratch, and fire-drill triage — a mitigation, not a fix. There is no co-founder, no advisor structure, and no hiring plan disclosed in this report because none exists yet to disclose.</p>
+    </div>
+  </div>
+
+  <p class="footnote">This report deliberately does not include a founder biography, prior-venture history, or credentials narrative — none of that is verifiable from the repository this report was built from, and per this report's own no-invented-numbers rule, it isn't included rather than guessed at.</p>
+</section>
+
+<section id="state">
+  <span class="eyebrow">03 — Present State &amp; Roadmap</span>
+  <h2>What's built, what's open, and what's next</h2>
+  <p class="dek">Read directly from <code>memory.md</code>'s current Status, Feature log, and Open Items on 23 August 2026, re-confirmed unchanged immediately before this revision was written.</p>
+
+  <h3>Nine weeks, visualized</h3>
+  <div class="timeline-scroll">
+    <div class="timeline">
+      <div class="t-stop milestone"><div class="t-dot"></div><div class="t-date">18 Jun</div><div class="t-label">Foundation</div><div class="t-sub">Auth, projects, RLS pattern established</div></div>
+      <div class="t-stop"><div class="t-dot"></div><div class="t-date">20 Jun</div><div class="t-label">Kanban + To-Do</div><div class="t-sub">Core boards, planner, collaboration</div></div>
+      <div class="t-stop milestone"><div class="t-dot"></div><div class="t-date">22 Jun</div><div class="t-label">Pro launch</div><div class="t-sub">Billing (Dodo), canvas foundation, reminders</div></div>
+      <div class="t-stop"><div class="t-dot"></div><div class="t-date">29 Jun</div><div class="t-label">Canvas multiplayer</div><div class="t-sub">Yjs realtime, media, live cursors</div></div>
+      <div class="t-stop milestone"><div class="t-dot"></div><div class="t-date">13–16 Jul</div><div class="t-label">7-phase security remediation</div><div class="t-sub">RLS hardening, a11y suite, pentest-readiness</div></div>
+      <div class="t-stop"><div class="t-dot"></div><div class="t-date">12 Aug</div><div class="t-label">Team plan + India research</div><div class="t-sub">Pricing tightened, Play Store dropped</div></div>
+      <div class="t-stop milestone"><div class="t-dot"></div><div class="t-date">15–17 Aug</div><div class="t-label">Improvement sprint</div><div class="t-sub">Analytics, time tracking, templates, import, search, automations</div></div>
+      <div class="t-stop"><div class="t-dot"></div><div class="t-date">20 Aug</div><div class="t-label">Goals + Gantt</div><div class="t-sub">Timeline view, goal tracking</div></div>
+      <div class="t-stop"><div class="t-dot"></div><div class="t-date">22 Aug</div><div class="t-label">Report v2</div><div class="t-sub">56 migrations, 13 functions live; admin analytics dashboard + Resend domain shipped later the same day</div></div>
+      <div class="t-stop milestone"><div class="t-dot"></div><div class="t-date">23 Aug</div><div class="t-label">Today</div><div class="t-sub">GitHub 2FA, mobile Lighthouse fix, Nvexis light-mode rebrand in progress</div></div>
+    </div>
+  </div>
+
+  <p>Aurora is live and has been through every phase of its original build plan plus a June 2026 Pro feature set and a July 2026 seven-phase security remediation, pentest-reviewed. The active work since 15 August has been <code>IMPROVEMENT-PLAN-2026-08.md</code>, itself built from competitor research (§8). Of its 38 tasks, Tasks 1–14 and 16–33 are confirmed done and pushed to <code>main</code> — each cross-checked against a real commit hash, not taken on the plan document's word. Task 15 (this report) is complete. Tasks 34–38 remain open.</p>
+
+  <h3>Named plainly — then closed within hours, not softened</h3>
+  <p>This report was first written and published at 8:50am on 22 August 2026. Per explicit instruction, its first draft stated two shipped-but-unverified gaps exactly as <code>memory.md</code>'s own Open Items described them that morning, not a rosier summary. Both were real, and both were closed the same day — verified here against <code>git log</code>/<code>git show</code> directly, not taken on trust:</p>
+  <ul>
+    <li><strong>Drag-and-drop block reordering in Notes (Task 31) — wired and live as of commit <code>1db9282</code>, 47 minutes after this report was first published.</strong> At first publish, the extension, the drag-handle component, and the CSS all existed but the file that assembles the note editor never actually imported them — a real, inert gap, not a false alarm. The fix matched the "two lines" the project's own notes had already scoped: <code>MoveBlock</code> added to the notes extensions array, a <code>dragHandle</code> prop added to the editor call. <code>tsc --noEmit</code> ran clean, exit 0.</li>
+    <li><strong>The five 22 August 2026 features have now had their mandatory Windows build-verification pass.</strong> Note export to PDF, note export to Word, the Calendar Day view and project color-key legend, the standalone note/personal-canvas sharing bug-fix, and the auto-generated notes Contents panel all went through <code>npm install &amp;&amp; npm run typecheck &amp;&amp; npm run build</code> on the founder's own Windows machine — this project's real go/no-go gate, not a sandboxed approximation — and are confirmed live and reachable on <code>origin/main</code>, checked directly via <code>git log origin/main</code> rather than this file's own older prose.</li>
+    <li><strong>A structural development-environment limitation remains, and it isn't a code problem</strong>: this repo is developed partly through a bridge to a Windows machine that cannot always complete a full build inside one tool-call's time budget, and several AI sessions this window edited the same shared files, requiring manual re-merges after live-edit collisions. Worth an investor knowing candidly; it is not a security or data-integrity issue — a from-scratch clean-clone build has repeatedly confirmed the same code is typecheck/build/test clean when it can run to completion.</li>
+  </ul>
+  <div class="callout good">
+    <p><strong>Why this is worth showing rather than quietly editing away:</strong> the drag-handle fix landed in 47 minutes, and both items were verified and pushed within roughly 90 minutes of this report's first publish. That turnaround is itself a real data point about this operating model's velocity — see §2.</p>
+  </div>
+
+  <h3>Update, 23 August 2026 — the day after this report's v2 edition</h3>
+  <p>Four more items closed in the day since the section above was written, each verified directly rather than taken from a changelog:</p>
+  <ul>
+    <li><strong>Admin analytics dashboard shipped, then bug-fixed the same day it launched.</strong> A new admin-only <code>/analytics</code> page (funnel + breakdown views, two new <code>SECURITY DEFINER</code> RPCs, audit-logged like every other admin read) closes the "no admin dashboard, SQL-query-only" gap this report's SWOT (§9) and Technology Assessment (§10) both named as a real weakness in the prior edition. Loading the real page (not just reading the code) surfaced two genuine bugs, both root-caused and fixed same-day: the two RPCs were mis-declared <code>stable</code> despite writing an audit-log row, which Postgres correctly rejected as a read-only-transaction violation; and the signup funnel showed zero completions past step one because every real account in the tracked window had signed up via Google's redirect flow, which the original instrumentation had no way to distinguish from a returning login. Both are fixed, the migration is applied to the live database, and the dashboard now shows real counts.</li>
+    <li><strong>Resend sending domain (<code>mail.nvexis.com</code>) verified and live</strong> — DKIM, SPF, and DMARC records added in Cloudflare DNS, closing the go-live checklist's outstanding DNS item (§11). <code>REMINDER_FROM_EMAIL</code> now sends as <code>Aurora &lt;reminders@mail.nvexis.com&gt;</code> instead of the <code>onboarding@resend.dev</code> fallback. Not yet exercised by a real end-to-end reminder email reaching an inbox — Resend's own domain verification actively checks DNS, which is strong evidence, but the next due-date reminder that actually fires is the first real confirmation.</li>
+    <li><strong>GitHub account MFA enabled</strong> (passkey), closing the bus-factor runbook's outstanding hardening item named in §10 and §11 of the prior edition. Recovery codes were downloaded and kept outside the repository.</li>
+    <li><strong>Mobile Lighthouse Performance improved from 63 to 70</strong> on PageSpeed Insights, by deferring a render-blocking CSS chunk (the rich-text editor's styles) that was loading on every page, including the anonymous marketing landing page, even though only authenticated users ever reach the editor. This partially, not fully, closes the "Lighthouse / mobile / regression re-score" item still open in §11 — a full re-run of the executable checklist (install-prompt checks, on-device screenshots, a fresh desktop score) still needs the founder's own browser and phone.</li>
+  </ul>
+  <p class="footnote">A separate, in-progress visual refresh of the public marketing site — moving its dominant treatment from a dark, star-field hero to Nvexis's light-mode, parchment-and-oxblood identity, and removing decorative sparkle iconography — was underway as this edition was being prepared. It is not included as a verified, shipped item above because the founder had not yet visually confirmed the deployed result at the time of writing; treat it as in-progress rather than done.</p>
+
+  <h3>Near-term roadmap, in priority order</h3>
+  <p class="footnote" style="margin-top:0;">The two items that led this list when the report was first drafted — wiring Task 31's drag handle, and the Windows verification pass for the five 22 August features — are done (see above) and have been removed rather than left checked off for tidiness.</p>
+  <ol class="plain">
+    <li>Task 34 — a small polish pass already scoped.</li>
+    <li>Task 37 — sharing/collaborators completion (largely done already per the 22 August audit; remaining scope is UI polish, not new architecture).</li>
+    <li>Task 38 — calendar polish beyond the Day view already shipped, gated on asking the founder what still feels rough.</li>
+    <li>§11's Pre-Launch Checklist — the actual go-live gates, none of which block feature-completeness.</li>
+  </ol>
+</section>
+
+<section id="product">
+  <span class="eyebrow">04 — Product Overview</span>
+  <h2>What Aurora actually does</h2>
+  <p class="dek">Every area, in real detail — built by reading <code>src/features/*</code> directly, not from a marketing brief. Click any card to expand the full detail.</p>
+
+  <div class="expand-all-row"><button class="expand-all-btn" id="expandAllFeatures">Expand all</button></div>
+
+  <div class="feature-group">
+    <div class="feature-group-label">Where the day-to-day work happens</div>
+
+    <details class="feature-card">
+      <summary class="feature-head">
+        <span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="6" height="16" rx="1"/><rect x="10" y="4" width="6" height="10" rx="1"/><rect x="17" y="4" width="4" height="7" rx="1"/></svg></span>
+        <span class="feature-title-row"><h4>Kanban boards</h4><div class="feature-hook">The part of Aurora every first-time user touches first — and the part designed so every other feature can surface without leaving it.</div></span>
+        <span class="feature-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg></span>
+      </summary>
+      <div class="feature-body">
+        <p>Columns with drag-and-drop cards; checklists; labels; a priority tier per card; due dates, with due <em>time</em> (not just date) on Pro; assignees; recurring cards on a schedule (17 Aug — the to-do planner's recurrence engine, wired to boards); file attachments (16 Aug, the same private-Storage-plus-signed-URL pattern notes/canvas already used); per-card time tracking with start/stop and a running total, aware of multiple people on the same card and enforcing one active timer per person account-wide; threaded comments with @mentions and reactions; a review/approval workflow; a per-card activity feed; and card-level reminders, with Pro getting custom offsets and channels.</p>
+      </div>
+    </details>
+
+    <details class="feature-card">
+      <summary class="feature-head">
+        <span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></span>
+        <span class="feature-title-row"><h4>To-Do planner</h4><div class="feature-hook">Not every task belongs on a shared board — this is where personal work lives, on purpose.</div></span>
+        <span class="feature-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg></span>
+      </summary>
+      <div class="feature-body">
+        <p>A personal daily/weekly planner with custom recurrence rules (daily/weekly/monthly/interval), priority tiers, bulk actions, swipe gestures on mobile, drag-and-drop reordering with fractional positioning and auto-sink-on-complete, and starter templates so a new user has something useful the instant they open it. Aurora's own internal Simplicity Audit specifically calls this page out as doing "zero-config default" correctly.</p>
+      </div>
+    </details>
+
+    <details class="feature-card">
+      <summary class="feature-head">
+        <span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+        <span class="feature-title-row"><h4>Calendar</h4><div class="feature-hook">Four views over one unified truth — not four separate systems pretending to agree.</div></span>
+        <span class="feature-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg></span>
+      </summary>
+      <div class="feature-body">
+        <p>Month, Week, Day (added 22 Aug), and a Timeline/Gantt view (added 20 Aug) — all reading from the same cards, to-dos, and project milestones rather than four parallel data stores. A project color-key legend appears once more than one project is in view. A Pro-gated ICS subscribe feed lets Google/Apple/Outlook see Aurora's dates one-way. Competitor research (§8) calls this exact feature a bolt-on when it exists at all elsewhere; Aurora's version is a first-class, unified surface.</p>
+      </div>
+    </details>
+  </div>
+
+  <div class="feature-group">
+    <div class="feature-group-label">Where the thinking happens</div>
+
+    <details class="feature-card">
+      <summary class="feature-head">
+        <span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg></span>
+        <span class="feature-title-row"><h4>Notes</h4><div class="feature-hook">A Notion-style editor with the one thing most Notion competitors skip: it stays fast and legible even as a note grows.</div></span>
+        <span class="feature-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg></span>
+      </summary>
+      <div class="feature-body">
+        <p>Built on Tiptap: headings, bullet/ordered/task lists, tables with per-column resize, image upload and clipboard paste, embeds, math formulas (KaTeX, inline and block, click-to-edit with a live preview), subscript and superscript, an auto-generated clickable table of contents per note (22 Aug, with anchors that lazily backfill onto notes written before the feature existed), folders, templates (curated and "save as template"), full-text search, drag-and-drop block reordering (wired live 22 Aug, commit <code>1db9282</code>), and export to Markdown, Word (Pro), and PDF (Pro).</p>
+      </div>
+    </details>
+
+    <details class="feature-card">
+      <summary class="feature-head">
+        <span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15 15 0 010 20M2 12h20"/></svg></span>
+        <span class="feature-title-row"><h4>Canvas</h4><div class="feature-hook">An infinite whiteboard that stays in sync live, with a second person, on a different device, in real time.</div></span>
+        <span class="feature-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg></span>
+      </summary>
+      <div class="feature-body">
+        <p>Konva for rendering, Yjs for the CRDT sync layer, perfect-freehand for pressure-sensitive strokes: freehand drawing, text boxes, images and media (audio/video, in-app recording, upload, or YouTube/Vimeo/Loom/SoundCloud embeds), tables, pages/frames, z-ordering, multi-select, a layers panel, and undo/redo, with live multiplayer cursors and presence. Most competitors studied in §8 either bolt this on or omit it entirely; Aurora ships it as a native, Pro-gated primitive.</p>
+      </div>
+    </details>
+  </div>
+
+  <div class="feature-group">
+    <div class="feature-group-label">Where the team happens</div>
+
+    <details class="feature-card">
+      <summary class="feature-head">
+        <span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></span>
+        <span class="feature-title-row"><h4>Collaboration</h4><div class="feature-hook">Roles enforced where a client can't fake them — the database — not just hidden buttons in the UI.</div></span>
+        <span class="feature-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg></span>
+      </summary>
+      <div class="feature-body">
+        <p>Owner/editor/viewer roles enforced in Postgres Row Level Security; email-keyed invitations; live presence; real-time sync; a client-facing, no-account-required read-only share link for boards (16 Aug — the direct answer to a documented freelancer need: showing a client progress without giving them a seat); and standalone note/personal-canvas sharing with its own role model, audited and bug-fixed for real on 22 Aug (three UI call sites were silently ignoring the recipient's actual role — the underlying database rule was correct throughout).</p>
+      </div>
+    </details>
+
+    <details class="feature-card">
+      <summary class="feature-head">
+        <span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
+        <span class="feature-title-row"><h4>Goals</h4><div class="feature-hook">A progress bar, not an OKR framework — a deliberate refusal to build the enterprise version nobody here asked for.</div></span>
+        <span class="feature-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg></span>
+      </summary>
+      <div class="feature-body">
+        <p>Lightweight, flat progress-bar goals — deliberately not an Objectives/Key-Results system. A conscious Simplicity Guardrail call, shipped free rather than Pro-gated because the mitigation is scope, not a paywall (§8).</p>
+      </div>
+    </details>
+
+    <details class="feature-card">
+      <summary class="feature-head">
+        <span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
+        <span class="feature-title-row"><h4>Automations</h4><div class="feature-hook">Three fixed behaviors, zero configuration screens — the guardrail's single clearest self-restraint.</div></span>
+        <span class="feature-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg></span>
+      </summary>
+      <div class="feature-body">
+        <p>A small, fixed trigger/action rule set, Pro/Team-gated — deliberately not a general-purpose "if X then Y" rule builder, which the guardrail's own competitor research names as the single most direct path to the "feature overload" reviewers cite as ClickUp's top churn driver.</p>
+      </div>
+    </details>
+  </div>
+
+  <div class="feature-group">
+    <div class="feature-group-label">Getting in, finding things, and getting out</div>
+
+    <details class="feature-card">
+      <summary class="feature-head">
+        <span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>
+        <span class="feature-title-row"><h4>Import</h4><div class="feature-hook">A one-way door out of a competitor's tool and into Aurora — the switching-cost killer.</div></span>
+        <span class="feature-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg></span>
+      </summary>
+      <div class="feature-body">
+        <p>One-time Trello JSON export / CSV import into a new Aurora project — one-way, no ongoing sync, aimed squarely at lowering the cost of trying Aurora over an incumbent.</p>
+      </div>
+    </details>
+
+    <details class="feature-card">
+      <summary class="feature-head">
+        <span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+        <span class="feature-title-row"><h4>Search &amp; command palette</h4><div class="feature-hook">"Where did I write that thing about the Q3 deadline" — now actually answerable.</div></span>
+        <span class="feature-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg></span>
+      </summary>
+      <div class="feature-body">
+        <p>Full-text search across card and note content (17 Aug — previously the command palette only indexed names), surfaced inside the same ⌘K palette used for quick navigation across projects, notes, canvases, and folders. One familiar affordance extended, not a second search UI.</p>
+      </div>
+    </details>
+
+    <details class="feature-card">
+      <summary class="feature-head">
+        <span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></span>
+        <span class="feature-title-row"><h4>MCP server — "Connect Claude"</h4><div class="feature-hook">A genuinely unusual feature for a project-management tool at this stage — worth real explanation, not a throwaway line.</div></span>
+        <span class="feature-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg></span>
+      </summary>
+      <div class="feature-body">
+        <p>A Pro+ user can connect Claude Desktop or Claude Code directly to their own Aurora account via a personal access token, and read or write boards, to-dos, and notes through the same RLS-enforced API the app itself uses. The token is generated once, shown once, and only its SHA-256 hash is ever stored; a database trigger blocks any writer to that column other than the service role. Each tool call is authenticated by a short-lived (5-minute) JWT minted from a dedicated, independently-revocable signing key — not the project's normal session key. It lets a technical user (§5's third persona) manage their boards from inside an AI coding session instead of a browser tab, and it's real, novel authentication infrastructure the pentest brief (§10) flags as its highest-priority area to test.</p>
+      </div>
+    </details>
+  </div>
+
+  <div class="feature-group">
+    <div class="feature-group-label">The quiet stuff that still matters</div>
+
+    <details class="feature-card">
+      <summary class="feature-head">
+        <span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a4.5 4.5 0 000 9 4.5 4.5 0 010 9"/></svg></span>
+        <span class="feature-title-row"><h4>Personalization</h4><div class="feature-hook">Curated by default, raw control one tap away — the settings page as a case study in the guardrail working.</div></span>
+        <span class="feature-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg></span>
+      </summary>
+      <div class="feature-body">
+        <p>Day/Night themes, font pairing, and custom color presets — an 8-tile curated grid leading, with a raw hex/color-wheel picker demoted to a collapsed "Advanced" disclosure (a deliberate rebuild after an earlier raw-picker version produced ugly, uncoordinated results) — synced to the account, not just the device, since 15 Aug.</p>
+      </div>
+    </details>
+
+    <details class="feature-card">
+      <summary class="feature-head">
+        <span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></span>
+        <span class="feature-title-row"><h4>PWA / installability</h4><div class="feature-hook">Installs like a real app, on every platform, from a browser — no app-store gatekeeper.</div></span>
+        <span class="feature-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg></span>
+      </summary>
+      <div class="feature-body">
+        <p>Installable on mobile and desktop from any browser, offline caching via a service worker, and platform-appropriate install-prompt handling — a real native prompt on Chrome/Edge/Android, a guided walkthrough on iOS Safari, which exposes no programmatic install API.</p>
+      </div>
+    </details>
+
+    <details class="feature-card">
+      <summary class="feature-head">
+        <span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></span>
+        <span class="feature-title-row"><h4>Notifications &amp; reminders</h4><div class="feature-hook">Nothing slips, even with the app closed.</div></span>
+        <span class="feature-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg></span>
+      </summary>
+      <div class="feature-body">
+        <p>Due-date reminders via email (Resend) and browser notification; Pro gets custom timed reminders with configurable lead time and channel.</p>
+      </div>
+    </details>
+
+    <details class="feature-card">
+      <summary class="feature-head">
+        <span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
+        <span class="feature-title-row"><h4>Billing</h4><div class="feature-hook">The server is always the source of truth for who's paid — never the client, never a hidden trust assumption.</div></span>
+        <span class="feature-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg></span>
+      </summary>
+      <div class="feature-body">
+        <p>Three priced, self-serve tiers (Free/Pro/Team) plus an unpriced, manually-provisioned Enterprise tier for accounts past Team's 40-member cap; Dodo Payments checkout; in-place plan switching; currency localization; and webhook-verified entitlement, enforced by a database trigger that blocks any client write to billing columns.</p>
+      </div>
+    </details>
+
+    <details class="feature-card">
+      <summary class="feature-head">
+        <span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+        <span class="feature-title-row"><h4>Analytics (internal)</h4><div class="feature-hook">The instrument panel nobody sees but the founder — and the thing that closes last edition's biggest named risk.</div></span>
+        <span class="feature-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg></span>
+      </summary>
+      <div class="feature-body">
+        <p>A minimal, privacy-respecting funnel-tracking layer shipped 15 Aug — seventeen allow-listed events, one table, no dashboard, no third-party vendor, no PII fields, its real audience internal rather than customer-facing. It's the instrumentation behind this report's revenue and marketing modeling (§13, §14) — closing the prior edition's biggest named gap.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<section id="personas">
+  <span class="eyebrow">05 — Target User Personas</span>
+  <h2>Who Aurora is actually built for</h2>
+  <p class="dek">Grounded in the product's real pricing shape and what the August improvement pass specifically added.</p>
+
+  <div class="persona">
+    <div class="role">Persona 1 — the freelance consultant</div>
+    <h4>Priya, 29, independent brand consultant, Bengaluru</h4>
+    <p>Priya runs her practice on a free Trello board, a separate Google Doc per client, and a spreadsheet for billable time — three tools, no single source of truth. A client asks "where are we?" and she assembles the answer by hand. She doesn't want to hand a client a login just to show progress. Aurora's <strong>client-facing read-only share link</strong> solves that directly: send a link, the client sees the board, no signup. Her real switching trigger to Pro is <strong>per-card time tracking</strong> — once she's billing against it instead of a separate timer app, going back is real friction.</p>
+    <div class="hook">Why she upgrades: one feature she can't live without, not a feature-list comparison.</div>
+  </div>
+
+  <div class="persona">
+    <div class="role">Persona 2 — the small creative/dev team</div>
+    <h4>A 5-person product studio currently on ClickUp Business</h4>
+    <p>They're paying ClickUp's per-seat price for five people and resent two things: the bill scaling every time they bring on a contractor, and a settings surface dense enough that a new hire needs real onboarding time (exactly the "feature overload" complaint §8's research documents). Aurora's <strong>flat per-board pricing</strong> — Team at $22/mo covers up to 40 people on a board, not $22 <em>per person</em> — is a direct cost argument the studio's lead can bring to the team without a spreadsheet. The Simplicity Guardrail's visible discipline (§8) is the qualitative half of the same pitch.</p>
+    <div class="hook">Why they switch: the bill stops scaling with headcount, and the tool stops needing an onboarding doc.</div>
+  </div>
+
+  <div class="persona">
+    <div class="role">Persona 3 — the price-sensitive student/early-career freelancer</div>
+    <h4>Arjun, 21, computer-science student and part-time freelance developer, Pune</h4>
+    <p>Arjun wants one tool for coursework, a couple of small freelance projects, and a personal to-do list, but a $10+/seat/month tool is a real budget line for him. Dodo, Aurora's payment processor, converts the $5.99 list price to his local currency automatically at checkout — a real, verified behavior (§13), though whether Aurora has additionally configured a deliberately-discounted local price is something this report could not confirm from the codebase and flags as worth the founder's direct attention. He's also the segment most likely to actually use the <strong>MCP/Claude connector</strong> — a technically comfortable user who already has Claude Code open for coursework and would rather manage his to-do list from there than switch tabs.</p>
+    <div class="hook">Why this persona matters even with the pricing question open: he's real evidence the MCP connector isn't a gimmick — it's this exact user's daily workflow.</div>
+  </div>
+</section>
+
+<section id="market">
+  <span class="eyebrow">06 — Market Research</span>
+  <h2>The market Aurora is entering</h2>
+  <p class="dek">Fetched directly from three independent research firms' own report pages this session — not aggregator summaries.</p>
+
+  <p>Project-management-software market sizing varies by firm because of a real methodology difference (whether enterprise PPM/portfolio tools are in scope), not sloppy data. Rather than pick the most flattering number, here are three independent firms' current published figures, fetched directly:</p>
+
+  <div class="table-scroll">
+  <table>
+    <tr><th>Source</th><th class="num">2025</th><th class="num">2026 est.</th><th class="num">CAGR</th><th>Horizon</th></tr>
+    <tr><td>Grand View Research</td><td class="num">$7.9B</td><td class="num">$8.7B</td><td class="num">11.1%</td><td>→ $19.8B by 2033</td></tr>
+    <tr><td>Mordor Intelligence</td><td class="num">$9.76B</td><td class="num">$11.27B</td><td class="num">15.42%</td><td>→ $23.09B by 2031</td></tr>
+    <tr><td>Straits Research</td><td class="num">$10.33B</td><td class="num">$12.24B</td><td class="num">18.48%</td><td>→ $47.52B by 2034</td></tr>
+  </table>
+  </div>
+  <p class="footnote">All three fetched directly from the publisher's own report page on 22 Aug 2026 (see §17). Honest range: <strong>2026 market size $8.7B–$12.24B</strong>, <strong>CAGR 11.1%–18.5%</strong> depending on scope and horizon. Every one of these figures is materially in line with the 13 August edition's carried-forward range ($7.3–12.2B) — this session's direct re-fetch confirms rather than revises it.</p>
+
+  <h3>Why the market is growing this fast</h3>
+  <ul>
+    <li><strong>Remote/hybrid work is now permanent infrastructure</strong>, not a pandemic artifact — distributed teams need a shared source of truth a spreadsheet can't provide at scale.</li>
+    <li><strong>Tool consolidation.</strong> The fastest-growing sub-segment is "all-in-one" workspaces over single-purpose Kanban tools — Aurora's exact positioning.</li>
+    <li><strong>SMB and solo/freelancer adoption is accelerating</strong> faster than enterprise, favoring a low-priced, fast-to-adopt product over an enterprise-first incumbent.</li>
+    <li><strong>AI-adjacent workflow tools</strong> are pulling more "planning" software spend into comparison shopping generally.</li>
+  </ul>
+
+  <h3>Where Aurora actually fits</h3>
+  <p>Aurora is not competing for the enterprise PPM buyer (Jira/Asana Enterprise/Monday Enterprise territory — SSO, governance, custom fields at scale). Its real addressable market is the bottom two-thirds of that $9–12B figure: individuals, freelancers, and small teams (2–10 people) currently paying $5–$15/seat/month for some combination of a board tool, a notes tool, and a canvas tool — or paying nothing and limping along with spreadsheets and a free Trello board.</p>
+
+  <div class="callout">
+    <p><strong>Sizing the realistic slice:</strong> even capturing 0.001% of the ~$9–12B global market implies roughly $90k–$120k in category spend redirected toward Aurora — several multiples of even the Best-case revenue scenario in §13. The market is not the constraint; distribution execution is (§14).</p>
+  </div>
+</section>
+
+<section id="psychology">
+  <span class="eyebrow">07 — Buyer Psychology</span>
+  <h2>Why people actually pick, and pay for, a tool like this</h2>
+  <p class="dek">The behavioral research behind Aurora's pricing and messaging.</p>
+
+  <h3>Pricing psychology already built into Aurora</h3>
+  <ul>
+    <li><strong>Anchoring + decoy pricing.</strong> Three visible tiers let Pro act as the anchored "obvious middle choice" against Team's higher price.</li>
+    <li><strong>Charm pricing.</strong> $5.99 and $47.99 reliably outperform round pricing in willingness-to-pay studies.</li>
+    <li><strong>Loss aversion via annual framing.</strong> "33% off" triggers loss aversion more effectively than "save $24/year" framed as a gain.</li>
+    <li><strong>The freemium "foot in the door."</strong> A genuinely usable free tier lowers first-use friction to near zero — critical for an unknown indie brand.</li>
+  </ul>
+
+  <h3>What actually converts a free user to Pro</h3>
+  <p>Trigger-moment upgrades beat time-based nags; social proof closes the trust gap for an unknown brand; users upgrade because <em>one</em> Pro-gated feature becomes indispensable, not because they compared the whole feature list. The feature set now offers meaningfully more of these "one thing" hooks than it did on 13 August — time tracking, custom reminders, canvas, automations, templates, and exports are each a real, distinct reason a specific user might hit "upgrade." This is a genuine, citable reason to expect Pro-conversion assumptions might land modestly higher than the 13 August estimate — §13 treats it as an explicit judgment call, not a measured fact.</p>
+
+  <h3>Category-specific psychology: why people switch PM tools at all</h3>
+  <p>Project/task management has unusually high "tool churn" — the two dominant switching triggers are <strong>overwhelm</strong> (the #1 stated reason people leave Notion and ClickUp) and <strong>fragmentation fatigue</strong> (juggling 3–4 separate tools). Aurora's calm, all-in-one brand promise answers both directly, and per this session's fresh competitor research (§8), no major competitor has shipped a named "calm mode" or decluttering feature that would blunt this positioning as of 22 August 2026.</p>
+</section>
+
+<section id="competition">
+  <span class="eyebrow">08 — Competitive Analysis</span>
+  <h2>The field, and where Aurora sits in it</h2>
+  <p class="dek">Every price below was fetched directly from the competitor's own pricing page on 22 August 2026 — not an aggregator's summary.</p>
+
+  <h3>Entry paid tier, per user/month, billed annually where offered</h3>
+  <div class="table-scroll">
+  <div class="bars">
+    <div class="bar-row"><span>Trello Standard</span><div class="bar-track"><div class="bar-fill" style="width:25%"></div></div><span class="val">$5.00</span></div>
+    <div class="bar-row"><span>Aurora Pro</span><div class="bar-track"><div class="bar-fill aurora" style="width:30%"></div></div><span class="val">$5.99</span></div>
+    <div class="bar-row"><span>ClickUp Unlimited</span><div class="bar-track"><div class="bar-fill" style="width:35%"></div></div><span class="val">$7.00</span></div>
+    <div class="bar-row"><span>Monday.com Basic</span><div class="bar-track"><div class="bar-fill" style="width:45%"></div></div><span class="val">$9.00</span></div>
+    <div class="bar-row"><span>Notion Plus</span><div class="bar-track"><div class="bar-fill" style="width:50%"></div></div><span class="val">$10.00</span></div>
+    <div class="bar-row"><span>Asana Starter</span><div class="bar-track"><div class="bar-fill" style="width:55%"></div></div><span class="val">$10.99</span></div>
+  </div>
+  </div>
+  <p class="footnote">Fetched directly, 22 Aug 2026: Trello (trello.com/pricing), Asana (asana.com/pricing), Notion (notion.com/pricing), ClickUp (clickup.com/pricing), monday.com (monday.com/pricing). Todoist's own pricing page renders its numbers client-side and could not be scraped directly this session — its ~$5/mo (annual) Pro figure is a well-triangulated aggregator consensus, flagged here as the one competitor price in this report not fetched at the source. Aurora Pro is a <em>flat per-board</em> price up to 10 collaborators, not per-seat — the comparison changes materially for any team of 3+, below.</p>
+
+  <div class="callout">
+    <p><strong>What moved since 13 August, confirmed at the source:</strong> Asana's entry paid tier is "Starter," $10.99/user/month billed annually ($13.49 billed monthly) — asana.com's own pricing page confirms both figures explicitly. The 13 August report used $13.49 without specifying billing cadence; this edition uses the annual figure to match its own "billed annually where applicable" methodology. Trello, ClickUp, Monday, and Notion all re-checked within the same range as August — no material movement. <strong>No competitor was found to have shipped a "calm mode," a decluttering feature, or a bundled simplicity play.</strong></p>
+  </div>
+
+  <h3>Feature coverage, side by side</h3>
+  <div class="table-scroll">
+  <table>
+    <tr><th>Capability</th><th class="center">Aurora</th><th class="center">Trello</th><th class="center">Asana</th><th class="center">ClickUp</th><th class="center">Monday</th><th class="center">Notion</th><th class="center">Todoist</th></tr>
+    <tr><td>Kanban boards</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center cross">—</td></tr>
+    <tr><td>Native block/rich-text notes</td><td class="center check">✓</td><td class="center cross">—</td><td class="center cross">—</td><td class="center check">✓</td><td class="center cross">—</td><td class="center check">✓</td><td class="center cross">—</td></tr>
+    <tr><td>Real-time collaborative canvas</td><td class="center check">✓</td><td class="center cross">—</td><td class="center cross">—</td><td class="center cross">bolt-on</td><td class="center cross">bolt-on</td><td class="center cross">—</td><td class="center cross">—</td></tr>
+    <tr><td>Calendar unifying boards + tasks</td><td class="center check">✓</td><td class="center cross">add-on</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center cross">—</td><td class="center check">✓</td></tr>
+    <tr><td>Per-card time tracking</td><td class="center check">✓</td><td class="center cross">add-on</td><td class="center cross">higher tier</td><td class="center check">✓</td><td class="center cross">higher tier</td><td class="center cross">—</td><td class="center cross">—</td></tr>
+    <tr><td>No-login client share link</td><td class="center check">✓</td><td class="center check">✓</td><td class="center check">✓</td><td class="center maybe">~</td><td class="center maybe">~</td><td class="center check">✓</td><td class="center cross">—</td></tr>
+    <tr><td>Flat pricing (not per-seat)</td><td class="center check">✓</td><td class="center cross">—</td><td class="center cross">—</td><td class="center cross">—</td><td class="center cross">—</td><td class="center cross">—</td><td class="center cross">—</td></tr>
+    <tr><td>AI-agent (MCP) connector</td><td class="center check">✓</td><td class="center cross">—</td><td class="center cross">—</td><td class="center maybe">AI add-on</td><td class="center maybe">AI add-on</td><td class="center maybe">AI add-on</td><td class="center cross">—</td></tr>
+  </table>
+  </div>
+  <p class="footnote">"~" marks a capability that exists in a narrower or paid-tier-only form per this session's research; "—" marks not offered as of 22 Aug 2026. This table is Aurora's own read of each competitor's current public feature set, built for this report — treat it as a starting map to verify, not a certified comparison.</p>
+
+  <h3>Aurora's positioning wedge, updated for the larger feature set</h3>
+  <p>Aurora's differentiated claim has gotten stronger, not weaker, since 13 August: it is still the only product in this table bundling Kanban boards, a rich-text notes editor, a real-time collaborative canvas, and a unified calendar in one flat-priced tier below every competitor's entry tier except Trello — and it now also has time tracking, file attachments, a client share link, project templates, recurring cards, goals, and fixed-rule automations layered on top, without (per §8) losing its "calm" identity. The risk is the same as it was in August: "does everything" is also ClickUp's pitch, and ClickUp's own biggest weakness is the exact failure mode Aurora is actively designing against.</p>
+
+  <div class="callout good">
+    <p><strong>Worth naming as a differentiator in its own right: the Simplicity Guardrail process itself.</strong> A documented, actually-followed anti-bloat discipline is rare and credible to a sophisticated buyer precisely because it isn't just marketing copy — it has overruled its own advisory flags with a written reason on record (automations, goals, and the Gantt view were all initially flagged as bloat risk, then explicitly greenlit with a stated mitigation — see §8) and produced a real audit that found genuine overload in the shipped product, not just reviewed new proposals. Few indie or even funded competitors can show a paper trail like this.</p>
+  </div>
+
+  <div class="callout good">
+    <p><strong>The flat-per-board pricing model remains close to unique in this category</strong> — every competitor above still charges per seat, confirmed unchanged. For any team of 3+, Aurora Pro's $5.99/mo total (or Team's $22/mo for up to 40 people) undercuts every competitor's per-seat math by a wide margin. This is the single most quantifiable, most under-used message for the marketing plan in §14.</p>
+  </div>
+</section>
+
+<section id="swot">
+  <span class="eyebrow">09 — SWOT &amp; Risk Register</span>
+  <h2>Strengths, weaknesses, opportunities, threats — and what to actually do about each risk</h2>
+  <p class="dek">Per explicit founder instruction, the pending pentest and the not-yet-run marketing motion are scheduled pre-launch actions (§11, §14), not weaknesses or threats.</p>
+
+  <div class="swot-grid">
+    <div class="swot-cell s">
+      <h4>Strengths</h4>
+      <ul>
+        <li>Genuinely distinctive, cohesive design system — few indie tools this age have a real design language</li>
+        <li>Flat per-board pricing undercuts every per-seat competitor for teams of 3+</li>
+        <li>A formalized, <em>actually followed</em> Simplicity Guardrail process with a real self-correction paper trail</li>
+        <li>Funnel instrumentation now live (shipped 15 Aug; didn't exist on 13 Aug) — closing the prior report's biggest named gap</li>
+        <li>A written solo-maintainer bus-factor runbook exists — access, redeploy, and fire-drill steps are documented</li>
+        <li>Security posture unusually mature for pre-revenue: RLS everywhere, a 19-assertion pgTAP suite, a completed 7-phase remediation, a scoped and budgeted pentest ready to commission</li>
+        <li>Broad, genuinely shipped feature surface built by one person</li>
+        <li>Self-identified gaps close fast: the two code-completion items this report flagged at first publish (Task 31's drag-handle wiring, a pending Windows build pass) were fixed, verified, and pushed to <code>origin/main</code> within about 90 minutes — see §3. The same pattern repeated a day later: the admin-dashboard gap this SWOT itself named was shipped, then two real bugs found by actually loading the page were fixed the same day (§3)</li>
+        <li>Near-zero fixed infrastructure cost at current scale — §12</li>
+      </ul>
+    </div>
+    <div class="swot-cell w">
+      <h4>Weaknesses</h4>
+      <ul>
+        <li>Solo-maintainer bus-factor risk is real and unresolved even with the runbook — a mitigation, not a removal</li>
+        <li>Zero brand awareness, zero public reviews, zero social proof</li>
+        <li>No native mobile app-store presence — §15</li>
+        <li>India/PPP pricing's actual live behavior could not be confirmed from the codebase this session (§13) — a concrete, fixable open item, not a fundamental flaw</li>
+      </ul>
+    </div>
+    <div class="swot-cell o">
+      <h4>Opportunities</h4>
+      <ul>
+        <li>Fast-growing category (11–18.5% CAGR, three independent sources) with a large, underserved price-sensitive SMB/solo segment</li>
+        <li>"Tool fatigue"/overwhelm remains the #1 stated churn driver from ClickUp/Notion users, unanswered by any competitor as of this session's research</li>
+        <li>India and other PPP markets are large and price-driven — the infrastructure (Dodo) to serve them well already exists, even if the exact price needs confirming</li>
+        <li>The MCP/Claude-connector feature is a genuine, differentiated hook for a technically-forward audience no direct competitor studied here offers</li>
+        <li>Flat per-board pricing remains a highly shareable, quotable hook, still barely used in any marketing</li>
+      </ul>
+    </div>
+    <div class="swot-cell t">
+      <h4>Threats</h4>
+      <ul>
+        <li>Incumbents have vastly larger marketing budgets and could bundle a "calm mode" to blunt Aurora's wedge — not observed yet, but the risk hasn't gone away</li>
+        <li>Payment-processor fee or policy changes (Dodo) directly hit margin given how thin unit economics are pre-scale</li>
+        <li>Solo-founder key-person risk could halt the roadmap with no backup, notwithstanding the runbook</li>
+        <li>Platform risk from Apple/Google policy shifts if a native wrapper is ever built</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Risk register — likelihood, impact, and who owns fixing it</h3>
+  <div class="table-scroll">
+  <table>
+    <tr><th>Risk</th><th class="center">Likelihood</th><th class="center">Impact</th><th>Mitigation / current status</th></tr>
+    <tr><td>Solo-founder unavailability (illness, burnout, life event)</td><td class="center"><span class="risk-badge med">Medium</span></td><td class="center"><span class="risk-badge high">High</span></td><td>Bus-factor runbook documents credential recovery and redeploy-from-scratch — reduces recovery time from "unknown" to a checklist, does not add a second person</td></tr>
+    <tr><td>India/PPP price not actually configured as intended</td><td class="center"><span class="risk-badge med">Medium</span></td><td class="center"><span class="risk-badge med">Medium</span></td><td>Confirm live Dodo checkout price for an India-based test account before launch marketing to that segment (§15)</td></tr>
+    <tr><td>A shipped-but-unverified feature ships a real bug to production</td><td class="center"><span class="risk-badge low">Low</span></td><td class="center"><span class="risk-badge med">Medium</span></td><td>The Windows build-verification gate exists specifically to catch this before push — the 5 features pending as of this report's first draft have since cleared it and are confirmed live on <code>origin/main</code> (§3); the gate itself remains standing policy for whatever ships next</td></tr>
+    <tr><td>A security incident before the pentest completes</td><td class="center"><span class="risk-badge low">Low</span></td><td class="center"><span class="risk-badge high">High</span></td><td>19-assertion pgTAP regression suite plus completed 7-phase remediation reduce likelihood; pentest itself is scoped and budgeted, commissioning is the remaining step (§11)</td></tr>
+    <tr><td>Competitor ships a "calm mode" or similar, blunting the core wedge</td><td class="center"><span class="risk-badge low">Low</span></td><td class="center"><span class="risk-badge med">Medium</span></td><td>Not observed as of this session's research; no specific mitigation beyond continuing to ship distinctively and moving on messaging (§14) before a competitor does</td></tr>
+    <tr><td>Dodo fee structure or policy changes</td><td class="center"><span class="risk-badge low">Low</span></td><td class="center"><span class="risk-badge med">Medium</span></td><td>No mitigation beyond monitoring — a genuine, accepted platform dependency common to any Merchant-of-Record model</td></tr>
+  </table>
+  </div>
+</section>
+
+<section id="tech">
+  <span class="eyebrow">10 — Technology &amp; Security Assessment</span>
+  <h2>An honest read of the codebase, as of 23 August 2026</h2>
+  <p class="dek">Verified against <code>package.json</code>, <code>supabase/migrations/</code>, <code>supabase/functions/</code>, and the three internal security/readiness documents directly.</p>
+
+  <h3>The shape of the system</h3>
+  <div class="arch-diagram">
+    <div class="arch-row">
+      <div class="arch-box"><div class="t">Client</div>React 19 PWA<br>installable, offline-cached</div>
+    </div>
+    <div class="arch-arrow">↓ static assets ↓</div>
+    <div class="arch-row">
+      <div class="arch-box"><div class="t">Cloudflare Pages</div>hosting only<br>unlimited free-tier bandwidth</div>
+    </div>
+    <div class="arch-arrow">↓ API calls, RLS-enforced ↓</div>
+    <div class="arch-row">
+      <div class="arch-box"><div class="t">Supabase</div>Postgres · Auth · RLS<br>Realtime · Storage</div>
+      <div class="arch-box"><div class="t">13 Edge Functions</div>billing, calendar, MCP,<br>automations, analytics</div>
+    </div>
+    <div class="arch-arrow">↓ webhooks / API ↓</div>
+    <div class="arch-row">
+      <div class="arch-box"><div class="t">Dodo Payments</div>Merchant of Record</div>
+      <div class="arch-box"><div class="t">Resend</div>transactional email</div>
+    </div>
+  </div>
+
+  <h3>Stack, verified against <code>package.json</code></h3>
+  <div class="table-scroll">
+  <table>
+    <tr><th>Layer</th><th>Technology</th><th>Version pinned</th></tr>
+    <tr><td>Frontend framework</td><td>React + TypeScript (strict)</td><td>React 19.2.7</td></tr>
+    <tr><td>Build tool</td><td>Vite</td><td>8.0.16</td></tr>
+    <tr><td>Styling</td><td>Tailwind CSS + Framer Motion</td><td>Tailwind 3.4.19 · Framer Motion 12.40.0</td></tr>
+    <tr><td>Kanban drag-and-drop</td><td>dnd-kit</td><td>core 6.3.1 · sortable 10.0.0</td></tr>
+    <tr><td>Rich text / collaborative editing</td><td>Tiptap + Yjs</td><td>Tiptap family pinned 3.27.1 · Yjs 13.6.31</td></tr>
+    <tr><td>Canvas rendering</td><td>Konva / react-konva / perfect-freehand</td><td>10.3.0 · 19.2.5 · 1.2.3</td></tr>
+    <tr><td>Backend</td><td>Supabase</td><td>@supabase/supabase-js 2.108.2</td></tr>
+    <tr><td>Math rendering</td><td>KaTeX</td><td>0.18.1</td></tr>
+    <tr><td>Word export</td><td>docx (dolanmiu/docx, MIT)</td><td>9.7.1</td></tr>
+    <tr><td>Validation</td><td>Zod</td><td>4.4.3</td></tr>
+    <tr><td>Hosting</td><td>Cloudflare Pages</td><td>—</td></tr>
+    <tr><td>Payments</td><td>Dodo Payments (Merchant of Record)</td><td>—</td></tr>
+  </table>
+  </div>
+  <p class="footnote">TypeScript 6.0.3, Vitest 4.1.10, ESLint 10.5.0, axe-core 4.10.2 round out the toolchain. <strong>The old <code>@fontsource-variable/inter</code>/<code>space-grotesk</code> dead dependencies the 13 August report flagged are confirmed gone</strong> — the current <code>package.json</code> contains no font packages at all; fonts load via a Google Fonts link. Resolved, not merely reported as resolved.</p>
+
+  <h3>Evidence of shipped surface area</h3>
+  <p>Counted directly: <strong>56 database migrations</strong>, dated 18 June to 22 August 2026 — nine weeks of continuous schema evolution. <strong>13 Supabase Edge Functions</strong>: <code>calendar-feed</code>, <code>calendar-feed-token</code>, <code>create-recurring-cards</code>, <code>dodo-change-plan</code>, <code>dodo-create-checkout</code>, <code>dodo-portal</code>, <code>dodo-webhook</code>, <code>mcp-server</code>, <code>mcp-token</code>, <code>project-share</code>, <code>run-automations</code>, <code>send-due-reminders</code>, <code>track-event</code> — the real serverless surface, with no traditional backend server anywhere in the stack.</p>
+
+  <h3>Security model</h3>
+  <p>Row Level Security is enabled on every table, and every per-project table's policy resolves membership through a <code>SECURITY DEFINER</code> helper function rather than a sub-query — the pattern that avoids Postgres's known RLS self-recursion failure mode. A 7-phase internal remediation (closed 14–16 July 2026) covered privilege-escalation hardening, <code>SECURITY DEFINER</code> <code>search_path</code> pinning, billing-PII isolation from co-members, and Edge Function hardening. Two automated pgTAP regression suites run in CI on every migration: the core RLS suite (15 assertions) and a newer one covering an information-disclosure fix (4 assertions) — <strong>19 assertions total</strong>, proving a non-member can't read or write another tenant's data, a viewer can read but not write, and a user can't self-upgrade their own plan column.</p>
+
+  <p>A pre-pentest hardening pass on 16 August 2026 found one real issue before vendor handoff: two <code>BEFORE INSERT</code> triggers checked a target row's plan/usage before Postgres evaluated the row's own RLS check clause, letting a caller who knew another user's id distinguish "this account is at its limit" from "headroom exists" purely from an error message — a minor information-disclosure bug (an authorization oracle, not a data-write vulnerability; the insert itself always failed for a non-owner). Fixed with a dedicated migration and a 4-assertion regression test proving the fix.</p>
+
+  <h3>MCP server auth — the newest, least-battle-tested surface</h3>
+  <p>Aurora's own pentest readiness brief ranks the MCP connector as the highest-priority area for an external tester, ahead of standard web classes, because it's genuinely novel token-minting infrastructure with no precedent elsewhere in the app: a 32-random-byte token, hashed and stored; a trigger that rejects any writer to the hash column other than the service role; and a 5-minute-TTL JWT minted per tool call from a dedicated signing key, so RLS — not custom access-control code — decides what a connected Claude session can touch.</p>
+
+  <h3>Pentest — scoped, budgeted, and scheduled, not a gap</h3>
+  <p>Per the founder's explicit framing, this is a planned pre-launch action (§11), not a weakness. Scope (gray-box, ~one app plus its PostgREST/RPC surface, two-to-three tenant accounts across plan tiers) and budget ($4,000–$8,000) are already decided; commissioning a vendor is what remains.</p>
+
+  <h3>What's genuinely still open</h3>
+  <ul>
+    <li>Old, now-rotated secrets from a fully-remediated 16 August 2026 incident still sit in git history prior to the fix commit — inert, so hygiene rather than urgent, but a history scrub is still outstanding.</li>
+  </ul>
+  <p class="footnote">Two items in this list as of the prior edition are now closed: the admin analytics dashboard shipped and is live at <code>/analytics</code> (with two real bugs found and fixed the same day — §3), and GitHub account MFA is enabled (passkey) — closing the bus-factor runbook's outstanding hardening item.</p>
+</section>
+
+<section id="checklist">
+  <span class="eyebrow">11 — Pre-Launch Checklist</span>
+  <h2>What's actually left before go-live</h2>
+  <p class="dek"><strong>Updated 23 Aug 2026:</strong> since the prior edition, the Resend sending-domain row and the GitHub account MFA row have both moved to Done — verified directly (Resend's own domain-status field flipped to "Verified"; 2FA confirmed enabled in GitHub account settings), not assumed from having made the change. Cross-referenced against <code>memory.md</code>'s Open Items, <code>CLAUDE.md</code>'s stated go-live gates, and the bus-factor/pentest-readiness documents. None of this blocks the product being feature-complete — these are the go-live gates, and §14's marketing plan runs in parallel with them, not after. Five items remain open, and each needs the founder personally — a KYC/live-keys check, a price confirmation, a legal engagement, a git-history scrub, and a real-device Lighthouse re-score — nothing left here is code.</p>
+
+  <div class="table-scroll">
+  <table>
+    <tr><th>Item</th><th>Status as of 23 Aug 2026</th><th>Owner</th></tr>
+    <tr><td>Dodo Payments live keys</td><td>KYC (Individual account) submitted, under review as of 19 July 2026; live keys and <code>DODO_PAYMENTS_ENVIRONMENT=live</code> not yet flipped — needs a fresh status check</td><td>Founder</td></tr>
+    <tr><td>Resend sending domain</td><td><span class="tag yes">Done</span> <code>mail.nvexis.com</code> DNS-verified (DKIM/SPF/DMARC in Cloudflare); <code>REMINDER_FROM_EMAIL</code> now <code>Aurora &lt;reminders@mail.nvexis.com&gt;</code>, the <code>onboarding@resend.dev</code> fallback retired. Not yet confirmed by a real reminder email actually landing in an inbox.</td><td>Done</td></tr>
+    <tr><td>India/PPP checkout price</td><td><strong>New this edition:</strong> confirm the actual live Dodo checkout price for an India billing address — this session traced the code and found no evidence a discounted price is configured (§13)</td><td>Founder</td></tr>
+    <tr><td>Independent penetration test</td><td>Scoped and budgeted ($4,000–$8,000, gray-box, retest included) — <strong>scheduled/in-progress, not a blocker</strong>; commissioning a vendor is the remaining step</td><td>Founder</td></tr>
+    <tr><td>Legal review of Terms of Service / Privacy Policy</td><td>Drafts exist; no confirmation of a qualified legal review found in the repo this session — treat as open until confirmed</td><td>Founder</td></tr>
+    <tr><td>GitHub account MFA</td><td><span class="tag yes">Done</span> Two-factor authentication enabled (passkey); recovery codes downloaded and kept outside the repository — closes the bus-factor runbook's hardening item</td><td>Done</td></tr>
+    <tr><td>Old rotated secrets in git history</td><td>Low-urgency hygiene — credentials rotated 16 Aug 2026 and are inert; a history scrub would remove the stale values if desired</td><td>Founder</td></tr>
+    <tr><td>Windows verification pass for 5 Aug 22 features</td><td><span class="tag yes">Done</span> <code>npm install &amp;&amp; npm run typecheck &amp;&amp; npm run build</code> ran clean and pushed to <code>origin/main</code> — note PDF export, note Word export, Calendar Day view + legend, the sharing bug-fix, and the Contents panel are all live. Confirmed 22 Aug 2026 by re-checking <code>git log origin/main</code> directly, not by re-trusting this file's own older prose.</td><td>Done</td></tr>
+    <tr><td>Wire Task 31 (drag-and-drop note block reordering)</td><td><span class="tag yes">Done</span> The two-line fix landed and is on <code>origin/main</code> as of 22 Aug 2026 — the drag handle is live in the running app, not just built.</td><td>Done</td></tr>
+    <tr><td>Lighthouse / mobile / regression re-score</td><td><span class="tag maybe">Still open</span> The executable checklist (<code>PHASE-7-VERIFICATION.md</code>) needs a real browser, a real phone, and human judgment (DevTools Lighthouse runs, install-prompt checks, on-device screenshots) — outside what an AI session can execute unattended. Newest features (mobile toolbar collapse, formula editor, the five 22 Aug features, Task 31) shipped after the last recorded run and aren't yet reflected in a fresh score.</td><td>Founder</td></tr>
+  </table>
+  </div>
+
+  <div class="callout good">
+    <p>The marketing launch itself is deliberately <strong>not</strong> on this list as a go-live blocker — per the founder's framing, it's a parallel workstream (§14), not a gate on shipping the product.</p>
+  </div>
+</section>
+
+<section id="cost">
+  <span class="eyebrow">12 — Cost Model</span>
+  <h2>What Aurora costs to run, at 100 / 1,000 / 10,000 users</h2>
+  <p class="dek">Every vendor number below was fetched directly from the vendor's own pricing/docs page this session. The usage-per-tier behavior is this report's own bottom-up estimate, clearly labeled — there is no live traffic to measure yet.</p>
+
+  <h3>Usage-tier definitions</h3>
+  <div class="table-scroll">
+  <table>
+    <tr><th>Tier</th><th>Definition</th><th>Concrete behavior assumed</th></tr>
+    <tr><td><strong>Mild</strong> (60% of users)</td><td>Signed up, opens the app a few times a month, one small board</td><td>No canvas media — structurally impossible on Free, since Canvas is Pro-gated in code — no attachments, no automations, occasional analytics pings only</td></tr>
+    <tr><td><strong>Normal</strong> (33%)</td><td>Daily-ish active, several boards, regular notes/canvas use</td><td>A few note images/attachments, occasional canvas use, due-date email reminders, moderate search/palette activity</td></tr>
+    <tr><td><strong>Heavy</strong> (7%)</td><td>A Team-plan-shaped account: many collaborators, heavy canvas media, automations running, MCP usage</td><td>Regular canvas media uploads (bounded by the 10 GiB/account quota, §4 fact), automation rules firing regularly, custom reminders, an active MCP connection</td></tr>
+  </table>
+  </div>
+  <p class="footnote">The 60/33/7 split is a stated planning assumption (front-loaded toward light usage, typical of an early product with a generous free tier) — not measured. Everything downstream of it uses <strong>fact-checked vendor pricing</strong>; only the usage volumes are estimates.</p>
+
+  <h3>Vendor pricing, fetched directly this session (facts)</h3>
+  <div class="table-scroll">
+  <table>
+    <tr><th>Vendor</th><th>Free tier</th><th>Next paid tier</th></tr>
+    <tr><td>Supabase</td><td class="tag fact">500 MB database · 1 GB storage · 5 GB egress + 5 GB cached egress · 50,000 MAU · 500K Edge Function invocations · 200 realtime connections · 2M realtime messages</td><td>Pro $25/mo — 8 GB DB (+$0.125/GB) · 100 GB storage (+$0.0213/GB) · 250 GB egress (+$0.09/GB) + 250 GB cached egress (+$0.03/GB) · 100,000 MAU (+$0.00325/MAU) · 2M Edge invocations (+$2/1M) · 500 realtime conn (+$10/1000) · 5M realtime msgs (+$2.50/M). <strong>Team $599/mo has identical resource limits to Pro</strong> — confirmed directly from Supabase's own pricing page — priced for org-level compliance/governance, not more resources.</td></tr>
+    <tr><td>Cloudflare Pages</td><td class="tag fact">Static asset hosting: unlimited requests and bandwidth on every tier, 500 builds/month</td><td>Aurora uses Cloudflare purely for static hosting (Supabase Edge Functions carry the serverless logic, not Cloudflare Workers/Functions) — cost stays <strong>$0 at every milestone modeled here</strong>, confirmed directly against Cloudflare's own pricing docs.</td></tr>
+    <tr><td>Resend</td><td class="tag fact">100 emails/day (~3,000/month)</td><td>Pro $20/mo for 50,000 emails/month; Scale $90/mo for 100,000/month; $0.90/1,000 overage on either paid tier</td></tr>
+    <tr><td>Dodo Payments</td><td colspan="2" class="tag fact">4% + $0.40 per domestic US card/wallet transaction; +1.5% for international cards/APMs; +0.5% for subscriptions/recurring billing. Its default "Adaptive Currency" localization (live FX conversion of the single USD price) adds a separate 2–4% FX-conversion fee, tiered by order value — whether Aurora's account absorbs this or passes it to the customer is a merchant-side toggle this report could not verify. Fee scales with revenue, not user count — see §13, not this table.</td></tr>
+  </table>
+  </div>
+
+  <h3>The math, milestone by milestone</h3>
+  <div class="table-scroll">
+  <table>
+    <tr><th>Milestone</th><th class="num">DB rows (est.)</th><th class="num">Cumulative storage (est.)</th><th class="num">Monthly egress (est.)</th><th class="num">Monthly emails (est.)</th><th class="num">Infra cost/mo</th></tr>
+    <tr><td>100 users<br><span class="footnote">(60/33/7 split)</span></td><td class="num">~25,700</td><td class="num">~15 GB</td><td class="num">~21 GB</td><td class="num">~136</td><td class="num"><strong>~$25</strong></td></tr>
+    <tr><td>1,000 users<br><span class="footnote">(600/330/70)</span></td><td class="num">~257,000</td><td class="num">~150 GB</td><td class="num">~212 GB</td><td class="num">~1,360</td><td class="num"><strong>~$26</strong></td></tr>
+    <tr><td>10,000 users<br><span class="footnote">(6,000/3,300/700)</span></td><td class="num">~2.57M</td><td class="num">~1.5 TB</td><td class="num">~2.1 TB</td><td class="num">~13,600</td><td class="num"><strong>~$243</strong></td></tr>
+  </table>
+  </div>
+  <p class="footnote"><strong>100 users:</strong> storage alone (~15 GB) exceeds Supabase's free 1 GB the moment even a handful of heavy/Team-shaped accounts exist — Supabase Pro ($25/mo) becomes necessary, but with zero overage (storage and egress both land comfortably inside Pro's included allowances). Resend and Cloudflare stay free. <strong>1,000 users:</strong> still Supabase Pro, plus a trivial ~$1/mo storage overage (~50 GB over the 100 GB included, at $0.0213/GB); egress (~212 GB) stays inside the 250 GB included. Email volume (~1,360/mo) stays under Resend's free 3,000/mo cap — <em>Resend stays free even at 1,000 users.</em> <strong>10,000 users:</strong> database size (a few GB) stays inside Pro's 8 GB included. Storage overage ≈ (1.5TB − 100GB) × $0.0213/GB ≈ $30/mo. Egress overage ≈ (2.1TB − 250GB) × $0.09/GB ≈ $168/mo — now the dominant cost driver, and treated here as fully non-cached egress (a conservative, upper-bound assumption — Supabase's cheaper $0.03/GB cached-egress tier likely covers some real share of this traffic in practice). Resend needs its Pro tier ($20/mo), comfortably covering ~13,600 emails/month. Total ≈ $25 base + $30 storage + $168 egress + $20 Resend ≈ <strong>$243/mo (~$2,920/yr)</strong>.</p>
+
+  <div class="callout">
+    <p><strong>The one genuinely load-bearing structural fact in this model:</strong> canvas media — the single largest driver of storage and egress cost — is Pro/Team-gated in the code itself (confirmed in <code>proFeatures.ts</code>). A Free account cannot generate this cost. Aurora's heaviest infrastructure cost is structurally coupled to its heaviest-paying accounts, not to free-tier growth — a materially better risk shape than a product whose heaviest resource users are also its non-paying users.</p>
+  </div>
+  <div class="callout good">
+    <p><strong>A sharper insight than "you'll need a bigger tier eventually":</strong> because Supabase's Team plan has <em>identical resource limits to Pro</em>, jumping to Team at 10,000 users would not reduce the $198/mo in overage above by a single dollar — it would add $599/mo in base price for compliance/governance features Aurora doesn't need yet. The correct move at every milestone modeled here is staying on Pro and paying metered overage, not upgrading tiers. At 10,000 registered users, even a conservative 3–4% conversion rate (§13) implies $1,500–2,000+/mo in revenue against ~$243/mo in infrastructure cost — a healthy, sustainable ratio, not a scaling cost crisis.</p>
+  </div>
+</section>
+
+<section id="revenue">
+  <span class="eyebrow">13 — Revenue &amp; Profit Projections</span>
+  <h2>Worst, Normal, and Best case</h2>
+  <p class="dek">Built from Dodo's exact published fee formula (not an approximation) and Aurora's actual current pricing. There is still zero live revenue data — every scenario below says so plainly.</p>
+
+  <div class="callout warn">
+    <p>These are illustrative planning ranges, not guarantees. The <strong>Worst case is genuinely pessimistic</strong> — near-zero conversion, the marketing plan in §14 essentially not working — not a slightly-discounted version of Normal.</p>
+  </div>
+
+  <h3>Unit economics per subscriber — exact, from Dodo's published fee schedule</h3>
+  <div class="table-scroll">
+  <table>
+    <tr><th>Plan</th><th class="num">List price</th><th class="num">Fee, domestic US<br><span class="footnote">4.5% + $0.40</span></th><th class="num">Fee, international<br><span class="footnote">6% + $0.40</span></th><th class="num">Net, domestic</th><th class="num">Net, international</th></tr>
+    <tr><td>Pro — monthly</td><td class="num">$5.99</td><td class="num">$0.67 (11.2%)</td><td class="num">$0.76 (12.7%)</td><td class="num">$5.32</td><td class="num">$5.23</td></tr>
+    <tr><td>Pro — annual</td><td class="num">$47.99/yr</td><td class="num">$2.56 (5.3%)</td><td class="num">$3.28 (6.8%)</td><td class="num">$45.43/yr</td><td class="num">$44.71/yr</td></tr>
+    <tr><td>Team — monthly</td><td class="num">$22.00</td><td class="num">$1.39 (6.3%)</td><td class="num">$1.72 (7.8%)</td><td class="num">$20.61</td><td class="num">$20.28</td></tr>
+    <tr><td>Team — annual</td><td class="num">$174.99/yr</td><td class="num">$8.27 (4.7%)</td><td class="num">$10.90 (6.2%)</td><td class="num">$166.72/yr</td><td class="num">$164.09/yr</td></tr>
+  </table>
+  </div>
+  <p class="footnote">Formula fetched directly from Dodo's own pricing page, 22 Aug 2026: <strong>4% + $0.40 per domestic US transaction</strong>, <strong>+1.5% for international cards/payment methods</strong>, <strong>+0.5% for subscriptions</strong> (Aurora is subscription-only, so both columns include the 0.5%). Not included above: Dodo's separate 2–4% Adaptive-Currency FX-conversion fee, which applies specifically to non-USD-settled international transactions and is not quantified here because whether Aurora's account absorbs or passes it through is unverified (§12) — treat the "international" column as a floor, not a ceiling, for non-US customers paying in their local currency.</p>
+
+  <h3>The assumption chain behind the headline ARR figures — shown, not hidden</h3>
+  <p>Blended net revenue per paid subscriber = <strong>85% Pro / 15% Team</strong> plan mix (stated assumption, unchanged from 13 August) × <strong>50% monthly / 50% annual</strong> billing-cadence mix within each plan (a new, explicit assumption this edition — the 13 August report's "~$5/mo blended" figure didn't show this step) × the <strong>international</strong> fee case above (the more conservative of the two, chosen deliberately). That arithmetic: Pro blended $4.48/mo, Team blended $16.98/mo, weighted 85/15 → <strong>$6.35/mo ($76.20/yr) blended net revenue per paid subscriber.</strong> This is higher than the 13 August report's round "~$5/mo" figure — not because Aurora got more expensive, but because that figure is now a shown calculation instead of a round guess. Substitute your own mix assumptions into the 4-cell table above if you'd model it differently.</p>
+
+  <h3>Global (USD) scenario model — Year 1</h3>
+  <div class="table-scroll">
+  <table>
+    <tr><th>Scenario</th><th class="num">Signups Yr1</th><th class="num">Free→Paid</th><th class="num">Paid subs</th><th class="num">Net ARR</th><th class="num">Est. infra costs/yr</th><th class="num">Est. profit</th></tr>
+    <tr><td>Worst</td><td class="num">600</td><td class="num">0.7%</td><td class="num">~4</td><td class="num">~$305</td><td class="num">~$300</td><td class="num">~$5</td></tr>
+    <tr><td>Normal</td><td class="num">5,000</td><td class="num">4%</td><td class="num">~200</td><td class="num">~$15.2k</td><td class="num">~$310</td><td class="num">~$14.9k</td></tr>
+    <tr><td>Best</td><td class="num">20,000</td><td class="num">5.5%</td><td class="num">~1,100</td><td class="num">~$83.8k</td><td class="num">~$2,900</td><td class="num">~$80.9k</td></tr>
+  </table>
+  </div>
+  <p class="footnote">Excludes founder time and the one-off pentest cost. Infra costs interpolated from §12's milestone model against each scenario's implied user count. Freemium conversion benchmarks re-checked this session directly against ChartMogul's 2026 figures (via Userpilot): standard freemium converts 3–5% at the 50th percentile, 8–12% at the 75th; the Worst case sits below even the 50th-percentile floor deliberately, since "marketing doesn't work" is the scenario's premise. The Normal case's 4% sits inside that 3–5% band — consistent with, not more optimistic than, the published benchmark.</p>
+
+  <h3>Sensitivity: what conversion rate alone does to ARR, at a fixed 5,000 signups</h3>
+  <div class="table-scroll">
+  <table>
+    <tr><th class="num">Conversion</th><th class="num">1%</th><th class="num">2%</th><th class="num">4%</th><th class="num">6%</th><th class="num">8%</th></tr>
+    <tr><td>Paid subs</td><td class="num">50</td><td class="num">100</td><td class="num">200</td><td class="num">300</td><td class="num">400</td></tr>
+    <tr><td>Net ARR</td><td class="num">$3.8k</td><td class="num">$7.6k</td><td class="num">$15.2k</td><td class="num">$22.9k</td><td class="num">$30.5k</td></tr>
+  </table>
+  </div>
+  <p class="footnote">The point of this table: conversion rate, not signup volume, is the single biggest lever on this model — doubling conversion from 2% to 4% has the same ARR effect as doubling signups. §5's product-hook argument (more Pro-gated features than August) is exactly the lever this table says matters most.</p>
+
+  <h3>India pricing — a finding, not an assumption</h3>
+  <p>The 13 August report stated a specific India Pro price (₹399/mo). This session traced that figure through the codebase and could not confirm it: <code>src/lib/plans.ts</code> holds only a single global USD price, and the four Dodo product-ID environment variables in the checkout function are single, non-region-specific IDs — no evidence of a separately configured India price anywhere in the code, commit history, or marketing site. Dodo's own documentation distinguishes two different features: <strong>Adaptive Currency</strong> (the default — live FX conversion of the single USD price, no merchant configuration required) and <strong>Localized Pricing</strong> (a distinct, opt-in feature for deliberately different per-country prices, configured in Dodo's dashboard, invisible to this repository). At today's live rate (1 USD ≈ ₹95.67, fetched 21 Aug 2026), <strong>Adaptive Currency's default behavior would show an Indian customer ₹573/mo for Pro</strong> — not ₹399. The gap between those two numbers is large enough (~30%) that it matters which one is actually live.</p>
+  <div class="callout warn">
+    <p><strong>Recommendation, not a criticism:</strong> confirm the actual live Dodo checkout price with an India billing address before this report's India-market messaging (§5, §14) goes out. If Localized Pricing at ₹399 <em>is</em> configured in the Dodo dashboard, the 13 August figure was right and this is a non-issue. If it isn't, this is a concrete, cheap, high-leverage fix — a genuinely price-accessible India offering is exactly what Persona 3 (§5) needs, and the infrastructure to deliver it (Dodo) is already in place; it just needs confirming or configuring.</p>
+  </div>
+  <p>Pending that confirmation, an India-specific revenue scenario isn't modeled separately in this edition — presenting one would mean picking between two materially different price points with no way to know which is real. The global scenarios above already include international Dodo customers, India among them, at whichever price is actually live.</p>
+
+  <h3>Honest expectations</h3>
+  <ul>
+    <li>Most independent SaaS products never cross $1k MRR — historically a distribution failure, not a cost or product failure.</li>
+    <li>A realistic, credible 12-month target for a committed solo operator running §14's plan consistently is the <strong>Normal case (~$15k ARR)</strong>, with real upside if one channel meaningfully outperforms.</li>
+    <li>The CAC reality check in §14 matters here too: a published 2026 median self-serve SaaS CAC of ~$702 (Digital Applied) would be catastrophic against a $76/yr blended customer — reinforcing that organic/referral acquisition isn't a nice-to-have for this price point, it's the only economically viable path until unit economics or price point change.</li>
+    <li>Given how thin the per-user fixed costs are (§12), retention is close to pure margin — reliability, onboarding quality, and not becoming "the next ClickUp" matter more to long-run profit than acquisition volume alone.</li>
+  </ul>
+</section>
+
+<section id="marketing">
+  <span class="eyebrow">14 — 90-Day Marketing Plan</span>
+  <h2>The build is over. This is day one of go-to-market.</h2>
+  <p class="dek">A real week-by-week plan, not a channel list — starting from launch-readiness, not from "day one of coding." Free/organic-first; paid spend gated on Dodo confirming real paying subscribers, not a date.</p>
+
+  <p>Nine weeks of building are behind this plan, not ahead of it — which changes what "build in public" even means here. There's no live construction to narrate day by day anymore; the honest content is retrospective ("I built a full project-management platform solo, with AI, in nine weeks — here's exactly what shipped and what it cost") plus forward-looking use-case and category content. This plan is written on that premise, not on a generic 90-day-launch template.</p>
+
+  <div class="gate-box">
+    <strong>Day 1 of this plan is not today.</strong> It's the day §11's Pre-Launch Checklist clears — Dodo live keys, a verified Resend domain, the India-pricing confirmation, and the five pending features through their Windows build pass. Everything below is sequenced from that day, whenever it lands, not from a fixed calendar date.
+  </div>
+
+  <h3>Channel fit — decided with reasoning, not by default</h3>
+  <div class="table-scroll">
+  <table>
+    <tr><th>Channel</th><th class="center">Fit</th><th>Why</th></tr>
+    <tr><td>X (build-in-public retrospective + ongoing)</td><td class="center"><span class="tag yes">Strong</span></td><td>Founder-led, indie-SaaS-native audience; the "solo + AI, 9 weeks, real shipped product" story is genuinely differentiated content, not filler</td></tr>
+    <tr><td>LinkedIn</td><td class="center"><span class="tag yes">Strong</span></td><td>Reaches Persona 2 (small-team buyer) who isn't necessarily on X; same material, reframed for a professional audience</td></tr>
+    <tr><td>Reddit (r/productivity, r/Notion, r/SaaS, r/InternetIsBeautiful)</td><td class="center"><span class="tag yes">Strong</span></td><td>High-intent audiences actively discussing tool switches — with an explicit cadence/tone guardrail against looking like spam</td></tr>
+    <tr><td>Product Hunt</td><td class="center"><span class="tag yes">Strong</span></td><td>A credibility/backlink/community event more than a growth channel — the SEO backlink and exposure matter more than the 48-hour spike</td></tr>
+    <tr><td>Hacker News ("Show HN")</td><td class="center"><span class="tag maybe">Worth trying</span></td><td><strong>New in this edition:</strong> the MCP/Claude-connector angle (§4) is a genuinely good fit for HN's technical audience — a real, working AI-agent integration, not an AI-washed feature. One attempt, one shot at the front page; if it doesn't land, no real cost beyond the post itself</td></tr>
+    <tr><td>SEO / comparison content</td><td class="center"><span class="tag yes">Strong</span></td><td>This category has unusually high "switching" search volume; compounding traffic that doesn't decay like a social post</td></tr>
+    <tr><td>Instagram / Facebook</td><td class="center"><span class="tag no">Not recommended</span></td><td>No evidence found this session that either is a strong organic channel for B2B/prosumer PM SaaS specifically — both skew consumer/visual-lifestyle; the freelancer/small-team buyer isn't primarily discovered there for a work-tool decision. Do not invest founder time here in Phase 1.</td></tr>
+  </table>
+  </div>
+
+  <h3>The referral mechanic — cheaper than it looks</h3>
+  <p>Aurora's invitation system already exists (§4). "Both get a month of Pro" is a UI/copy change, not new infrastructure. Its real marginal cost isn't the ~$310 blended "referral CAC" figure industry benchmarks report (Digital Applied, 2026 — a broad B2B SaaS average across much higher-ACV products) — it's <strong>one month of forgone Pro revenue, ≈$5.99 gross / ≈$5.23 net</strong> (§13), paid to <em>both</em> the referrer and the invitee. That's a real, quantifiable, near-zero cost per acquisition, and it belongs in Phase 1 as a build item, not a Phase 2 afterthought.</p>
+
+  <div class="phase-block">
+    <div class="phase-head"><h3>Phase 1 — Foundation &amp; Soft Launch</h3><span class="phase-when">Weeks 1–2</span></div>
+    <div class="phase-body">
+      <div class="week-row"><details><summary><span class="week-num">W1</span><span class="week-title">Instrumentation check, asset prep, seed content</span><span class="week-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg></span></summary>
+      <div class="week-detail">
+        <ul>
+          <li>Confirm the funnel-analytics events (§4) are firing correctly end-to-end on the live production build — this is the one thing that makes every later week's "measurement plan" real instead of aspirational.</li>
+          <li>Ship the referral mechanic UI (above) if not already live.</li>
+          <li>Write and schedule the retrospective X thread: "I built a full PM platform solo with AI in 9 weeks — here's what shipped, what broke, and what it costs to run." Real numbers from §3/§12, not vague claims.</li>
+          <li>Prepare Product Hunt assets (gallery images, tagline, first-comment maker story) — don't launch yet.</li>
+          <li>Begin lurking/participating genuinely in target subreddits — no promotion yet, just real presence.</li>
+        </ul>
+      </div>
+      </details></div>
+      <div class="week-row"><details><summary><span class="week-num">W2</span><span class="week-title">First content cadence, LinkedIn reframe, SEO foundation</span><span class="week-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg></span></summary>
+      <div class="week-detail">
+        <ul>
+          <li>Start the ongoing cadence: ~3x/week on X (feature spotlights, design decisions, the Simplicity Guardrail story), ~1x/week on LinkedIn (professional reframe of the same material, not a copy-paste).</li>
+          <li>Publish the first 1–2 SEO comparison pages ("Aurora vs. Trello," "a calm alternative to ClickUp") — this is a slow-compounding channel, so starting early matters more than volume.</li>
+          <li>Watch <code>landing_page_viewed</code> and <code>signup_started</code> in Supabase Studio directly — this is the week the analytics investment (§4) starts paying for itself.</li>
+        </ul>
+      </div>
+      </details></div>
+    </div>
+  </div>
+
+  <div class="phase-block">
+    <div class="phase-head"><h3>Phase 2 — Product Hunt Launch</h3><span class="phase-when">Weeks 3–4</span></div>
+    <div class="phase-body">
+      <div class="week-row"><details><summary><span class="week-num">W3</span><span class="week-title">Launch week — Tuesday/Wednesday, per PH convention</span><span class="week-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg></span></summary>
+      <div class="week-detail">
+        <ul>
+          <li>Launch on Product Hunt on a Tuesday or Wednesday (historically the highest-traffic launch days). Cross-post the launch to X, LinkedIn, and the Reddit communities already engaged with genuinely (not as a link drop — as "we launched, here's the PH page if you want to see it").</li>
+          <li>Founder present all day answering every comment — this is the actual growth mechanism, not the traffic spike itself.</li>
+          <li>Consider a same-week or following-week "Show HN" post specifically foregrounding the MCP/Claude connector (§4's fourth persona-fit angle) — a distinct audience from PH's, worth a separate post rather than folding into the PH description.</li>
+        </ul>
+      </div>
+      </details></div>
+      <div class="week-row"><details><summary><span class="week-num">W4</span><span class="week-title">Post-launch follow-through</span><span class="week-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg></span></summary>
+      <div class="week-detail">
+        <ul>
+          <li>Publish a "what we learned from launch week" retrospective — real numbers (signups, activation rate from <code>first_board_created</code>, any qualitative feedback) — this is exactly the kind of transparent content that earns trust for an unknown brand (§7).</li>
+          <li>Resume the steady X/LinkedIn/Reddit/SEO cadence from Phase 1 — launch week is a spike, not a strategy.</li>
+        </ul>
+      </div>
+      </details></div>
+    </div>
+  </div>
+
+  <div class="phase-block">
+    <div class="phase-head"><h3>Phase 3 — Sustained Organic</h3><span class="phase-when">Weeks 5–8</span></div>
+    <div class="phase-body">
+      <div class="week-row"><details><summary><span class="week-num">W5–6</span><span class="week-title">Message testing, in parallel</span><span class="week-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg></span></summary>
+      <div class="week-detail">
+        <p>Run all four message angles concurrently across different posts, and watch which one actually drives <code>signup_started</code> — don't guess, measure:</p>
+        <ul>
+          <li><strong>Price-per-team</strong> ("Trello + Notion + Miro, one flat price, not per seat") — best on Reddit/comparison pages, already price-shopping audiences.</li>
+          <li><strong>Calm/anti-overwhelm</strong> ("all your work in one place, without feeling like ClickUp") — best for build-in-public and Product Hunt framing.</li>
+          <li><strong>Design/craft</strong> (the glass-over-parchment aesthetic, real screenshots) — best for X/LinkedIn, where visual distinctiveness earns organic shares on its own.</li>
+          <li><strong>"Run your boards from Claude"</strong> (the MCP connector) — targets a distinct, technical audience active in indie-hacker and AI-tool communities; no competitor studied in §8 offers anything comparable.</li>
+        </ul>
+      </div>
+      </details></div>
+      <div class="week-row"><details><summary><span class="week-num">W7–8</span><span class="week-title">Double down on what's working</span><span class="week-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg></span></summary>
+      <div class="week-detail">
+        <ul>
+          <li>By now there's enough <code>upgrade_prompt_shown</code>/<code>checkout_started</code> data to see which feature is actually driving upgrade intent — lean into that feature specifically in content, rather than continuing to sell the whole feature list evenly.</li>
+          <li>Continue SEO content shipping weekly — this channel's payoff compounds starting now, not in week 1.</li>
+        </ul>
+      </div>
+      </details></div>
+    </div>
+  </div>
+
+  <div class="phase-block">
+    <div class="phase-head"><h3>Phase 4 — The Paid-Spend Decision</h3><span class="phase-when">Week 9 onward — gated, not scheduled</span></div>
+    <div class="phase-body">
+      <div class="gate-box">
+        <strong>The actual gate:</strong> Dodo confirming 10+ real, live paying subscribers via the server-side <code>checkout_completed</code> event (§4 — never the client redirect). Not "week 9" on a calendar. If that threshold hasn't been hit by week 9, Phase 3's organic cadence continues unchanged and this decision is revisited weekly, not abandoned.
+      </div>
+      <div class="week-row"><details><summary><span class="week-num">Once gated</span><span class="week-title">First paid test — Reddit Ads</span><span class="week-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg></span></summary>
+      <div class="week-detail">
+        <p><strong>Why Reddit first:</strong> same audience as the organic Reddit motion already run in Phases 1–3, with precise subreddit targeting — the organic groundwork (which communities respond, what tone works) is already laid.</p>
+        <p><strong>Current 2026 benchmarks, fetched directly:</strong> CPC $0.50–$3.50 (most campaigns $0.75–$2.00), CPM $3–$12. Full-optimization guides recommend $1,500–3,000/month for statistically meaningful 30-day data — <strong>Aurora's actual first-test budget is deliberately much smaller ($150–300/month)</strong>, appropriate for a bootstrap-stage signal-of-life test, not a fully-scaled campaign. Expect noisier data at this budget; that's the accepted tradeoff for testing before there's real revenue to risk.</p>
+        <p><strong>Why not spend at the $702 median self-serve SaaS CAC (§13)</strong> that industry benchmarks report: at Aurora's $76/yr blended customer value, that CAC would be unrecoverable for roughly a decade. This budget is deliberately scrappy because the unit economics demand it, not because ambition is low.</p>
+        <p><strong>Measurement, end-to-end:</strong> UTM-tagged ad landing URL → <code>landing_page_viewed</code> → <code>signup_started</code>/<code>signup_completed</code> → <code>first_board_created</code> (activation) → <code>upgrade_prompt_shown</code> → <code>checkout_started</code> → <code>checkout_completed</code> (server-confirmed). This full chain is now instrumented (§4) — <strong>closing the exact "marketing blind" gap the 13 August report named as Aurora's single biggest risk.</strong> That the gap is closed is itself a meaningful update, independent of what the eventual paid results show.</p>
+      </div>
+      </details></div>
+    </div>
+  </div>
+</section>
+
+<section id="stores">
+  <span class="eyebrow">15 — App Store &amp; Play Store Feasibility</span>
+  <h2>Should Aurora ship to the stores? Re-verified with current facts</h2>
+  <p class="dek">Carries forward the 13 August conclusion; re-checked against 2026 policy research this session.</p>
+
+  <h3>Google Play — technically easy, commercially the real question</h3>
+  <p>Google continues to officially support PWAs on Play via a Trusted Web Activity (TWA) wrapper. The commercial catch is unchanged: a PWA distributed through Google Play that sells digital goods/subscriptions must route those purchases through Google Play Billing — not an external checkout like Dodo's — which would mean maintaining two billing systems and paying Google's cut (typically ~15% for subscriptions after year one) <em>in addition to</em> Dodo's fee, a real margin hit on already-thin unit economics (§13). A narrower middle path — a TWA that links out to the web app, with billing staying external — can avoid triggering the Play Billing requirement, but 2026 research this session found continued regulatory movement (external-purchase-link allowances tied to antitrust rulings) that keeps this a live, evolving policy area rather than a settled one.</p>
+
+  <h3>Apple App Store — the harder, more expensive path</h3>
+  <p>Unchanged: Apple's Guideline 4.2 requires an app to go meaningfully beyond "a repackaged website," and a bare PWA-in-a-WebView is routinely rejected. iOS still lacks Android/Chrome's native install-prompt affordance. A real App Store presence would require a genuine native wrapper (Capacitor, not a raw WebView), a $99/year developer account, and real engineering time.</p>
+
+  <h3>Recommendation — unchanged from 13 August</h3>
+  <ol class="plain">
+    <li><strong>Stay web-only for now.</strong> The product already installs from any browser on any platform; app-store presence is a distribution/trust channel, not a requirement — and the founder has already confirmed this for the current improvement-plan cycle.</li>
+    <li><strong>Revisit Google Play once there are paying users</strong>, as a link-out-only TWA (no in-app billing).</li>
+    <li><strong>Treat Apple App Store as a Phase 2+ decision</strong>, gated on a validated paying user base.</li>
+    <li><strong>Do not integrate Google Play Billing</strong> unless Android-store distribution proves to be a major acquisition channel and the margin math is re-run at that point.</li>
+  </ol>
+</section>
+
+<section id="faq">
+  <span class="eyebrow">16 — Investor FAQ</span>
+  <h2>The questions a skeptical reader will actually ask</h2>
+  <p class="dek">Answered directly, including where the honest answer is "not yet."</p>
+
+  <details class="faq-item">
+    <summary><span>Why won't Notion, ClickUp, or Asana just copy the flat-pricing or "calm" positioning?</span><span class="q-chevron"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></summary>
+    <div class="faq-answer"><p>They could, and §9 lists it as a real threat, not a dismissed one. But flat per-board pricing is structurally awkward for a company whose entire revenue model is per-seat — it's a cannibalization decision, not a feature toggle, which is why none of the six competitors studied have moved on it despite it being a knowable, public gap for months. "Calm mode" is easier to copy technically but harder to copy credibly: it would read as a direct admission that the overwhelm complaints are true, from companies whose whole roadmap has been adding features. Neither is impossible, both are genuinely harder for an incumbent than for Aurora to do first.</p></div>
+  </details>
+
+  <details class="faq-item">
+    <summary><span>What happens if the founder can't continue?</span><span class="q-chevron"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></summary>
+    <div class="faq-answer"><p>A written bus-factor runbook exists — credential locations, a from-scratch redeploy procedure, third-party contacts, and fire-drill triage steps, all documented outside any one person's head. That materially shortens a hypothetical successor's ramp-up time. It does not solve the underlying single-point-of-failure risk (§9 names this plainly), and there is no successor, co-founder, or contingency staffing plan in place today.</p></div>
+  </details>
+
+  <details class="faq-item">
+    <summary><span>Is this pre-revenue with real traction, or just an idea with a landing page?</span><span class="q-chevron"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></summary>
+    <div class="faq-answer"><p>Pre-revenue, but not pre-product. §3 and §10's evidence (56 migrations, 13 Edge Functions, a completed 7-phase security remediation, 19 passing regression assertions) is code-verifiable, not marketing claims. Zero paying customers and zero marketing spend to date are stated plainly (§00 Snapshot) rather than obscured — the product risk is largely retired; the distribution risk is entirely ahead, which is exactly what §14 exists to address.</p></div>
+  </details>
+
+  <details class="faq-item">
+    <summary><span>How defensible is a solo-built product against funded competitors with real marketing budgets?</span><span class="q-chevron"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></summary>
+    <div class="faq-answer"><p>Not defensible on marketing spend — that's conceded outright in §9's Threats. The defensibility argument is narrower and more specific: near-zero fixed cost (§12) means Aurora can be profitable at a customer count that would be a rounding error for a funded competitor, so it doesn't need to win the category, only a durable, underserved slice of it (§6). That's a real strategy, not a hope, but it is genuinely a different bet than "outcompete ClickUp."</p></div>
+  </details>
+
+  <details class="faq-item">
+    <summary><span>What's the single biggest risk to this thesis?</span><span class="q-chevron"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></summary>
+    <div class="faq-answer"><p>Distribution, not product or cost. §13's honest-expectations note says it plainly: most independent SaaS never crosses $1k MRR, and that's historically a distribution failure. Every other risk in §9's register is medium-likelihood at worst; this one is the whole game.</p></div>
+  </details>
+
+  <details class="faq-item">
+    <summary><span>Is the India/PPP pricing story real?</span><span class="q-chevron"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></summary>
+    <div class="faq-answer"><p>Partially confirmed, honestly flagged. Dodo's currency-localization infrastructure is real and verified (§13). Whether Aurora has actually configured a deliberately discounted India price, versus a straight FX conversion of the US price, could not be confirmed from the codebase this session. This is presented as a concrete, cheap, near-term fix, not a structural problem — see §13 and §11's checklist.</p></div>
+  </details>
+</section>
+
+<section id="sources">
+  <span class="eyebrow">17 — Sources &amp; Methodology</span>
+  <h2>Where these numbers come from</h2>
+  <p class="dek">Internal repository research plus live web research conducted 22 August 2026, re-verified with direct vendor/source fetches in a follow-up pass the same day.</p>
+
+  <h3>Internal sources (facts)</h3>
+  <ul>
+    <li><code>CLAUDE.md</code>, <code>memory.md</code> (Status, Feature log, Decision log, Open items — read in full, re-confirmed unchanged before this revision), <code>plan.md</code>, <code>IMPROVEMENT-PLAN-2026-08.md</code></li>
+    <li><code>reports/Aurora_Full_Strategy_Report_2026-08-13.html</code> — treated as the draft this report supersedes and re-verifies</li>
+    <li><code>reports/FEATURE-GAP-ANALYSIS.md</code>, <code>reports/SIMPLICITY-GUARDRAIL.md</code>, <code>reports/SIMPLICITY-AUDIT-2026-08.md</code>, <code>reports/ANALYTICS.md</code>, <code>reports/BUS-FACTOR-RUNBOOK.md</code>, <code>reports/PENTEST-READINESS-2026.md</code></li>
+    <li><code>package.json</code>, <code>supabase/migrations/</code> (56 files, counted directly), <code>supabase/functions/</code> (13 functions, listed directly), <code>supabase/functions/dodo-create-checkout/index.ts</code> (checked for region-specific pricing — found none)</li>
+    <li><code>src/lib/plans.ts</code>, <code>src/lib/proFeatures.ts</code>, <code>src/lib/storage.ts</code>, <code>src/styles/index.css</code> (live design tokens), <code>legal/</code> and <code>marketing-site/</code> directory listings, <code>src/features/*</code> (26 feature folders), <code>git log</code> (author field, commit history)</li>
+  </ul>
+
+  <h3>Live web research, fetched directly from primary sources on 22 Aug 2026</h3>
+  <ul class="footnote">
+    <li><strong>Competitor pricing:</strong> trello.com/pricing, asana.com/pricing, notion.com/pricing, clickup.com/pricing, monday.com/pricing — all fetched directly. Todoist's pricing page renders client-side and could not be scraped; its figure is aggregator-triangulated and flagged as such (§8).</li>
+    <li><strong>Market size &amp; CAGR:</strong> grandviewresearch.com, mordorintelligence.com, straitsresearch.com — all fetched directly (§6).</li>
+    <li><strong>Vendor infrastructure pricing:</strong> supabase.com/pricing, developers.cloudflare.com/workers/platform/pricing, resend.com/pricing, dodopayments.com/pricing, docs.dodopayments.com/features/adaptive-currency — all fetched directly (§12, §13).</li>
+    <li><strong>Freemium conversion benchmarks:</strong> userpilot.com (citing ChartMogul's 2026 report), fetched directly.</li>
+    <li><strong>CAC benchmarks:</strong> digitalapplied.com, fetched directly.</li>
+    <li><strong>Ad cost benchmarks:</strong> stackmatix.com, fetched directly, for Reddit Ads CPC/CPM.</li>
+    <li><strong>Exchange rate:</strong> xe.com, fetched directly, 21 Aug 2026 23:58 UTC.</li>
+    <li><strong>App Store / Play Store policy:</strong> 2026 developer-policy coverage on Apple App Store Guideline 4.2 and Google Play external-purchase-link developments (aggregator sources — not a single fetched primary policy document).</li>
+  </ul>
+
+  <div class="callout">
+    <p><strong>Disclaimer:</strong> this report contains business, marketing, and financial planning estimates, not professional financial, legal, or investment advice. Revenue projections are illustrative scenarios built from industry benchmarks and Aurora's actual current pricing, not guarantees. Consult a qualified professional before making material financial or legal decisions based on this document.</p>
+  </div>
+</section>
+
+</div>
+
+<footer>Aurora — a product of Nvexis — Confidential Investor Strategy Report · Prepared 23 August 2026 · v3, updated · Supersedes the 22 August 2026 edition</footer>
+
+</div><!-- /.main -->
+
+<script>
+(function(){
+  var root = document.documentElement;
+  var body = document.body;
+  var themeToggle = document.getElementById('themeToggle');
+  var sidebarToggle = document.getElementById('sidebarToggle');
+  var scrim = document.getElementById('scrim');
+  var STORAGE_KEY = 'aurora-report-theme';
+
+  function systemPrefersDark(){
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  function applyTheme(t){
+    if (t === 'dark' || t === 'light') root.setAttribute('data-theme', t);
+    else root.removeAttribute('data-theme');
+  }
+  var saved = null;
+  try { saved = localStorage.getItem(STORAGE_KEY); } catch(e) {}
+  applyTheme(saved);
+
+  themeToggle.addEventListener('click', function(){
+    var current = root.getAttribute('data-theme');
+    var effectiveDark = current ? current === 'dark' : systemPrefersDark();
+    var next = effectiveDark ? 'light' : 'dark';
+    applyTheme(next);
+    try { localStorage.setItem(STORAGE_KEY, next); } catch(e) {}
+  });
+
+  var isDesktop = window.matchMedia('(min-width: 981px)').matches;
+  if (!isDesktop) body.classList.add('sidebar-closed');
+
+  function toggleSidebar(){
+    if (window.matchMedia('(min-width: 981px)').matches){
+      body.classList.toggle('sidebar-closed');
+    } else {
+      body.classList.toggle('sidebar-open');
+    }
+  }
+  sidebarToggle.addEventListener('click', toggleSidebar);
+  scrim.addEventListener('click', function(){ body.classList.remove('sidebar-open'); });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('#tocList a'));
+  var map = {};
+  links.forEach(function(a){
+    var id = a.getAttribute('href').slice(1);
+    var el = document.getElementById(id);
+    if (el) map[id] = a;
+  });
+  var sections = Object.keys(map).map(function(id){ return document.getElementById(id); });
+  if ('IntersectionObserver' in window && sections.length){
+    var observer = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        var link = map[entry.target.id];
+        if (!link) return;
+        if (entry.isIntersecting){
+          links.forEach(function(l){ l.classList.remove('active'); });
+          link.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+    sections.forEach(function(s){ observer.observe(s); });
+  }
+
+  links.forEach(function(a){
+    a.addEventListener('click', function(){
+      if (!window.matchMedia('(min-width: 981px)').matches) body.classList.remove('sidebar-open');
+    });
+  });
+
+  var expandBtn = document.getElementById('expandAllFeatures');
+  if (expandBtn){
+    var expanded = false;
+    expandBtn.addEventListener('click', function(){
+      expanded = !expanded;
+      document.querySelectorAll('#product details.feature-card').forEach(function(d){ d.open = expanded; });
+      expandBtn.textContent = expanded ? 'Collapse all' : 'Expand all';
+    });
+  }
+})();
+</script>
+
+</body>
+</html>

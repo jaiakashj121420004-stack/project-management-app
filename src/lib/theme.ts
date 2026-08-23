@@ -19,12 +19,24 @@ export function storeTheme(theme: Theme): void {
   localStorage.setItem(STORAGE_KEY, theme);
 }
 
-/** Initial theme: explicit choice → OS preference → dark (the brand default). */
+/**
+ * Initial theme: explicit choice (this device, or the signed-in account, via
+ * ThemeProvider's post-mount reconciliation) → light.
+ *
+ * Changed 2026-08-23 (Nvexis rebrand, founder direction): light/parchment is
+ * now the brand's default surface, not a secondary option — the whole public
+ * site and the "mostly light mode" personalization direction assume a visitor
+ * lands in Day by default. Previously this fell through to the OS's
+ * `prefers-color-scheme` and then to Night if neither matched; that's removed
+ * on purpose, not an oversight — a first-time visitor (including a fresh PWA
+ * install, which has no prior localStorage) should see Day regardless of
+ * system dark-mode, and ONLY switches away from it once they explicitly
+ * toggle the theme themselves. `getStoredTheme()` above still means that
+ * choice — device-local via `storeTheme`, and account-wide once signed in via
+ * `ThemeProvider`'s profile sync — sticks and is never overridden again.
+ */
 export function getInitialTheme(): Theme {
-  const stored = getStoredTheme();
-  if (stored) return stored;
-  if (window.matchMedia('(prefers-color-scheme: light)').matches) return 'light';
-  return 'dark';
+  return getStoredTheme() ?? 'light';
 }
 
 /** Reflect the theme on <html> so CSS variables and Tailwind's dark: variant flip,

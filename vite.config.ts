@@ -120,8 +120,12 @@ export default defineConfig({
         scope: '/',
         display: 'standalone',
         orientation: 'any',
-        theme_color: '#0B0710',
-        background_color: '#0B0710',
+        // Day/parchment (2026-08-23) — matches the new light-by-default brand
+        // direction (src/lib/theme.ts's getInitialTheme) so the PWA install splash
+        // screen and app-switcher chrome aren't a jarring dark flash before the
+        // app's own light UI paints.
+        theme_color: '#ECE4D6',
+        background_color: '#ECE4D6',
         categories: ['productivity', 'business', 'utilities'],
         icons: [
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
