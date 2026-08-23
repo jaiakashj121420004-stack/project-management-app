@@ -62,7 +62,7 @@ export const FONT_PAIRINGS: Record<FontPairingId, FontPairing> = {
     label: 'Almanac (default)',
     description: 'Fraunces + Spectral — the classic Aurora serif look.',
     category: 'Serif',
-    display: 'Fraunces',
+    display: "'Fraunces Variable', Fraunces",
     body: 'Spectral',
   },
   'modern-sans': {

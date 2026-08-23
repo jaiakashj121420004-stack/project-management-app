@@ -58,7 +58,7 @@ export function PersonalizationPresetGrid({
             >
               <span className="flex w-full items-center justify-between gap-2">
                 <span
-                  style={{ fontFamily: 'Fraunces, Georgia, serif', color: preset.text }}
+                  style={{ fontFamily: "'Fraunces Variable', Fraunces, Georgia, serif", color: preset.text }}
                   className="text-xl font-semibold"
                 >
                   Aa

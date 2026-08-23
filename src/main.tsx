@@ -3,8 +3,12 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { MotionConfig } from 'framer-motion';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-// Nvexis fonts (Fraunces / Spectral / IBM Plex Mono) are loaded via <link> in
-// index.html so no self-hosted font dependency is required.
+// Nvexis core fonts (Fraunces / Spectral / IBM Plex Mono) are self-hosted via
+// @fontsource — see styles/fonts.css for why (Phase 7 Lighthouse audit
+// follow-up, 2026-08-23: the old fonts.googleapis.com <link> in index.html
+// cost ~750ms of mobile-only render-blocking time as a fresh third-party
+// round trip). The four optional font-pairing choices still load from
+// Google Fonts via index.html's non-blocking preload+swap — see font-swap.js.
 import App from '@/App';
 import { Toaster } from '@/components/feedback/Toaster';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
@@ -26,6 +30,7 @@ import {
   persister,
   queryClient,
 } from '@/lib/queryClient';
+import '@/styles/fonts.css';
 import '@/styles/index.css';
 
 // Recover automatically if a code-split chunk 404s after a deploy (stale
