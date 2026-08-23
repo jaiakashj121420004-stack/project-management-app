@@ -32,8 +32,8 @@ function Inner({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () 
       </div>
 
       <GradientButton
-        size={collapsed ? 'sm' : 'md'}
-        leftIcon={<Plus size={18} />}
+        size={collapsed ? 'sm' : 'lg'}
+        leftIcon={<Plus size={20} />}
         onClick={handleNewProject}
         className={cn('w-full', collapsed && 'aspect-square w-11 px-0')}
         aria-label="New project"

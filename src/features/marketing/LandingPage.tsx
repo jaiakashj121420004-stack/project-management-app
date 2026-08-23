@@ -39,7 +39,16 @@ const MARK = '/brand/aurora-mark.svg';
  * you drop the file in, it gracefully falls back to the styled faux mockup. So
  * the site looks great now AND upgrades to real screenshots the moment they land.
  */
-function Shot({ src, children }: { src: string; children: ReactNode }) {
+function Shot({
+  src,
+  children,
+  eager = false,
+}: {
+  src: string;
+  children: ReactNode;
+  /** Set true for above-the-fold instances (the Hero montage). */
+  eager?: boolean;
+}) {
   const [failed, setFailed] = useState(false);
   if (failed) return <>{children}</>;
   // Real screenshots aren't in public/shots/ yet (see that folder's README),
@@ -51,11 +60,19 @@ function Shot({ src, children }: { src: string; children: ReactNode }) {
   // doesn't move anything below it. Real, measured regression this fixes:
   // Phase 7 Lighthouse audit (2026-08-23) traced 0.234 of a 0.331 total CLS
   // score to exactly this element.
+  //
+  // `eager` skips `loading="lazy"` for the two Hero instances: with lazy
+  // loading, the browser defers even *starting* the (guaranteed-404) fetch
+  // until this element nears the viewport, which delays the onError swap to
+  // the mockup for the section most likely to contain the mobile LCP
+  // element. Below-the-fold instances (Spotlight/DeepDive) keep lazy loading
+  // since deferring an off-screen request is the correct behavior there.
   return (
     <img
       src={src}
       alt=""
-      loading="lazy"
+      loading={eager ? 'eager' : 'lazy'}
+      fetchPriority={eager ? 'high' : 'auto'}
       onError={() => setFailed(true)}
       className="lode-window aspect-[8/5] w-full object-cover object-top"
     />
@@ -168,8 +185,8 @@ function Hero() {
 
       {/* Flagship montage */}
       <div className="mx-auto mt-14 grid max-w-5xl gap-4 sm:grid-cols-2">
-        <div className="sm:mt-8"><Shot src="/shots/board.png"><BoardMockup /></Shot></div>
-        <div><Shot src="/shots/editor.png"><EditorMockup /></Shot></div>
+        <div className="sm:mt-8"><Shot src="/shots/board.png" eager><BoardMockup /></Shot></div>
+        <div><Shot src="/shots/editor.png" eager><EditorMockup /></Shot></div>
       </div>
     </section>
   );
