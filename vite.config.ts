@@ -1,5 +1,5 @@
 import { fileURLToPath, URL } from 'node:url';
-import { defineConfig, type PluginOption } from 'vite';
+import { defineConfig, type Plugin, type PluginOption } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { visualizer } from 'rollup-plugin-visualizer';
@@ -36,6 +36,63 @@ function manualChunks(id: string): string | undefined {
   // it its own async chunk, split off purely because of how it's imported.
   if (id.includes('/docx/') || id.includes('\\docx\\')) return undefined;
   return 'vendor';
+}
+
+/**
+ * Phase 7 Lighthouse audit follow-up (2026-08-23, PageSpeed report
+ * ypumoty04e): the mobile "Render-blocking requests" audit measured 810 ms
+ * of estimated savings vs. only 200 ms on desktop for the *same* build
+ * output — direct proof (dist/index.html) that `/assets/editor-*.css` (the
+ * merged Tiptap/KaTeX chunk's CSS — see manualChunks above) is still an
+ * unconditional `<link rel="stylesheet">` in the HTML on every page,
+ * including the anonymous marketing landing page, costing ~330 ms of that
+ * 810 ms on its own. This was NOT an accidental eager import: every module
+ * under src/features/{editor,canvas,notes} is reached only through
+ * App.tsx's lazy() routes (grepped and confirmed) — it's Vite's default CSS
+ * handling, which, unlike JS (see `modulePreload.resolveDependencies`
+ * below), has no per-chunk opt-out for statically injecting a chunk's CSS
+ * into the HTML.
+ *
+ * The fix mirrors a pattern already shipped in this codebase for the four
+ * optional font pairings (index.html's `#optional-fonts-preload` +
+ * public/font-swap.js): rewrite the plain stylesheet link into a
+ * `<link rel="preload" as="style" data-css-swap>` (fetched in parallel,
+ * never blocking) plus a `<noscript>` fallback, and activate it once loaded
+ * via public/css-swap.js. Every route that actually needs editor styling
+ * still gets it — just fetched alongside the page instead of gating first
+ * paint on it — while the ~95% of loads that never touch the editor, notes,
+ * or canvas surfaces (every marketing visit, and most authenticated
+ * sessions on any given load) stop paying for it.
+ */
+function deferEditorCss(): Plugin {
+  return {
+    name: 'aurora-defer-editor-css',
+    apply: 'build',
+    transformIndexHtml: {
+      order: 'post',
+      handler(html, ctx) {
+        const bundle = ctx.bundle;
+        if (!bundle) return html;
+        const editorCss = Object.values(bundle).find(
+          (item) => item.type === 'asset' && /^assets\/editor-.*\.css$/.test(item.fileName)
+        );
+        if (!editorCss) return html;
+        const href = `/${editorCss.fileName}`;
+        const linkRe = new RegExp(
+          `<link rel="stylesheet"[^>]*href="${href.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^>]*>`
+        );
+        if (!linkRe.test(html)) return html;
+        const replacement =
+          `<link rel="preload" as="style" data-css-swap crossorigin href="${href}">` +
+          `<noscript><link rel="stylesheet" crossorigin href="${href}"></noscript>`;
+        html = html.replace(linkRe, replacement);
+        if (!html.includes('/css-swap.js')) {
+          html = html.replace('</head>', '<script src="/css-swap.js" defer></script></head>');
+        }
+        return html;
+      },
+    },
+  };
 }
 
 // https://vite.dev/config/
@@ -104,6 +161,7 @@ export default defineConfig({
       gzipSize: true,
       brotliSize: true,
     }) as PluginOption,
+    deferEditorCss(),
   ],
   build: {
     rollupOptions: {
