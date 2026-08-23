@@ -28,7 +28,7 @@
 .block-editor h1,
 .block-editor h2,
 .block-editor h3 {
-  font-family: 'Fraunces Variable', Fraunces, Georgia, serif;
+  font-family: 'Fraunces', Georgia, serif;
   font-weight: 700;
   line-height: 1.2;
   margin: 0.8em 0 0.3em;
@@ -217,7 +217,7 @@
   margin: 0;
 }
 .block-editor table th {
-  font-family: 'Fraunces Variable', Fraunces, Georgia, serif;
+  font-family: 'Fraunces', Georgia, serif;
   font-weight: 700;
   background: color-mix(in srgb, var(--accent-from) 12%, transparent);
 }

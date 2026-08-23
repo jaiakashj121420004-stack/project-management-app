@@ -18,7 +18,7 @@
   /* Personalization defaults (Settings page — src/lib/customTheme.ts). Shared
      across both themes so switching Night/Day doesn't reset a chosen pairing;
      overridden inline on <html> only when the user picks something else. */
-  --font-display: 'Fraunces Variable', Fraunces;
+  --font-display: 'Fraunces';
   --font-body: 'Spectral';
 
   --bg: 24 18 16; /* #181210 ink */
@@ -478,14 +478,14 @@
   margin: 0.25em 0;
 }
 .canvas-rich h1 {
-  font-family: 'Fraunces Variable', Fraunces, Georgia, serif;
+  font-family: 'Fraunces', Georgia, serif;
   font-size: 1.6em;
   font-weight: 800;
   line-height: 1.15;
   margin: 0.2em 0 0.3em;
 }
 .canvas-rich h2 {
-  font-family: 'Fraunces Variable', Fraunces, Georgia, serif;
+  font-family: 'Fraunces', Georgia, serif;
   font-size: 1.3em;
   font-weight: 700;
   line-height: 1.2;

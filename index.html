@@ -25,26 +25,35 @@
     <meta property="og:url" content="https://aurora.nvexis.com/" />
 
     <!-- Nvexis type: Fraunces (display) · Spectral (body) · IBM Plex Mono
-         (figures/eyebrows, fixed) are self-hosted via @fontsource — see
-         src/styles/fonts.css, imported from main.tsx — instead of a Google
-         Fonts <link> here. Sora/Manrope, Playfair Display/Lora, and
+         (figures/eyebrows, fixed). Sora/Manrope, Playfair Display/Lora, and
          Poppins/Nunito are the four extra font-pairing choices offered in
-         Settings (src/lib/customTheme.ts); those stay on the Google Fonts
-         CDN below since most page loads never fetch them at all.
+         Settings (src/lib/customTheme.ts) — loaded here too so switching is
+         instant with no extra network round-trip.
 
          Phase 7 Lighthouse audit (2026-08-23): a single render-blocking
          <link rel="stylesheet"> for all 10 families cost ~1.1s of blocked
          first paint on every visit, including anonymous landing-page visits
-         that only ever use the first three. First fix (same date) split off
-         a non-blocking preload-then-swap for the four optional pairing
-         choices, leaving the three always-needed families as one small
-         blocking Google Fonts request. Follow-up audit (n54opz6o92) measured
-         that remaining request at ~750ms on mobile — almost entirely the
-         round trip to a fresh third-party origin, not its ~2 KiB size — so
-         it's now self-hosted instead of trimmed further: same three
-         families, same weights/styles, zero extra network round-trip. -->
+         that only ever use the first three. Split into a small blocking
+         request for the always-needed families and a non-blocking
+         preload-then-swap for the four optional pairing choices — no font
+         stops being available, it just no longer blocks first paint.
+
+         2026-08-23 follow-up: self-hosting the three core families via
+         @fontsource (to remove the ~750ms third-party round trip) was tried
+         and reverted — see git history. It merged their @font-face rules
+         into the same large, already-render-blocking Tailwind stylesheet, so
+         the browser couldn't even discover the font files until that whole
+         ~93 KiB file finished downloading, instead of fetching them in
+         parallel the way this separate Google Fonts request does. Measured
+         net effect: worse (mobile Performance 70 -> 65, LCP critical-path
+         latency up to 2,392ms). A parallel, non-blocking self-hosted
+         stylesheet is worth revisiting later; a same-file merge is not. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&family=Spectral:ital,wght@0,400;0,500;0,600;1,400;1,600&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap"
+    />
     <link
       id="optional-fonts-preload"
       rel="preload"

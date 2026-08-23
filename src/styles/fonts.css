@@ -1,44 +1,9 @@
-/**
- * Self-hosted replacement for the core Google Fonts stylesheet
- * (fonts.googleapis.com/css2?family=Fraunces...&family=Spectral...&family=IBM+Plex+Mono...)
- * that used to sit in index.html as a render-blocking <link>.
- *
- * Phase 7 Lighthouse audit follow-up (2026-08-23, PageSpeed report
- * n54opz6o92): that stylesheet cost ~750 ms on mobile — almost entirely
- * DNS + TLS + round-trip time to a brand-new third-party origin, not
- * download size (the response itself is under 2 KiB). Mobile's throttling
- * profile makes a fresh-origin round trip far more expensive than desktop's,
- * which is why this showed up as a much bigger chunk of the mobile-only
- * "Render-blocking requests" estimate.
- *
- * Fix: vendor the same three families via @fontsource (widely used,
- * maintained mirror of Google Fonts' own files) and import them here, so
- * they compile into the app's own already-fetched first-party CSS bundle
- * instead of a separate cross-origin request. Same families, same weights
- * and styles as the original query string, same `font-display: swap`
- * behavior — just served from our own origin.
- *
- * Weight/style coverage matches the original <link> exactly:
- *   Fraunces:   ital,opsz,wght@0,9..144,400..900;1,9..144,400..900 (variable, both axes, roman+italic)
- *   Spectral:   ital,wght@0,400;0,500;0,600;1,400;1,600
- *   IBM Plex Mono: wght@400;500;600;700 (roman only — never used italic)
- *
- * The four optional font-pairing choices (Sora/Manrope, Playfair/Lora,
- * Poppins/Nunito) are untouched — they're already loaded non-blocking via
- * the preload+swap stylesheet in index.html (see font-swap.js) and most
- * page loads never fetch them at all, so self-hosting them wouldn't save
- * anything on the critical path.
+/* Reverted 2026-08-23: self-hosting the core fonts via @fontsource merged
+ * their @font-face rules into the same large, already-render-blocking
+ * Tailwind stylesheet, so the browser couldn't discover the font files
+ * until that whole file finished downloading — serialized instead of
+ * parallel. Measured net effect was worse (mobile Performance 70 -> 65,
+ * LCP critical-path latency up to 2,392ms). See index.html's font comment
+ * for the full story. This file is intentionally unused — nothing imports
+ * it — kept only so the explanation isn't lost. Safe to delete.
  */
-@import '@fontsource-variable/fraunces/opsz.css';
-@import '@fontsource-variable/fraunces/opsz-italic.css';
-
-@import '@fontsource/spectral/400.css';
-@import '@fontsource/spectral/500.css';
-@import '@fontsource/spectral/600.css';
-@import '@fontsource/spectral/400-italic.css';
-@import '@fontsource/spectral/600-italic.css';
-
-@import '@fontsource/ibm-plex-mono/400.css';
-@import '@fontsource/ibm-plex-mono/500.css';
-@import '@fontsource/ibm-plex-mono/600.css';
-@import '@fontsource/ibm-plex-mono/700.css';
