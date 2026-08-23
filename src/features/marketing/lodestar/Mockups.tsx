@@ -27,6 +27,16 @@ const GOLD = '#d8b455';
 const INK = '#181210';
 const INK2 = '#211917';
 const PAPER = '#ece4d6';
+// Muted secondary text/icon color on dark mockup surfaces (INK/INK2). Was
+// #8a7d6c in a few spots, which measures ~4.30:1 against INK2 — just under
+// the 4.5:1 WCAG AA minimum (Phase 7 Lighthouse audit, 2026-08-23, flagged
+// this as a real contrast failure; these mockups render as live DOM on the
+// production landing page today, since public/shots/ has no real screenshots
+// yet — see Shot in LandingPage.tsx). #9a8d7c was already used for the same
+// role elsewhere in this file and clears AA (~5.3:1) on the same background,
+// so every use now shares this one constant instead of two near-identical
+// greys, one of which failed.
+const MUTED = '#9a8d7c';
 const BONE = '#e7dcc9';
 
 const NAV = [
@@ -75,11 +85,11 @@ function AppFrame({ active, children }: { active: string; children: ReactNode })
             className="flex items-center gap-2 border-b px-3 py-2"
             style={{ borderColor: 'rgba(255,245,225,0.08)' }}
           >
-            <div className="flex-1 rounded-lg px-2.5 py-1.5 text-[10px]" style={{ background: INK2, color: '#8a7d6c' }}>
+            <div className="flex-1 rounded-lg px-2.5 py-1.5 text-[10px]" style={{ background: INK2, color: MUTED }}>
               Search projects, cards, notes…
             </div>
-            <Bell size={13} style={{ color: '#8a7d6c' }} />
-            <Moon size={13} style={{ color: '#8a7d6c' }} />
+            <Bell size={13} style={{ color: MUTED }} />
+            <Moon size={13} style={{ color: MUTED }} />
             <span className="grid h-5 w-5 place-items-center rounded-full text-[9px] text-white" style={{ background: '#2f6fb0' }}>J</span>
           </div>
           <div className="p-3">{children}</div>
@@ -105,18 +115,18 @@ export function BoardMockup() {
       </div>
       <div className="mb-2 flex gap-2 text-[9px]">
         {['Board', 'Notes', 'Canvas', 'Activity'].map((t, i) => (
-          <span key={t} className="rounded-md px-2 py-1" style={i === 0 ? { background: OX, color: '#fff' } : { color: '#8a7d6c' }}>{t}</span>
+          <span key={t} className="rounded-md px-2 py-1" style={i === 0 ? { background: OX, color: '#fff' } : { color: MUTED }}>{t}</span>
         ))}
       </div>
       <div className="mb-2 flex flex-wrap gap-1">
         {CHIPS.map((c) => (
-          <span key={c} className="rounded-full border px-1.5 py-0.5 text-[8px]" style={{ borderColor: 'rgba(255,245,225,0.15)', color: '#9a8d7c' }}>{c}</span>
+          <span key={c} className="rounded-full border px-1.5 py-0.5 text-[8px]" style={{ borderColor: 'rgba(255,245,225,0.15)', color: MUTED }}>{c}</span>
         ))}
       </div>
       <div className="grid grid-cols-3 gap-2">
         {cols.map((col) => (
           <div key={col.name} className="rounded-lg p-1.5" style={{ background: 'rgba(255,245,225,0.03)' }}>
-            <p className="mb-1.5 flex justify-between px-1 text-[9px] font-semibold uppercase tracking-wide" style={{ color: '#8a7d6c' }}>
+            <p className="mb-1.5 flex justify-between px-1 text-[9px] font-semibold uppercase tracking-wide" style={{ color: MUTED }}>
               {col.name} <span>{col.n}</span>
             </p>
             <div className="flex flex-col gap-1.5">
@@ -158,7 +168,7 @@ export function EditorMockup() {
           ))}
         </div>
         <div className="rounded-md px-2 py-1" style={{ border: '1px solid rgba(255,245,225,0.1)' }}>▸ Toggle: open questions</div>
-        <div className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[8px]" style={{ background: 'rgba(255,245,225,0.05)', color: '#9a8d7c' }}>
+        <div className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[8px]" style={{ background: 'rgba(255,245,225,0.05)', color: MUTED }}>
           <span style={{ color: GOLD }}>/</span> heading · list · toggle · code · emoji…
         </div>
       </div>
@@ -172,11 +182,11 @@ export function CanvasMockup() {
     <AppFrame active="Library">
       <div className="mb-1.5 flex items-center gap-1.5 rounded-lg px-1.5 py-1" style={{ background: INK2, width: 'fit-content' }}>
         {tools.map((Ico, i) => (
-          <span key={i} className="grid h-5 w-5 place-items-center rounded" style={i === 1 ? { background: OX, color: '#fff' } : { color: '#9a8d7c' }}>
+          <span key={i} className="grid h-5 w-5 place-items-center rounded" style={i === 1 ? { background: OX, color: '#fff' } : { color: MUTED }}>
             <Ico size={11} />
           </span>
         ))}
-        <span className="ml-1 rounded px-1.5 text-[8px]" style={{ background: 'rgba(255,245,225,0.06)', color: '#9a8d7c' }}>Ruled ▾</span>
+        <span className="ml-1 rounded px-1.5 text-[8px]" style={{ background: 'rgba(255,245,225,0.06)', color: MUTED }}>Ruled ▾</span>
       </div>
       <div className="relative overflow-hidden rounded-lg" style={{ height: 150, background: '#171210' }}>
         <svg viewBox="0 0 320 150" className="absolute inset-0 h-full w-full">
@@ -212,7 +222,7 @@ export function CalendarMockup() {
           const chip = chips.find((c) => c.d === i);
           return (
             <div key={i} className="rounded" style={{ height: 34, background: 'rgba(255,245,225,0.03)', border: '1px solid rgba(255,245,225,0.05)', padding: 2 }}>
-              <span className="text-[7px]" style={{ color: '#8a7d6c' }}>{i + 1}</span>
+              <span className="text-[7px]" style={{ color: MUTED }}>{i + 1}</span>
               {chip && <span className="mt-0.5 block truncate rounded px-1 text-[7px] text-white" style={{ background: chip.c }}>{chip.t}</span>}
             </div>
           );

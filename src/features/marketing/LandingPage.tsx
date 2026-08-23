@@ -42,13 +42,22 @@ const MARK = '/brand/aurora-mark.svg';
 function Shot({ src, children }: { src: string; children: ReactNode }) {
   const [failed, setFailed] = useState(false);
   if (failed) return <>{children}</>;
+  // Real screenshots aren't in public/shots/ yet (see that folder's README),
+  // so in production every visit currently 404s and falls back to `children`
+  // — but before that error resolves, this <img> has no intrinsic size and
+  // renders at ~0 height, then the page reflows once the mockup swaps in.
+  // `aspect-[8/5]` reserves that height up front (~268px tall at this grid's
+  // column width, matching the mockup's own fixed minHeight) so the swap
+  // doesn't move anything below it. Real, measured regression this fixes:
+  // Phase 7 Lighthouse audit (2026-08-23) traced 0.234 of a 0.331 total CLS
+  // score to exactly this element.
   return (
     <img
       src={src}
       alt=""
       loading="lazy"
       onError={() => setFailed(true)}
-      className="lode-window w-full"
+      className="lode-window aspect-[8/5] w-full object-cover object-top"
     />
   );
 }
@@ -73,15 +82,22 @@ export function LandingPage() {
   return (
     <div className="lode min-h-dvh bg-[color:var(--lode-night)] font-body antialiased">
       <Nav />
-      <Hero />
-      <StatBand />
-      <Spotlights />
-      <DeepDive />
-      <FeatureGrid />
-      <CollaborationBand />
-      <Pricing />
-      <MakersNote />
-      <FinalCta />
+      {/* Phase 7 Lighthouse audit (2026-08-23): this route renders standalone
+          (not through MarketingLayout, which already wraps its children in a
+          <main>), so it had no landmark of its own — added here rather than
+          switching to MarketingLayout, since Nav/Footer here are this page's
+          own <header>/<footer>, not the shared marketing chrome. */}
+      <main>
+        <Hero />
+        <StatBand />
+        <Spotlights />
+        <DeepDive />
+        <FeatureGrid />
+        <CollaborationBand />
+        <Pricing />
+        <MakersNote />
+        <FinalCta />
+      </main>
       <Footer />
     </div>
   );

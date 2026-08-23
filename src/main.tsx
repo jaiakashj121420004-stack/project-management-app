@@ -9,7 +9,14 @@ import App from '@/App';
 import { Toaster } from '@/components/feedback/Toaster';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { CustomThemeProvider } from '@/components/theme/CustomThemeProvider';
-import { AuthProvider } from '@/features/auth';
+// Imported from its own file, not the '@/features/auth' barrel: main.tsx runs
+// on every route, so a barrel import here would statically pull in every
+// sibling the barrel re-exports (LoginPage, SignUpPage, ForgotPasswordPage,
+// ResetPasswordPage, ProfilePage) into the initial bundle regardless of
+// App.tsx's lazy() route splitting — this is exactly what the build reported
+// as [INEFFECTIVE_DYNAMIC_IMPORT] for those five pages (Phase 7 Lighthouse
+// audit, 2026-08-23).
+import { AuthProvider } from '@/features/auth/AuthProvider';
 import { applyTheme, getInitialTheme } from '@/lib/theme';
 import { setupChunkReloadRecovery } from '@/lib/chunkReloadRecovery';
 import { applyCustomTheme, getStoredCustomTheme } from '@/lib/customTheme';

@@ -10,7 +10,10 @@ import { useProfile } from './useProfile';
 import { resolveAvatarUrl, resolveDisplayName } from './identity';
 import { signOut } from './api';
 import { PlanBadge } from '@/features/billing/PlanBadge';
-import { FeedbackModal } from '@/features/feedback';
+// Own file, not the '@/features/feedback' barrel — same reasoning as
+// main.tsx's AuthProvider import: a barrel import here would statically pull
+// FeedbackPage in too, defeating its lazy() split in App.tsx.
+import { FeedbackModal } from '@/features/feedback/FeedbackModal';
 
 function MenuItem({
   icon: Icon,
