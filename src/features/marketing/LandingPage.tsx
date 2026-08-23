@@ -15,7 +15,6 @@ import {
   MessagesSquare,
   ShieldCheck,
   ClipboardCheck,
-  Sparkles,
   Users,
   Type,
   PenTool,
@@ -77,9 +76,9 @@ function Shot({
 }
 
 /**
- * The public landing page — the celestial front door of Aurora (the product;
- * Nvexis is the company). A starlit hero descends into warm parchment feature
- * sections showcasing every part of the app, on the brand palette + gilt accent.
+ * The public landing page — the front door of Aurora (the product; Nvexis is
+ * the company). A warm, editorial parchment page showcasing every part of the
+ * app, on the brand palette + gilt accent, bookended by a dark nav/footer.
  * Faux app windows stand in for screenshots (see lodestar/Mockups.tsx — the
  * folder keeps its internal name; nothing user-facing reads "Lodestar").
  */
@@ -94,7 +93,7 @@ export function LandingPage() {
   }, []);
 
   return (
-    <div className="lode min-h-dvh bg-[color:var(--lode-night)] font-body antialiased">
+    <div className="lode min-h-dvh bg-[color:var(--lode-parchment)] font-body antialiased">
       <Nav />
       {/* Phase 7 Lighthouse audit (2026-08-23): this route renders standalone
           (not through MarketingLayout, which already wraps its children in a
@@ -150,16 +149,16 @@ function Nav() {
 /* ---- Hero ----------------------------------------------------------------- */
 function Hero() {
   return (
-    <section className="lode-night lode-stars relative px-4 pb-24 pt-16 sm:px-6 sm:pt-24">
+    <section className="lode-paper relative px-4 pb-24 pt-16 sm:px-6 sm:pt-24">
       <div className="mx-auto max-w-3xl text-center">
         <div className="lode-glow mx-auto mb-7 w-fit">
           <img src={MARK} alt="Aurora" className="mx-auto h-16 w-16" />
         </div>
-        <p className="lode-eyebrow mb-4 text-[rgba(216,180,85,0.9)]">Aurora · by Nvexis</p>
-        <h1 className="font-display text-4xl font-black leading-[1.05] text-[color:var(--lode-parchment)] sm:text-6xl">
+        <p className="lode-eyebrow mb-4 text-[color:var(--lode-oxblood-deep)]">Aurora · by Nvexis</p>
+        <h1 className="font-display text-4xl font-black leading-[1.05] text-[color:var(--lode-ink)] sm:text-6xl">
           Every project, note, and idea — <span className="lode-gilt">in one calm home.</span>
         </h1>
-        <p className="mx-auto mt-5 max-w-xl text-lg text-[rgba(236,228,214,0.72)]">
+        <p className="mx-auto mt-5 max-w-xl text-lg text-[color:rgba(34,26,20,0.72)]">
           One calm workspace for everything: Kanban boards, a Notion-style block editor, an
           infinite collaborative canvas with pen, media &amp; embeds, a calendar, standalone notes
           and daily to-dos — installable on every device, synced in real time, and free to start.
@@ -170,12 +169,12 @@ function Hero() {
           </Link>
           <Link
             to="/pricing"
-            className="rounded-xl border border-[rgba(255,245,225,0.18)] px-5 py-2.5 text-[rgba(236,228,214,0.9)] transition-colors hover:bg-white/5"
+            className="rounded-xl border border-[rgba(122,42,38,0.3)] px-5 py-2.5 text-[color:var(--lode-ink)] transition-colors hover:bg-[rgba(122,42,38,0.06)]"
           >
             See what’s inside
           </Link>
         </div>
-        <p className="mt-4 font-mono text-xs uppercase tracking-widest text-[rgba(236,228,214,0.72)]">
+        <p className="mt-4 font-mono text-xs uppercase tracking-widest text-[color:rgba(34,26,20,0.6)]">
           No credit card · Works on mobile + desktop
         </p>
       </div>
@@ -198,12 +197,12 @@ function StatBand() {
     ['0', 'to start — free forever plan'],
   ];
   return (
-    <section className="lode-night border-y border-[rgba(255,245,225,0.08)] px-4 py-8 sm:px-6">
+    <section className="lode-paper border-y border-[rgba(122,42,38,0.14)] px-4 py-8 sm:px-6">
       <div className="mx-auto grid max-w-5xl grid-cols-2 gap-6 text-center sm:grid-cols-4">
         {stats.map(([n, label]) => (
           <div key={label}>
             <p className="font-display text-3xl font-black lode-gilt">{n}</p>
-            <p className="mt-1 text-xs text-[rgba(236,228,214,0.6)]">{label}</p>
+            <p className="mt-1 text-xs text-[color:rgba(34,26,20,0.6)]">{label}</p>
           </div>
         ))}
       </div>
@@ -347,33 +346,33 @@ const PILLARS: { icon: LucideIcon; title: string; intro: string; points: string[
 
 function DeepDive() {
   return (
-    <section className="lode-night lode-stars px-4 py-20 sm:px-6">
+    <section className="lode-paper px-4 py-20 sm:px-6">
       <div className="mx-auto max-w-3xl text-center">
-        <p className="lode-eyebrow text-[rgba(216,180,85,0.9)]">Under the hood</p>
-        <h2 className="mt-2 font-display text-3xl font-black text-[color:var(--lode-parchment)] sm:text-4xl">
+        <p className="lode-eyebrow text-[color:var(--lode-oxblood-deep)]">Under the hood</p>
+        <h2 className="mt-2 font-display text-3xl font-black text-[color:var(--lode-ink)] sm:text-4xl">
           Deceptively simple. Seriously deep.
         </h2>
-        <p className="mx-auto mt-3 max-w-xl text-[rgba(236,228,214,0.7)]">
+        <p className="mx-auto mt-3 max-w-xl text-[color:rgba(34,26,20,0.7)]">
           Every surface is loaded with the details that make real work fast. Here’s a taste.
         </p>
       </div>
       <div className="mx-auto mt-14 grid max-w-5xl gap-4 md:grid-cols-2">
         {PILLARS.map(({ icon: Icon, title, intro, points }) => (
-          <div
-            key={title}
-            className="rounded-2xl border border-[rgba(255,245,225,0.1)] bg-white/[0.03] p-6"
-          >
+          <div key={title} className="lode-card p-6">
             <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-[rgba(216,180,85,0.14)] text-[color:var(--lode-gold)]">
+              <span
+                className="grid h-10 w-10 place-items-center rounded-xl"
+                style={{ background: 'rgba(194,74,64,0.12)', color: 'var(--lode-oxblood)' }}
+              >
                 <Icon size={19} />
               </span>
-              <h3 className="font-display text-xl font-bold text-[color:var(--lode-parchment)]">{title}</h3>
+              <h3 className="font-display text-xl font-bold text-[color:var(--lode-ink)]">{title}</h3>
             </div>
-            <p className="mt-3 text-sm text-[rgba(236,228,214,0.7)]">{intro}</p>
+            <p className="mt-3 text-sm text-[color:rgba(34,26,20,0.7)]">{intro}</p>
             <ul className="mt-4 space-y-2">
               {points.map((p) => (
-                <li key={p} className="flex items-start gap-2 text-sm text-[rgba(236,228,214,0.85)]">
-                  <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-[color:var(--lode-gold)]" />
+                <li key={p} className="flex items-start gap-2 text-sm text-[color:rgba(34,26,20,0.82)]">
+                  <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-[color:var(--lode-oxblood)]" />
                   {p}
                 </li>
               ))}
@@ -381,7 +380,7 @@ function DeepDive() {
           </div>
         ))}
       </div>
-      <p className="mx-auto mt-8 max-w-3xl text-center text-sm text-[rgba(236,228,214,0.6)]">
+      <p className="mx-auto mt-8 max-w-3xl text-center text-sm text-[color:rgba(34,26,20,0.6)]">
         Plus: a ⌘K command palette, a calendar with drag-to-reschedule, a daily to-do planner with
         recurring templates, email + browser reminders at custom times, an installable PWA that
         works offline, and row-level security so every row is private by default.
@@ -430,14 +429,14 @@ function FeatureGrid() {
 /* ---- Collaboration band (dark) -------------------------------------------- */
 function CollaborationBand() {
   return (
-    <section id="collaborate" className="lode-night lode-stars px-4 py-20 sm:px-6">
+    <section id="collaborate" className="lode-paper px-4 py-20 sm:px-6">
       <div className="mx-auto grid max-w-5xl items-center gap-10 md:grid-cols-2">
         <div>
-          <p className="lode-eyebrow text-[rgba(216,180,85,0.9)]">Better together</p>
-          <h2 className="mt-2 font-display text-3xl font-black text-[color:var(--lode-parchment)] sm:text-4xl">
+          <p className="lode-eyebrow text-[color:var(--lode-oxblood-deep)]">Better together</p>
+          <h2 className="mt-2 font-display text-3xl font-black text-[color:var(--lode-ink)] sm:text-4xl">
             Work with your team, live.
           </h2>
-          <p className="mt-3 text-[rgba(236,228,214,0.72)]">
+          <p className="mt-3 text-[color:rgba(34,26,20,0.72)]">
             Invite people to a board, a canvas, or a single note. See who’s here with presence
             avatars, co-edit the canvas with live cursors, comment and @mention, request reviews,
             and follow an activity log — with a notification bell for everything aimed at you.
@@ -495,7 +494,7 @@ function PlanCard({
           className="lode-chip absolute -top-3 left-6 bg-[#fdfaf4]"
           style={{ color: 'var(--lode-oxblood-deep)', borderColor: 'rgba(122,42,38,0.35)' }}
         >
-          <Sparkles size={12} /> Best value
+          Best value
         </span>
       )}
       <p className="font-display text-lg font-bold text-[color:var(--lode-ink)]">{name}</p>
@@ -524,18 +523,18 @@ function PlanCard({
  * built it, and a candid line about where the product stands. */
 function MakersNote() {
   return (
-    <section className="lode-night px-4 py-20 sm:px-6">
+    <section className="lode-paper px-4 py-20 sm:px-6">
       <div className="mx-auto max-w-3xl text-center">
-        <p className="lode-eyebrow text-[rgba(216,180,85,0.9)]">A note from the maker</p>
-        <blockquote className="mt-5 font-display text-2xl font-semibold leading-snug text-[color:var(--lode-parchment)] sm:text-3xl">
+        <p className="lode-eyebrow text-[color:var(--lode-oxblood-deep)]">A note from the maker</p>
+        <blockquote className="mt-5 font-display text-2xl font-semibold leading-snug text-[color:var(--lode-ink)] sm:text-3xl">
           “I built Aurora because my notes, my boards, and my whiteboard lived in three
           different apps. I wanted one calm home for all of it — honest, no lock-in, and
           free to start.”
         </blockquote>
-        <figcaption className="mt-5 font-mono text-xs uppercase tracking-wider text-[rgba(236,228,214,0.7)]">
+        <figcaption className="mt-5 font-mono text-xs uppercase tracking-wider text-[color:rgba(34,26,20,0.7)]">
           J. Jai Akash · builder of Aurora
         </figcaption>
-        <p className="mx-auto mt-8 max-w-xl text-sm text-[rgba(236,228,214,0.7)]">
+        <p className="mx-auto mt-8 max-w-xl text-sm text-[color:rgba(34,26,20,0.7)]">
           Aurora is new, so you won’t find a wall of testimonials here yet — we’d rather
           show you the product than quote strangers. Every feature above works today. Try
           it free and judge for yourself.
@@ -548,14 +547,14 @@ function MakersNote() {
 /* ---- Final CTA + footer --------------------------------------------------- */
 function FinalCta() {
   return (
-    <section className="lode-night lode-stars px-4 py-24 text-center sm:px-6">
+    <section className="lode-paper px-4 py-24 text-center sm:px-6">
       <div className="lode-glow mx-auto mb-6 w-fit">
         <img src={MARK} alt="" className="h-12 w-12" />
       </div>
-      <h2 className="mx-auto max-w-2xl font-display text-3xl font-black text-[color:var(--lode-parchment)] sm:text-5xl">
+      <h2 className="mx-auto max-w-2xl font-display text-3xl font-black text-[color:var(--lode-ink)] sm:text-5xl">
         Everything you make, <span className="lode-gilt">in one place.</span>
       </h2>
-      <p className="mx-auto mt-4 max-w-md text-[rgba(236,228,214,0.72)]">
+      <p className="mx-auto mt-4 max-w-md text-[color:rgba(34,26,20,0.72)]">
         One calm, beautiful home for your projects, notes and ideas. Free to start, on every device.
       </p>
       <Link to="/signup" className="lode-cta mt-8 text-base">

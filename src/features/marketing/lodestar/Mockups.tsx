@@ -175,7 +175,7 @@ export function EditorMockup() {
   return (
     <AppFrame active="Library">
       <div className="mb-1.5 flex items-center justify-between">
-        <p className="font-display text-base font-bold" style={{ color: BONE }}>Launch plan ✦</p>
+        <p className="font-display text-base font-bold" style={{ color: BONE }}>Launch plan</p>
         <span className="text-[9px]" style={{ color: '#5aa06a' }}>✓ Saved</span>
       </div>
       <div className="space-y-1.5 text-[10px] leading-relaxed" style={{ color: BONE }}>
