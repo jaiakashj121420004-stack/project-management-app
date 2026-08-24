@@ -7,7 +7,7 @@ import {
   Megaphone,
   MessageSquareHeart,
   Settings,
-  Sun,
+  Sunrise,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -25,7 +25,7 @@ export interface NavItem {
 
 /** Primary navigation. `bottomNav` items also appear in the mobile bottom bar. */
 export const NAV_ITEMS: readonly NavItem[] = [
-  { label: 'Today', to: '/today', icon: Sun, bottomNav: true },
+  { label: 'Today', to: '/today', icon: Sunrise, bottomNav: true },
   { label: 'Boards', to: '/boards', icon: LayoutGrid, end: true, bottomNav: true },
   { label: 'To-Do', to: '/todos', icon: ListTodo, bottomNav: true },
   { label: 'Calendar', to: '/calendar', icon: CalendarDays, bottomNav: true },

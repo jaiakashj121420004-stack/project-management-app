@@ -35,7 +35,7 @@ function Inner({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () 
         size={collapsed ? 'sm' : 'lg'}
         leftIcon={<Plus size={20} />}
         onClick={handleNewProject}
-        className={cn('w-full', collapsed && 'aspect-square w-11 px-0')}
+        className={cn('w-full', collapsed && 'aspect-square w-11 shrink-0 px-0')}
         aria-label="New project"
       >
         {!collapsed && 'New project'}
