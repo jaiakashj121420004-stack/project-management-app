@@ -1,4 +1,5 @@
 import { fileURLToPath, URL } from 'node:url';
+import fs from 'node:fs';
 import { defineConfig, type Plugin, type PluginOption } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -35,7 +36,68 @@ function manualChunks(id: string): string | undefined {
   // loads eagerly on every route. Returning undefined here lets Rollup give
   // it its own async chunk, split off purely because of how it's imported.
   if (id.includes('/docx/') || id.includes('\\docx\\')) return undefined;
+  // PageSpeed follow-up (2026-08-30, PageSpeed report lkdtduvz5x): the
+  // dist/stats.html treemap showed @dnd-kit, zod, date-fns, and dompurify —
+  // all sizeable boxes — sitting inside the eagerly-loaded 'vendor' chunk
+  // that ships on every route, including the anonymous marketing landing
+  // page. Grepped every importer of each: @dnd-kit only appears under
+  // features/{board,calendar,todos} (drag-and-drop), zod only under each
+  // feature's own schemas.ts + the auth forms, dompurify only under
+  // features/{editor,notes} — every single one is reached exclusively
+  // through an App.tsx lazy() route boundary already. They were only ending
+  // up in 'vendor' because this function force-merged them there regardless
+  // of that boundary, the same mistake the docx case above already fixes for
+  // one package — this generalizes that fix to the rest. Excluding them here
+  // lets Rollup split each into its own chunk(s) based on the *real* import
+  // graph, so an anonymous/marketing visit no longer downloads
+  // drag-and-drop, every feature's Zod validation, and DOMPurify before it
+  // can render anything.
+  if (
+    id.includes('@dnd-kit') ||
+    id.includes('/zod/') ||
+    id.includes('/date-fns/') ||
+    id.includes('dompurify')
+  ) {
+    return undefined;
+  }
   return 'vendor';
+}
+
+/**
+ * Landing-page screenshots (public/shots/*.png) are optional — the marketing
+ * page falls back to a styled CSS mockup for any that aren't dropped in yet
+ * (see public/shots/README.txt + LandingPage.tsx's <Shot>). Until real
+ * screenshots exist, every visit to the public landing page was issuing 6
+ * guaranteed-404 image requests (2 of them above-the-fold, so effectively
+ * eager despite loading="lazy") purely to discover that via onError — wasted
+ * connection/request budget on exactly the throttled-mobile, anonymous-visit
+ * path the mobile Lighthouse Performance score is measured on. This plugin
+ * reads public/shots/ at build time and exposes the filenames that actually
+ * exist via a virtual module, so <Shot> can skip the network round-trip
+ * entirely for shots it already knows aren't there — no manual list to
+ * maintain; dropping a real PNG into public/shots/ and rebuilding is still
+ * the whole workflow described in that folder's README.
+ */
+function availableShotsPlugin(): Plugin {
+  const virtualModuleId = 'virtual:available-shots';
+  const resolvedVirtualModuleId = '\0' + virtualModuleId;
+  const shotsDir = fileURLToPath(new URL('./public/shots', import.meta.url));
+  return {
+    name: 'aurora-available-shots',
+    resolveId(id) {
+      if (id === virtualModuleId) return resolvedVirtualModuleId;
+    },
+    load(id) {
+      if (id !== resolvedVirtualModuleId) return;
+      let names: string[] = [];
+      try {
+        names = fs.readdirSync(shotsDir).filter((f) => f.toLowerCase().endsWith('.png'));
+      } catch {
+        names = [];
+      }
+      return `export const AVAILABLE_SHOTS = new Set(${JSON.stringify(names)});`;
+    },
+  };
 }
 
 /**
@@ -166,6 +228,7 @@ export default defineConfig({
       brotliSize: true,
     }) as PluginOption,
     deferEditorCss(),
+    availableShotsPlugin(),
   ],
   build: {
     rollupOptions: {

@@ -38,6 +38,7 @@ import {
 } from './lodestar/Mockups';
 import { PLANS, PLAN_ORDER, ENTERPRISE_CONTACT_EMAIL } from '@/lib/plans';
 import './lodestar.css';
+import { AVAILABLE_SHOTS } from 'virtual:available-shots';
 
 const MARK = '/brand/aurora-mark.svg';
 
@@ -53,7 +54,16 @@ function Shot({
   src: string;
   children: ReactNode;
 }) {
-  const [failed, setFailed] = useState(false);
+  // Skip the network request entirely for a shot that build-time (see
+  // vite.config.ts's availableShotsPlugin) already knows isn't in
+  // public/shots/ — avoids a guaranteed-404 fetch on every landing-page
+  // visit (was costing 6 wasted requests per load, 2 of them effectively
+  // eager since they sit above the fold). Once a real PNG is dropped in and
+  // the site rebuilds, this starts true→false automatically, no code change
+  // needed, and onError below still covers a shot that's listed but fails
+  // to load for some other reason.
+  const filename = src.slice(src.lastIndexOf('/') + 1);
+  const [failed, setFailed] = useState(() => !AVAILABLE_SHOTS.has(filename));
   if (failed) return <>{children}</>;
   // Real screenshots aren't in public/shots/ yet (see that folder's README),
   // so in production every visit currently 404s and falls back to `children`
