@@ -288,7 +288,7 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
         <p className="text-fg-muted">
           Create your first workspace to start building boards, lists, and notes.
         </p>
-        <GradientButton leftIcon={<Plus size={18} />} onClick={onCreate}>
+        <GradientButton leftIcon={<Plus size={18} />} onClick={() => onCreate()}>
           New project
         </GradientButton>
       </GlassPanel>
