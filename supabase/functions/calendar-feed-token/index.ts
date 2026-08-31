@@ -23,10 +23,11 @@
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const APP_URL = Deno.env.get('APP_URL') ?? '*';
+const APP_URL = Deno.env.get('APP_URL');
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': APP_URL,
+// Missing APP_URL disables browser cross-origin access; never broaden it to '*'.
+const corsHeaders: Record<string, string> = {
+  ...(APP_URL ? { 'Access-Control-Allow-Origin': APP_URL } : {}),
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
   Vary: 'Origin',
@@ -61,12 +62,12 @@ async function isRateLimited(userId: string): Promise<boolean> {
     });
     if (!res.ok) {
       console.error(`rate_limit_hit failed: ${res.status} ${await res.text()}`);
-      return false; // fail open
+      return true; // fail closed — deny token operations when the limiter is unavailable
     }
     return (await res.json()) === true;
   } catch (err) {
     console.error('rate_limit_hit error', err);
-    return false; // fail open
+    return true; // fail closed — deny token operations when the limiter is unavailable
   }
 }
 
