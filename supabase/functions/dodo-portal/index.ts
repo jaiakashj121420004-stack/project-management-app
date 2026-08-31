@@ -66,12 +66,12 @@ async function isRateLimited(userId: string): Promise<boolean> {
     });
     if (!res.ok) {
       console.error(`rate_limit_hit failed: ${res.status} ${await res.text()}`);
-      return false; // fail open
+      return true; // fail closed — deny portal access when the limiter is unavailable
     }
     return (await res.json()) === true;
   } catch (err) {
     console.error('rate_limit_hit error', err);
-    return false; // fail open
+    return true; // fail closed — deny portal access when the limiter is unavailable
   }
 }
 
