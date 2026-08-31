@@ -86,6 +86,9 @@ const ProfilePage = lazy(() =>
 const SettingsPage = lazy(() =>
   import('@/pages/SettingsPage').then((m) => ({ default: m.SettingsPage }))
 );
+const ContactPage = lazy(() =>
+  import('@/features/support/ContactPage').then((m) => ({ default: m.ContactPage }))
+);
 const StyleGuide = lazy(() =>
   import('@/pages/StyleGuide').then((m) => ({ default: m.StyleGuide }))
 );
@@ -147,6 +150,7 @@ export default function App() {
             <Route path="billing" element={<BillingPage />} />
             <Route path="pro-vs-free" element={<ProVsFreePage />} />
             <Route path="profile" element={<ProfilePage />} />
+            <Route path="contact" element={<ContactPage />} />
             <Route path="settings" element={<SettingsPage />} />
             {/* Dev-only component showcase — intentionally not in the nav; kept
                 reachable by direct URL for verifying primitives in both themes. */}

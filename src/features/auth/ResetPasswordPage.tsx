@@ -82,6 +82,8 @@ export function ResetPasswordPage() {
         <Field
           label="New password"
           type="password"
+          name="new-password"
+          id="reset-password-new"
           autoComplete="new-password"
           placeholder="••••••••"
           leftIcon={<Lock size={17} />}
@@ -93,6 +95,8 @@ export function ResetPasswordPage() {
         <Field
           label="Confirm password"
           type="password"
+          name="confirm-password"
+          id="reset-password-confirm"
           autoComplete="new-password"
           placeholder="••••••••"
           leftIcon={<Lock size={17} />}

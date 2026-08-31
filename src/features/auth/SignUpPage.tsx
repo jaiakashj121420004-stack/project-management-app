@@ -98,6 +98,8 @@ export function SignUpPage() {
       <form onSubmit={(event) => void onSubmit(event)} noValidate className="flex flex-col gap-4">
         <Field
           label="Display name"
+          name="name"
+          id="signup-name"
           autoComplete="name"
           placeholder="Ada Lovelace"
           leftIcon={<User size={17} />}
@@ -108,6 +110,8 @@ export function SignUpPage() {
         <Field
           label="Email"
           type="email"
+          name="email"
+          id="signup-email"
           autoComplete="email"
           placeholder="you@example.com"
           leftIcon={<Mail size={17} />}
@@ -118,6 +122,8 @@ export function SignUpPage() {
         <Field
           label="Password"
           type="password"
+          name="new-password"
+          id="signup-password"
           autoComplete="new-password"
           placeholder="••••••••"
           leftIcon={<Lock size={17} />}

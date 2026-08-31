@@ -64,6 +64,8 @@ export function ForgotPasswordPage() {
         <Field
           label="Email"
           type="email"
+          name="email"
+          id="forgot-password-email"
           autoComplete="email"
           placeholder="you@example.com"
           leftIcon={<Mail size={17} />}

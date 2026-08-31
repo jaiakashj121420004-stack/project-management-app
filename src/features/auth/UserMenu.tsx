@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CreditCard, LogOut, MessageSquarePlus, Sparkles, User, type LucideIcon } from 'lucide-react';
+import { CreditCard, Globe, LogOut, Mail, MessageSquarePlus, Sparkles, User, type LucideIcon } from 'lucide-react';
 import { Avatar } from '@/components/Avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { springs } from '@/lib/motion';
@@ -137,6 +137,27 @@ export function UserMenu() {
               }}
             >
               Pro vs Free
+            </MenuItem>
+            <MenuItem
+              icon={Globe}
+              onClick={() => {
+                setOpen(false);
+                // /preview always renders the public marketing site, even for a
+                // signed-in visitor — opened in a new tab so this session and
+                // its boards stay exactly where the user left them.
+                window.open(`${window.location.origin}/preview`, '_blank', 'noopener,noreferrer');
+              }}
+            >
+              View website
+            </MenuItem>
+            <MenuItem
+              icon={Mail}
+              onClick={() => {
+                setOpen(false);
+                void navigate('/contact');
+              }}
+            >
+              Contact us
             </MenuItem>
             <MenuItem
               icon={MessageSquarePlus}

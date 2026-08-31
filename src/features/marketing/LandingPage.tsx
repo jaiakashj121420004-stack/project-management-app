@@ -1,32 +1,21 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { captureLandingAttribution, track } from '@/lib/analytics';
+import { springs } from '@/lib/motion';
 import {
   ArrowRight,
+  Bot,
   CalendarDays,
   CheckCircle2,
-  Command,
-  Palette,
-  Search,
-  Bell,
-  Download,
-  WifiOff,
-  Map,
-  MessagesSquare,
-  ShieldCheck,
-  ClipboardCheck,
-  Users,
-  Type,
-  PenTool,
-  Library as LibraryIcon,
+  ChevronDown,
   LayoutGrid,
+  Library as LibraryIcon,
+  Palette,
+  PenTool,
+  ShieldCheck,
   Target,
-  Zap,
-  Timer,
-  LayoutTemplate,
-  FileUp,
-  Share2,
-  Bot,
+  Type,
   type LucideIcon,
 } from 'lucide-react';
 import {
@@ -36,7 +25,7 @@ import {
   CalendarMockup,
   PaletteMockup,
 } from './lodestar/Mockups';
-import { PLANS, PLAN_ORDER, ENTERPRISE_CONTACT_EMAIL } from '@/lib/plans';
+import { PLANS, PLAN_ORDER, PRO_MEMBER_LIMIT, TEAM_MEMBER_LIMIT, ENTERPRISE_CONTACT_EMAIL } from '@/lib/plans';
 import './lodestar.css';
 import { AVAILABLE_SHOTS } from 'virtual:available-shots';
 
@@ -99,6 +88,12 @@ function Shot({
  * app, on the brand palette + gilt accent, bookended by a dark nav/footer.
  * Faux app windows stand in for screenshots (see lodestar/Mockups.tsx — the
  * folder keeps its internal name; nothing user-facing reads "Lodestar").
+ *
+ * Copy throughout follows MARKETING.md §19–§21: plain and concrete rather than
+ * hype-y, no competitor names anywhere (not even descriptively — see the
+ * substitution table in §21), and every claim here is something the product
+ * actually does today. Nothing is invented; nothing is a testimonial we don't
+ * have yet.
  */
 export function LandingPage() {
   // First funnel moment: capture first-touch UTM/referrer once per browser (a
@@ -122,10 +117,11 @@ export function LandingPage() {
         <Hero />
         <StatBand />
         <Spotlights />
-        <DeepDive />
-        <FeatureGrid />
+        <FeatureExplorer />
+        <Guardrail />
         <CollaborationBand />
         <Pricing />
+        <SecurityNote />
         <MakersNote />
         <FinalCta />
       </main>
@@ -146,7 +142,7 @@ function Nav() {
         <nav className="hidden items-center gap-7 text-sm text-[rgba(236,228,214,0.75)] md:flex">
           <a href="#features" className="hover:text-[color:var(--lode-parchment)]">Features</a>
           <a href="#collaborate" className="hover:text-[color:var(--lode-parchment)]">Collaborate</a>
-          <Link to="/pricing" className="hover:text-[color:var(--lode-parchment)]">Pricing</Link>
+          <a href="#pricing" className="hover:text-[color:var(--lode-parchment)]">Pricing</a>
         </nav>
         <div className="flex items-center gap-2">
           <Link
@@ -174,26 +170,26 @@ function Hero() {
         </div>
         <p className="lode-eyebrow mb-4 text-[color:var(--lode-oxblood-deep)]">Aurora · by Nvexis</p>
         <h1 className="font-display text-4xl font-black leading-[1.05] text-[color:var(--lode-ink)] sm:text-6xl">
-          Every project, note, and idea — <span className="lode-gilt">in one calm home.</span>
+          Boards, docs, canvas and a calendar — <span className="lode-gilt">one workspace, one price.</span>
         </h1>
         <p className="mx-auto mt-5 max-w-xl text-lg text-[color:rgba(34,26,20,0.72)]">
-          One calm workspace for everything: Kanban boards, a Notion-style block editor, an
-          infinite collaborative canvas with pen, media &amp; embeds, a calendar, standalone notes
-          and daily to-dos — installable on every device, synced in real time, and free to start.
+          Aurora puts Kanban boards, a block-based document editor, an infinite collaborative
+          canvas, a calendar and a daily planner in one calm place — instead of three or four
+          tools that don't agree with each other. Free to start. No credit card.
         </p>
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link to="/signup" className="lode-cta text-base">
             Start free <ArrowRight size={17} />
           </Link>
-          <Link
-            to="/pricing"
+          <a
+            href="#features"
             className="rounded-xl border border-[rgba(122,42,38,0.3)] px-5 py-2.5 text-[color:var(--lode-ink)] transition-colors hover:bg-[rgba(122,42,38,0.06)]"
           >
-            See what’s inside
-          </Link>
+            See what's inside
+          </a>
         </div>
         <p className="mt-4 font-mono text-xs uppercase tracking-widest text-[color:rgba(34,26,20,0.6)]">
-          No credit card · Works on mobile + desktop
+          Works on mobile + desktop · Installs like a native app
         </p>
       </div>
 
@@ -206,13 +202,16 @@ function Hero() {
   );
 }
 
-/* ---- Stat band ------------------------------------------------------------ */
+/* ---- Stat band -------------------------------------------------------------
+ * Four concrete, checkable facts rather than vague superlatives — see
+ * MARKETING.md §5 "concrete over abstract, always". Every number here is
+ * something a visitor can go verify on the pricing page in ten seconds. */
 function StatBand() {
-  const stats = [
-    ['1', 'workspace for your whole life’s work'],
-    ['∞', 'canvas + folders, nested however you think'],
-    ['2-ink', 'warm, editorial, easy on the eyes'],
-    ['0', 'to start — free forever plan'],
+  const stats: [string, string][] = [
+    ['1 price', 'per board — not per person'],
+    [`${PRO_MEMBER_LIMIT}`, 'people on a Pro board, same $5.99/mo'],
+    ['5-in-1', 'boards, docs, canvas, calendar & planner'],
+    ['$0', 'to start — a genuinely usable free plan'],
   ];
   return (
     <section className="lode-paper border-y border-[rgba(122,42,38,0.14)] px-4 py-8 sm:px-6">
@@ -272,27 +271,32 @@ function Spotlights() {
         <h2 className="mt-2 font-display text-3xl font-black text-[color:var(--lode-ink)] sm:text-4xl">
           A whole workspace that finally feels like one thing.
         </h2>
+        <p className="mx-auto mt-3 max-w-xl text-[color:rgba(34,26,20,0.7)]">
+          The most common reason people abandon a project tool isn't a missing feature — it's that
+          the tool got too complicated to open, or it's really three tools stitched together that
+          quietly disagree with each other. Aurora is built against both.
+        </p>
       </div>
       <div className="mx-auto mt-16 flex max-w-5xl flex-col gap-20">
         <Spotlight
           eyebrow="Boards"
           title="Kanban that gets out of your way"
-          body="Drag cards across columns, set due dates and priorities, attach checklists and labels. Multiple projects, each its own board."
-          points={['Drag-and-drop columns & cards', 'Due dates, priorities, checklists, labels', 'Assignees + a linked calendar']}
+          body="Drag cards across columns, set due dates and priorities, attach checklists and labels. Multiple projects, each its own board — and the bill doesn't change when you add the sixth person."
+          points={['Drag-and-drop columns & cards', 'Due dates, priorities, checklists, labels', 'Assignees + a calendar that reads the same data']}
           mockup={<Shot src="/shots/board.png"><BoardMockup /></Shot>}
         />
         <Spotlight
           reverse
           eyebrow="Library + Editor"
-          title="A Notion-style editor, organised like a file explorer"
-          body="Standalone notes and canvases live in one nested Library. Write with a real block editor: slash commands, toggles, task lists, custom colours, emoji, drag-to-reorder."
-          points={['Infinite folders for notes + canvases', '“/” slash menu, toggles, task lists, colours', 'Full-text search across your Library']}
+          title="A block-based document editor, organised like a file explorer"
+          body="Standalone notes and canvases live in one nested Library. Write with a real block editor — slash commands, toggles, task lists, custom colours, emoji, drag-to-reorder — the same editor that powers every text box on the canvas, too."
+          points={['Infinite folders for notes + canvases', '"/" slash menu, toggles, task lists, colours', 'Full-text search across your whole Library']}
           mockup={<Shot src="/shots/editor.png"><EditorMockup /></Shot>}
         />
         <Spotlight
           eyebrow="Canvas · Pro"
           title="An infinite whiteboard that thinks with you"
-          body="Pressure-sensitive pen, marker and highlighter, shapes and text, images, audio and video — and live multiplayer cursors so a team can sketch together in real time."
+          body="Pressure-sensitive pen, marker and highlighter, shapes and text, images, audio and video — and live multiplayer cursors so a team can sketch together in real time, with edits that merge instead of overwrite."
           points={['Freehand ink, media, embeds', 'Live cursors + real-time co-editing', 'Minimap, fit-to-content, page styles']}
           mockup={<Shot src="/shots/canvas.png"><CanvasMockup /></Shot>}
         />
@@ -301,63 +305,86 @@ function Spotlights() {
   );
 }
 
-/* ---- Deep dive: detailed capabilities per pillar -------------------------- */
-const PILLARS: { icon: LucideIcon; title: string; intro: string; points: string[] }[] = [
+/* ---- Feature explorer: every feature, in an accordion ---------------------
+ * The full feature inventory (MARKETING.md §8), grouped into eight categories
+ * a visitor can open one at a time rather than scrolling past a wall of text.
+ * Nothing named here is a competitor's product — see §21. */
+interface Pillar {
+  icon: LucideIcon;
+  title: string;
+  intro: string;
+  points: string[];
+}
+
+const PILLARS: Pillar[] = [
+  {
+    icon: LayoutGrid,
+    title: 'Boards & teamwork',
+    intro: 'Kanban that scales from a solo to-do list to a whole team’s review pipeline.',
+    points: [
+      'Drag-drop columns & cards across multiple projects',
+      'Due dates (and due times on Pro), priorities, checklists, labels, assignees',
+      'Review flow: request → approve / needs-changes, with status filters',
+      'Threaded comments with @mentions + emoji reactions',
+      'Per-project activity log + a live notification bell',
+      'Presence avatars show who’s viewing; changes sync live',
+      'Owner / editor / viewer roles, enforced in the database — not just hidden buttons',
+    ],
+  },
+  {
+    icon: CalendarDays,
+    title: 'Calendar & reminders',
+    intro: 'Four views over one truth, not four systems pretending to agree.',
+    points: [
+      'Month, Week, Day and a Timeline/Gantt view — all reading the same cards and to-dos',
+      'Drag a card to a new day to reschedule it; drag or resize a timeline bar to change its span',
+      'A colour-coded legend appears automatically once more than one project is in view',
+      'Due-date reminders by email and browser notification',
+      'Pro: custom reminder timing and channels, plus an ICS feed your own calendar app can subscribe to',
+    ],
+  },
   {
     icon: Type,
-    title: 'A real block editor',
-    intro: 'The same Notion-style editor powers standalone notes and every text box on the canvas.',
+    title: 'A block-based document editor',
+    intro: 'The same editor powers standalone notes and every text box on the canvas.',
     points: [
-      'Press “/” for a slash menu that inserts any block',
-      'Headings H1–H3, quotes, code blocks, dividers',
-      'Bullet, numbered, hyphen, lettered (a,b,c) & Roman (i,ii,iii) lists — nested',
+      'Press "/" for a slash menu that inserts any block',
+      'Headings, quotes, code blocks, dividers',
+      'Bullet, numbered, lettered and Roman-numeral lists — nested',
       'Task lists with real checkboxes that strike through when done',
       'Toggle / collapsible blocks to fold away detail',
-      'Bold, italic, underline, strike, inline code',
-      'Custom text colours AND highlight colours (full palette)',
-      'Emoji: type “:” to autocomplete, or pick from the toolbar',
-      'Safe, sanitised links — and everything autosaves as you type',
+      'Math formulas (inline and block) with a click-to-edit live preview',
+      'Custom text colours and highlight colours, an emoji autocomplete, and safe sanitised links',
+      'Auto-generated, clickable table of contents per note',
+      'Export to Markdown (free), Word and PDF (Pro)',
+      'Everything autosaves as you type',
     ],
   },
   {
     icon: PenTool,
     title: 'An infinite canvas',
-    intro: 'A whiteboard that thinks with you — draw, drop media, and lay ideas out freely.',
+    intro: 'A whiteboard that stays in sync live, with another person, on another device.',
     points: [
       'Infinite pan & zoom; ruled, grid, dotted or blank pages',
-      'Pressure-sensitive pen, marker & translucent highlighter',
-      'Two erasers: whole-stroke and pixel-precise',
-      'Rich text boxes (the full block editor above)',
-      'Images: paste, drag-drop, or upload',
-      'Audio & video: record in-app, upload, OR embed from YouTube, Vimeo, Loom & SoundCloud',
-      'Multi-select, group move, z-order, lock, duplicate, layers panel',
-      'Minimap + fit-to-content + reset view to navigate big boards',
-      'Live multiplayer cursors — co-edit in real time',
+      'Pressure-sensitive pen, marker & translucent highlighter, with two erasers',
+      'Rich text boxes using the same block editor as your notes',
+      'Images: paste, drag-drop, or upload; audio & video: record in-app, upload, or embed',
+      'Multi-select, group move, z-order, lock, duplicate, and a layers panel',
+      'Minimap, fit-to-content, and reset view for navigating big boards',
+      'Live multiplayer cursors — concurrent edits merge rather than clobber each other',
     ],
   },
   {
     icon: LibraryIcon,
-    title: 'Library & notes',
+    title: 'Library, search & organization',
     intro: 'One nested folder tree holds your notes and canvases together, like a real file explorer.',
     points: [
-      'Infinite subfolders holding BOTH notes and canvases',
-      'Standalone notes (independent of any project) + per-project notes',
+      'Infinite subfolders holding both notes and canvases',
+      'Standalone notes (independent of any project) plus per-project notes',
       'Rename, move to any folder, delete, and search across everything',
       'Share a note or canvas by email as editor or viewer',
-      'Legacy markdown notes convert to blocks automatically',
-    ],
-  },
-  {
-    icon: LayoutGrid,
-    title: 'Boards & teamwork',
-    intro: 'Kanban that scales from a solo to-do to a whole team’s review pipeline.',
-    points: [
-      'Drag-drop columns & cards across multiple projects',
-      'Due dates, priorities, checklists, labels, assignees',
-      'Review flow: request → approve / needs-changes, with status filters',
-      'Comments with @mentions + emoji reactions',
-      'Per-project activity log + a live notification bell',
-      'Presence avatars show who’s viewing; changes sync live',
+      'Full-text search across every card and note, surfaced in one ⌘K command palette',
+      'A single familiar way to jump between projects, notes, canvases and folders',
     ],
   },
   {
@@ -365,55 +392,75 @@ const PILLARS: { icon: LucideIcon; title: string; intro: string; points: string[
     title: 'Goals, automations & time',
     intro: 'Track the outcome, automate the busywork, and account for the hours — without a config screen in sight.',
     points: [
-      'Lightweight progress-bar goals — not a heavyweight OKR system',
-      'Fixed, ready-made automations for the busywork you always do',
-      'Recurring cards on a schedule, wired to the same planner engine',
+      'Lightweight progress-bar goals — a title, a target date, and a percentage. Deliberately not a heavyweight OKR system.',
+      'A small, fixed set of automation rules — "when a card moves to Done, assign it to…" — not a general rule builder',
+      'Recurring cards on a schedule, wired to the same planner engine as your daily to-dos',
       'Per-card time tracking: start/stop, a running total, one active timer at a time',
-      'Personal daily/weekly to-do planner with its own recurrence rules',
-      'Starter templates so a fresh board or list is never a blank page',
+      'A personal daily/weekly to-do planner with its own recurrence rules, separate from shared boards',
+      'Starter templates, so a fresh board or list is never a blank page',
     ],
   },
   {
-    icon: FileUp,
-    title: 'Import, connect & carry it with you',
-    intro: 'Bring your old tool’s work in, and let your own AI tools reach in when you want them to.',
+    icon: Bot,
+    title: 'Connect your AI assistant, bring your work in',
+    intro: 'Reach Aurora from tools you already use — and don’t start from zero.',
     points: [
-      'One-time Trello JSON / CSV import into a brand-new Aurora project',
-      'Connect Claude Desktop or Claude Code straight to your account (Pro+)',
-      'A client-facing, no-account read-only share link for any board',
-      'Full-text search across every card and note, right in ⌘K',
-      'Installable PWA with offline reading, on every platform',
-      'Themes and colour presets synced to your account, not just one device',
+      'Pro & Team: connect Claude Desktop or Claude Code directly to your account and read or write boards, to-dos and notes through the same permission-enforced API the app itself uses',
+      'Auth built for that: a token shown once, only its hash stored, and every call authenticated by a short-lived key you can revoke on its own',
+      'A client-facing, no-account-required read-only share link — send a URL, they see the board, nobody signs up',
+      'One-time board import from another tool’s JSON export, or from CSV, into a brand-new Aurora project — one-way, so trying Aurora costs you nothing to reverse',
+    ],
+  },
+  {
+    icon: Palette,
+    title: 'Make it yours, everywhere',
+    intro: 'The small details that make a tool feel like it’s actually yours.',
+    points: [
+      'Day and Night themes, both fully designed — not an afterthought toggle',
+      'Font pairing (free) and a custom accent colour (Pro), with eight curated presets up front',
+      'Preferences sync to your account, not just one device',
+      'Installs from any browser on desktop or mobile, like a native app',
+      'Offline caching, so you can keep reading when you lose signal',
     ],
   },
 ];
 
-function DeepDive() {
+function AccordionRow({ pillar, open, onToggle }: { pillar: Pillar; open: boolean; onToggle: () => void }) {
+  const { icon: Icon, title, intro, points } = pillar;
   return (
-    <section className="lode-paper px-4 py-20 sm:px-6">
-      <div className="mx-auto max-w-3xl text-center">
-        <p className="lode-eyebrow text-[color:var(--lode-oxblood-deep)]">Under the hood</p>
-        <h2 className="mt-2 font-display text-3xl font-black text-[color:var(--lode-ink)] sm:text-4xl">
-          Deceptively simple. Seriously deep.
-        </h2>
-        <p className="mx-auto mt-3 max-w-xl text-[color:rgba(34,26,20,0.7)]">
-          Every surface is loaded with the details that make real work fast. Here’s a taste.
-        </p>
-      </div>
-      <div className="mx-auto mt-14 grid max-w-5xl gap-4 md:grid-cols-2">
-        {PILLARS.map(({ icon: Icon, title, intro, points }) => (
-          <div key={title} className="lode-card p-6">
-            <div className="flex items-center gap-3">
-              <span
-                className="grid h-10 w-10 place-items-center rounded-xl"
-                style={{ background: 'rgba(194,74,64,0.12)', color: 'var(--lode-oxblood)' }}
-              >
-                <Icon size={19} />
-              </span>
-              <h3 className="font-display text-xl font-bold text-[color:var(--lode-ink)]">{title}</h3>
-            </div>
-            <p className="mt-3 text-sm text-[color:rgba(34,26,20,0.7)]">{intro}</p>
-            <ul className="mt-4 space-y-2">
+    <div className="lode-card overflow-hidden">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full items-center gap-4 p-5 text-left"
+      >
+        <span
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl"
+          style={{ background: 'rgba(194,74,64,0.12)', color: 'var(--lode-oxblood)' }}
+        >
+          <Icon size={20} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-display text-lg font-bold text-[color:var(--lode-ink)]">{title}</span>
+          <span className="mt-0.5 block text-sm text-[color:rgba(34,26,20,0.65)]">{intro}</span>
+        </span>
+        <ChevronDown
+          size={20}
+          className="shrink-0 text-[color:rgba(34,26,20,0.5)] transition-transform duration-200"
+          style={{ transform: open ? 'rotate(180deg)' : undefined }}
+        />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={springs.snappy}
+            className="overflow-hidden"
+          >
+            <ul className="space-y-2 px-5 pb-6 pl-[4.25rem]">
               {points.map((p) => (
                 <li key={p} className="flex items-start gap-2 text-sm text-[color:rgba(34,26,20,0.82)]">
                   <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-[color:var(--lode-oxblood)]" />
@@ -421,63 +468,88 @@ function DeepDive() {
                 </li>
               ))}
             </ul>
-          </div>
-        ))}
-      </div>
-      <p className="mx-auto mt-8 max-w-3xl text-center text-sm text-[color:rgba(34,26,20,0.6)]">
-        Plus: a ⌘K command palette, a calendar with drag-to-reschedule, a daily to-do planner with
-        recurring templates, email + browser reminders at custom times, an installable PWA that
-        works offline, and row-level security so every row is private by default.
-      </p>
-    </section>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
-/* ---- Feature grid (covers every remaining feature) ------------------------ */
-const GRID: { icon: LucideIcon; title: string; body: string }[] = [
-  { icon: CalendarDays, title: 'Calendar', body: 'Month & week views; drag any card to reschedule.' },
-  { icon: ClipboardCheck, title: 'Daily to-do planner', body: 'Plan your day, with recurring task templates.' },
-  { icon: Command, title: '⌘K command palette', body: 'Jump anywhere in a keystroke.' },
-  { icon: Search, title: 'Library search', body: 'Find any note, canvas, or folder instantly.' },
-  { icon: Bell, title: 'Reminders', body: 'Email + browser notifications, at custom times.' },
-  { icon: Download, title: 'Installable PWA', body: 'Add to your phone & desktop like a native app.' },
-  { icon: WifiOff, title: 'Works offline', body: 'Read your work offline; syncs across devices.' },
-  { icon: Map, title: 'Canvas minimap', body: 'Overview, fit-to-content, click-to-jump.' },
-  { icon: Palette, title: 'Custom colours', body: 'Text, highlight & pen colours everywhere.' },
-  { icon: MessagesSquare, title: 'Comments & @mentions', body: 'Discuss on cards; react with emoji.' },
-  { icon: Users, title: 'Sharing & roles', body: 'Invite by email as editor or viewer.' },
-  { icon: ShieldCheck, title: 'Private by default', body: 'Row-level security guards every row.' },
-  { icon: Target, title: 'Goals', body: 'A simple progress bar, not an OKR system.' },
-  { icon: Zap, title: 'Automations', body: 'Fixed, ready-made rules for the busywork.' },
-  { icon: Timer, title: 'Time tracking', body: 'Start/stop timers with a running total per card.' },
-  { icon: LayoutTemplate, title: 'Templates', body: 'Starter templates for boards, lists & notes.' },
-  { icon: FileUp, title: 'Trello & CSV import', body: 'Bring an old board in, one-time and one-way.' },
-  { icon: Share2, title: 'Client share links', body: 'A read-only link — no account needed to view.' },
-  { icon: Bot, title: 'Connect Claude (Pro+)', body: 'Link Claude Desktop/Code to your account.' },
-];
-
-function FeatureGrid() {
+function FeatureExplorer() {
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
   return (
-    <section className="lode-paper px-4 pb-20 sm:px-6">
-      <div className="mx-auto grid max-w-5xl gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {GRID.map(({ icon: Icon, title, body }) => (
-          <div key={title} className="lode-card p-4">
-            <span
-              className="grid h-9 w-9 place-items-center rounded-xl"
-              style={{ background: 'rgba(194,74,64,0.12)', color: 'var(--lode-oxblood)' }}
-            >
-              <Icon size={18} />
-            </span>
-            <p className="mt-3 font-display font-semibold text-[color:var(--lode-ink)]">{title}</p>
-            <p className="mt-1 text-sm text-[color:rgba(34,26,20,0.68)]">{body}</p>
-          </div>
+    <section className="lode-paper px-4 py-20 sm:px-6">
+      <div className="mx-auto max-w-3xl text-center">
+        <p className="lode-eyebrow text-[color:var(--lode-oxblood-deep)]">Every feature, in full</p>
+        <h2 className="mt-2 font-display text-3xl font-black text-[color:var(--lode-ink)] sm:text-4xl">
+          Deceptively simple. Seriously deep.
+        </h2>
+        <p className="mx-auto mt-3 max-w-xl text-[color:rgba(34,26,20,0.7)]">
+          Everything shipped and live today, grouped by what you're trying to do. Open a section to
+          see the whole list.
+        </p>
+      </div>
+      <div className="mx-auto mt-12 flex max-w-3xl flex-col gap-3">
+        {PILLARS.map((pillar, i) => (
+          <AccordionRow
+            key={pillar.title}
+            pillar={pillar}
+            open={openIndex === i}
+            onToggle={() => setOpenIndex((current) => (current === i ? null : i))}
+          />
         ))}
       </div>
     </section>
   );
 }
 
-/* ---- Collaboration band (dark) -------------------------------------------- */
+/* ---- The Simplicity Guardrail (angle 2) ------------------------------------
+ * Anyone can claim their tool is simple. This section shows the mechanism
+ * instead of the adjective — see MARKETING.md §8 and §22 angle 2. */
+function Guardrail() {
+  return (
+    <section className="lode-paper border-y border-[rgba(122,42,38,0.14)] px-4 py-20 sm:px-6">
+      <div className="mx-auto grid max-w-5xl items-center gap-10 md:grid-cols-2">
+        <div>
+          <p className="lode-eyebrow text-[color:var(--lode-oxblood-deep)]">Why it stays simple</p>
+          <h2 className="mt-2 font-display text-3xl font-black text-[color:var(--lode-ink)] sm:text-4xl">
+            Every feature is checked against one question before it's built.
+          </h2>
+          <p className="mt-4 text-[color:rgba(34,26,20,0.72)]">
+            Does this add a surface a new user has to learn on day one? If the honest answer is
+            yes, the feature gets smaller — not the checklist.
+          </p>
+          <ul className="mt-5 space-y-3">
+            <li className="flex items-start gap-2 text-sm text-[color:rgba(34,26,20,0.82)]">
+              <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-[color:var(--lode-oxblood)]" />
+              Goals could have been a full objectives-and-key-results system. It's a progress bar
+              with a target date.
+            </li>
+            <li className="flex items-start gap-2 text-sm text-[color:rgba(34,26,20,0.82)]">
+              <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-[color:var(--lode-oxblood)]" />
+              Automations could have been a general if-this-then-that builder. It's three fixed
+              behaviours that read as a plain sentence.
+            </li>
+            <li className="flex items-start gap-2 text-sm text-[color:rgba(34,26,20,0.82)]">
+              <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-[color:var(--lode-oxblood)]" />
+              The rule cuts both ways — it's also overruled itself, in writing, when a feature
+              earned its place.
+            </li>
+          </ul>
+        </div>
+        <div className="lode-card p-8 text-center">
+          <p className="font-display text-xl font-semibold leading-snug text-[color:var(--lode-ink)]">
+            "Most tools in this category keep adding surface area until the tool itself becomes
+            the thing you have to manage."
+          </p>
+          <p className="mt-4 text-sm text-[color:rgba(34,26,20,0.6)]">That's the failure mode this rule exists to prevent.</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---- Collaboration band ----------------------------------------------------- */
 function CollaborationBand() {
   return (
     <section id="collaborate" className="lode-paper px-4 py-20 sm:px-6">
@@ -488,7 +560,7 @@ function CollaborationBand() {
             Work with your team, live.
           </h2>
           <p className="mt-3 text-[color:rgba(34,26,20,0.72)]">
-            Invite people to a board, a canvas, or a single note. See who’s here with presence
+            Invite people to a board, a canvas, or a single note. See who's here with presence
             avatars, co-edit the canvas with live cursors, comment and @mention, request reviews,
             and follow an activity log — with a notification bell for everything aimed at you.
           </p>
@@ -529,17 +601,34 @@ function formatPrice(n: number): string {
 }
 
 function Pricing() {
+  const perSeatFiveYear = 5 * 10 * 12; // illustrative: 5 people, $10/seat/mo, one year
+  const teamYear = PLANS.team.priceMonthly * 12;
   return (
     <section id="pricing" className="lode-paper px-4 py-20 sm:px-6">
       <div className="mx-auto max-w-3xl text-center">
         <p className="lode-eyebrow text-[color:var(--lode-oxblood-deep)]">Simple pricing</p>
         <h2 className="mt-2 font-display text-3xl font-black text-[color:var(--lode-ink)] sm:text-4xl">
-          Start free. Upgrade when you fly.
+          Priced per board. Not per person.
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-[color:rgba(34,26,20,0.7)]">
-          No credit card to begin. Move to Pro any time for the infinite Canvas and real-time
-          co-editing, or Team when your whole group needs to be on one board.
+          Most tools in this category charge per seat, so the bill grows every time you add a
+          contractor, a freelancer, or a client who just needs to look at something. Aurora
+          doesn't. Pro is {formatPrice(PLANS.pro.priceMonthly)}/mo for up to {PRO_MEMBER_LIMIT} people
+          on a board. Team is {formatPrice(PLANS.team.priceMonthly)}/mo for up to {TEAM_MEMBER_LIMIT}.
+          Not each — total.
         </p>
+        <div className="mx-auto mt-8 grid max-w-md grid-cols-2 gap-4 rounded-2xl border border-[rgba(122,42,38,0.16)] bg-[rgba(255,253,248,0.6)] p-5 text-left">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-[color:rgba(34,26,20,0.55)]">A typical per-seat tool</p>
+            <p className="mt-1 font-display text-2xl font-bold text-[color:var(--lode-ink)]">${perSeatFiveYear}<span className="text-sm font-medium text-[color:rgba(34,26,20,0.6)]">/yr</span></p>
+            <p className="mt-1 text-xs text-[color:rgba(34,26,20,0.55)]">5 people, $10/seat/mo — illustrative</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wide text-[color:var(--lode-oxblood-deep)]">Aurora Team</p>
+            <p className="mt-1 font-display text-2xl font-bold text-[color:var(--lode-ink)]">${teamYear}<span className="text-sm font-medium text-[color:rgba(34,26,20,0.6)]">/yr</span></p>
+            <p className="mt-1 text-xs text-[color:rgba(34,26,20,0.55)]">up to {TEAM_MEMBER_LIMIT} people, flat</p>
+          </div>
+        </div>
       </div>
       <div className="mx-auto mt-10 grid max-w-4xl gap-4 sm:grid-cols-3">
         {PLAN_ORDER.map((id) => (
@@ -600,28 +689,64 @@ function PlanCard({
   );
 }
 
+/* ---- Security, stated plainly (MARKETING.md §9, §20) -----------------------
+ * "Enterprise-grade" is a banned phrase because it means nothing and Aurora
+ * has no independent audit yet. This says what's actually true instead. */
+function SecurityNote() {
+  return (
+    <section className="lode-paper px-4 py-16 sm:px-6">
+      <div className="mx-auto max-w-2xl">
+        <div className="lode-card flex flex-col gap-4 p-7 sm:flex-row sm:items-start sm:p-8">
+          <span
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-xl"
+            style={{ background: 'rgba(194,74,64,0.12)', color: 'var(--lode-oxblood)' }}
+          >
+            <ShieldCheck size={20} />
+          </span>
+          <div>
+            <p className="font-display text-lg font-bold text-[color:var(--lode-ink)]">
+              Said plainly, not with a padlock icon
+            </p>
+            <p className="mt-2 text-sm text-[color:rgba(34,26,20,0.75)]">
+              Every table has row-level security. Every paid limit is enforced by the database, not
+              only the interface. Payment state is only ever written by a signature-verified
+              webhook — your browser is never trusted to say what you paid for. There's a test
+              suite whose only job is proving one account can't read another account's data.
+            </p>
+            <p className="mt-2 text-sm text-[color:rgba(34,26,20,0.75)]">
+              What's not true yet: no independent security audit. It's scoped and budgeted, and
+              it's the next thing we're paying for — ahead of any advertising.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ---- Maker's note ---------------------------------------------------------
  * Aurora is new, so there's no wall of five-star customer quotes to show — and
  * inventing them would be exactly the hype this brand rejects (see the anti-guru
- * voice in DESIGN-GUIDELINES §8). Instead: one honest note from the person who
- * built it, and a candid line about where the product stands. */
+ * voice in DESIGN-GUIDELINES §8 and MARKETING.md §20). Instead: one honest note
+ * from the person who built it, and a candid line about where the product
+ * stands. */
 function MakersNote() {
   return (
     <section className="lode-paper px-4 py-20 sm:px-6">
       <div className="mx-auto max-w-3xl text-center">
         <p className="lode-eyebrow text-[color:var(--lode-oxblood-deep)]">A note from the maker</p>
         <blockquote className="mt-5 font-display text-2xl font-semibold leading-snug text-[color:var(--lode-ink)] sm:text-3xl">
-          “I built Aurora because my notes, my boards, and my whiteboard lived in three
-          different apps. I wanted one calm home for all of it — honest, no lock-in, and
-          free to start.”
+          "I built Aurora because my notes, my boards, and my whiteboard lived in three
+          different apps that didn't agree with each other. I wanted one calm home for all of
+          it — honest about what it is, and free to start."
         </blockquote>
         <figcaption className="mt-5 font-mono text-xs uppercase tracking-wider text-[color:rgba(34,26,20,0.7)]">
           J. Jai Akash · builder of Aurora
         </figcaption>
         <p className="mx-auto mt-8 max-w-xl text-sm text-[color:rgba(34,26,20,0.7)]">
-          Aurora is new, so you won’t find a wall of testimonials here yet — we’d rather
-          show you the product than quote strangers. Every feature above works today. Try
-          it free and judge for yourself.
+          Aurora is new, so you won't find a wall of testimonials here yet — we'd rather show
+          you the product than quote strangers. Every feature above works today. Try it free and
+          judge for yourself.
         </p>
       </div>
     </section>
@@ -658,9 +783,10 @@ function Footer() {
           <span className="text-[rgba(236,228,214,0.72)]">· a Nvexis product</span>
         </div>
         <nav className="flex flex-wrap items-center justify-center gap-5">
-          <Link to="/pricing" className="hover:text-[color:var(--lode-parchment)]">Pricing</Link>
+          <a href="#pricing" className="hover:text-[color:var(--lode-parchment)]">Pricing</a>
           <Link to="/terms" className="hover:text-[color:var(--lode-parchment)]">Terms</Link>
           <Link to="/privacy" className="hover:text-[color:var(--lode-parchment)]">Privacy</Link>
+          <a href={`mailto:${ENTERPRISE_CONTACT_EMAIL}`} className="hover:text-[color:var(--lode-parchment)]">Contact</a>
           <Link to="/login" className="hover:text-[color:var(--lode-parchment)]">Sign in</Link>
         </nav>
         <p className="font-mono text-xs text-[rgba(236,228,214,0.72)]">Made by J. Jai Akash</p>

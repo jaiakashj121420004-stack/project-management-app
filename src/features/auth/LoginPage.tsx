@@ -66,6 +66,8 @@ export function LoginPage() {
         <Field
           label="Email"
           type="email"
+          name="email"
+          id="login-email"
           autoComplete="email"
           placeholder="you@example.com"
           leftIcon={<Mail size={17} />}
@@ -77,6 +79,8 @@ export function LoginPage() {
           <Field
             label="Password"
             type="password"
+            name="current-password"
+            id="login-password"
             autoComplete="current-password"
             placeholder="••••••••"
             leftIcon={<Lock size={17} />}
