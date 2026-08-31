@@ -118,12 +118,12 @@ async function rateLimitHit(key: string): Promise<boolean> {
     });
     if (!res.ok) {
       console.error(`rate_limit_hit failed: ${res.status} ${await res.text()}`);
-      return false; // fail open, same convention as every other rate-limited function here
+      return true; // fail closed — deny MCP calls when the limiter is unavailable
     }
     return (await res.json()) === true;
   } catch (err) {
     console.error('rate_limit_hit error', err);
-    return false;
+    return true; // fail closed — deny MCP calls when the limiter is unavailable
   }
 }
 
