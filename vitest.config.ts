@@ -19,6 +19,17 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     css: false,
+    // A couple of pure-logic suites transitively import src/lib/supabase.ts
+    // (via noteMedia.ts -> NoteImageView.tsx), which throws at import time if
+    // VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY aren't set. These are
+    // deliberately fake, non-functional placeholders used only inside the
+    // test process (never shipped, never used to hit a real Supabase
+    // project) so the CI runner doesn't need real secrets to run tests that
+    // don't actually touch Supabase.
+    env: {
+      VITE_SUPABASE_URL: 'https://placeholder.supabase.co',
+      VITE_SUPABASE_ANON_KEY: 'placeholder-anon-key-for-tests',
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
