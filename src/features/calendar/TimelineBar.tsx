@@ -71,6 +71,14 @@ export function DraggableTimelineBar({
   const start = useDraggable({ id: `${card.id}::start`, data: { kind: 'timeline-start', card } });
   const end = useDraggable({ id: `${card.id}::end`, data: { kind: 'timeline-end', card } });
 
+  // `useDraggable`'s return value is dnd-kit's own public API — a plain
+  // object bundling a stable ref-setter callback with plain values
+  // (`listeners`/`attributes`/`isDragging`), spread straight into JSX exactly
+  // as dnd-kit's own docs show. `react-hooks/refs` can't tell that setNodeRef
+  // is a callback ref (not a `.current` read) and flags every spread here as
+  // a render-time ref access; disabling it for this block is scoped to that
+  // known false positive rather than a real render/effect bug.
+  /* eslint-disable react-hooks/refs */
   return (
     <div className="relative flex h-full items-center">
       <TimelineBarFace
@@ -109,4 +117,5 @@ export function DraggableTimelineBar({
       )}
     </div>
   );
+  /* eslint-enable react-hooks/refs */
 }

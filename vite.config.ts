@@ -89,7 +89,7 @@ function availableShotsPlugin(): Plugin {
     },
     load(id) {
       if (id !== resolvedVirtualModuleId) return;
-      let names: string[] = [];
+      let names: string[];
       try {
         names = fs.readdirSync(shotsDir).filter((f) => f.toLowerCase().endsWith('.png'));
       } catch {

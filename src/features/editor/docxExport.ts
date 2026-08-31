@@ -173,11 +173,11 @@ async function rasterizeLatex(latex: string, displayMode: boolean): Promise<Reso
 // ── Pass 1: collect every image path + math formula the doc references ─────
 
 function collectAssets(node: JSONContent, images: Set<string>, formulas: Set<string>): void {
-  const path = node.attrs?.path;
+  const path: unknown = node.attrs?.path;
   if (node.type === 'noteImage' && typeof path === 'string' && path) {
     images.add(path);
   }
-  const latex = node.attrs?.latex;
+  const latex: unknown = node.attrs?.latex;
   if ((node.type === 'mathInline' || node.type === 'mathBlock') && typeof latex === 'string') {
     formulas.add(mathKey(node.type, latex));
   }
@@ -345,7 +345,7 @@ function inlineNodeToChild(
   }
 
   if (node.type === 'mathInline') {
-    const rawLatex = node.attrs?.latex;
+    const rawLatex: unknown = node.attrs?.latex;
     const latex = typeof rawLatex === 'string' ? rawLatex : '';
     const asset = ctx.assets.formulas.get(mathKey('mathInline', latex));
     if (!asset) return new TextRun({ text: latex ? `$${latex}$` : '', italics: true, ...extraRunOpts });
@@ -437,7 +437,7 @@ function listToBlocks(list: JSONContent, depth: number, ctx: ConvertCtx): Block[
     });
   }
 
-  const rawListStyle = list.attrs?.listStyle;
+  const rawListStyle: unknown = list.attrs?.listStyle;
   const style = typeof rawListStyle === 'string' ? rawListStyle : null;
   const reference =
     list.type === 'orderedList'
@@ -550,7 +550,7 @@ function blockToDocx(node: JSONContent, ctx: ConvertCtx): Block[] {
     }
 
     case 'noteImage': {
-      const rawPath = node.attrs?.path;
+      const rawPath: unknown = node.attrs?.path;
       const path = typeof rawPath === 'string' ? rawPath : null;
       const asset = path ? ctx.assets.images.get(path) : null;
       if (!asset) {
@@ -571,7 +571,7 @@ function blockToDocx(node: JSONContent, ctx: ConvertCtx): Block[] {
     }
 
     case 'mathBlock': {
-      const rawLatex = node.attrs?.latex;
+      const rawLatex: unknown = node.attrs?.latex;
       const latex = typeof rawLatex === 'string' ? rawLatex : '';
       const asset = ctx.assets.formulas.get(mathKey('mathBlock', latex));
       if (!asset) {
@@ -592,10 +592,10 @@ function blockToDocx(node: JSONContent, ctx: ConvertCtx): Block[] {
     }
 
     case 'noteEmbed': {
-      const rawUrl = node.attrs?.embedUrl;
+      const rawUrl: unknown = node.attrs?.embedUrl;
       const url = typeof rawUrl === 'string' ? rawUrl : '';
       const href = url ? safeLinkHref(url) : null;
-      const rawProvider = node.attrs?.provider;
+      const rawProvider: unknown = node.attrs?.provider;
       const provider = typeof rawProvider === 'string' ? rawProvider : 'Embed';
       const label = new TextRun({ text: `${provider} embed`, italics: true });
       return [

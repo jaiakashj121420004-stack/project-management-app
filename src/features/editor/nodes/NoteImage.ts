@@ -139,7 +139,7 @@ export const NoteImage = Node.create({
    * text boxes, which don't include this extension.
    */
   addProseMirrorPlugins() {
-    const noteId = this.options.noteId as string | null;
+    const noteId = this.options.noteId;
     const nodeType = this.type;
 
     return [

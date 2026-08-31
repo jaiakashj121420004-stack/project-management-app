@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ChevronDown, Type } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/cn';
@@ -25,13 +25,14 @@ interface ToolbarShellProps {
  */
 export function ToolbarShell({ label, children, className }: ToolbarShellProps) {
   const isMobile = useMediaQuery('(max-width: 640px)');
-  const [expanded, setExpanded] = useState(!isMobile);
+  const [expanded, setExpanded] = useState(false);
 
   // Crossing the breakpoint (rotate, resize) always lands on "open" — a
   // collapsed toolbar should never persist onto a desktop-sized viewport.
-  useEffect(() => {
-    if (!isMobile) setExpanded(true);
-  }, [isMobile]);
+  // Derived at render time (rather than reset via an effect that runs a beat
+  // after isMobile flips) so there's no stale collapsed frame when the
+  // viewport crosses the breakpoint.
+  const open = expanded || !isMobile;
 
   return (
     <div
@@ -43,7 +44,7 @@ export function ToolbarShell({ label, children, className }: ToolbarShellProps) 
       {isMobile && (
         <button
           type="button"
-          aria-expanded={expanded}
+          aria-expanded={open}
           onClick={() => setExpanded((e) => !e)}
           className="flex w-full items-center justify-between gap-2 px-3 py-2 text-sm font-medium text-fg-muted transition-colors active:bg-[var(--glass-fill)]"
         >
@@ -51,10 +52,10 @@ export function ToolbarShell({ label, children, className }: ToolbarShellProps) 
             <Type size={15} />
             Format
           </span>
-          <ChevronDown size={15} className={cn('transition-transform', expanded && 'rotate-180')} />
+          <ChevronDown size={15} className={cn('transition-transform', open && 'rotate-180')} />
         </button>
       )}
-      {expanded && (
+      {open && (
         <div
           role="toolbar"
           aria-label={label}

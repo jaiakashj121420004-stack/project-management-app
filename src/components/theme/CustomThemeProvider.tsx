@@ -46,6 +46,12 @@ export function CustomThemeProvider({ children }: { children: ReactNode }) {
     // stomped by a stale `profile.custom_theme` while our own write to the
     // account is still in flight (the effect would otherwise re-fire on
     // every local change too, before the refetch catches up).
+    // Setting state inside this effect is intentional: this syncs an
+    // external source of truth (the account's saved custom theme) and must
+    // also run real side effects (`applyCustomTheme`/`storeCustomTheme`
+    // touch the DOM and localStorage), neither of which belongs in a pure
+    // render.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSettingsState((prev) => {
       if (customThemeEquals(serverSettings, prev)) return prev;
       applyCustomTheme(serverSettings);

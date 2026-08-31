@@ -308,7 +308,7 @@ async function waitForFonts(win: Window): Promise<void> {
 export async function exportNoteAsPdf(doc: JSONContent | null, title: string): Promise<void> {
   const cleanTitle = title.trim() || 'Untitled note';
   const fileName = safeFileName(title);
-  const bodyHtml = renderBlockHtml(doc as Record<string, unknown> | null);
+  const bodyHtml = renderBlockHtml(doc);
 
   const iframe = document.createElement('iframe');
   // Off-screen, not display:none — some browsers skip layout (and therefore

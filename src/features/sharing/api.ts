@@ -105,5 +105,5 @@ export async function fetchMyRole(
           .maybeSingle();
   const { data, error } = await query;
   if (error) throw error;
-  return (data?.role as ShareRole | undefined) ?? null;
+  return data?.role ?? null;
 }

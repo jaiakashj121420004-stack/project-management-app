@@ -45,6 +45,6 @@ export async function revokeFeedToken(): Promise<void> {
 
 /** The full HTTPS subscribe URL a calendar app should be pointed at. */
 export function feedUrlForToken(token: string): string {
-  const base = import.meta.env.VITE_SUPABASE_URL as string;
+  const base = import.meta.env.VITE_SUPABASE_URL;
   return `${base}/functions/v1/calendar-feed?token=${token}`;
 }

@@ -380,7 +380,7 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
               type="button"
               aria-label="Export as Word"
               title="Export as Word"
-              onClick={handleExportWord}
+              onClick={() => void handleExportWord()}
               disabled={exportingWord}
               className="grid h-9 w-9 place-items-center rounded-xl text-fg-subtle transition-colors hover:bg-[var(--glass-fill)] hover:text-fg disabled:opacity-50"
             >
@@ -414,7 +414,7 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
               type="button"
               aria-label="Export as PDF"
               title="Export as PDF"
-              onClick={handleExportPdf}
+              onClick={() => void handleExportPdf()}
               disabled={exportingPdf}
               className="grid h-9 w-9 place-items-center rounded-xl text-fg-subtle transition-colors hover:bg-[var(--glass-fill)] hover:text-fg disabled:opacity-50"
             >

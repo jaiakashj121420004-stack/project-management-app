@@ -54,7 +54,7 @@ export function InstallPrompt({ collapsed = false }: InstallPromptProps) {
         variant="secondary"
         size="sm"
         leftIcon={<Download size={15} />}
-        onClick={handleClick}
+        onClick={() => void handleClick()}
         className={cn('w-full', collapsed && 'aspect-square w-11 px-0')}
         aria-label="Install Aurora"
       >

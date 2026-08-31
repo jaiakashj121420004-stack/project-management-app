@@ -54,6 +54,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     // the latest local `theme` via the updater (rather than as a dependency)
     // stops a fresh local toggle from being stomped by a stale `profile.theme`
     // while our own write to the account is still in flight.
+    // Setting state inside this effect is intentional: this syncs an
+    // external source of truth (the account's saved theme) and must also
+    // run real side effects (`applyTheme`/`storeTheme` touch the DOM and
+    // localStorage), neither of which belongs in a pure render. See the
+    // file header for why this can't use `document.startViewTransition()`
+    // or otherwise be restructured — that broke production twice before.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setThemeState((prev) => {
       if (profile.theme === prev) return prev;
       applyTheme(profile.theme as Theme);

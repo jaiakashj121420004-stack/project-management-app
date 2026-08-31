@@ -208,6 +208,11 @@ export function RichTextBox({
 
   useLayoutEffect(() => {
     if (!editor) return;
+    // Positioning the toolbar requires measuring the box/toolbar DOM nodes
+    // after layout, which is why this lives in an effect rather than
+    // render; `recomputeToolbarPosition` sets state as part of that
+    // measurement.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     recomputeToolbarPosition();
     // The toolbar's own size can change independent of the box (popovers,
     // wrapping onto a second row) — that also invalidates the last computed
@@ -231,6 +236,9 @@ export function RichTextBox({
   // transform without changing its pixel size, which the ResizeObserver
   // above can't see, so it needs this separate trigger to stay anchored.
   useLayoutEffect(() => {
+    // Same DOM-measurement rationale as above — this trigger just fires on
+    // camera pan/zoom in addition to box/toolbar resize.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     recomputeToolbarPosition();
   }, [boxStyle, recomputeToolbarPosition]);
 

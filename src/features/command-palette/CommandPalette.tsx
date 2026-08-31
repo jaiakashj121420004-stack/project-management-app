@@ -59,11 +59,11 @@ function contentSearchCommand(result: ContentSearchResult, navigate: NavigateFun
     run: () => {
       if (isCard) {
         // Every card belongs to a project; project_id is non-null in practice.
-        if (result.projectId) navigate(`/projects/${result.projectId}?card=${result.id}`);
+        if (result.projectId) void navigate(`/projects/${result.projectId}?card=${result.id}`);
       } else if (result.projectId) {
-        navigate(`/projects/${result.projectId}?tab=notes&note=${result.id}`);
+        void navigate(`/projects/${result.projectId}?tab=notes&note=${result.id}`);
       } else {
-        navigate(`/library?note=${result.id}`);
+        void navigate(`/library?note=${result.id}`);
       }
     },
   };

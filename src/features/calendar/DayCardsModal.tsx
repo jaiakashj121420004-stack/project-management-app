@@ -60,7 +60,7 @@ export function DayCardsModal({
             <p className="text-xs font-semibold uppercase tracking-wide text-fg-subtle">To-dos</p>
             <button
               type="button"
-              onClick={() => dateKey && navigate(`/todos?date=${dateKey}`)}
+              onClick={() => dateKey && void navigate(`/todos?date=${dateKey}`)}
               className="flex items-center justify-between gap-2 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-fill)] px-3 py-2 text-left text-sm transition-colors hover:border-[color:var(--accent-from)]"
             >
               <span className="flex items-center gap-2 text-fg">
@@ -84,7 +84,7 @@ export function DayCardsModal({
                 key={project.id}
                 type="button"
                 style={accentVars(project.accent)}
-                onClick={() => navigate(`/projects/${project.id}`)}
+                onClick={() => void navigate(`/projects/${project.id}`)}
                 className="flex items-center gap-2 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-fill)] px-3 py-2 text-left text-sm text-fg transition-colors hover:border-[color:var(--accent-from)]"
               >
                 <MilestoneIcon size={15} className="text-[var(--accent-from)]" />
@@ -103,14 +103,14 @@ export function DayCardsModal({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => dateKey && navigate(`/todos?date=${dateKey}`)}
+              onClick={() => dateKey && void navigate(`/todos?date=${dateKey}`)}
               className="btn-3d-soft glass-strong flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-medium text-fg"
             >
               <ListPlus size={15} /> New to-do list
             </button>
             <button
               type="button"
-              onClick={() => dateKey && navigate(`/projects?new=1&date=${dateKey}`)}
+              onClick={() => dateKey && void navigate(`/projects?new=1&date=${dateKey}`)}
               className="btn-3d-soft glass-strong flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-medium text-fg"
             >
               <FolderPlus size={15} /> New project

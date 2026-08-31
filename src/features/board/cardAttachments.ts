@@ -127,6 +127,11 @@ export function useAttachmentUrl(path: string | null): AttachmentUrlState {
   useEffect(() => {
     if (!path) return;
     let cancelled = false;
+    // Kicking off an async fetch is a real side effect, and resetting
+    // `loading` here (rather than only in the initializer) is what makes a
+    // *changed* `path` show a fresh loading state instead of stale data
+    // from the previous path while the new signed URL resolves.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(!urlCache.has(path));
     cachedSignedUrl(path)
       .then((u) => {
