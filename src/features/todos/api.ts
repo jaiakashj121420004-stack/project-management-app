@@ -39,6 +39,39 @@ export async function fetchTodos(dateKey: string): Promise<TodosData> {
 
 // --- Lists ------------------------------------------------------------------
 
+/**
+ * Atomically create a recurring list's instance for one day PLUS all of its
+ * seeded items, via the `seed_recurring_todo_list` DB function (see
+ * supabase/migrations/20260901120000_todo_recurrence_atomic_seed.sql). One
+ * RPC call = one Postgres transaction, so a failure partway through can never
+ * leave a list row behind with none of its items (the bug that made
+ * recurring lists show up empty on some days -- memory.md, 2026-09-01). Only
+ * for recurrence-driven seeding; a plain user-created list still goes through
+ * `insertTodoList` below.
+ */
+export async function seedRecurringTodoList(input: {
+  dateKey: string;
+  name: string;
+  position: number;
+  recurrenceId: string;
+  items: string[];
+}): Promise<TodoList> {
+  // The function returns a single `todo_lists` row (not SETOF), so -- same
+  // convention as every other row/scalar-returning RPC in this codebase
+  // (accept_invitation, project_is_pro, ...) -- `data` is already that one
+  // object; no `.single()` needed (or wanted: that's for postgrest table
+  // queries expecting an array to unwrap, not RPC calls).
+  const { data, error } = await supabase.rpc('seed_recurring_todo_list', {
+    p_list_date: input.dateKey,
+    p_name: input.name,
+    p_position: input.position,
+    p_recurrence_id: input.recurrenceId,
+    p_items: input.items,
+  });
+  if (error) throw error;
+  return data;
+}
+
 export async function insertTodoList(input: {
   dateKey: string;
   name: string;

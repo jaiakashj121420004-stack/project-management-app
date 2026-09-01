@@ -13,7 +13,13 @@ import { todoListNameSchema } from './schemas';
 import { useAddTodoList, useRecurrences, useTodos } from './useTodos';
 import { TodoListsGrid } from './TodoListsGrid';
 import { ruleMatchesDate, type RecurrenceRule } from './recurrence';
-import { insertRecurrence, insertTodoItem, insertTodoList, setTodoListRecurrence } from './api';
+import {
+  insertRecurrence,
+  insertTodoItem,
+  insertTodoList,
+  seedRecurringTodoList,
+  setTodoListRecurrence,
+} from './api';
 import { STARTER_TEMPLATES, type StarterTemplate } from './starterTemplates';
 
 const STEP = 1000;
@@ -100,25 +106,32 @@ export function TodosPage() {
 
     void (async () => {
       let offset = 1;
+      let anyFailed = false;
       for (const template of due) {
         try {
-          const newList = await insertTodoList({
+          // One atomic RPC call (list + all its items in a single DB
+          // transaction) instead of a separate insertTodoList followed by an
+          // insertTodoItem loop -- that two-step version could fail after
+          // creating the list but before any items landed, leaving a
+          // permanently-empty "repeating" list behind with no way to retry
+          // (memory.md, 2026-09-01). See seedRecurringTodoList in api.ts.
+          await seedRecurringTodoList({
             dateKey,
             name: template.name,
             position: basePosition + offset * STEP,
-            sourceRecurrenceId: template.id,
+            recurrenceId: template.id,
+            items: template.items,
           });
-          let itemPos = 1;
-          for (const text of template.items) {
-            await insertTodoItem({ listId: newList.id, text, position: itemPos * STEP });
-            itemPos++;
-          }
           offset++;
         } catch (err) {
           console.error('[recurring] failed to seed list:', template.name, err);
-          seededRef.current.delete(dateKey); // allow a retry on next render
+          anyFailed = true;
         }
       }
+      // Only let a *failed* seed retry next render -- once every due template
+      // seeded successfully, dateKey stays marked done so a slow re-render
+      // never double-seeds it.
+      if (anyFailed) seededRef.current.delete(dateKey);
       void queryClient.invalidateQueries({ queryKey: ['todos', dateKey] });
     })();
   }, [cursor, dateKey, isLoading, isError, lists, recurrences, queryClient]);

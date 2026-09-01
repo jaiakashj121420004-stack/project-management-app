@@ -1228,6 +1228,27 @@ export interface Database {
         Args: { p_list_id: string };
         Returns: boolean;
       };
+      // RPC: atomically create a recurring list's instance for one day plus
+      // all of its seeded items (one DB transaction) -- see
+      // supabase/migrations/20260901120000_todo_recurrence_atomic_seed.sql.
+      seed_recurring_todo_list: {
+        Args: {
+          p_list_date: string;
+          p_name: string;
+          p_position: number;
+          p_recurrence_id: string;
+          p_items: string[];
+        };
+        Returns: {
+          id: string;
+          user_id: string;
+          list_date: string;
+          name: string;
+          position: number;
+          source_recurrence_id: string | null;
+          created_at: string;
+        };
+      };
       // Role-aware write checks + co-member visibility (Phase 8, plan.md §6).
       can_edit_project: {
         Args: { p_project_id: string };
