@@ -14,6 +14,7 @@ import {
   endOfWeek,
   format,
   isSameMonth,
+  isValid,
   parseISO,
   startOfMonth,
   startOfWeek,
@@ -55,6 +56,15 @@ interface DatePickerProps {
 }
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+/** Defensively parses a 'YYYY-MM-DD' string, returning null for anything else
+ *  (including a stray event object accidentally forwarded as `value` by a
+ *  caller) instead of letting date-fns' parseISO throw and crash the page. */
+function toValidDate(input: unknown): Date | null {
+  if (typeof input !== 'string' || input.length === 0) return null;
+  const parsed = parseISO(input);
+  return isValid(parsed) ? parsed : null;
+}
 
 const HOUR_OPTIONS: GlassSelectOption<number>[] = Array.from({ length: 12 }, (_, i) => ({
   value: i + 1,
@@ -109,9 +119,7 @@ export function DatePicker({
 }: DatePickerProps) {
   const reduce = useReducedMotion();
   const [open, setOpen] = useState(false);
-  const [viewMonth, setViewMonth] = useState<Date>(() =>
-    startOfMonth(value ? parseISO(value) : new Date()),
-  );
+  const [viewMonth, setViewMonth] = useState<Date>(() => startOfMonth(toValidDate(value) ?? new Date()));
   const [focusedKey, setFocusedKey] = useState<string>(() => value ?? toKey(new Date()));
 
   const rootRef = useRef<HTMLDivElement>(null);
@@ -124,7 +132,7 @@ export function DatePicker({
   const todayKey = toKey(new Date());
 
   function openPicker() {
-    const base = value ? parseISO(value) : new Date();
+    const base = toValidDate(value) ?? new Date();
     setViewMonth(startOfMonth(base));
     setFocusedKey(value ?? todayKey);
     keyboardNav.current = true;
@@ -173,7 +181,7 @@ export function DatePicker({
 
   function moveFocus(deltaDays: number) {
     keyboardNav.current = true;
-    const next = addDays(parseISO(focusedKey), deltaDays);
+    const next = addDays(toValidDate(focusedKey) ?? new Date(), deltaDays);
     setFocusedKey(toKey(next));
     if (!isSameMonth(next, viewMonth)) setViewMonth(startOfMonth(next));
   }
@@ -199,19 +207,19 @@ export function DatePicker({
       case 'PageUp':
         event.preventDefault();
         keyboardNav.current = true;
-        setFocusedKey(toKey(addMonths(parseISO(focusedKey), -1)));
+        setFocusedKey(toKey(addMonths(toValidDate(focusedKey) ?? new Date(), -1)));
         setViewMonth((m) => addMonths(m, -1));
         break;
       case 'PageDown':
         event.preventDefault();
         keyboardNav.current = true;
-        setFocusedKey(toKey(addMonths(parseISO(focusedKey), 1)));
+        setFocusedKey(toKey(addMonths(toValidDate(focusedKey) ?? new Date(), 1)));
         setViewMonth((m) => addMonths(m, 1));
         break;
       case 'Enter':
       case ' ':
         event.preventDefault();
-        selectDay(parseISO(focusedKey));
+        selectDay(toValidDate(focusedKey) ?? new Date());
         break;
       default:
         break;
@@ -219,8 +227,9 @@ export function DatePicker({
   }
 
   const days = monthMatrix(viewMonth);
-  const triggerText = value
-    ? `${format(parseISO(value), 'EEE, MMM d, yyyy')}${
+  const validValue = toValidDate(value);
+  const triggerText = validValue
+    ? `${format(validValue, 'EEE, MMM d, yyyy')}${
         showTime && time ? ` · ${formatClockTime(time)}` : ''
       }`
     : placeholder;
