@@ -8,6 +8,13 @@ import react from '@vitejs/plugin-react';
 // (Phase 2) target the pure-logic modules, but the DOM harness is ready.
 export default defineConfig({
   plugins: [react()],
+  // Tests import the browser Supabase client even when they do not make network
+  // calls. Keep these values local and non-secret; production values still come
+  // only from the real Vite environment.
+  define: {
+    'import.meta.env.VITE_SUPABASE_URL': JSON.stringify('http://127.0.0.1:54321'),
+    'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify('ci-placeholder-anon-key'),
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
