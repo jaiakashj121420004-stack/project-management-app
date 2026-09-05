@@ -6,8 +6,7 @@ import { LegalPage, type LegalSection } from './LegalPage';
   keep this in sync with that file if either changes.
 */
 
-const OPERATOR_CONTACT =
-  'Jai Akash, No. 91, Maha Vishnu Nagar, Arakkonam Road, SS Nagar Post, Tiruttani – 631211, Tamil Nadu, India. General and legal notices: nvexis14@gmail.com.';
+const OPERATOR_CONTACT = 'nvexis14@gmail.com.';
 
 const SECTIONS: LegalSection[] = [
   {

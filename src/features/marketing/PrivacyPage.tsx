@@ -10,7 +10,7 @@ const SECTIONS: LegalSection[] = [
   {
     heading: 'Who is responsible for your data',
     body: [
-      'Aurora is operated by Jai Akash, an individual sole proprietor trading as "Nvexis" ("we", "us", "our"), who is the data controller / data fiduciary for personal information processed through the Service. Contact and DPDP Grievance Officer: nvexis14@gmail.com. Postal: No. 91, Maha Vishnu Nagar, Arakkonam Road, SS Nagar Post, Tiruttani – 631211, Tamil Nadu, India.',
+      'Aurora is operated by Jai Akash, an individual sole proprietor trading as "Nvexis" ("we", "us", "our"), who is the data controller / data fiduciary for personal information processed through the Service. Contact and DPDP Grievance Officer: nvexis14@gmail.com.',
     ],
   },
   {
