@@ -63,7 +63,16 @@ export async function signInWithEmail({ email, password }: LoginInput): Promise<
 export async function signInWithGoogle(): Promise<AuthResult> {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: origin() },
+    options: {
+      redirectTo: origin(),
+      // Without this, Google silently re-authenticates whichever Google
+      // account the browser already has an active session with — after
+      // signing out of Aurora, clicking "Continue with Google" again just
+      // signs straight back into the same account with no chooser shown.
+      // `prompt=select_account` forces Google's own account-picker screen
+      // every time, so switching accounts (or adding a new one) works.
+      queryParams: { prompt: 'select_account' },
+    },
   });
   // On success the browser navigates away, so this only returns on error.
   return { error: error ? friendlyAuthError(error) : null };
