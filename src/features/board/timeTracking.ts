@@ -20,12 +20,22 @@ export function totalSeconds(entries: TimeEntry[], now: Date): number {
   return entries.reduce((sum, entry) => sum + entrySeconds(entry, now), 0);
 }
 
-/** Compact "h:mm" duration — the running-total format. */
+/**
+ * Compact running-total duration — "m:ss" under an hour, "h:mm:ss" once it
+ * crosses one. Always exact (no minute-level rounding): the previous
+ * "h:mm" format rounded to the nearest minute, so pausing at 10s displayed
+ * as "0:00" — indistinguishable from no time tracked at all. Anything under
+ * a minute must still show its real seconds.
+ */
 export function formatHoursMinutes(seconds: number): string {
-  const minutes = Math.round(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return `${hours}:${String(mins).padStart(2, '0')}`;
+  const total = Math.max(0, Math.round(seconds));
+  const hours = Math.floor(total / 3600);
+  const mins = Math.floor((total % 3600) / 60);
+  const secs = total % 60;
+  if (hours > 0) {
+    return `${hours}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }
+  return `${mins}:${String(secs).padStart(2, '0')}`;
 }
 
 /** "h:mm:ss" — the live-ticking format shown while a timer is running. */
