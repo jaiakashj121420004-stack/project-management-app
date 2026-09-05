@@ -93,11 +93,12 @@ export function TableOfContents({ editor }: { editor: Editor }) {
         aria-label="Table of contents"
         title="Contents"
         className={cn(
-          'glass-strong grid h-9 w-9 place-items-center rounded-xl border border-[var(--glass-border)] text-fg-subtle shadow-[0_6px_18px_-10px_rgba(0,0,0,0.5)] transition-colors hover:text-fg',
+          'glass-strong flex h-9 items-center gap-1.5 rounded-xl border border-[var(--glass-border)] px-2.5 text-fg-subtle shadow-[0_6px_18px_-10px_rgba(0,0,0,0.5)] transition-colors hover:text-fg sm:px-3',
           open && 'text-fg',
         )}
       >
         <List size={15} />
+        <span className="hidden text-xs font-medium sm:inline">Contents</span>
       </button>
 
       {open && (

@@ -13,13 +13,41 @@ import { springs } from '@/lib/motion';
  * We use registerType: 'prompt' (vite.config) so updates never reload the app
  * out from under the user mid-edit — they choose when to apply.
  */
+// How often an already-open tab re-checks for a new deployed version. Without
+// an explicit check, the browser only re-validates the service worker script
+// on its own schedule (roughly once a day, or on a fresh navigation) — a PWA
+// left open for a long editing session could silently sit on a stale build
+// (missing whatever shipped since) far longer than that. This is a real
+// bug class we've hit before (see chunkReloadRecovery.ts's doc comment for
+// the "stale service worker after a deploy" incident) — polling here closes
+// the gap between deploys and this tab actually finding out about one.
+const UPDATE_CHECK_INTERVAL_MS = 20 * 60 * 1000; // 20 minutes
+
 export function PWAReloadPrompt() {
   const reduceMotion = useReducedMotion();
   const {
     offlineReady: [offlineReady, setOfflineReady],
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
-  } = useRegisterSW();
+  } = useRegisterSW({
+    onRegisteredSW(_url, registration) {
+      if (!registration) return;
+      const check = () => void registration.update();
+      // Once on load (covers "reopened the PWA after a deploy") plus a
+      // recurring poll for a long-lived open tab.
+      check();
+      window.setInterval(check, UPDATE_CHECK_INTERVAL_MS);
+      // Also re-check the moment the tab regains focus/visibility — the
+      // single most common "did I miss an update?" moment.
+      const onVisible = () => {
+        if (document.visibilityState === 'visible') check();
+      };
+      document.addEventListener('visibilitychange', onVisible);
+      // No cleanup path: useRegisterSW's callback runs once for the app's
+      // lifetime (registration is a singleton), matching how the plugin's
+      // own examples wire this up.
+    },
+  });
 
   // Auto-dismiss the "offline ready" confirmation; the update prompt stays until
   // the user acts on it.
