@@ -215,12 +215,13 @@ function CardDetailForm({
   }
 
   return (
-    <div className="-mr-2 flex max-h-[72vh] flex-col gap-5 overflow-y-auto pr-2">
+    <div className="flex max-h-[72vh] flex-col">
       <form
         onSubmit={(event) => void handleSubmit(event)}
         noValidate
-        className="flex flex-col gap-5"
+        className="flex min-h-0 flex-1 flex-col"
       >
+      <div className="-mr-2 flex flex-1 min-h-0 flex-col gap-5 overflow-y-auto pr-2">
       {formError && (
         <div
           role="alert"
@@ -289,65 +290,71 @@ function CardDetailForm({
         canEdit
       />
 
-      {confirmingDelete ? (
-        <div className="flex flex-col gap-3 border-t border-danger/30 pt-4">
-          <div className="flex items-start gap-2.5 text-sm text-fg-muted">
-            <AlertTriangle size={18} className="mt-px shrink-0 text-danger" />
-            <span>
-              Delete <span className="font-semibold text-fg">{card.title}</span>? This can&apos;t be
-              undone.
-            </span>
+      <CardCollaboration card={card} projectId={projectId} canEdit />
+      </div>
+
+      {/* Floating footer: pinned to the bottom of the modal (not the page)
+         so Save/Cancel/Delete are always reachable without scrolling all
+         the way down through labels/checklist/attachments/comments. */}
+      <div className="glass-strong sticky bottom-0 z-10 -mx-6 -mb-6 mt-4 shrink-0 border-t border-[var(--glass-border)] px-6 py-4 sm:-mx-7 sm:-mb-7 sm:px-7">
+        {confirmingDelete ? (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-start gap-2.5 text-sm text-fg-muted">
+              <AlertTriangle size={18} className="mt-px shrink-0 text-danger" />
+              <span>
+                Delete <span className="font-semibold text-fg">{card.title}</span>? This can&apos;t be
+                undone.
+              </span>
+            </div>
+            {deleteError && (
+              <p role="alert" className="text-sm text-danger">
+                {deleteError}
+              </p>
+            )}
+            <div className="flex justify-end gap-2.5">
+              <GradientButton
+                type="button"
+                variant="ghost"
+                onClick={() => setConfirmingDelete(false)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </GradientButton>
+              <GradientButton
+                type="button"
+                accent="ember"
+                leftIcon={<Trash2 size={16} />}
+                isLoading={isDeleting}
+                onClick={() => void handleDelete()}
+              >
+                Delete card
+              </GradientButton>
+            </div>
           </div>
-          {deleteError && (
-            <p role="alert" className="text-sm text-danger">
-              {deleteError}
-            </p>
-          )}
-          <div className="flex justify-end gap-2.5">
+        ) : (
+          <div className="flex items-center justify-between gap-2.5">
             <GradientButton
               type="button"
               variant="ghost"
-              onClick={() => setConfirmingDelete(false)}
-              disabled={isDeleting}
-            >
-              Cancel
-            </GradientButton>
-            <GradientButton
-              type="button"
-              accent="ember"
               leftIcon={<Trash2 size={16} />}
-              isLoading={isDeleting}
-              onClick={() => void handleDelete()}
+              onClick={() => setConfirmingDelete(true)}
+              disabled={isPending || isDeleting}
+              className="text-danger hover:bg-danger/10 hover:text-danger"
             >
-              Delete card
+              Delete
             </GradientButton>
+            <div className="flex gap-2.5">
+              <GradientButton type="button" variant="ghost" onClick={onClose} disabled={isPending}>
+                Cancel
+              </GradientButton>
+              <GradientButton type="submit" isLoading={isPending}>
+                Save changes
+              </GradientButton>
+            </div>
           </div>
-        </div>
-      ) : (
-        <div className="flex items-center justify-between gap-2.5 border-t border-[var(--glass-border)] pt-4">
-          <GradientButton
-            type="button"
-            variant="ghost"
-            leftIcon={<Trash2 size={16} />}
-            onClick={() => setConfirmingDelete(true)}
-            disabled={isPending || isDeleting}
-            className="text-danger hover:bg-danger/10 hover:text-danger"
-          >
-            Delete
-          </GradientButton>
-          <div className="flex gap-2.5">
-            <GradientButton type="button" variant="ghost" onClick={onClose} disabled={isPending}>
-              Cancel
-            </GradientButton>
-            <GradientButton type="submit" isLoading={isPending}>
-              Save changes
-            </GradientButton>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
       </form>
-
-      <CardCollaboration card={card} projectId={projectId} canEdit />
     </div>
   );
 }

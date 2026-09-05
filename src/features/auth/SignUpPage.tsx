@@ -10,15 +10,18 @@ import { signUpWithEmail, signInWithGoogle } from './api';
 import { fieldErrorsOf, signUpSchema } from './schemas';
 
 export function SignUpPage() {
-  const [values, setValues] = useState({ displayName: '', email: '', password: '' });
+  const [values, setValues] = useState({ displayName: '', email: '', password: '', agreedToTerms: false });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [sentEmail, setSentEmail] = useState<string | null>(null);
 
-  const set = (key: keyof typeof values) => (event: { target: { value: string } }) =>
+  const set = (key: 'displayName' | 'email' | 'password') => (event: { target: { value: string } }) =>
     setValues((prev) => ({ ...prev, [key]: event.target.value }));
+
+  const toggleAgreed = () =>
+    setValues((prev) => ({ ...prev, agreedToTerms: !prev.agreedToTerms }));
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -49,6 +52,13 @@ export function SignUpPage() {
 
   async function onGoogle() {
     setFormError(null);
+    if (!values.agreedToTerms) {
+      setErrors((prev) => ({
+        ...prev,
+        agreedToTerms: 'You must agree to the Terms of Service and Privacy Policy to create an account.',
+      }));
+      return;
+    }
     setGoogleLoading(true);
     // Google is a redirect flow — the browser navigates away and back via
     // Supabase's OAuth callback, which this component never sees again, so
@@ -94,6 +104,22 @@ export function SignUpPage() {
 
       <GoogleButton onClick={() => void onGoogle()} isLoading={googleLoading} />
       <OrDivider />
+
+      <label className="flex items-start gap-2.5 text-sm text-fg-muted">
+        <input
+          type="checkbox"
+          checked={values.agreedToTerms}
+          onChange={toggleAgreed}
+          className="mt-0.5 h-4 w-4 shrink-0 rounded border-[var(--hairline)] accent-[var(--accent-from)]"
+        />
+        <span>
+          I agree to the <AuthLink to="/terms">Terms of Service</AuthLink> and{' '}
+          <AuthLink to="/privacy">Privacy Policy</AuthLink>.
+        </span>
+      </label>
+      {errors.agreedToTerms && (
+        <p className="-mt-2 text-sm text-danger">{errors.agreedToTerms}</p>
+      )}
 
       <form onSubmit={(event) => void onSubmit(event)} noValidate className="flex flex-col gap-4">
         <Field

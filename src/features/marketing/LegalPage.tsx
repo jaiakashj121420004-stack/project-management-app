@@ -1,4 +1,3 @@
-import { AlertTriangle } from 'lucide-react';
 import { Reveal } from '@/components/motion/Reveal';
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import { MarketingLayout } from './MarketingLayout';
@@ -11,17 +10,17 @@ export interface LegalSection {
 
 interface LegalPageProps {
   title: string;
-  /** e.g. "June 2026". */
+  /** e.g. "5 September 2026". */
   lastUpdated: string;
   intro: string;
   sections: LegalSection[];
 }
 
 /**
- * Shared frame for the Terms and Privacy pages: a readable glass document with
- * a prominent "starter template — have a lawyer review before commercial launch"
- * banner, a last-updated line, an intro, and headed sections. Keeps both legal
- * pages consistent and lean.
+ * Shared frame for the Terms and Privacy pages: a readable glass document
+ * with a last-updated line, an intro, and headed sections. Content for both
+ * pages is the finalized policy text (see legal/Aurora-Terms-of-Service.docx
+ * and legal/Aurora-Privacy-Policy.docx for the source-of-truth long form).
  */
 export function LegalPage({ title, lastUpdated, intro, sections }: LegalPageProps) {
   return (
@@ -33,15 +32,6 @@ export function LegalPage({ title, lastUpdated, intro, sections }: LegalPageProp
               <span className="gradient-text">{title}</span>
             </h1>
             <p className="mt-2 text-sm text-fg-subtle">Last updated: {lastUpdated}</p>
-
-            <div className="mt-6 flex items-start gap-3 rounded-2xl border border-warning/30 bg-warning/10 p-4 text-sm text-fg-muted">
-              <AlertTriangle size={18} className="mt-0.5 shrink-0 text-warning" />
-              <p>
-                This is a starter template provided for convenience and is{' '}
-                <span className="font-semibold text-fg">not legal advice</span>. Have it reviewed and
-                adapted by a qualified lawyer before relying on it for a commercial launch.
-              </p>
-            </div>
 
             <p className="mt-6 text-base leading-relaxed text-fg-muted">{intro}</p>
 

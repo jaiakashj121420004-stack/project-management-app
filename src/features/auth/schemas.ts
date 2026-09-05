@@ -23,6 +23,9 @@ export const signUpSchema = z.object({
   displayName,
   email,
   password,
+  agreedToTerms: z.boolean().refine((value) => value === true, {
+    message: 'You must agree to the Terms of Service and Privacy Policy to create an account.',
+  }),
 });
 export type SignUpInput = z.infer<typeof signUpSchema>;
 
