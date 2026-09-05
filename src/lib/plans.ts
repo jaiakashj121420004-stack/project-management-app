@@ -72,7 +72,7 @@ export const TEAM_MEMBER_LIMIT = 40;
 /** Mailto link for teams past TEAM_MEMBER_LIMIT — no self-serve Enterprise
  * checkout exists yet; this is a lightweight lead-capture CTA (decision log,
  * memory.md, 2026-08-12), not a priced pricing-page tier. */
-export const ENTERPRISE_CONTACT_EMAIL = 'jaiakashj121420004@gmail.com';
+export const ENTERPRISE_CONTACT_EMAIL = 'nvexis14@gmail.com';
 
 /** Discount applied to annual billing vs. paying monthly for a full year.
  * Raised from 5% on 2026-08-12 to make annual meaningfully cheaper AND more
