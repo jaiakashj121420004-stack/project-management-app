@@ -669,7 +669,7 @@ function Pricing() {
             name={PLANS[id].name}
             price={formatPrice(PLANS[id].priceMonthly)}
             period={PLANS[id].priceMonthly > 0 ? '/mo' : undefined}
-            indiaPrice={INDIA_PRICING[id] ? `${formatINR(INDIA_PRICING[id]!)}/mo in India` : undefined}
+            indiaPrice={INDIA_PRICING[id] ? `${formatINR(INDIA_PRICING[id])}/mo in India` : undefined}
             tagline={PLANS[id].tagline}
             points={PLANS[id].features}
             cta={PLAN_CTA[id]}
