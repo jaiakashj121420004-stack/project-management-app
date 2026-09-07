@@ -190,7 +190,7 @@ export function GlassSelect<T extends string | number>({
             exit={{ opacity: 0, scale: 0.97, y: openUp ? 4 : -4 }}
             transition={springs.snappy}
             className={cn(
-              'glass-menu absolute inset-x-0 z-50 max-h-60 overflow-auto rounded-2xl p-1',
+              'glass-menu absolute left-0 z-50 max-h-60 min-w-full w-max max-w-[20rem] overflow-auto rounded-2xl p-1',
               openUp ? 'bottom-full mb-1.5 origin-bottom' : 'top-full mt-1.5 origin-top',
               menuClassName,
             )}
