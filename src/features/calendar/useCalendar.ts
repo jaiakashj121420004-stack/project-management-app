@@ -3,7 +3,7 @@ import type { Card } from '@/types/database';
 import type { RecurrenceRule } from '@/lib/recurrence';
 import { removeCard, updateCardDetail, type BoardData } from '@/features/board/api';
 import type { CardExtras } from '@/features/board/cardExtras.api';
-import { fetchDatedCards, fetchTodoListsInRange, updateCardDates, type CalendarTodos } from './api';
+import { createQuickCard, fetchDatedCards, fetchTodoListsInRange, updateCardDates, type CalendarTodos, type QuickCardInput } from './api';
 
 /** Every to-do list (+ items) whose `list_date` falls in [startKey, endKey] —
  *  used to show to-do chips on the Calendar. Re-fetches when the visible range
@@ -187,6 +187,20 @@ export function useDeleteCalendarCard() {
       void queryClient.invalidateQueries({ queryKey: calendarKey });
       void queryClient.invalidateQueries({ queryKey: boardKey(projectId) });
       void queryClient.invalidateQueries({ queryKey: extrasKey(projectId) });
+    },
+  });
+}
+
+/** Quick-add a card straight from the Calendar (Day view). On success, patches
+ *  the calendar cache directly (so it appears without a refetch) and
+ *  invalidates the target project's board so it shows up there too. */
+export function useCreateQuickCard() {
+  const queryClient = useQueryClient();
+  return useMutation<Card, Error, QuickCardInput>({
+    mutationFn: createQuickCard,
+    onSuccess: (card) => {
+      queryClient.setQueryData<Card[]>(calendarKey, (old) => (old ? [...old, card] : [card]));
+      void queryClient.invalidateQueries({ queryKey: boardKey(card.project_id) });
     },
   });
 }

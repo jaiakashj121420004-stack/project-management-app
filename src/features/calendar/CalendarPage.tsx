@@ -33,6 +33,7 @@ import { TimelineBarFace } from './TimelineBar';
 import { TimelineGrid } from './TimelineGrid';
 import { DayCardsModal } from './DayCardsModal';
 import { shiftDateKey } from './timeline';
+import { useVisibleProjects } from './useVisibleProjects';
 import {
   calendarDays,
   groupCardsByDate,
@@ -63,7 +64,10 @@ type DragKind = 'card' | 'timeline-move' | 'timeline-start' | 'timeline-end';
  * Month grid on desktop/tablet, a tap-friendly agenda list on small phones —
  * plus a Timeline/Gantt view (Task 25), a third toggle alongside Month/Week
  * rather than a new nav destination, reusing this same dated-cards query, drag
- * machinery, and per-project accent convention.
+ * machinery, and per-project accent convention. The Calendar-upgrade pass adds
+ * a multi-project show/hide filter, a jump-to-date mini month, search, and an
+ * hourly Day-view schedule with click-to-create (see useVisibleProjects.ts /
+ * MiniMonthPicker.tsx / CalendarSearch.tsx / TimeGrid.tsx + dayGrid.ts).
  */
 export function CalendarPage() {
   const reducedMotion = useReducedMotion();
@@ -78,7 +82,6 @@ export function CalendarPage() {
 
   const [view, setView] = useState<CalendarView>('month');
   const [cursor, setCursor] = useState<Date>(() => startOfToday());
-  const [scope, setScope] = useState<string>('all');
   const [openCardId, setOpenCardId] = useState<string | null>(null);
   const [peekDateKey, setPeekDateKey] = useState<string | null>(null);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
@@ -91,12 +94,19 @@ export function CalendarPage() {
     [projectsById],
   );
 
-  // One query for every dated card; scope filters client-side.
+  // Which projects show on the calendar — an Outlook-style "calendar list"
+  // overlay (multi-select) rather than the old single-project dropdown.
+  // Filtering by `hidden` (not an allowlist of `visibleIds`) means cards never
+  // flash hidden while `projects` is still loading — see the hook's doc comment.
+  const { hidden: hiddenProjectIds, visibleIds: visibleProjectIds, toggleProject, showAll, showOnly } =
+    useVisibleProjects(projectList);
+
+  // One query for every dated card; the project filter applies client-side.
   const cardsById = useMemo(() => new Map((cards ?? []).map((c) => [c.id, c])), [cards]);
   const scopedCards = useMemo(() => {
     const all = cards ?? [];
-    return scope === 'all' ? all : all.filter((c) => c.project_id === scope);
-  }, [cards, scope]);
+    return hiddenProjectIds.size === 0 ? all : all.filter((c) => !hiddenProjectIds.has(c.project_id));
+  }, [cards, hiddenProjectIds]);
   const cardsByDate = useMemo(() => groupCardsByDate(scopedCards), [scopedCards]);
 
   const days = useMemo(() => calendarDays(view, cursor), [view, cursor]);
@@ -109,8 +119,18 @@ export function CalendarPage() {
   );
   const projectsByDate = useMemo(() => groupProjectsByDate(projectList), [projectList]);
 
-  const pageAccent: AccentName = scope === 'all' ? 'aurora' : (projectsById.get(scope)?.accent ?? 'aurora');
+  const pageAccent: AccentName =
+    visibleProjectIds.size === 1
+      ? (projectsById.get([...visibleProjectIds][0]!)?.accent ?? 'aurora')
+      : 'aurora';
   const cursorDateKey = useMemo(() => toDateKey(cursor), [cursor]);
+
+  // The Day view's quick-add defaults to whichever visible project comes
+  // first — if exactly one project is shown, that's an unambiguous choice.
+  const defaultQuickAddProjectId = useMemo(
+    () => projectList.find((p) => visibleProjectIds.has(p.id))?.id ?? projectList[0]?.id ?? '',
+    [projectList, visibleProjectIds],
+  );
 
   const sensors = useSensors(
     // A little travel before dragging so a clean click still opens the card.
@@ -190,6 +210,16 @@ export function CalendarPage() {
     setCursor((c) => (view === 'day' ? addDays(c, 1) : view === 'week' ? addWeeks(c, 1) : addMonths(c, 1)));
   }
 
+  /** Search result picked from the toolbar: jump straight to that card's day
+   *  and open it, regardless of the view/period currently on screen. */
+  function handleSearchSelect(card: Card) {
+    if (card.due_date) {
+      setCursor(parseISO(card.due_date));
+      setView('day');
+    }
+    setOpenCardId(card.id);
+  }
+
   async function handleSaveCard(id: string, values: CardDetailValues) {
     const card = cardsById.get(id);
     if (!card) return;
@@ -225,13 +255,20 @@ export function CalendarPage() {
         <CalendarToolbar
           view={view}
           onViewChange={setView}
-          scope={scope}
-          onScopeChange={setScope}
           projects={projectList}
+          visibleProjectIds={visibleProjectIds}
+          onToggleProject={toggleProject}
+          onShowAllProjects={showAll}
+          onShowOnlyProject={showOnly}
           periodLabel={periodLabel(view, cursor)}
+          cursor={cursor}
+          onJumpToDate={setCursor}
           onPrev={goPrev}
           onNext={goNext}
           onToday={() => setCursor(startOfToday())}
+          searchCards={scopedCards}
+          accentFor={accentFor}
+          onSearchSelect={handleSearchSelect}
         />
       </Reveal>
 
@@ -260,6 +297,8 @@ export function CalendarPage() {
               cards={cardsByDate.get(cursorDateKey) ?? []}
               todos={todosByDate.get(cursorDateKey)}
               milestones={projectsByDate.get(cursorDateKey) ?? []}
+              projects={projectList}
+              defaultProjectId={defaultQuickAddProjectId}
               accentFor={accentFor}
               onOpenCard={(card) => setOpenCardId(card.id)}
             />

@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { positionBetween } from '@/lib/ordering';
 import type { Card, TodoItem, TodoList } from '@/types/database';
 
 /**
@@ -74,6 +75,58 @@ export async function updateCardDates(
       ...(patch.startDate !== undefined ? { start_date: patch.startDate } : {}),
     })
     .eq('id', id)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export interface QuickCardInput {
+  projectId: string;
+  title: string;
+  /** `YYYY-MM-DD` — always set (the day the user clicked/tapped). */
+  dueDate: string;
+  /** ISO instant, or null for an all-day card (the all-day row's "+ Add" skips a time). */
+  dueAt: string | null;
+}
+
+/**
+ * Create a new card straight from the Calendar (Day view's click-an-empty-slot
+ * and the all-day row's "+ Add"). Appended to the target project's first
+ * column by position — deliberately no column picker here, matching Aurora's
+ * "useful the moment you open it" default; the card can be dragged to another
+ * column on its board afterward like any other card.
+ */
+export async function createQuickCard(input: QuickCardInput): Promise<Card> {
+  const { data: column, error: columnError } = await supabase
+    .from('columns')
+    .select('id')
+    .eq('project_id', input.projectId)
+    .order('position', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (columnError) throw columnError;
+  if (!column) throw new Error('This project has no columns yet — add one from its board first.');
+
+  const { data: lastCard, error: lastCardError } = await supabase
+    .from('cards')
+    .select('position')
+    .eq('column_id', column.id)
+    .order('position', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (lastCardError) throw lastCardError;
+
+  const { data, error } = await supabase
+    .from('cards')
+    .insert({
+      project_id: input.projectId,
+      column_id: column.id,
+      title: input.title,
+      position: positionBetween(lastCard?.position, undefined),
+      due_date: input.dueDate,
+      due_at: input.dueAt,
+    })
     .select('*')
     .single();
   if (error) throw error;
