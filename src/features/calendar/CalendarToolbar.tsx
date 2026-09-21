@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, Upload } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { GradientButton } from '@/components/buttons/GradientButton';
 import { accentVars, type AccentName } from '@/lib/accents';
@@ -26,6 +26,7 @@ interface CalendarToolbarProps {
   searchCards: Card[];
   accentFor: (projectId: string) => AccentName;
   onSearchSelect: (card: Card) => void;
+  onImportClick: () => void;
 }
 
 /** Calendar header: title + period (click to jump to any date), a
@@ -48,6 +49,7 @@ export function CalendarToolbar({
   searchCards,
   accentFor,
   onSearchSelect,
+  onImportClick,
 }: CalendarToolbarProps) {
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const [projectFilterOpen, setProjectFilterOpen] = useState(false);
@@ -91,6 +93,9 @@ export function CalendarToolbar({
 
         <div className="ml-auto flex items-center gap-2">
           <CalendarSearch cards={searchCards} accentFor={accentFor} onSelect={onSearchSelect} />
+          <IconButton label="Import calendar" onClick={onImportClick}>
+            <Upload size={18} />
+          </IconButton>
           <CalendarProjectFilter
             open={projectFilterOpen}
             onOpenChange={setProjectFilterOpen}

@@ -19,6 +19,7 @@ interface CalendarGridProps {
   accentFor: (projectId: string) => AccentName;
   onOpenCard: (card: Card) => void;
   onPeek: (dateKey: string) => void;
+  onQuickAdd?: (dateKey: string) => void;
 }
 
 /**
@@ -36,6 +37,7 @@ export function CalendarGrid({
   accentFor,
   onOpenCard,
   onPeek,
+  onQuickAdd,
 }: CalendarGridProps) {
   const limit = variant === 'month' ? 3 : 8;
 
@@ -68,6 +70,7 @@ export function CalendarGrid({
               accentFor={accentFor}
               onOpenCard={onOpenCard}
               onPeek={onPeek}
+              onQuickAdd={onQuickAdd}
             />
           );
         })}

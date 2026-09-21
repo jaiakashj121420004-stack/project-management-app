@@ -1,5 +1,5 @@
 import { format, isToday } from 'date-fns';
-import { CalendarX2, Flag as MilestoneIcon, ListChecks } from 'lucide-react';
+import { CalendarX2, Flag as MilestoneIcon, ListChecks, Plus } from 'lucide-react';
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import { accentVars, type AccentName } from '@/lib/accents';
 import type { Card, Project } from '@/types/database';
@@ -14,6 +14,7 @@ interface AgendaListProps {
   accentFor: (projectId: string) => AccentName;
   onOpenCard: (card: Card) => void;
   onPeek: (dateKey: string) => void;
+  onQuickAdd?: (dateKey: string) => void;
   emptyLabel: string;
 }
 
@@ -30,6 +31,7 @@ export function AgendaList({
   accentFor,
   onOpenCard,
   onPeek,
+  onQuickAdd,
   emptyLabel,
 }: AgendaListProps) {
   const daysWithContent = days
@@ -65,6 +67,16 @@ export function AgendaList({
                 <span className="rounded-full bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-[var(--accent-fg)]">
                   Today
                 </span>
+              )}
+              {onQuickAdd && (
+                <button
+                  type="button"
+                  aria-label={`Add a card on ${format(date, 'MMMM d')}`}
+                  onClick={() => onQuickAdd(key)}
+                  className="grid h-5 w-5 place-items-center rounded-md text-fg-subtle transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+                >
+                  <Plus size={12} />
+                </button>
               )}
             </h3>
             {(todos || milestones.length > 0) && (

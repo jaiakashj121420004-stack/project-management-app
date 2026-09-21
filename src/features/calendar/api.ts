@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { positionBetween } from '@/lib/ordering';
 import type { Card, TodoItem, TodoList } from '@/types/database';
+import type { ParsedIcsEvent } from './icsParser';
 
 /**
  * Supabase data layer for the Calendar view. Like the rest of the app, every
@@ -131,4 +132,78 @@ export async function createQuickCard(input: QuickCardInput): Promise<Card> {
     .single();
   if (error) throw error;
   return data;
+}
+
+export interface IcsImportInput {
+  projectId: string;
+  events: ParsedIcsEvent[];
+  /** False strips every event's recurrence before insert — the caller
+   *  decides this once (via useProjectIsPro) rather than each row round-
+   *  tripping through the DB's enforce_card_recurrence_plan trigger and
+   *  failing the whole batch on the first non-Pro recurring row. */
+  keepRecurrence: boolean;
+}
+
+const ICS_IMPORT_CHUNK_SIZE = 300;
+
+function toChunks<T>(rows: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < rows.length; i += size) chunks.push(rows.slice(i, i + size));
+  return chunks;
+}
+
+/**
+ * Bulk-create cards from a parsed `.ics` file into an existing project's
+ * first column — the Calendar's "Import" flow (ImportCalendarModal.tsx). A
+ * one-time copy, same posture as features/import/runImport.ts: no ongoing
+ * link back to the source calendar, and running it again just creates
+ * duplicate cards (there's no UID-based de-dupe against what's already here).
+ */
+export async function importIcsEvents(input: IcsImportInput): Promise<{ imported: number }> {
+  if (input.events.length === 0) return { imported: 0 };
+
+  const { data: column, error: columnError } = await supabase
+    .from('columns')
+    .select('id')
+    .eq('project_id', input.projectId)
+    .order('position', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (columnError) throw columnError;
+  if (!column) throw new Error('This project has no columns yet — add one from its board first.');
+
+  const { data: lastCard, error: lastCardError } = await supabase
+    .from('cards')
+    .select('position')
+    .eq('column_id', column.id)
+    .order('position', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (lastCardError) throw lastCardError;
+
+  let cursor = lastCard?.position;
+  const rows = input.events.map((event) => {
+    const position = positionBetween(cursor, undefined);
+    cursor = position;
+    return {
+      project_id: input.projectId,
+      column_id: column.id,
+      title: event.title,
+      description: event.description,
+      due_date: event.dueDate,
+      due_at: event.dueAt,
+      position,
+      recurrence_rule: input.keepRecurrence ? event.recurrence : null,
+    };
+  });
+
+  let imported = 0;
+  for (const chunk of toChunks(rows, ICS_IMPORT_CHUNK_SIZE)) {
+    // Postgres multi-row insert is all-or-nothing, so a chunk that doesn't
+    // throw inserted every row in it — no need to select the rows back.
+    const { error } = await supabase.from('cards').insert(chunk);
+    if (error) throw error;
+    imported += chunk.length;
+  }
+  return { imported };
 }

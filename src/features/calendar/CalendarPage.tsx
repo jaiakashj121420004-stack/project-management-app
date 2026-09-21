@@ -28,6 +28,8 @@ import { CalendarToolbar } from './CalendarToolbar';
 import { CalendarGrid } from './CalendarGrid';
 import { AgendaList } from './AgendaList';
 import { DayView } from './DayView';
+import { QuickAddCardModal } from './QuickAddCardModal';
+import { ImportCalendarModal } from './ImportCalendarModal';
 import { CardChip } from './CardChip';
 import { TimelineBarFace } from './TimelineBar';
 import { TimelineGrid } from './TimelineGrid';
@@ -86,6 +88,8 @@ export function CalendarPage() {
   const [peekDateKey, setPeekDateKey] = useState<string | null>(null);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
   const [activeKind, setActiveKind] = useState<DragKind>('card');
+  const [monthQuickAdd, setMonthQuickAdd] = useState<{ dateKey: string; seed: number } | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const projectList = useMemo(() => projects ?? [], [projects]);
   const projectsById = useMemo(() => new Map(projectList.map((p) => [p.id, p])), [projectList]);
@@ -220,6 +224,14 @@ export function CalendarPage() {
     setOpenCardId(card.id);
   }
 
+  /** "+" on a Month/Week cell or an Agenda day header — same quick-add form
+   *  Day view uses, just without a time (an all-day card by default). Remounts
+   *  via an incrementing seed so a second click on a different day always
+   *  starts from that day's fields (see QuickAddCardModal's doc comment). */
+  function openMonthQuickAdd(dateKey: string) {
+    setMonthQuickAdd((prev) => ({ dateKey, seed: (prev?.seed ?? 0) + 1 }));
+  }
+
   async function handleSaveCard(id: string, values: CardDetailValues) {
     const card = cardsById.get(id);
     if (!card) return;
@@ -269,6 +281,7 @@ export function CalendarPage() {
           searchCards={scopedCards}
           accentFor={accentFor}
           onSearchSelect={handleSearchSelect}
+          onImportClick={() => setImportOpen(true)}
         />
       </Reveal>
 
@@ -322,6 +335,7 @@ export function CalendarPage() {
               accentFor={accentFor}
               onOpenCard={(card) => setOpenCardId(card.id)}
               onPeek={setPeekDateKey}
+              onQuickAdd={openMonthQuickAdd}
             />
           ) : (
             <AgendaList
@@ -332,6 +346,7 @@ export function CalendarPage() {
               accentFor={accentFor}
               onOpenCard={(card) => setOpenCardId(card.id)}
               onPeek={setPeekDateKey}
+              onQuickAdd={openMonthQuickAdd}
               emptyLabel={view === 'month' ? 'Nothing scheduled this month.' : 'Nothing scheduled this week.'}
             />
           )}
@@ -366,6 +381,23 @@ export function CalendarPage() {
         accentFor={accentFor}
         onClose={() => setPeekDateKey(null)}
         onOpenCard={openCardFromPeek}
+      />
+
+      <QuickAddCardModal
+        key={monthQuickAdd?.seed ?? 0}
+        open={Boolean(monthQuickAdd)}
+        onClose={() => setMonthQuickAdd(null)}
+        dateKey={monthQuickAdd?.dateKey ?? cursorDateKey}
+        initialTime={null}
+        projects={projectList}
+        defaultProjectId={defaultQuickAddProjectId}
+      />
+
+      <ImportCalendarModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        projects={projectList}
+        defaultProjectId={defaultQuickAddProjectId}
       />
 
       <CardDetailModal

@@ -3,7 +3,16 @@ import type { Card } from '@/types/database';
 import type { RecurrenceRule } from '@/lib/recurrence';
 import { removeCard, updateCardDetail, type BoardData } from '@/features/board/api';
 import type { CardExtras } from '@/features/board/cardExtras.api';
-import { createQuickCard, fetchDatedCards, fetchTodoListsInRange, updateCardDates, type CalendarTodos, type QuickCardInput } from './api';
+import {
+  createQuickCard,
+  fetchDatedCards,
+  fetchTodoListsInRange,
+  importIcsEvents,
+  updateCardDates,
+  type CalendarTodos,
+  type IcsImportInput,
+  type QuickCardInput,
+} from './api';
 
 /** Every to-do list (+ items) whose `list_date` falls in [startKey, endKey] —
  *  used to show to-do chips on the Calendar. Re-fetches when the visible range
@@ -201,6 +210,21 @@ export function useCreateQuickCard() {
     onSuccess: (card) => {
       queryClient.setQueryData<Card[]>(calendarKey, (old) => (old ? [...old, card] : [card]));
       void queryClient.invalidateQueries({ queryKey: boardKey(card.project_id) });
+    },
+  });
+}
+
+/** Bulk-create cards from a parsed .ics file (the Calendar's Import flow).
+ *  Simpler cache handling than useCreateQuickCard's single-card patch — a
+ *  batch can be large, so this just invalidates rather than hand-merging N
+ *  rows into the cache. */
+export function useImportIcsEvents() {
+  const queryClient = useQueryClient();
+  return useMutation<{ imported: number }, Error, IcsImportInput>({
+    mutationFn: importIcsEvents,
+    onSuccess: (_result, { projectId }) => {
+      void queryClient.invalidateQueries({ queryKey: calendarKey });
+      void queryClient.invalidateQueries({ queryKey: boardKey(projectId) });
     },
   });
 }
