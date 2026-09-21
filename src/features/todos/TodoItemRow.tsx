@@ -270,7 +270,7 @@ export function TodoItemRow({
         )}
 
         {!selectMode && !editingText && (
-          <div className="flex shrink-0 items-center opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+          <div className="flex w-0 shrink-0 items-center overflow-hidden opacity-0 transition-[width,opacity] duration-150 focus-within:w-[6.5rem] focus-within:opacity-100 group-hover:w-[6.5rem] group-hover:opacity-100">
             <Tooltip label="Edit">
               <button
                 type="button"

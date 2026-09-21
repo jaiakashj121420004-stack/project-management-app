@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { format, isSameMonth, isToday } from 'date-fns';
-import { ListChecks, Flag as MilestoneIcon } from 'lucide-react';
+import { ListChecks, Flag as MilestoneIcon, Plus } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { accentVars, type AccentName } from '@/lib/accents';
 import type { Card, Project } from '@/types/database';
@@ -22,6 +22,9 @@ interface DayCellProps {
   accentFor: (projectId: string) => AccentName;
   onOpenCard: (card: Card) => void;
   onPeek: (dateKey: string) => void;
+  /** Opens the quick-add modal for this day — omitted where it doesn't make
+   *  sense (there is none currently; kept optional for forward-compat). */
+  onQuickAdd?: (dateKey: string) => void;
 }
 
 /**
@@ -45,6 +48,7 @@ function DayCellComponent({
   accentFor,
   onOpenCard,
   onPeek,
+  onQuickAdd,
 }: DayCellProps) {
   const { setNodeRef, isOver } = useDroppable({ id: dateKey, data: { dateKey } });
   const today = isToday(date);
@@ -58,14 +62,14 @@ function DayCellComponent({
     <div
       ref={setNodeRef}
       className={cn(
-        'flex flex-col gap-1 rounded-xl border border-[var(--glass-border)] p-1 transition-colors',
+        'group/cell flex flex-col gap-1 rounded-xl border border-[var(--glass-border)] p-1 transition-colors',
         variant === 'month' ? 'min-h-[6.5rem] sm:min-h-[7.5rem]' : 'min-h-[15rem]',
         outside && 'opacity-40',
         today && 'border-[var(--accent-from)]/35 bg-[var(--accent-from)]/[0.06]',
         isOver && 'border-[var(--accent-from)]/60 bg-[var(--accent-from)]/10',
       )}
     >
-      <div className="px-0.5">
+      <div className="flex items-center justify-between px-0.5">
         <span
           className={cn(
             'grid h-6 min-w-[1.5rem] place-items-center rounded-full px-1 text-xs font-semibold',
@@ -76,6 +80,16 @@ function DayCellComponent({
         >
           {format(date, 'd')}
         </span>
+        {onQuickAdd && (
+          <button
+            type="button"
+            aria-label={`Add a card on ${format(date, 'MMMM d')}`}
+            onClick={() => onQuickAdd(dateKey)}
+            className="grid h-5 w-5 shrink-0 place-items-center rounded-md text-fg-subtle opacity-0 transition-opacity hover:bg-[var(--glass-fill)] hover:text-fg focus-visible:opacity-100 group-hover/cell:opacity-100"
+          >
+            <Plus size={12} />
+          </button>
+        )}
       </div>
 
       <div className={cn('flex min-h-0 flex-col gap-1', variant === 'week' && 'overflow-y-auto')}>

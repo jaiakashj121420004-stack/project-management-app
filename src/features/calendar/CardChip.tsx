@@ -1,5 +1,6 @@
 import { forwardRef, type ButtonHTMLAttributes } from 'react';
 import { useDraggable } from '@dnd-kit/core';
+import { Repeat2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { accentVars, type AccentName } from '@/lib/accents';
 import { dueStatus, type DueStatus } from '@/features/board/due';
@@ -33,6 +34,7 @@ export const CardChip = forwardRef<HTMLButtonElement, CardChipProps>(function Ca
 ) {
   const status = card.due_date ? dueStatus(card.due_date) : 'upcoming';
   const dot = STATUS_DOT[status];
+  const recurring = card.recurrence_rule !== null;
 
   return (
     <button
@@ -55,6 +57,9 @@ export const CardChip = forwardRef<HTMLButtonElement, CardChipProps>(function Ca
         className="h-3.5 w-1 shrink-0 rounded-full bg-[linear-gradient(180deg,var(--accent-from),var(--accent-to))]"
       />
       <span className="min-w-0 flex-1 truncate text-xs font-medium text-fg">{card.title}</span>
+      {recurring && (
+        <Repeat2 size={11} className="shrink-0 text-fg-subtle" aria-label="Repeats" />
+      )}
       {dot && <span aria-hidden className={cn('h-1.5 w-1.5 shrink-0 rounded-full', dot)} />}
     </button>
   );
