@@ -378,3 +378,19 @@
 .canvas-table__resize-handle:active::after {
   opacity: 0.6;
 }
+
+/* Drawing surface: a resting palm must never select page text or pop the iOS
+   callout. Real text inputs inside (text boxes, frame names) stay selectable. */
+.canvas-surface {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.canvas-surface [contenteditable='true'],
+.canvas-surface [contenteditable='true'] *,
+.canvas-surface input,
+.canvas-surface textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}

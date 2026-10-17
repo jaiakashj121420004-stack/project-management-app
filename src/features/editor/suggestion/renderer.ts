@@ -29,35 +29,58 @@ export function makeSuggestionRender<I>(
     const FALLBACK_HEIGHT = 320; // best guess before the menu has painted/laid out
     const FALLBACK_WIDTH = 280;
 
-    // `visualViewport` tracks the on-screen viewport shrunk by the mobile
-    // keyboard; `window.innerHeight`/`innerWidth` don't shrink, so using them
-    // alone can place (or leave) the menu underneath the keyboard.
-    const viewportHeight = () => window.visualViewport?.height ?? window.innerHeight;
-    const viewportWidth = () => window.visualViewport?.width ?? window.innerWidth;
+    // `position: fixed` is laid out against the LAYOUT viewport, while the part
+    // the person can actually see is the VISUAL viewport (shrunk by the iPad /
+    // iPhone keyboard, shifted when iOS scrolls the page up, scaled by pinch
+    // zoom). Place and clamp against the visual viewport's rectangle expressed in
+    // layout coordinates, otherwise the menu can open off-screen or under the
+    // keyboard and "/" looks dead.
+    const visible = () => {
+      const vv = window.visualViewport;
+      return {
+        top: vv?.offsetTop ?? 0,
+        left: vv?.offsetLeft ?? 0,
+        height: vv?.height ?? window.innerHeight,
+        width: vv?.width ?? window.innerWidth,
+      };
+    };
 
     const place = (rect: DOMRect | null | undefined) => {
       if (!container || !rect) return;
-      // Measure the actual rendered menu (it's already mounted at this point,
-      // even on the very first call in onStart — the ReactRenderer mounts
-      // synchronously), falling back to a reasonable guess only if that
-      // measurement isn't available yet (e.g. an empty item list).
-      const menuHeight = container.offsetHeight || FALLBACK_HEIGHT;
+      const menuHeight = Math.min(container.offsetHeight || FALLBACK_HEIGHT, visible().height - 2 * MARGIN);
       const menuWidth = container.offsetWidth || FALLBACK_WIDTH;
-      const vh = viewportHeight();
-      const vw = viewportWidth();
+      const v = visible();
+      const minTop = v.top + MARGIN;
+      const maxTop = v.top + v.height - menuHeight - MARGIN;
 
-      const spaceBelow = vh - rect.bottom;
-      const spaceAbove = rect.top;
-      // Prefer below the cursor (Notion-style); flip above it only when
-      // there isn't room below but there is above — never let it render
-      // partially off-screen either way.
+      const spaceBelow = v.top + v.height - rect.bottom;
+      const spaceAbove = rect.top - v.top;
+      // Prefer below the cursor; flip above only when there's no room below but
+      // more above — and never leave the visible area either way.
       const placeAbove = spaceBelow < menuHeight + MARGIN && spaceAbove > spaceBelow;
       const rawTop = placeAbove ? rect.top - menuHeight - 6 : rect.bottom + 6;
-      const top = Math.min(Math.max(MARGIN, rawTop), Math.max(MARGIN, vh - menuHeight - MARGIN));
-      const left = Math.min(Math.max(MARGIN, rect.left), Math.max(MARGIN, vw - menuWidth - MARGIN));
+      const top = Math.min(Math.max(minTop, rawTop), Math.max(minTop, maxTop));
+      const left = Math.min(
+        Math.max(v.left + MARGIN, rect.left),
+        Math.max(v.left + MARGIN, v.left + v.width - menuWidth - MARGIN),
+      );
 
       container.style.top = `${top}px`;
       container.style.left = `${left}px`;
+      container.style.maxHeight = `${Math.max(120, v.height - 2 * MARGIN)}px`;
+    };
+
+    // The keyboard opening/closing or iOS scrolling the page moves the visible
+    // area without any editor update, so re-place on those too.
+    let lastRect: (() => DOMRect | null) | null | undefined;
+    const reposition = () => place(lastRect?.());
+    const attachViewportListeners = () => {
+      window.visualViewport?.addEventListener('resize', reposition);
+      window.visualViewport?.addEventListener('scroll', reposition);
+    };
+    const detachViewportListeners = () => {
+      window.visualViewport?.removeEventListener('resize', reposition);
+      window.visualViewport?.removeEventListener('scroll', reposition);
     };
 
     return {
@@ -65,9 +88,12 @@ export function makeSuggestionRender<I>(
         renderer = new ReactRenderer(Component, { props, editor: props.editor });
         container = document.createElement('div');
         container.style.position = 'fixed';
-        container.style.zIndex = '60';
+        // Above the full-screen canvas overlay (z-80) and modals (z-90).
+        container.style.zIndex = '200';
         container.appendChild(renderer.element);
         document.body.appendChild(container);
+        lastRect = props.clientRect;
+        attachViewportListeners();
         place(props.clientRect?.());
         // Re-place once more after layout settles (fonts/async item list can
         // change the menu's real height right after mount).
@@ -75,6 +101,7 @@ export function makeSuggestionRender<I>(
       },
       onUpdate: (props) => {
         renderer?.updateProps(props);
+        lastRect = props.clientRect;
         place(props.clientRect?.());
       },
       onKeyDown: (props) => {
@@ -82,6 +109,8 @@ export function makeSuggestionRender<I>(
         return renderer?.ref?.onKeyDown(props) ?? false;
       },
       onExit: () => {
+        detachViewportListeners();
+        lastRect = null;
         renderer?.destroy();
         container?.remove();
         renderer = null;

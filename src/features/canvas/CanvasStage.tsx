@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Stage, Layer, Path, Transformer } from 'react-konva';
+import { Stage, Layer, Transformer } from 'react-konva';
 import type Konva from 'konva';
 import type { PageType } from '@/lib/canvasPages';
 import { useElementSize } from '@/hooks/useElementSize';
@@ -13,7 +13,7 @@ import type { CaretUser } from './richText';
 import type { RemotePeer } from './collab/awareness';
 import type { XmlFragment } from 'yjs';
 import { useCanvasPalette } from './useCanvasPalette';
-import { strokePathData, type ErasePoint, type StrokeStyle } from './freehand';
+import { strokeOutline, type ErasePoint, type StrokeStyle } from './freehand';
 import { penStrokeStyle, type PenSettings } from './drawing';
 import {
   LONG_PRESS_MS,
@@ -94,6 +94,39 @@ interface CanvasStageProps {
 /** How long after the last pen event we keep rejecting touch (palm rejection). */
 const PEN_ACTIVE_MS = 800;
 
+/** Once a stylus has touched this canvas we remember it, so a resting palm that
+ *  lands BEFORE the pen can never start a stroke (the 800 ms window alone can't
+ *  catch that order). Persisted so it also holds right after a reload. */
+const PEN_SEEN_KEY = 'aurora.canvas.penSeen';
+
+function readPenSeen(): boolean {
+  try {
+    return localStorage.getItem(PEN_SEEN_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+/** A touch contact this large is a palm / fist, not a fingertip. */
+function isPalmContact(evt: PointerEvent): boolean {
+  return evt.pointerType === 'touch' && (evt.width > 36 || evt.height > 36);
+}
+
+/** Paint a perfect-freehand outline as a smoothed filled shape. */
+function fillOutline(ctx: CanvasRenderingContext2D, outline: number[][]) {
+  const n = outline.length;
+  if (n === 0) return;
+  ctx.beginPath();
+  ctx.moveTo(outline[0]![0]!, outline[0]![1]!);
+  for (let i = 0; i < n; i += 1) {
+    const a = outline[i]!;
+    const b = outline[(i + 1) % n]!;
+    ctx.quadraticCurveTo(a[0]!, a[1]!, (a[0]! + b[0]!) / 2, (a[1]! + b[1]!) / 2);
+  }
+  ctx.closePath();
+  ctx.fill();
+}
+
 function distance(a: { x: number; y: number }, b: { x: number; y: number }): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
@@ -119,7 +152,8 @@ function pressureOf(evt: PointerEvent, isPen: boolean): number {
  *   - text   — click drops a text box.
  *
  * Two-finger pan/zoom and wheel-zoom work in every mode.
- * Palm rejection: once a pen is in use, touch is ignored for 800 ms.
+ * Palm rejection: once a pen has been seen, finger touch never draws/erases/places
+ * text (fingers still pan/zoom with two); a palm-sized contact is always ignored.
  * Right-click anywhere fires onContextMenu.
  * Long-press (600 ms) on touch fires onContextMenu.
  */
@@ -159,8 +193,12 @@ export function CanvasStage({
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
-  const previewRef = useRef<Konva.Path>(null);
+  const inkRef = useRef<HTMLCanvasElement>(null);
+  const inkRaf = useRef<number | null>(null);
+  const cameraRef = useRef(camera);
+  cameraRef.current = camera;
   const size = useElementSize(containerRef);
+  const dpr = typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1;
   const palette = useCanvasPalette(containerRef);
 
   // Live transform of the text/media box being dragged/resized so HTML overlays track it.
@@ -177,7 +215,9 @@ export function CanvasStage({
 
   // Palm rejection.
   const penActive = useRef(false);
+  const penSeen = useRef(readPenSeen());
   const penTimer = useRef<number | null>(null);
+  const lastPointerType = useRef<string>('');
 
   // Group drag: when multiple elements are selected and the user drags one of
   // them, we move all selected elements by the same delta and batch-commit on end.
@@ -198,6 +238,14 @@ export function CanvasStage({
   const longPressElementId = useRef<string | null>(null);
 
   const markPen = () => {
+    if (!penSeen.current) {
+      penSeen.current = true;
+      try {
+        localStorage.setItem(PEN_SEEN_KEY, '1');
+      } catch {
+        /* storage unavailable — the in-memory flag still protects this session */
+      }
+    }
     penActive.current = true;
     if (penTimer.current !== null) window.clearTimeout(penTimer.current);
     penTimer.current = window.setTimeout(() => { penActive.current = false; }, PEN_ACTIVE_MS);
@@ -206,6 +254,26 @@ export function CanvasStage({
   useEffect(() => () => {
     if (penTimer.current !== null) window.clearTimeout(penTimer.current);
     if (longPressTimer.current !== null) window.clearTimeout(longPressTimer.current);
+    if (inkRaf.current !== null) cancelAnimationFrame(inkRaf.current);
+  }, []);
+
+  // iOS selects text / shows the callout when a palm rests on the page. The
+  // canvas is a drawing surface, so block selection everywhere inside it except
+  // in real text inputs (text boxes, frame names).
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const block = (e: Event) => {
+      const t = e.target as HTMLElement | null;
+      if (t?.closest('[contenteditable="true"], input, textarea')) return;
+      e.preventDefault();
+    };
+    el.addEventListener('selectstart', block);
+    el.addEventListener('dragstart', block);
+    return () => {
+      el.removeEventListener('selectstart', block);
+      el.removeEventListener('dragstart', block);
+    };
   }, []);
 
   useEffect(() => {
@@ -286,19 +354,47 @@ export function CanvasStage({
 
   // ── drawing ─────────────────────────────────────────────────────────────────
 
-  function paintPreview() {
-    const node = previewRef.current;
+  // The in-progress stroke is painted on a plain 2D canvas overlay, once per
+  // animation frame — far cheaper than rebuilding an SVG path string and
+  // re-parsing it in Konva on every pointer event.
+  function renderInk() {
+    const canvas = inkRef.current;
     const d = drawing.current;
-    if (!node || !d) return;
-    node.data(strokePathData(d.points, d.style));
-    node.getLayer()?.batchDraw();
+    if (!canvas || !d) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const dpr = window.devicePixelRatio || 1;
+    const cam = cameraRef.current;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.setTransform(dpr * cam.scale, 0, 0, dpr * cam.scale, dpr * cam.x, dpr * cam.y);
+    ctx.fillStyle = d.style.color;
+    ctx.globalAlpha = d.style.opacity;
+    fillOutline(ctx, strokeOutline(d.points, d.style));
   }
 
+  function paintPreview() {
+    if (inkRaf.current !== null) return;
+    inkRaf.current = requestAnimationFrame(() => {
+      inkRaf.current = null;
+      renderInk();
+    });
+  }
+
+  function clearInkNow() {
+    const canvas = inkRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  /** Clear after the committed stroke has had two frames to appear, so the ink
+   *  never blinks out between "pen up" and the Konva element rendering. */
   function clearPreview() {
-    const node = previewRef.current;
-    if (!node) return;
-    node.data('');
-    node.getLayer()?.batchDraw();
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (!drawing.current) clearInkNow();
+    }));
   }
 
   function startStroke(e: Konva.KonvaEventObject<PointerEvent>) {
@@ -307,12 +403,8 @@ export function CanvasStage({
     if (!start) return;
     const style = penStrokeStyle(penSettings, !isPen);
     drawing.current = { pointerId: e.evt.pointerId, points: [start.x, start.y, pressureOf(e.evt, isPen)], style };
-    const node = previewRef.current;
-    if (node) {
-      node.fill(style.color);
-      node.opacity(style.opacity);
-      node.globalCompositeOperation(style.blend === 'multiply' ? 'multiply' : 'source-over');
-    }
+    const canvas = inkRef.current;
+    if (canvas) canvas.style.mixBlendMode = style.blend === 'multiply' ? 'multiply' : 'normal';
     paintPreview();
     startGestureListeners(extendStroke, endStroke, cancelStroke);
   }
@@ -484,6 +576,16 @@ export function CanvasStage({
     const type = e.evt.pointerType;
     if (type === 'pen') markPen();
 
+    // Palm rejection. A palm usually lands BEFORE the pen, so the short "pen is
+    // active" window isn't enough: once any stylus has been seen, fingers never
+    // draw, erase or drop text (they still pan/zoom). Palm-sized contacts are
+    // always ignored, pen or no pen.
+    if (type === 'touch' && (penSeen.current || penActive.current || isPalmContact(e.evt))) {
+      if (tool === 'draw' || tool === 'erase' || tool === 'text') return;
+    }
+
+    window.getSelection()?.removeAllRanges();
+
     if (tool === 'text') {
       const p = toWorld(e.evt.clientX, e.evt.clientY);
       if (p) onPlaceText(p.x, p.y);
@@ -491,11 +593,14 @@ export function CanvasStage({
     }
 
     if (tool !== 'draw' && tool !== 'erase') return;
-    if (type === 'touch' && penActive.current) return;
     if (type === 'touch' && !e.evt.isPrimary) {
       cancelStroke();
       endErase();
       return;
+    }
+    // The pen landed while a finger/palm stroke was running: drop the stray one.
+    if (type === 'pen' && drawing.current && drawing.current.pointerId !== e.evt.pointerId) {
+      cancelStroke();
     }
     if (e.evt.cancelable) e.evt.preventDefault();
 
@@ -658,7 +763,11 @@ export function CanvasStage({
   }
 
   function handleStageDragStart(e: Konva.KonvaEventObject<DragEvent>) {
-    if (e.target === stageRef.current) return;
+    if (e.target === stageRef.current) {
+      // A palm resting while the pen is working must not drag the page around.
+      if (lastPointerType.current === 'touch' && penActive.current) stageRef.current?.stopDrag();
+      return;
+    }
     if (selectedIds.length <= 1) return;
     const stage = stageRef.current;
     if (!stage) return;
@@ -772,11 +881,19 @@ export function CanvasStage({
   return (
     <div
       ref={containerRef}
-      className="relative h-full w-full overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-fill)]"
+      className="canvas-surface relative h-full w-full overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-fill)]"
       style={{ touchAction: 'none', cursor }}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      onPointerMove={(e) => reportCursor(e.clientX, e.clientY)}
+      onPointerDownCapture={(e) => {
+        lastPointerType.current = e.pointerType;
+        if (e.pointerType === 'pen') markPen();
+      }}
+      onPointerMove={(e) => {
+        // Apple Pencil hover also proves a stylus is present.
+        if (e.pointerType === 'pen') markPen();
+        reportCursor(e.clientX, e.clientY);
+      }}
       onPointerLeave={() => onPointerWorldMove?.(null)}
     >
       {size.width > 0 && size.height > 0 && (
@@ -809,7 +926,8 @@ export function CanvasStage({
               palette={palette}
             />
           </Layer>
-          <Layer>
+          {/* Hit-testing every pointer move is wasted work while inking. */}
+          <Layer listening={tool !== 'draw'}>
             {elements.map((element) => (
               <ElementNode
                 key={element.id}
@@ -856,11 +974,16 @@ export function CanvasStage({
               />
             )}
           </Layer>
-          <Layer listening={false}>
-            <Path ref={previewRef} perfectDrawEnabled={false} shadowForStrokeEnabled={false} />
-          </Layer>
         </Stage>
       )}
+
+      <canvas
+        ref={inkRef}
+        aria-hidden
+        width={Math.max(1, Math.round(size.width * dpr))}
+        height={Math.max(1, Math.round(size.height * dpr))}
+        className="pointer-events-none absolute inset-0 h-full w-full"
+      />
 
       {marqueeStyle && (
         <div

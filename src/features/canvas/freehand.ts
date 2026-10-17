@@ -77,6 +77,16 @@ function outlineFor(samples: Array<[number, number, number]>, shape: StrokeShape
   });
 }
 
+/**
+ * The raw outline polygon for a stroke's samples. The live-drawing overlay
+ * paints this straight onto a 2D canvas, skipping the SVG-string build + Konva
+ * path parse that made long strokes lag.
+ */
+export function strokeOutline(points: number[], shape: StrokeShape): number[][] {
+  const samples = toSamples(points);
+  return samples.length === 0 ? [] : outlineFor(samples, shape);
+}
+
 /** The filled-outline SVG path for a stroke's stored samples + shape params. */
 export function strokePathData(points: number[], shape: StrokeShape): string {
   const samples = toSamples(points);

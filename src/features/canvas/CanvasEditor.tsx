@@ -8,7 +8,8 @@ import {
   useState,
   type ChangeEvent,
 } from 'react';
-import { AlertCircle, Check, Eye, Pencil, Trash2, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { AlertCircle, Check, Eye, Maximize2, Pencil, Trash2, X } from 'lucide-react';
 import { Spinner } from '@/components/feedback/Spinner';
 import { SegmentedToggle } from '@/components/forms/SegmentedToggle';
 import { CanvasMinimap } from './CanvasMinimap';
@@ -57,6 +58,7 @@ import { LayersPanel } from './LayersPanel';
 import { centerCamera } from './bounds';
 import { PenToolbar } from './PenToolbar';
 import { EraserToolbar } from './EraserToolbar';
+import { InkDock } from './InkDock';
 import {
   NUDGE_STEP,
   NUDGE_LARGE_STEP,
@@ -240,6 +242,9 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
   const [mode, setMode] = useState<'edit' | 'view'>('edit');
   const editing = canEdit && mode === 'edit';
   const [tool, setTool] = useState<CanvasTool>('select');
+  // Full-screen writing mode: everything but the canvas + a compact dock hides.
+  const [focus, setFocus] = useState(false);
+  const [showMoreTools, setShowMoreTools] = useState(false);
   const [pen, setPen] = useState<PenSettings>(() => defaultPenSettings(theme));
   const [eraserMode, setEraserMode] = useState<EraserMode>('object');
   const [eraserSize, setEraserSize] = useState(ERASER_DEFAULT_SIZE);
@@ -906,6 +911,30 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [editing, editingTextId]);
 
+  // Full-screen mode: lock page scroll behind it and let Esc leave.
+  useEffect(() => {
+    if (!focus) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !editingTextId) setFocus(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [focus, editingTextId]);
+
+  function toggleFocus() {
+    setFocus((on) => {
+      // Entering full screen is for writing: start on the pen, not Select.
+      if (!on && editing && tool === 'select') changeTool('draw');
+      return !on;
+    });
+    setShowMoreTools(false);
+  }
+
   function handleDelete() {
     runDelete({ id: note.id });
     onDeleted();
@@ -914,10 +943,18 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
   const hasSelection = validSelectedIds.length > 0;
   const selectedLocked = primaryElement?.locked ?? false;
 
-  return (
-    <div className="flex flex-col gap-3" onPaste={handlePaste}>
+  const content = (
+    <div
+      className={
+        focus
+          ? 'fixed inset-0 z-[80] flex flex-col overflow-hidden bg-base'
+          : 'flex flex-col gap-3'
+      }
+      onPaste={handlePaste}
+    >
       <input ref={fileInputRef} type="file" accept={IMAGE_ACCEPT} aria-hidden tabIndex={-1} className="sr-only" onChange={handleFileInputChange} />
 
+      {!focus && (
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <input
@@ -939,6 +976,10 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
               </span>
             )}
             <SaveIndicator status={status} />
+            <button type="button" aria-label="Full screen" title="Full screen — just the canvas" onClick={toggleFocus}
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl px-2.5 text-xs font-semibold text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg">
+              <Maximize2 size={15} /> <span className="hidden sm:inline">Full screen</span>
+            </button>
             <button type="button" aria-label="Delete canvas" onClick={() => setConfirmingDelete((open) => !open)}
               className="grid h-9 w-9 place-items-center rounded-xl text-fg-subtle transition-colors hover:bg-danger/10 hover:text-danger">
               <Trash2 size={16} />
@@ -946,8 +987,9 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
           </div>
         )}
       </div>
+      )}
 
-      {confirmingDelete && canEdit && (
+      {confirmingDelete && canEdit && !focus && (
         <div className="flex items-center justify-between gap-2 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-fg-muted">
           <span>Delete <span className="font-semibold text-fg">{note.title}</span>? This cannot be undone.</span>
           <div className="flex shrink-0 items-center gap-1.5">
@@ -967,7 +1009,7 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
         </div>
       )}
 
-      {canEdit && (
+      {canEdit && !focus && (
         <SegmentedToggle
           label="Canvas mode"
           value={mode}
@@ -979,7 +1021,7 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
         />
       )}
 
-      <div className="relative min-h-[82vh] w-full flex-1 sm:min-h-[78vh]">
+      <div className={focus ? 'relative min-h-0 w-full flex-1' : 'relative min-h-[82vh] w-full flex-1 sm:min-h-[78vh]'}>
         <div className="absolute inset-0">
           <CanvasStage
             elements={visibleElements}
@@ -1027,7 +1069,21 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
           </div>
         )}
 
-        <div className="pointer-events-none absolute inset-x-0 top-0 flex flex-col items-center gap-2 p-2 sm:p-3">
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 flex flex-col items-center gap-2 p-2 sm:p-3"
+          style={focus ? { paddingTop: 'max(0.5rem, env(safe-area-inset-top))' } : undefined}
+        >
+          {focus && editing && (
+            <button
+              type="button"
+              onClick={() => setShowMoreTools((v) => !v)}
+              aria-expanded={showMoreTools}
+              className="glass-menu pointer-events-auto self-end rounded-xl border border-[var(--glass-border)] px-3 py-1.5 text-xs font-semibold text-fg-muted hover:text-fg"
+            >
+              {showMoreTools ? 'Hide more tools' : 'More tools'}
+            </button>
+          )}
+          {(!focus || showMoreTools) && (
           <CanvasToolbar
             className="pointer-events-auto"
             canEdit={editing}
@@ -1061,17 +1117,6 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
             showLayers={showLayers}
             onToggleLayers={() => setShowLayers((v) => !v)}
           />
-          {editing && tool === 'draw' && (
-            <PenToolbar className="pointer-events-auto" settings={pen} onChange={setPen} />
-          )}
-          {editing && tool === 'erase' && (
-            <EraserToolbar
-              className="pointer-events-auto"
-              mode={eraserMode}
-              onMode={setEraserMode}
-              size={eraserSize}
-              onSize={setEraserSize}
-            />
           )}
           {soleFrame && (
             <div className="glass-menu pointer-events-auto flex items-center gap-2 rounded-xl border border-[var(--glass-border)] px-2.5 py-1.5">
@@ -1084,6 +1129,39 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
                 className="w-44 bg-transparent text-sm text-fg placeholder:text-fg-subtle focus:outline-none"
               />
             </div>
+          )}
+        </div>
+
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 px-2 pt-2 sm:px-3"
+          style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+        >
+          {editing && tool === 'draw' && (
+            <PenToolbar className="pointer-events-auto" settings={pen} onChange={setPen} />
+          )}
+          {editing && tool === 'erase' && (
+            <EraserToolbar
+              className="pointer-events-auto"
+              mode={eraserMode}
+              onMode={setEraserMode}
+              size={eraserSize}
+              onSize={setEraserSize}
+            />
+          )}
+          {editing && (
+            <InkDock
+              className="pointer-events-auto"
+              tool={tool}
+              onTool={changeTool}
+              pen={pen}
+              onPen={setPen}
+              canUndo={canUndo}
+              canRedo={canRedo}
+              onUndo={undo}
+              onRedo={redo}
+              focus={focus}
+              onToggleFocus={toggleFocus}
+            />
           )}
         </div>
 
@@ -1139,6 +1217,9 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
       )}
     </div>
   );
+
+  // Portalled to <body> so no transformed/filtered ancestor can trap the fixed overlay.
+  return focus && typeof document !== 'undefined' ? createPortal(content, document.body) : content;
 }
 
 function SaveIndicator({ status }: { status: SaveStatus }) {
