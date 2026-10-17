@@ -48,7 +48,7 @@ export const SlashMenu = forwardRef<SuggestionListHandle, SuggestionProps<SlashI
     }
 
     return (
-      <div className="glass-menu max-h-72 w-64 overflow-y-auto rounded-xl border border-[var(--glass-border)] p-1 shadow-[0_18px_40px_-16px_rgba(0,0,0,0.5)]">
+      <div className="glass-menu max-h-72 w-64 touch-pan-y overflow-y-auto overscroll-contain rounded-xl border border-[var(--glass-border)] p-1 shadow-[0_18px_40px_-16px_rgba(0,0,0,0.5)]">
         {props.items.map((item, i) => {
           const Icon = item.icon;
           // A labelled divider before the first item of each new section (e.g.
@@ -66,7 +66,9 @@ export const SlashMenu = forwardRef<SuggestionListHandle, SuggestionProps<SlashI
               <button
                 type="button"
                 onMouseEnter={() => setIndex(i)}
+                // Keep the editor focused (and the iPad keyboard up) while tapping.
                 onMouseDown={(e) => e.preventDefault()}
+                onPointerDown={(e) => e.preventDefault()}
                 onClick={() => select(i)}
                 className={cn(
                   'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors',
