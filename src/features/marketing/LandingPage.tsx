@@ -11,6 +11,7 @@ import {
   ChevronDown,
   LayoutGrid,
   Library as LibraryIcon,
+  Minus,
   Palette,
   PenTool,
   ShieldCheck,
@@ -58,11 +59,19 @@ function Shot({
   // so in production every visit currently 404s and falls back to `children`
   // — but before that error resolves, this <img> has no intrinsic size and
   // renders at ~0 height, then the page reflows once the mockup swaps in.
-  // `aspect-[8/5]` reserves that height up front (~268px tall at this grid's
-  // column width, matching the mockup's own fixed minHeight) so the swap
-  // doesn't move anything below it. Real, measured regression this fixes:
-  // Phase 7 Lighthouse audit (2026-08-23) traced 0.234 of a 0.331 total CLS
-  // score to exactly this element.
+  // `aspect-[1672/897]` reserves that height up front — matching the actual
+  // screenshots' native ratio (they're all cropped to 1672×897, see
+  // public/shots/README.txt) — so the swap doesn't move anything below it.
+  // Real, measured regression this fixes: Phase 7 Lighthouse audit
+  // (2026-08-23) traced 0.234 of a 0.331 total CLS score to exactly this
+  // element.
+  //
+  // `object-contain` (not `object-cover`) is deliberate: a screenshot's
+  // content — sidebar, toolbar, search bar — is meaningful at every edge, so
+  // cropping it to fill a mismatched box hides real UI. Since the reserved
+  // box now matches the screenshots' own ratio exactly, contain and cover
+  // render identically for the current assets; contain just stays safe if a
+  // future replacement screenshot doesn't match 1672:897 exactly.
   //
   // Tried eager-loading + fetchPriority="high" on the two above-the-fold
   // (Hero) instances on 2026-08-23 to speed up the onError→mockup swap —
@@ -77,7 +86,7 @@ function Shot({
       alt=""
       loading="lazy"
       onError={() => setFailed(true)}
-      className="lode-window aspect-[8/5] w-full object-cover object-top"
+      className="lode-window aspect-[1672/897] w-full object-contain object-top"
     />
   );
 }
@@ -600,6 +609,22 @@ function formatPrice(n: number): string {
   return Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`;
 }
 
+/** India monthly pricing, shown alongside the USD price. This is a display
+ * rate set directly by Akash (2026-09-07) — it is NOT read from `@/lib/plans`
+ * and is not (yet) wired to a matching Dodo product/currency at checkout.
+ * Before relying on this in production, confirm the India checkout flow
+ * actually charges these rupee amounts rather than a live USD→INR
+ * conversion of the numbers in `PLANS` — otherwise this page and the actual
+ * charge can disagree. */
+const INDIA_PRICING: Partial<Record<'free' | 'pro' | 'team', number>> = {
+  pro: 399,
+  team: 1103,
+};
+
+function formatINR(n: number): string {
+  return `₹${n.toLocaleString('en-IN')}`;
+}
+
 function Pricing() {
   const perSeatFiveYear = 5 * 10 * 12; // illustrative: 5 people, $10/seat/mo, one year
   const teamYear = PLANS.team.priceMonthly * 12;
@@ -617,6 +642,13 @@ function Pricing() {
           on a board. Team is {formatPrice(PLANS.team.priceMonthly)}/mo for up to {TEAM_MEMBER_LIMIT}.
           Not each — total.
         </p>
+        <div className="mx-auto mt-6 flex max-w-xl flex-wrap items-center justify-center gap-2 rounded-full border border-[rgba(122,42,38,0.2)] bg-[rgba(122,42,38,0.06)] px-5 py-2.5 text-sm text-[color:var(--lode-oxblood-deep)]">
+          <span aria-hidden="true">🇮🇳</span>
+          <span className="font-semibold">India pricing:</span>
+          <span>Pro {formatINR(INDIA_PRICING.pro!)}/mo</span>
+          <span className="text-[color:rgba(122,42,38,0.4)]">·</span>
+          <span>Team {formatINR(INDIA_PRICING.team!)}/mo</span>
+        </div>
         <div className="mx-auto mt-8 grid max-w-md grid-cols-2 gap-4 rounded-2xl border border-[rgba(122,42,38,0.16)] bg-[rgba(255,253,248,0.6)] p-5 text-left">
           <div>
             <p className="text-xs uppercase tracking-wide text-[color:rgba(34,26,20,0.55)]">A typical per-seat tool</p>
@@ -637,6 +669,7 @@ function Pricing() {
             name={PLANS[id].name}
             price={formatPrice(PLANS[id].priceMonthly)}
             period={PLANS[id].priceMonthly > 0 ? '/mo' : undefined}
+            indiaPrice={INDIA_PRICING[id] ? `${formatINR(INDIA_PRICING[id])}/mo in India` : undefined}
             tagline={PLANS[id].tagline}
             points={PLANS[id].features}
             cta={PLAN_CTA[id]}
@@ -648,14 +681,15 @@ function Pricing() {
       <p className="mx-auto mt-6 max-w-xl text-center text-xs text-[color:rgba(34,26,20,0.55)]">
         Need more than {PLANS.team.memberLimit} people on one board? <a href={`mailto:${ENTERPRISE_CONTACT_EMAIL}`} className="underline decoration-[rgba(122,42,38,0.4)] underline-offset-2 hover:text-[color:var(--lode-oxblood-deep)]">Talk to us about Enterprise</a>.
       </p>
+      <PricingComparisonTable />
     </section>
   );
 }
 
 function PlanCard({
-  name, price, period, tagline, points, cta, to, highlight = false,
+  name, price, period, indiaPrice, tagline, points, cta, to, highlight = false,
 }: {
-  name: string; price: string; period?: string; tagline: string; points: string[]; cta: string; to: string; highlight?: boolean;
+  name: string; price: string; period?: string; indiaPrice?: string; tagline: string; points: string[]; cta: string; to: string; highlight?: boolean;
 }) {
   return (
     <div
@@ -675,6 +709,11 @@ function PlanCard({
       <p className="mt-4 font-display text-4xl font-black text-[color:var(--lode-ink)]">
         {price}<span className="text-base font-medium text-[color:rgba(34,26,20,0.72)]">{period}</span>
       </p>
+      {indiaPrice && (
+        <p className="mt-1 text-xs font-medium text-[color:var(--lode-oxblood-deep)]">
+          <span aria-hidden="true">🇮🇳</span> {indiaPrice}
+        </p>
+      )}
       <ul className="mt-5 flex-1 space-y-2">
         {points.map((p) => (
           <li key={p} className="flex items-start gap-2 text-sm text-[color:rgba(34,26,20,0.82)]">
@@ -685,6 +724,121 @@ function PlanCard({
       <Link to={to} className={`lode-cta mt-6 justify-center ${highlight ? '' : 'lode-cta--ghost'}`}>
         {cta} <ArrowRight size={15} />
       </Link>
+    </div>
+  );
+}
+
+/* ---- Pricing comparison table -----------------------------------------
+ * Row-by-row Free vs Pro vs Team, on top of the cards above (Akash asked for
+ * both). Every row here mirrors a real, shipped gate: the two Pro-only rows
+ * (Canvas, Canvas media) match `PRO_FEATURES.canvas` / `.media` in
+ * proFeatures.ts, and the unshipped 'collaboration' Pro feature is
+ * deliberately left out — proFeatures.ts's own rule is "don't market vapor".
+ * Wrapped in overflow-x-auto so it scrolls instead of squeezing on mobile. */
+type ComparisonCell = boolean | string;
+interface ComparisonRow {
+  label: string;
+  free: ComparisonCell;
+  pro: ComparisonCell;
+  team: ComparisonCell;
+}
+
+const COMPARISON_ROWS: ComparisonRow[] = [
+  { label: 'Price', free: '$0', pro: '$5.99/mo', team: '$22/mo' },
+  { label: 'Boards you can own', free: `${PLANS.free.projectLimit}`, pro: 'Unlimited', team: 'Unlimited' },
+  { label: 'People per board', free: `${PLANS.free.memberLimit}`, pro: `${PRO_MEMBER_LIMIT}`, team: `${TEAM_MEMBER_LIMIT}` },
+  { label: 'Kanban boards & cards', free: true, pro: true, team: true },
+  { label: 'Calendar & daily planner', free: true, pro: true, team: true },
+  { label: 'Notes & Library (block editor)', free: true, pro: true, team: true },
+  { label: 'Infinite Canvas whiteboard', free: false, pro: true, team: true },
+  { label: 'Canvas media (images, audio, video)', free: false, pro: true, team: true },
+  { label: 'Reminders', free: 'Browser only', pro: 'Browser + email + custom', team: 'Browser + email + custom' },
+  { label: 'Priority support', free: false, pro: true, team: true },
+];
+
+function ComparisonCellView({ value }: { value: ComparisonCell }) {
+  if (typeof value === 'boolean') {
+    return value ? (
+      <CheckCircle2 size={18} className="mx-auto text-[color:var(--lode-oxblood)]" />
+    ) : (
+      <Minus size={18} className="mx-auto text-[color:rgba(34,26,20,0.28)]" />
+    );
+  }
+  return <span>{value}</span>;
+}
+
+function PricingComparisonTable() {
+  return (
+    <div className="mx-auto mt-16 max-w-4xl">
+      <h3 className="text-center font-display text-xl font-bold text-[color:var(--lode-ink)]">
+        Compare plans, feature by feature
+      </h3>
+
+      {/* Mobile (< sm): a stacked list — no fixed-width table, so nothing is
+       * ever clipped or requires side-scrolling on a phone. Each row becomes
+       * its own block; Free/Pro/Team wrap onto their own line if the value
+       * text is long (e.g. "Browser + email + custom"). */}
+      <div className="lode-card mt-6 divide-y divide-[rgba(122,42,38,0.12)] p-0 sm:hidden">
+        {COMPARISON_ROWS.map((row) => (
+          <div key={row.label} className="p-4">
+            <p className="font-display text-sm font-bold text-[color:var(--lode-ink)]">{row.label}</p>
+            <dl className="mt-2 space-y-1.5">
+              {(['free', 'pro', 'team'] as const).map((id) => (
+                <div key={id} className="flex items-start justify-between gap-3 text-sm">
+                  <dt className="shrink-0 text-[color:rgba(34,26,20,0.55)]">{PLANS[id].name}</dt>
+                  <dd className="text-right text-[color:rgba(34,26,20,0.82)]">
+                    <ComparisonCellView value={row[id]} />
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop/tablet (sm+): the full side-by-side table. */}
+      <div className="lode-card mt-6 hidden overflow-x-auto p-0 sm:block">
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr className="border-b border-[rgba(122,42,38,0.16)]">
+              <th className="p-4 text-left font-display text-base font-bold text-[color:var(--lode-ink)]">
+                Feature
+              </th>
+              {(['free', 'pro', 'team'] as const).map((id) => (
+                <th
+                  key={id}
+                  className="p-4 text-center font-display text-base font-bold text-[color:var(--lode-ink)]"
+                >
+                  {PLANS[id].name}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {COMPARISON_ROWS.map((row, i) => (
+              <tr
+                key={row.label}
+                className={i % 2 === 1 ? 'bg-[rgba(122,42,38,0.035)]' : undefined}
+              >
+                <td className="p-4 text-left text-[color:rgba(34,26,20,0.82)]">{row.label}</td>
+                <td className="p-4 text-center text-[color:rgba(34,26,20,0.82)]">
+                  <ComparisonCellView value={row.free} />
+                </td>
+                <td className="p-4 text-center text-[color:rgba(34,26,20,0.82)]">
+                  <ComparisonCellView value={row.pro} />
+                </td>
+                <td className="p-4 text-center text-[color:rgba(34,26,20,0.82)]">
+                  <ComparisonCellView value={row.team} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-4 text-center text-xs text-[color:rgba(34,26,20,0.55)]">
+        <span aria-hidden="true">🇮🇳</span> India pricing: Pro {formatINR(INDIA_PRICING.pro!)}/mo · Team{' '}
+        {formatINR(INDIA_PRICING.team!)}/mo.
+      </p>
     </div>
   );
 }
