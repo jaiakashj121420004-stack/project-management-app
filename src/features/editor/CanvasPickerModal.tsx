@@ -31,7 +31,7 @@ export function CanvasPickerModal({
         </div>
       ) : canvases.length === 0 ? (
         <p className="py-2 text-sm text-fg-muted">
-          You don’t have any canvases yet — create one in the Library first, then insert it here.
+          You don’t have any canvases yet — create one in Notebooks first, then insert it here.
         </p>
       ) : (
         <div className="flex max-h-[55vh] flex-col gap-1 overflow-y-auto">

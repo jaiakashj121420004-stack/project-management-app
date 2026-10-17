@@ -120,7 +120,7 @@ export function LibraryPage() {
             <LibraryIcon size={22} />
           </span>
           <div>
-            <h1 className="gradient-text text-2xl font-bold leading-tight">Library</h1>
+            <h1 className="gradient-text text-2xl font-bold leading-tight">Notebooks</h1>
             <p className="text-sm text-fg-muted">Your notes and canvases, organised in folders.</p>
           </div>
         </header>
@@ -132,7 +132,7 @@ export function LibraryPage() {
         </div>
       ) : isError ? (
         <GlassPanel className="p-6 text-center text-fg-muted">
-          Couldn&apos;t load your Library. Check your connection and try again.
+          Couldn&apos;t load your Notebooks. Check your connection and try again.
         </GlassPanel>
       ) : open ? (
         <div className="flex flex-col gap-4">
@@ -157,7 +157,7 @@ export function LibraryPage() {
                 onClick={() => setOpen(null)}
                 className="inline-flex w-fit items-center gap-1.5 rounded-lg px-2 py-1 text-sm text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
               >
-                <ArrowLeft size={16} /> Library
+                <ArrowLeft size={16} /> Notebooks
                 <span className="text-fg-subtle">· {openTitle}</span>
               </button>
             )}
@@ -189,8 +189,8 @@ export function LibraryPage() {
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search your Library…"
-              aria-label="Search the Library"
+              placeholder="Search your Notebooks…"
+              aria-label="Search Notebooks"
               className="w-full rounded-xl border border-[var(--glass-border)] bg-[var(--field-bg)] py-2.5 pl-9 pr-9 text-sm text-fg placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
             />
             {search && (

@@ -61,7 +61,7 @@ export function MoveToDialog({
           )}
         >
           <Home size={16} className="shrink-0 text-fg-subtle" />
-          <span className="flex-1 truncate">Library (root)</span>
+          <span className="flex-1 truncate">Notebooks (root)</span>
           {currentFolderId === null && <Check size={15} className="text-success" />}
         </button>
 

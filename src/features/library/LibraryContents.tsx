@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { ChevronRight, FolderPlus, Home, Shapes, FileText } from 'lucide-react';
+import { ChevronRight, FileUp, FolderPlus, Home, Shapes, FileText } from 'lucide-react';
+import { ImportDialog } from '@/features/import/ImportDialog';
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import { GradientButton } from '@/components/buttons/GradientButton';
 import { Modal } from '@/components/Modal';
@@ -74,6 +75,7 @@ export function LibraryContents({
 }: LibraryContentsProps) {
   const [dialog, setDialog] = useState<Dialog>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   const renameFolder = useRenameFolder();
   const moveFolder = useMoveFolder();
@@ -227,7 +229,7 @@ export function LibraryContents({
           onClick={() => onNavigate(null)}
           className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 hover:bg-[var(--glass-fill)] hover:text-fg"
         >
-          <Home size={15} /> Library
+          <Home size={15} /> Notebooks
         </button>
         {crumbs.map((folder) => (
           <span key={folder.id} className="inline-flex items-center gap-1">
@@ -265,6 +267,14 @@ export function LibraryContents({
           isLoading={createCanvas.isPending}
         >
           New canvas
+        </GradientButton>
+        <GradientButton
+          size="sm"
+          variant="secondary"
+          leftIcon={<FileUp size={15} />}
+          onClick={() => setImportOpen(true)}
+        >
+          Import
         </GradientButton>
       </div>
 
@@ -324,10 +334,25 @@ export function LibraryContents({
         onCancel={() => setDialog(null)}
         onConfirm={confirmDelete}
       />
+      <ImportDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        folderId={currentFolderId}
+        isPro={isPro}
+        onNeedPro={() => {
+          setImportOpen(false);
+          setUpgradeOpen(true);
+        }}
+        onImported={(result) => {
+          setImportOpen(false);
+          onOpenItem({ kind: result.kind, id: result.id });
+        }}
+      />
+
       <UpgradeModal
         open={upgradeOpen}
         onClose={() => setUpgradeOpen(false)}
-        reason="Upgrade to Pro to create infinite canvases in your Library."
+        reason="Upgrade to Pro to create infinite canvases in your Notebooks."
       />
     </div>
   );
@@ -350,7 +375,7 @@ function DeleteConfirm({
       <p className="text-sm text-fg-muted">
         Delete <span className="font-semibold text-fg">{label}</span>?
         {isFolder
-          ? ' Its subfolders are deleted too; notes and canvases inside move back to the Library root.'
+          ? ' Its subfolders are deleted too; notes and canvases inside move back to the Notebooks root.'
           : ' This can’t be undone.'}
       </p>
       <div className="mt-5 flex justify-end gap-2">

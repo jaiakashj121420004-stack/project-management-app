@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
-import { PanelLeftClose, PanelLeftOpen, Plus } from 'lucide-react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { BookOpen, PanelLeftClose, PanelLeftOpen, Plus } from 'lucide-react';
 import { Brand } from './Brand';
 import { SidebarNav } from './SidebarNav';
 import { GradientButton } from '@/components/buttons/GradientButton';
@@ -30,6 +30,25 @@ function Inner({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () 
       <div className={cn('px-1.5 pt-2', collapsed && 'flex justify-center px-0')}>
         <Brand collapsed={collapsed} />
       </div>
+
+      <NavLink
+        to="/library"
+        onClick={onNavigate}
+        title={collapsed ? 'Notebooks' : undefined}
+        aria-label="Notebooks"
+        className={({ isActive }) =>
+          cn(
+            'flex items-center justify-center gap-2.5 rounded-2xl border border-[var(--glass-border)]',
+            'bg-[var(--glass-fill)] font-display text-lg font-semibold text-fg transition-colors',
+            'hover:border-[color:var(--accent-from)]',
+            collapsed ? 'aspect-square w-11 shrink-0 self-center' : 'w-full px-4 py-3',
+            isActive && 'border-[color:var(--accent-from)] ring-2 ring-[var(--accent-from)]',
+          )
+        }
+      >
+        <BookOpen size={20} className="shrink-0" />
+        {!collapsed && 'Notebooks'}
+      </NavLink>
 
       <GradientButton
         size={collapsed ? 'sm' : 'lg'}

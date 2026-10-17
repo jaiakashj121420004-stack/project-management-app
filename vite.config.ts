@@ -36,6 +36,12 @@ function manualChunks(id: string): string | undefined {
   // loads eagerly on every route. Returning undefined here lets Rollup give
   // it its own async chunk, split off purely because of how it's imported.
   if (id.includes('/docx/') || id.includes('\\docx\\')) return undefined;
+  // Same for the import parsers (pdf.js + mammoth and its zip/xml deps): only
+  // reached via dynamic import() when someone imports a file (features/import),
+  // so they get their own async chunks instead of bloating `vendor`.
+  if (/[\\/](pdfjs-dist|mammoth|jszip|xmlbuilder|bluebird|lop|dingbat-to-unicode|underscore|base64-js|argparse|path-is-absolute|option|pako|readable-stream|lie|immediate|setimmediate)[\\/]/.test(id)) {
+    return undefined;
+  }
   // PageSpeed follow-up (2026-08-30, PageSpeed report lkdtduvz5x): the
   // dist/stats.html treemap showed @dnd-kit, zod, date-fns, and dompurify —
   // all sizeable boxes — sitting inside the eagerly-loaded 'vendor' chunk
