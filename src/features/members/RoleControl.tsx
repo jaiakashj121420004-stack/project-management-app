@@ -6,6 +6,7 @@ import { Badge } from '@/components/Badge';
 import { springs } from '@/lib/motion';
 import { INVITE_ROLES } from './schemas';
 import type { InvitationRole, ProjectRole } from '@/types/database';
+import { usePopoverPlacement } from '@/hooks/usePopoverPlacement';
 
 const ROLE_LABEL: Record<ProjectRole, string> = {
   owner: 'Owner',
@@ -36,7 +37,7 @@ export function RoleSelect({
   onChange,
   disabled,
   size = 'sm',
-  openUp = false,
+  openUp: forceUp = false,
 }: {
   value: InvitationRole;
   onChange: (role: InvitationRole) => void;
@@ -46,6 +47,7 @@ export function RoleSelect({
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { openUp } = usePopoverPlacement(open, ref, 170, forceUp);
 
   useEffect(() => {
     if (!open) return;

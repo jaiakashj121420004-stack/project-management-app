@@ -5,6 +5,7 @@ import { cn } from '@/lib/cn';
 import { Avatar } from '@/components/Avatar';
 import { springs } from '@/lib/motion';
 import { useMembers } from '@/features/members/useMembers';
+import { usePopoverPlacement } from '@/hooks/usePopoverPlacement';
 
 /**
  * Pick which project member a card is assigned to (the assignee is who due-date
@@ -25,6 +26,7 @@ export function AssigneeField({
   const members = data?.members ?? [];
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { openUp, maxHeight } = usePopoverPlacement(open, ref, 224);
 
   useEffect(() => {
     if (!open) return;
@@ -83,11 +85,15 @@ export function AssigneeField({
           {open && (
             <motion.ul
               role="listbox"
-              initial={{ opacity: 0, scale: 0.98, y: -4 }}
+              initial={{ opacity: 0, scale: 0.98, y: openUp ? 4 : -4 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.98, y: -4 }}
+              exit={{ opacity: 0, scale: 0.98, y: openUp ? 4 : -4 }}
               transition={springs.snappy}
-              className="glass-menu absolute inset-x-0 top-full z-50 mt-1.5 max-h-56 origin-top overflow-auto rounded-2xl p-1"
+              style={{ maxHeight }}
+              className={cn(
+                'glass-menu absolute inset-x-0 z-50 max-h-56 overflow-auto rounded-2xl p-1',
+                openUp ? 'bottom-full mb-1.5 origin-bottom' : 'top-full mt-1.5 origin-top',
+              )}
             >
               <AssigneeOption label="Unassigned" selected={value === null} onClick={() => pick(null)} />
               {members.map((member) => (
