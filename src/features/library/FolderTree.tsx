@@ -61,7 +61,7 @@ export function FolderTree({
   return (
     <nav className="flex flex-col gap-1">
       <div className="mb-1 flex items-center justify-between px-1">
-        <span className="text-xs font-semibold uppercase tracking-wide text-fg-subtle">Library</span>
+        <span className="text-xs font-semibold uppercase tracking-wide text-fg-subtle">Notebooks</span>
         {canEdit && (
           <button
             type="button"

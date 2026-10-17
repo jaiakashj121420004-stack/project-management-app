@@ -10,7 +10,7 @@
  * The render + plain-text walkers are defensive: a malformed body never throws
  * past this boundary.
  */
-import { generateHTML, type AnyExtension, type JSONContent } from '@tiptap/core';
+import { generateHTML, generateJSON, type AnyExtension, type JSONContent } from '@tiptap/core';
 import DOMPurify from 'isomorphic-dompurify';
 import { blockExtensions } from './extensions';
 import { noteTableExtensions } from './nodes/tableExtensions';
@@ -443,4 +443,17 @@ export function markdownToDoc(markdown: string): JSONContent {
   }
 
   return { type: 'doc', content: content.length ? content : [{ type: 'paragraph' }] };
+}
+
+/** Parse (already untrusted) HTML into a note document. Images are dropped —
+ *  imported files can't carry storage-backed media, and data URLs are never
+ *  stored — as are scripts/styles/frames. Unknown tags degrade to their text. */
+export function htmlToDoc(html: string): JSONContent {
+  const clean = DOMPurify.sanitize(html, {
+    FORBID_TAGS: ['img', 'picture', 'svg', 'video', 'audio', 'iframe', 'style', 'script'],
+    FORBID_ATTR: ['style'],
+  });
+  if (clean.trim().length === 0) return emptyDoc();
+  const doc = generateJSON(clean, RENDER_EXTENSIONS) as JSONContent;
+  return doc.content && doc.content.length > 0 ? doc : emptyDoc();
 }

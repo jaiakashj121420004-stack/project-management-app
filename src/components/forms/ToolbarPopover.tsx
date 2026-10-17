@@ -29,16 +29,46 @@ export function ToolbarPopover({ open, onClose, trigger, title, children }: Tool
   const anchorRef = useRef<HTMLSpanElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const isMobile = useMediaQuery('(max-width: 640px)');
-  const [coords, setCoords] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+  const [coords, setCoords] = useState<{ top: number; left: number; maxHeight: number }>({
+    top: 0,
+    left: 0,
+    maxHeight: 480,
+  });
 
+  // Measure the real panel, then place it below the trigger — or above when
+  // there isn't room — and clamp it inside the visible viewport (which an
+  // on-screen keyboard shrinks), so it can never run off the bottom.
   useLayoutEffect(() => {
     if (!open || isMobile || !anchorRef.current) return;
-    const rect = anchorRef.current.getBoundingClientRect();
-    const width = 288;
-    setCoords({
-      top: Math.min(rect.bottom + 6, window.innerHeight - 12),
-      left: Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)),
-    });
+    const place = () => {
+      const anchor = anchorRef.current;
+      if (!anchor) return;
+      const rect = anchor.getBoundingClientRect();
+      const vv = window.visualViewport;
+      const vTop = (vv?.offsetTop ?? 0) + 8;
+      const vBottom = (vv?.offsetTop ?? 0) + (vv?.height ?? window.innerHeight) - 8;
+      const vw = vv?.width ?? window.innerWidth;
+      const width = 288;
+      const natural = panelRef.current?.offsetHeight ?? 320;
+      const below = vBottom - (rect.bottom + 6);
+      const above = rect.top - 6 - vTop;
+      const up = natural > below && above > below;
+      const maxHeight = Math.max(160, Math.min(natural, up ? above : below));
+      const height = Math.min(natural, maxHeight);
+      const top = up ? rect.top - 6 - height : rect.bottom + 6;
+      setCoords({
+        top: Math.max(vTop, Math.min(top, vBottom - height)),
+        left: Math.max(8, Math.min(rect.left, vw - width - 8)),
+        maxHeight,
+      });
+    };
+    place();
+    window.addEventListener('resize', place);
+    window.visualViewport?.addEventListener('resize', place);
+    return () => {
+      window.removeEventListener('resize', place);
+      window.visualViewport?.removeEventListener('resize', place);
+    };
   }, [open, isMobile]);
 
   useEffect(() => {
@@ -75,9 +105,11 @@ export function ToolbarPopover({ open, onClose, trigger, title, children }: Tool
                 'glass-strong z-[90] rounded-2xl border border-[var(--glass-border)] p-3 shadow-[0_22px_60px_-20px_rgba(0,0,0,0.7)]',
                 isMobile
                   ? 'fixed inset-x-3 top-3 max-h-[78vh] overflow-auto'
-                  : 'fixed w-[min(18rem,92vw)]',
+                  : 'fixed w-[min(18rem,92vw)] overflow-auto',
               )}
-              style={isMobile ? undefined : { top: coords.top, left: coords.left }}
+              style={
+                isMobile ? undefined : { top: coords.top, left: coords.left, maxHeight: coords.maxHeight }
+              }
             >
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wide text-fg-subtle">

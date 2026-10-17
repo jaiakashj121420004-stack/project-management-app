@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Check, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { springs } from '@/lib/motion';
+import { usePopoverPlacement } from '@/hooks/usePopoverPlacement';
 
 export interface PickerItem {
   id: string;
@@ -37,6 +38,7 @@ export function EntityPicker({ items, selectedId, onSelect, label, className }: 
   const listRef = useRef<HTMLUListElement>(null);
   const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const listId = useId();
+  const { openUp, maxHeight } = usePopoverPlacement(open, ref, 288);
 
   const selectedIndex = items.findIndex((item) => item.id === selectedId);
   const selected = selectedIndex >= 0 ? items[selectedIndex] : undefined;
@@ -141,11 +143,15 @@ export function EntityPicker({ items, selectedId, onSelect, label, className }: 
             aria-label={label}
             aria-activedescendant={items.length ? `${listId}-opt-${activeIndex}` : undefined}
             onKeyDown={onListKeyDown}
-            initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.97, y: -4 }}
+            initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.97, y: openUp ? 4 : -4 }}
             animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
-            exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.97, y: -4 }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.97, y: openUp ? 4 : -4 }}
             transition={springs.snappy}
-            className="glass-menu absolute inset-x-0 top-full z-50 mt-1.5 max-h-72 origin-top overflow-auto rounded-2xl p-1 outline-none"
+            style={{ maxHeight }}
+            className={cn(
+              'glass-menu absolute inset-x-0 z-50 max-h-72 overflow-auto rounded-2xl p-1 outline-none',
+              openUp ? 'bottom-full mb-1.5 origin-bottom' : 'top-full mt-1.5 origin-top',
+            )}
           >
             {items.map((item, index) => {
               const isSelected = item.id === selectedId;

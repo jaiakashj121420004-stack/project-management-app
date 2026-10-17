@@ -10,6 +10,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Check, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { springs } from '@/lib/motion';
+import { usePopoverPlacement } from '@/hooks/usePopoverPlacement';
 
 /**
  * A custom dropdown on the opaque `.glass-menu` surface — the app's standard
@@ -55,13 +56,15 @@ export function GlassSelect<T extends string | number>({
   label,
   disabled,
   size = 'md',
-  openUp = false,
+  openUp: forceUp = false,
   className,
   menuClassName,
 }: GlassSelectProps<T>) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
+  // Flips above the trigger automatically when there's no room below it.
+  const { openUp, maxHeight } = usePopoverPlacement(open, ref, 240, forceUp);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const listId = useId();
   const optionId = (i: number) => `${listId}-opt-${i}`;
@@ -189,6 +192,7 @@ export function GlassSelect<T extends string | number>({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: openUp ? 4 : -4 }}
             transition={springs.snappy}
+            style={{ maxHeight }}
             className={cn(
               'glass-menu absolute left-0 z-50 max-h-60 min-w-full w-max max-w-[20rem] overflow-auto rounded-2xl p-1',
               openUp ? 'bottom-full mb-1.5 origin-bottom' : 'top-full mt-1.5 origin-top',

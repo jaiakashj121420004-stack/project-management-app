@@ -9,6 +9,7 @@ import {
 import { Avatar } from '@/components/Avatar';
 import { GradientButton } from '@/components/buttons/GradientButton';
 import { cn } from '@/lib/cn';
+import { usePopoverPlacement } from '@/hooks/usePopoverPlacement';
 
 export interface ComposerMember {
   userId: string;
@@ -70,6 +71,7 @@ export function CommentComposer({
       .filter((member) => member.displayName && member.displayName.toLowerCase().includes(query))
       .slice(0, 6);
   }, [mention, members]);
+  const mentionPlacement = usePopoverPlacement(mention !== null && matches.length > 0, textareaRef, 224);
 
   // Restore the caret after a programmatic insert (mention pick).
   useLayoutEffect(() => {
@@ -157,7 +159,11 @@ export function CommentComposer({
         {mention && matches.length > 0 && (
           <ul
             role="listbox"
-            className="glass-menu absolute left-0 top-full z-50 mt-1 max-h-56 w-64 overflow-auto rounded-2xl p-1"
+            style={{ maxHeight: mentionPlacement.maxHeight }}
+            className={cn(
+              'glass-menu absolute left-0 z-50 max-h-56 w-64 overflow-auto rounded-2xl p-1',
+              mentionPlacement.openUp ? 'bottom-full mb-1' : 'top-full mt-1',
+            )}
           >
             {matches.map((member, index) => (
               <li key={member.userId}>

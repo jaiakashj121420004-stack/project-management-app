@@ -21,6 +21,8 @@ export interface NavItem {
   bottomNav?: boolean;
   /** Only render for the app administrator (gated by isAdminUser). */
   adminOnly?: boolean;
+  /** Skip in the sidebar list (it has its own big button there). */
+  sidebarHidden?: boolean;
 }
 
 /** Primary navigation. `bottomNav` items also appear in the mobile bottom bar. */
@@ -29,7 +31,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: 'Boards', to: '/boards', icon: LayoutGrid, end: true, bottomNav: true },
   { label: 'To-Do', to: '/todos', icon: ListTodo, bottomNav: true },
   { label: 'Calendar', to: '/calendar', icon: CalendarDays, bottomNav: true },
-  { label: 'Library', to: '/library', icon: Library, bottomNav: true },
+  { label: 'Notebooks', to: '/library', icon: Library, bottomNav: true, sidebarHidden: true },
   { label: 'From the Founder', to: '/from-the-founder', icon: Megaphone },
   { label: 'Feedback/Features', to: '/feedback', icon: MessageSquareHeart },
   { label: 'Analytics', to: '/analytics', icon: BarChart3, adminOnly: true },

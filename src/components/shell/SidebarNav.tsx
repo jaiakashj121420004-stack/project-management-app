@@ -14,7 +14,7 @@ export function SidebarNav({
 }) {
   const { user } = useAuth();
   const admin = isAdminUser(user);
-  const items = NAV_ITEMS.filter((item) => !item.adminOnly || admin);
+  const items = NAV_ITEMS.filter((item) => (!item.adminOnly || admin) && !item.sidebarHidden);
   return (
     <nav className="flex flex-col gap-1.5">
       {items.map(({ label, to, icon: Icon, end }) => (

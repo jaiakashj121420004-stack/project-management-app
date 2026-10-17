@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Brush, ChevronDown, ChevronUp, Highlighter, Pen, Pipette } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { ColorPicker } from './ColorPicker';
+import { ToolbarPopover } from '@/components/forms/ToolbarPopover';
 import {
   PEN_COLORS,
   PEN_PRESETS,
@@ -34,7 +35,6 @@ const COLLAPSE_KEY = 'canvas-pen-collapsed';
 export function PenToolbar({ settings, onChange, className }: PenToolbarProps) {
   const spec = PEN_PRESETS[settings.preset];
   const [pickerOpen, setPickerOpen] = useState(false);
-  const pickerRef = useRef<HTMLDivElement>(null);
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return localStorage.getItem(COLLAPSE_KEY) === '1';
@@ -58,15 +58,6 @@ export function PenToolbar({ settings, onChange, className }: PenToolbarProps) {
   // NOTE: every hook must run before the early `if (collapsed) return` below —
   // otherwise collapsing changes the hook count between renders and React throws
   // "rendered fewer hooks than expected", blanking the whole app.
-  useEffect(() => {
-    if (!pickerOpen) return;
-    const onDown = (e: PointerEvent) => {
-      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) setPickerOpen(false);
-    };
-    document.addEventListener('pointerdown', onDown, true);
-    return () => document.removeEventListener('pointerdown', onDown, true);
-  }, [pickerOpen]);
-
   // Collapsed: a compact bar showing the current preset + colour + size, with a
   // chevron to reopen the full options. Keeps the canvas clear on small screens.
   if (collapsed) {
@@ -163,34 +154,37 @@ export function PenToolbar({ settings, onChange, className }: PenToolbarProps) {
           );
         })}
 
-        {/* Custom colour (spectrum + hex) */}
-        <div ref={pickerRef} className="relative">
-          <button
-            type="button"
-            aria-label="Custom colour"
-            title="Custom colour"
-            aria-pressed={pickerOpen}
-            onClick={() => setPickerOpen((o) => !o)}
-            className={cn(
-              'grid h-6 w-6 place-items-center rounded-full border transition-transform',
-              customActive
-                ? 'scale-110 border-white ring-2 ring-[var(--accent-from)]'
-                : 'border-black/10 hover:scale-105 dark:border-white/20',
-            )}
-            style={customActive ? { backgroundColor: settings.color } : undefined}
-          >
-            {!customActive && <Pipette size={13} className="text-fg-muted" />}
-          </button>
-          {pickerOpen && (
-            <div className="glass-menu absolute left-1/2 top-full z-30 mt-2 -translate-x-1/2 rounded-xl border border-[var(--glass-border)] p-2 shadow-[0_14px_34px_-18px_rgba(0,0,0,0.7)]">
-              <ColorPicker
-                color={settings.color}
-                presets={PEN_COLORS}
-                onChange={(hex) => onChange({ ...settings, color: hex })}
-              />
-            </div>
-          )}
-        </div>
+        {/* Custom colour (spectrum + hex) — portalled + viewport-aware, since this
+            bar lives at the bottom of the screen. */}
+        <ToolbarPopover
+          open={pickerOpen}
+          onClose={() => setPickerOpen(false)}
+          title="Custom colour"
+          trigger={
+            <button
+              type="button"
+              aria-label="Custom colour"
+              title="Custom colour"
+              aria-pressed={pickerOpen}
+              onClick={() => setPickerOpen((o) => !o)}
+              className={cn(
+                'grid h-6 w-6 place-items-center rounded-full border transition-transform',
+                customActive
+                  ? 'scale-110 border-white ring-2 ring-[var(--accent-from)]'
+                  : 'border-black/10 hover:scale-105 dark:border-white/20',
+              )}
+              style={customActive ? { backgroundColor: settings.color } : undefined}
+            >
+              {!customActive && <Pipette size={13} className="text-fg-muted" />}
+            </button>
+          }
+        >
+          <ColorPicker
+            color={settings.color}
+            presets={PEN_COLORS}
+            onChange={(hex) => onChange({ ...settings, color: hex })}
+          />
+        </ToolbarPopover>
       </div>
 
       <Divider />
