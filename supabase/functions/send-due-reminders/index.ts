@@ -1,4 +1,4 @@
-// Aurora — due-date reminder Edge Function (Phase 9 + Pro P1).
+// Jotspring — due-date reminder Edge Function (Phase 9 + Pro P1).
 //
 // Runs on a schedule (pg_cron → pg_net, see supabase/README.md). It does THREE
 // independent things each invocation:
@@ -22,7 +22,7 @@
 //
 // Required secrets (set with `supabase secrets set`, never committed):
 //   RESEND_API_KEY      — Resend API key (free tier; https://resend.com)
-//   REMINDER_FROM_EMAIL — verified sender, e.g. "Aurora <reminders@yourdomain>"
+//   REMINDER_FROM_EMAIL — verified sender, e.g. "Jotspring <reminders@yourdomain>"
 //                         (defaults to Resend's onboarding@resend.dev for tests)
 //   CRON_SECRET         — shared secret the cron job sends in the x-cron-secret
 //                         header so only the scheduler can invoke this function
@@ -67,7 +67,7 @@ interface NotificationEmailCandidate {
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
-const FROM_EMAIL = Deno.env.get('REMINDER_FROM_EMAIL') ?? 'Aurora <onboarding@resend.dev>';
+const FROM_EMAIL = Deno.env.get('REMINDER_FROM_EMAIL') ?? 'Jotspring <onboarding@resend.dev>';
 const CRON_SECRET = Deno.env.get('CRON_SECRET') ?? '';
 
 /**
@@ -157,7 +157,7 @@ function renderEmail(name: string | null, cards: Candidate[]): string {
       <tr><td align="center">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 12px 40px rgba(80,40,120,.12);">
           <tr><td style="background:linear-gradient(110deg,#7C3AED,#06B6D4);padding:28px 24px;">
-            <div style="color:#fff;font-size:22px;font-weight:700;">Aurora</div>
+            <div style="color:#fff;font-size:22px;font-weight:700;">Jotspring</div>
             <div style="color:rgba(255,255,255,.85);font-size:14px;margin-top:4px;">Upcoming due dates</div>
           </td></tr>
           <tr><td style="padding:24px 8px 8px;">
@@ -167,7 +167,7 @@ function renderEmail(name: string | null, cards: Candidate[]): string {
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>
           </td></tr>
           <tr><td style="padding:16px 24px 28px;">
-            <p style="margin:0;color:#9a90a8;font-size:12px;">You're receiving this because email reminders are on in your Aurora profile. Turn them off any time in Profile → Reminders.</p>
+            <p style="margin:0;color:#9a90a8;font-size:12px;">You're receiving this because email reminders are on in your Jotspring profile. Turn them off any time in Profile → Reminders.</p>
           </td></tr>
         </table>
       </td></tr>
@@ -218,7 +218,7 @@ function renderTimeEmail(candidate: TimeCandidate): string {
       <tr><td align="center">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 12px 40px rgba(80,40,120,.12);">
           <tr><td style="background:linear-gradient(110deg,#7C3AED,#06B6D4);padding:28px 24px;">
-            <div style="color:#fff;font-size:22px;font-weight:700;">Aurora</div>
+            <div style="color:#fff;font-size:22px;font-weight:700;">Jotspring</div>
             <div style="color:rgba(255,255,255,.85);font-size:14px;margin-top:4px;">Reminder</div>
           </td></tr>
           <tr><td style="padding:24px;">
@@ -229,7 +229,7 @@ function renderTimeEmail(candidate: TimeCandidate): string {
             <p style="margin:0;color:#7a7090;font-size:13px;">${escapeHtml(candidate.project_name)}</p>
           </td></tr>
           <tr><td style="padding:0 24px 28px;">
-            <p style="margin:0;color:#9a90a8;font-size:12px;">You set this reminder in Aurora. Remove it from the card to stop these.</p>
+            <p style="margin:0;color:#9a90a8;font-size:12px;">You set this reminder in Jotspring. Remove it from the card to stop these.</p>
           </td></tr>
         </table>
       </td></tr>
@@ -296,7 +296,7 @@ function renderNotificationEmail(candidate: NotificationEmailCandidate): string 
       <tr><td align="center">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 12px 40px rgba(80,40,120,.12);">
           <tr><td style="background:linear-gradient(110deg,#7C3AED,#06B6D4);padding:28px 24px;">
-            <div style="color:#fff;font-size:22px;font-weight:700;">Aurora</div>
+            <div style="color:#fff;font-size:22px;font-weight:700;">Jotspring</div>
             <div style="color:rgba(255,255,255,.85);font-size:14px;margin-top:4px;">New activity</div>
           </td></tr>
           <tr><td style="padding:24px;">
@@ -306,7 +306,7 @@ function renderNotificationEmail(candidate: NotificationEmailCandidate): string 
             ${snippet ? `<p style="margin:12px 0 0;padding:12px 14px;background:#f6f2ff;border-radius:12px;color:#4a4060;font-size:14px;">“${snippet}”</p>` : ''}
           </td></tr>
           <tr><td style="padding:0 24px 28px;">
-            <p style="margin:0;color:#9a90a8;font-size:12px;">You're receiving this because email notifications are on in your Aurora profile. Turn them off any time in Profile → Reminders.</p>
+            <p style="margin:0;color:#9a90a8;font-size:12px;">You're receiving this because email notifications are on in your Jotspring profile. Turn them off any time in Profile → Reminders.</p>
           </td></tr>
         </table>
       </td></tr>

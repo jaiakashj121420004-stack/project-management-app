@@ -1,4 +1,4 @@
-// Aurora — Dodo Payments checkout session creator (billing).
+// Jotspring — Dodo Payments checkout session creator (billing).
 //
 // Authenticated endpoint. The signed-in user calls this to upgrade to Pro; we
 // create a Dodo Checkout Session for the chosen interval (monthly / annual) and

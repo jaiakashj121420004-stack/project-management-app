@@ -1,4 +1,4 @@
-// Aurora — Dodo Payments webhook receiver (billing).
+// Jotspring — Dodo Payments webhook receiver (billing).
 //
 // Dodo calls this whenever a subscription event happens. This is the ONLY place
 // a profile's `plan` / `plan_status` / Dodo ids are flipped — the client

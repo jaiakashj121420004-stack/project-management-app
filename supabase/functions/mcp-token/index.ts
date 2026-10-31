@@ -1,8 +1,8 @@
-// Aurora — MCP (Model Context Protocol) access token issuer (Pro).
+// Jotspring — MCP (Model Context Protocol) access token issuer (Pro).
 //
 // Authenticated endpoint. A Pro/Team/Enterprise user calls this from Settings
 // to generate, rotate, or revoke the personal access token that authenticates
-// Claude Desktop/Code (via the public `mcp-server` function) to their Aurora
+// Claude Desktop/Code (via the public `mcp-server` function) to their Jotspring
 // account. Design record: SETUP-MCP.md. Deployment: supabase/README.md.
 //
 // Unlike calendar-feed-token (a low-stakes, read-only, PLAINTEXT token), this

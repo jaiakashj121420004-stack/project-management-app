@@ -1,4 +1,4 @@
-// Aurora — public ICS calendar subscribe feed (Pro).
+// Jotspring — public ICS calendar subscribe feed (Pro).
 //
 // Unauthenticated GET endpoint (deployed with `--no-verify-jwt`, like
 // dodo-webhook — external calendar apps can't send a Supabase session). A
@@ -200,11 +200,11 @@ function buildIcs(
   const lines: string[] = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Aurora//Calendar Feed//EN',
+    'PRODID:-//Jotspring//Calendar Feed//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
-    'X-WR-CALNAME:Aurora',
-    'X-WR-CALDESC:Due dates, to-dos, and milestones from Aurora',
+    'X-WR-CALNAME:Jotspring',
+    'X-WR-CALDESC:Due dates, to-dos, and milestones from Jotspring',
     // Hints to clients how often to re-poll — most respect this loosely.
     'REFRESH-INTERVAL;VALUE=DURATION:PT1H',
     'X-PUBLISHED-TTL:PT1H',
@@ -226,7 +226,7 @@ function buildIcs(
     if (card.description) {
       lines.push(foldLine(`DESCRIPTION:${icsEscape(card.description)}`));
     }
-    lines.push('CATEGORIES:Aurora Card');
+    lines.push('CATEGORIES:Jotspring Card');
     lines.push('END:VEVENT');
   }
 
@@ -237,7 +237,7 @@ function buildIcs(
     lines.push(`DTSTAMP:${now}`);
     lines.push(`DTSTART;VALUE=DATE:${dateKeyToIcs(project.target_date)}`);
     lines.push(foldLine(`SUMMARY:${icsEscape(`${project.name} — milestone`)}`));
-    lines.push('CATEGORIES:Aurora Milestone');
+    lines.push('CATEGORIES:Jotspring Milestone');
     lines.push('END:VEVENT');
   }
 
@@ -255,7 +255,7 @@ function buildIcs(
     if (description) {
       lines.push(foldLine(`DESCRIPTION:${icsEscape(description)}`));
     }
-    lines.push('CATEGORIES:Aurora To-Do');
+    lines.push('CATEGORIES:Jotspring To-Do');
     lines.push('END:VEVENT');
   }
 

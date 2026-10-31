@@ -1,4 +1,4 @@
-// Aurora — rule-builder automations: the due_date_passed cron trigger.
+// Jotspring — rule-builder automations: the due_date_passed cron trigger.
 //
 // card_moved_to_column and checklist_completed are real Postgres AFTER-UPDATE
 // triggers (run_automations_for_card_move / run_automations_for_checklist,

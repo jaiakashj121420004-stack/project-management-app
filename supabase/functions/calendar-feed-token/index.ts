@@ -1,4 +1,4 @@
-// Aurora — Calendar subscribe feed token issuer (Pro).
+// Jotspring — Calendar subscribe feed token issuer (Pro).
 //
 // Authenticated endpoint. A Pro/Team/Enterprise user calls this from Settings
 // to get (or rotate) the opaque token that identifies them to the PUBLIC

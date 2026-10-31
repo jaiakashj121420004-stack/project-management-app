@@ -1,4 +1,4 @@
-// Aurora — minimal funnel-analytics event recorder.
+// Jotspring — minimal funnel-analytics event recorder.
 //
 // The ONLY way a client (signed in OR signed out) may write a row into
 // `analytics_events` — the table itself denies anon/authenticated reads and

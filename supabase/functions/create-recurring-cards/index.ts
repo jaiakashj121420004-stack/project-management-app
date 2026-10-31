@@ -1,4 +1,4 @@
-// Aurora — recurring Kanban card creation (feature request session, 2026-08-17).
+// Jotspring — recurring Kanban card creation (feature request session, 2026-08-17).
 //
 // A separate Edge Function from send-due-reminders on purpose: this has a
 // different trigger cadence (daily, not every 10 minutes — a card's recurrence

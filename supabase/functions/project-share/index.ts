@@ -1,4 +1,4 @@
-// Aurora — public read-only project share view.
+// Jotspring — public read-only project share view.
 //
 // Unauthenticated GET endpoint (deployed with `--no-verify-jwt`, like
 // calendar-feed/dodo-webhook — the browser hitting `/share/:token` has no

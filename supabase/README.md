@@ -82,7 +82,7 @@ Edge runtime automatically; you only set these three:
 ```bash
 npx supabase secrets set \
   RESEND_API_KEY=re_xxx \
-  REMINDER_FROM_EMAIL="Aurora <reminders@your-verified-domain.com>" \
+  REMINDER_FROM_EMAIL="Jotspring <reminders@your-verified-domain.com>" \
   CRON_SECRET="$(openssl rand -hex 32)"
 ```
 
@@ -294,7 +294,7 @@ service role. (`plan`, `plan_status`, the free-tier limit triggers,
 
 ### 2. Create the Dodo products (test mode)
 In the Dodo dashboard (**Test mode**): create **two subscription products** —
-"Aurora Pro Monthly" ($5.99 / month) and "Aurora Pro Annual" ($68.29 / year =
+"Jotspring Pro Monthly" ($5.99 / month) and "Jotspring Pro Annual" ($68.29 / year =
 12 × $5.99 − 5%). Copy each **product id** (`pdt_…`):
 - monthly → `DODO_PRODUCT_PRO_MONTHLY` (test value: `pdt_0NhalBvSKlS70L1sUMkur`)
 - annual  → `DODO_PRODUCT_PRO_ANNUAL`  (test value: `pdt_0Nhalv2OMQi73YMxXuxm8`)
@@ -417,9 +417,9 @@ supabase functions deploy send-due-reminders --no-verify-jwt
 
 In-app notifications (the bell) need nothing server-side beyond the migration.
 
-## Aurora MCP server (Claude Desktop/Code integration, Pro)
+## Jotspring MCP server (Claude Desktop/Code integration, Pro)
 
-Lets a Pro+ user connect Claude Desktop or Claude Code straight to their Aurora
+Lets a Pro+ user connect Claude Desktop or Claude Code straight to their Jotspring
 account — Claude can list/read/write their boards, to-dos, and notes. Full
 design record (why a dedicated JWT signing key, why not OAuth/`generateLink`)
 and the end-user "how do I connect Claude" steps live in
@@ -453,7 +453,7 @@ supabase functions deploy mcp-server --no-verify-jwt
 
 `mcp-token` stays JWT-verified (it's called by the signed-in app, like
 `calendar-feed-token`). `mcp-server` is `--no-verify-jwt` — its callers present
-Aurora's own access token, not a Supabase session JWT, so Supabase's platform
+Jotspring's own access token, not a Supabase session JWT, so Supabase's platform
 JWT gate would otherwise reject them before `mcp-server`'s own auth ever runs
 (same reason as `calendar-feed` and `dodo-webhook`).
 
@@ -486,7 +486,7 @@ turn, real enough to stop a runaway loop.
 ## Public read-only project share links (2026-08-16)
 
 Lets a project owner turn on a `/share/:token` link that anyone can open —
-no Aurora account — to see a stripped-down, read-only view of the board
+no Jotspring account — to see a stripped-down, read-only view of the board
 (columns/cards/labels/due dates only). One new migration, one new Edge
 Function. Full design rationale lives in the migration's own header comment.
 
