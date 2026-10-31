@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { Layers, Pencil, Trash2 } from 'lucide-react';
+import { CalendarDays, Layers, Pencil, Trash2 } from 'lucide-react';
 import { GlassCard } from '@/components/glass/GlassCard';
+import { format, parseISO } from 'date-fns';
 import { Badge } from '@/components/Badge';
 import { ACCENTS } from '@/lib/accents';
 import type { Project } from '@/types/database';
@@ -54,6 +55,11 @@ export function ProjectCard({ project, isOwner, onEdit, onDelete }: ProjectCardP
 
       <div className="mt-4 flex items-center gap-2">
         <Badge tone={isOwner ? 'accent' : 'neutral'}>{isOwner ? 'Owner' : 'Shared'}</Badge>
+        {project.target_date && (
+          <span className="ml-auto inline-flex items-center gap-1 rounded-full border border-[var(--glass-border)] bg-[var(--glass-fill)] px-2.5 py-0.5 text-xs font-medium text-fg-muted">
+            <CalendarDays size={12} /> {format(parseISO(project.target_date), 'MMM d')}
+          </span>
+        )}
       </div>
     </GlassCard>
   );
