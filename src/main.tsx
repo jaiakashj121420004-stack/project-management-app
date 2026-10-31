@@ -6,6 +6,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 // Nvexis fonts (Fraunces / Spectral / IBM Plex Mono) are loaded via <link> in
 // index.html so no self-hosted font dependency is required.
 import App from '@/App';
+import { AppLockGate } from '@/features/native/AppLockGate';
 import { Toaster } from '@/components/feedback/Toaster';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { CustomThemeProvider } from '@/components/theme/CustomThemeProvider';
@@ -73,7 +74,9 @@ createRoot(rootElement).render(
                 transform/layout animation, keeping only opacity. */}
             <MotionConfig reducedMotion="user">
               <BrowserRouter>
-                <App />
+                <AppLockGate>
+                  <App />
+                </AppLockGate>
               </BrowserRouter>
               {/* App-wide toast host — surfaces global mutation-failure feedback
                   (see lib/queryClient MutationCache). Fixed overlay, router-independent. */}

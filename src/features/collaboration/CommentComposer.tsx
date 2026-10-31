@@ -150,7 +150,7 @@ export function CommentComposer({
           autoFocus={autoFocus}
           rows={3}
           className={cn(
-            'w-full resize-y rounded-2xl border border-[var(--glass-border)] bg-[var(--field-bg)] px-3.5 py-2.5',
+            'w-full resize-y rounded-2xl border border-[var(--glass-border)] neu-field bg-[var(--field-bg)] px-3.5 py-2.5',
             'text-sm text-fg placeholder:text-fg-subtle outline-none transition-colors',
             'focus:border-[color:var(--accent-from)] focus:ring-2 focus:ring-[var(--accent-from)]',
           )}

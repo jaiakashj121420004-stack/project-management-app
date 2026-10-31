@@ -130,7 +130,7 @@ function ChecklistItemEditor({
       onKeyDown={handleKeyDown}
       onBlur={commit}
       aria-label="Edit item"
-      className="min-w-0 flex-1 rounded-lg border bg-[var(--field-bg)] px-2 py-1 text-sm text-fg focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
+      className="min-w-0 flex-1 rounded-lg border neu-field bg-[var(--field-bg)] px-2 py-1 text-sm text-fg focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
     />
   );
 }

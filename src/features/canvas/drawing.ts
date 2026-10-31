@@ -8,10 +8,10 @@
  * overlapping ink layers the way a real highlighter does.
  */
 import type { Theme } from '@/lib/theme';
-import type { StrokeBlend } from './elements';
+import type { StrokeBlend, StrokeTexture } from './elements';
 import type { StrokeStyle } from './freehand';
 
-export type PenPreset = 'pen' | 'marker' | 'highlighter';
+export type PenPreset = 'pen' | 'ink' | 'pencil' | 'crayon' | 'marker' | 'highlighter';
 
 export interface PenPresetSpec {
   label: string;
@@ -19,6 +19,10 @@ export interface PenPresetSpec {
   smoothing: number;
   opacity: number;
   blend: StrokeBlend;
+  /** Tapered fountain-pen tips, in multiples of the pen size (0 = blunt). */
+  taper: number;
+  /** Grainy finish for pencil / crayon. */
+  texture?: StrokeTexture;
   /** Default size + slider range (world px). */
   size: number;
   minSize: number;
@@ -32,9 +36,45 @@ export const PEN_PRESETS: Record<PenPreset, PenPresetSpec> = {
     smoothing: 0.5,
     opacity: 1,
     blend: 'normal',
+    taper: 0,
     size: 5,
     minSize: 1,
     maxSize: 24,
+  },
+  ink: {
+    label: 'Ink pen',
+    thinning: 0.85,
+    smoothing: 0.65,
+    opacity: 1,
+    blend: 'normal',
+    taper: 3,
+    size: 6,
+    minSize: 2,
+    maxSize: 28,
+  },
+  pencil: {
+    label: 'Pencil',
+    thinning: 0.5,
+    smoothing: 0.4,
+    opacity: 0.9,
+    blend: 'normal',
+    taper: 2,
+    texture: 'pencil',
+    size: 3,
+    minSize: 1,
+    maxSize: 14,
+  },
+  crayon: {
+    label: 'Crayon',
+    thinning: 0.1,
+    smoothing: 0.5,
+    opacity: 0.92,
+    blend: 'normal',
+    taper: 0,
+    texture: 'crayon',
+    size: 14,
+    minSize: 5,
+    maxSize: 44,
   },
   marker: {
     label: 'Marker',
@@ -42,6 +82,7 @@ export const PEN_PRESETS: Record<PenPreset, PenPresetSpec> = {
     smoothing: 0.55,
     opacity: 1,
     blend: 'normal',
+    taper: 0,
     size: 12,
     minSize: 4,
     maxSize: 40,
@@ -52,6 +93,7 @@ export const PEN_PRESETS: Record<PenPreset, PenPresetSpec> = {
     smoothing: 0.45,
     opacity: 0.35,
     blend: 'multiply',
+    taper: 0,
     size: 24,
     minSize: 10,
     maxSize: 64,
@@ -59,7 +101,14 @@ export const PEN_PRESETS: Record<PenPreset, PenPresetSpec> = {
 };
 
 /** Presets in display order (toolbar). */
-export const PEN_PRESET_ORDER: readonly PenPreset[] = ['pen', 'marker', 'highlighter'];
+export const PEN_PRESET_ORDER: readonly PenPreset[] = [
+  'pen',
+  'ink',
+  'pencil',
+  'crayon',
+  'marker',
+  'highlighter',
+];
 
 /**
  * A vivid, theme-agnostic palette that reads on both the light and dark glass
@@ -109,5 +158,7 @@ export function penStrokeStyle(settings: PenSettings, simulatePressure: boolean)
     opacity: spec.opacity,
     blend: spec.blend,
     simulatePressure,
+    taper: spec.taper * settings.size,
+    texture: spec.texture,
   };
 }

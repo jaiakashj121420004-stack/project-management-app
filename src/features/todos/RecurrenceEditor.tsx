@@ -143,7 +143,7 @@ export function RecurrenceEditor({
                 onChange={(e) =>
                   setDraft({ type: 'monthly', day: Math.min(31, Math.max(1, Number(e.target.value) || 1)) })
                 }
-                className="h-8 w-16 rounded-lg border bg-[var(--field-bg)] px-2 text-sm text-fg focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)] disabled:opacity-40"
+                className="h-8 w-16 rounded-lg border neu-field bg-[var(--field-bg)] px-2 text-sm text-fg focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)] disabled:opacity-40"
               />
               <label className="flex items-center gap-1.5 text-sm text-fg">
                 <input
@@ -171,13 +171,13 @@ export function RecurrenceEditor({
                 onChange={(e) =>
                   setDraft({ ...draft, count: Math.min(365, Math.max(1, Number(e.target.value) || 1)) })
                 }
-                className="h-8 w-16 rounded-lg border bg-[var(--field-bg)] px-2 text-sm text-fg focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)] disabled:opacity-40"
+                className="h-8 w-16 rounded-lg border neu-field bg-[var(--field-bg)] px-2 text-sm text-fg focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)] disabled:opacity-40"
               />
               <select
                 value={draft.unit}
                 disabled={!isPro}
                 onChange={(e) => setDraft({ ...draft, unit: e.target.value as 'day' | 'week' | 'month' })}
-                className="h-8 rounded-lg border bg-[var(--field-bg)] px-2 text-sm text-fg focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)] disabled:opacity-40"
+                className="h-8 rounded-lg border neu-field bg-[var(--field-bg)] px-2 text-sm text-fg focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)] disabled:opacity-40"
               >
                 <option value="day">day(s)</option>
                 <option value="week">week(s)</option>

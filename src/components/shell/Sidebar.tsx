@@ -1,9 +1,9 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { NavLink, useNavigate } from 'react-router-dom';
-import { BookOpen, PanelLeftClose, PanelLeftOpen, Plus } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { Brand } from './Brand';
 import { SidebarNav } from './SidebarNav';
-import { GradientButton } from '@/components/buttons/GradientButton';
+import { PRIMARY_NAV } from './navItems';
 import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { springs } from '@/lib/motion';
@@ -18,47 +18,48 @@ interface SidebarProps {
 
 /** Inner content shared by the desktop rail and the mobile drawer. */
 function Inner({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
-  const navigate = useNavigate();
-
-  function handleNewProject() {
-    onNavigate?.();
-    void navigate('/boards?new=1');
-  }
-
   return (
     <div className="flex h-full flex-col gap-6 overflow-y-auto p-3">
       <div className={cn('px-1.5 pt-2', collapsed && 'flex justify-center px-0')}>
         <Brand collapsed={collapsed} />
       </div>
 
-      <NavLink
-        to="/library"
-        onClick={onNavigate}
-        title={collapsed ? 'Notebooks' : undefined}
-        aria-label="Notebooks"
-        className={({ isActive }) =>
-          cn(
-            'flex items-center justify-center gap-2.5 rounded-2xl border border-[var(--glass-border)]',
-            'bg-[var(--glass-fill)] font-display text-lg font-semibold text-fg transition-colors',
-            'hover:border-[color:var(--accent-from)]',
-            collapsed ? 'aspect-square w-11 shrink-0 self-center' : 'w-full px-4 py-3',
-            isActive && 'border-[color:var(--accent-from)] ring-2 ring-[var(--accent-from)]',
-          )
-        }
-      >
-        <BookOpen size={20} className="shrink-0" />
-        {!collapsed && 'Notebooks'}
-      </NavLink>
-
-      <GradientButton
-        size={collapsed ? 'sm' : 'lg'}
-        leftIcon={<Plus size={20} />}
-        onClick={handleNewProject}
-        className={cn('w-full', collapsed && 'aspect-square w-11 shrink-0 px-0')}
-        aria-label="New project"
-      >
-        {!collapsed && 'New project'}
-      </GradientButton>
+      {/* The three headline destinations: identical tiles, equal weight. */}
+      <div className="flex flex-col gap-3" role="group" aria-label="Main sections">
+        {PRIMARY_NAV.map(({ label, to, icon: Icon, end }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={end}
+            onClick={onNavigate}
+            title={collapsed ? label : undefined}
+            aria-label={label}
+            className={({ isActive }) =>
+              cn(
+                'flex items-center gap-3 rounded-2xl font-display text-base font-semibold text-fg',
+                isActive ? 'neu-inset ring-2 ring-[var(--accent-from)]' : 'neu-raised',
+                collapsed ? 'aspect-square w-11 shrink-0 justify-center self-center' : 'w-full px-3.5 py-3',
+              )
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <span
+                  className={cn(
+                    'tile-icon grid h-8 w-8 shrink-0 place-items-center rounded-xl transition-colors',
+                    isActive
+                      ? 'bg-[linear-gradient(120deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)]'
+                      : 'text-[var(--accent-from)]',
+                  )}
+                >
+                  <Icon size={19} strokeWidth={2.1} />
+                </span>
+                {!collapsed && label}
+              </>
+            )}
+          </NavLink>
+        ))}
+      </div>
 
       <SidebarNav collapsed={collapsed} onNavigate={onNavigate} />
 

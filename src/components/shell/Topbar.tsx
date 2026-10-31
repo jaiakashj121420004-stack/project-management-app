@@ -36,7 +36,7 @@ export function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
         aria-label="Search — open the command palette"
         aria-keyshortcuts="Meta+K Control+K"
         className={cn(
-          'flex h-11 min-w-0 flex-1 items-center gap-2.5 rounded-xl border bg-[var(--field-bg)] px-3.5 leading-none',
+          'flex h-11 min-w-0 flex-1 items-center gap-2.5 rounded-xl border neu-field bg-[var(--field-bg)] px-3.5 leading-none',
           'text-left text-sm text-fg-subtle transition-colors hover:text-fg-muted',
           'max-w-md',
         )}

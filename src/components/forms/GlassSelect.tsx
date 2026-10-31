@@ -171,7 +171,7 @@ export function GlassSelect<T extends string | number>({
         aria-controls={open ? listId : undefined}
         aria-activedescendant={open ? optionId(activeIndex) : undefined}
         className={cn(
-          'flex w-full items-center justify-between gap-2 border border-[var(--glass-border)] bg-[var(--field-bg)] font-medium text-fg',
+          'flex w-full items-center justify-between gap-2 border border-[var(--glass-border)] neu-field bg-[var(--field-bg)] font-medium text-fg',
           'backdrop-blur-sm outline-none transition-colors focus:border-[color:var(--accent-from)] focus:ring-2 focus:ring-[var(--accent-from)]',
           'disabled:cursor-not-allowed disabled:opacity-50',
           size === 'md' ? 'h-10 rounded-xl px-3 text-sm' : 'h-8 rounded-lg px-2.5 text-sm',

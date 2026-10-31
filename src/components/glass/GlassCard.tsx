@@ -66,7 +66,7 @@ export function GlassCard({ accent, flat = false, className, children, onClick }
       }}
       whileHover={tiltActive ? { scale: 1.015 } : undefined}
       className={cn(
-        'glass rounded-2xl [transform-style:preserve-3d]',
+        'glass glass-sheen rounded-2xl [transform-style:preserve-3d]',
         onClick && 'cursor-pointer',
         className,
       )}

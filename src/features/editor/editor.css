@@ -150,11 +150,59 @@
   background: none;
   padding: 0;
 }
+/* Dividers: ten looks, driven by --rule-thickness / --rule-width / --rule-color
+   (set inline by the StyledRule node). Plain <hr> from old notes still works. */
 .block-editor hr {
+  --rule-ink: var(--rule-color, var(--glass-border));
   border: none;
-  border-top: 1px solid var(--glass-border);
-  margin: 0.9em 0;
+  height: 0;
+  width: var(--rule-width, 100%);
+  margin: 1em auto;
+  border-top: var(--rule-thickness, 1px) solid var(--rule-ink);
+  cursor: pointer;
 }
+.block-editor hr.ProseMirror-selectednode {
+  outline: 2px solid rgba(194, 74, 64, 0.6);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+.block-editor hr[data-variant='dashed'] { border-top-style: dashed; }
+.block-editor hr[data-variant='dotted'] { border-top-style: dotted; }
+.block-editor hr[data-variant='double'] {
+  border-top-style: double;
+  border-top-width: calc(var(--rule-thickness, 1px) * 2 + 1px);
+}
+.block-editor hr[data-variant='gradient'] {
+  border: none;
+  height: var(--rule-thickness, 2px);
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--rule-color, #7a2a26), transparent);
+}
+.block-editor hr[data-variant='wave'] {
+  border: none;
+  height: calc(var(--rule-thickness, 2px) * 4 + 4px);
+  background-color: var(--rule-ink);
+  -webkit-mask: radial-gradient(circle at 50% 100%, transparent 0 55%, #000 56% 70%, transparent 71%) 0 0 / 1.6em 100% repeat-x;
+  mask: radial-gradient(circle at 50% 100%, transparent 0 55%, #000 56% 70%, transparent 71%) 0 0 / 1.6em 100% repeat-x;
+}
+.block-editor hr[data-variant='dots'],
+.block-editor hr[data-variant='stars'],
+.block-editor hr[data-variant='diamond'],
+.block-editor hr[data-variant='fleuron'] {
+  border: none;
+  height: 1.4em;
+  overflow: visible;
+  text-align: center;
+  color: var(--rule-ink);
+  font-size: calc(0.7em + var(--rule-thickness, 2px) * 0.12em);
+  line-height: 1.4em;
+  letter-spacing: 0.9em;
+  padding-left: 0.9em;
+}
+.block-editor hr[data-variant='dots']::before { content: '•••'; }
+.block-editor hr[data-variant='stars']::before { content: '✦ ✦ ✦'; letter-spacing: 0.4em; }
+.block-editor hr[data-variant='diamond']::before { content: '◆'; letter-spacing: 0; }
+.block-editor hr[data-variant='fleuron']::before { content: '❦'; letter-spacing: 0; font-size: 1.5em; }
 
 /* Toggle / collapsible (Details). Editor renders a button + summary + content;
    the static render is a <div data-type="details">. Style both shapes. */

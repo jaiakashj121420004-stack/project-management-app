@@ -45,7 +45,7 @@ export function EmbedModal({
           }}
           placeholder="Paste a YouTube, Vimeo, Loom or SoundCloud link…"
           aria-label="Embed URL"
-          className="w-full rounded-xl border border-[var(--glass-border)] bg-[var(--field-bg)] px-3.5 py-2.5 text-sm text-fg placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
+          className="w-full rounded-xl border border-[var(--glass-border)] neu-field bg-[var(--field-bg)] px-3.5 py-2.5 text-sm text-fg placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
         />
         {error && <p className="text-xs text-danger">{error}</p>}
         <p className="text-xs text-fg-subtle">Supported: {ALLOWED_EMBED_PROVIDERS}.</p>

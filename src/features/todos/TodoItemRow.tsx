@@ -3,6 +3,8 @@ import { motion, useAnimation, useReducedMotion, type PanInfo } from 'framer-mot
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Check, CheckCircle2, ChevronDown, ChevronUp, GripVertical, Pencil, Trash2, X } from 'lucide-react';
+import { celebrate } from '@/lib/celebrate';
+import { haptic } from '@/lib/native/haptics';
 import { cn } from '@/lib/cn';
 import { Tooltip } from '@/components/Tooltip';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -192,12 +194,19 @@ export function TodoItemRow({
             role="checkbox"
             aria-checked={item.is_done}
             aria-label={item.is_done ? 'Mark not done' : 'Mark done'}
-            onClick={() => onToggle(!item.is_done)}
+            onClick={(event) => {
+              if (!item.is_done) {
+                const rect = event.currentTarget.getBoundingClientRect();
+                celebrate({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+                haptic('success');
+              }
+              onToggle(!item.is_done);
+            }}
             className={cn(
               'grid h-5 w-5 shrink-0 place-items-center rounded-md border-2 transition-colors',
               item.is_done
-                ? 'border-transparent bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)]'
-                : 'border-fg-subtle/55 bg-[var(--glass-fill)] text-transparent hover:border-[var(--accent-from)] hover:bg-[var(--glass-fill-strong)]',
+                ? 'animate-check-pop border-transparent shadow-[0_6px_12px_-4px_var(--accent-glow)] bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)]'
+                : 'neu-field border-fg-subtle/55 bg-[var(--glass-fill)] text-transparent hover:border-[var(--accent-from)] hover:bg-[var(--glass-fill-strong)]',
             )}
           >
             <Check size={13} strokeWidth={3} aria-hidden />
@@ -225,7 +234,7 @@ export function TodoItemRow({
               }}
               onBlur={commitEdit}
               aria-label="Edit to-do text"
-              className="h-8 min-w-0 flex-1 rounded-lg border bg-[var(--field-bg)] px-2.5 text-sm text-fg focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
+              className="h-8 min-w-0 flex-1 rounded-lg border neu-field bg-[var(--field-bg)] px-2.5 text-sm text-fg focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
             />
             {/* onMouseDown (not onClick) so these fire before the input's onBlur
                 would otherwise swallow the click and commit/cancel from under it. */}

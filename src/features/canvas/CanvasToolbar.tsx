@@ -10,6 +10,7 @@ import {
   FileText,
   Frame,
   ImagePlus,
+  Lasso,
   Layers,
   Lock,
   MousePointer,
@@ -17,6 +18,7 @@ import {
   Plus,
   Redo2,
   SlidersHorizontal,
+  SquareDashed,
   Table2,
   Trash2,
   Type,
@@ -29,6 +31,8 @@ import { cn } from '@/lib/cn';
 import { GlassSelect } from '@/components/forms/GlassSelect';
 import { PAGE_LABELS, PAGE_TYPES, type PageType } from '@/lib/canvasPages';
 import type { CanvasTool } from './constants';
+import type { ShapeKind } from './elements';
+import { ShapePicker } from './ShapePicker';
 
 interface CanvasToolbarProps {
   canEdit: boolean;
@@ -68,6 +72,8 @@ interface CanvasToolbarProps {
   onSendToBack: () => void;
   showLayers: boolean;
   onToggleLayers: () => void;
+  shapeKind: ShapeKind;
+  onPickShape: (kind: ShapeKind) => void;
   className?: string;
 }
 
@@ -109,6 +115,8 @@ export function CanvasToolbar({
   onSendToBack,
   showLayers,
   onToggleLayers,
+  shapeKind,
+  onPickShape,
   className,
 }: CanvasToolbarProps) {
   // On phones the full tool row wraps into several lines and eats the canvas, so
@@ -163,6 +171,21 @@ export function CanvasToolbar({
           <ToolButton label="Eraser" onClick={() => onTool('erase')} active={tool === 'erase'}>
             <Eraser size={16} />
           </ToolButton>
+          <ToolButton
+            label="Lasso select — draw a loop round things"
+            onClick={() => onTool('lasso')}
+            active={tool === 'lasso'}
+          >
+            <Lasso size={16} />
+          </ToolButton>
+          <ToolButton
+            label="Box select — drag a rectangle"
+            onClick={() => onTool('marquee')}
+            active={tool === 'marquee'}
+          >
+            <SquareDashed size={16} />
+          </ToolButton>
+          <ShapePicker variant="icon" kind={shapeKind} active={tool === 'shape'} onPick={onPickShape} />
           <Divider />
           <ToolButton label="Undo" onClick={onUndo} disabled={!canUndo}>
             <Undo2 size={17} />

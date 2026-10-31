@@ -6,7 +6,8 @@
  * The panel overlays the canvas (position:absolute) and is toggled by the
  * CanvasToolbar layers button. Width is fixed; it does NOT shrink the canvas.
  */
-import { Frame, Image, Mic, MousePointer, Table2, Type, Video } from 'lucide-react';
+import { shapeLabel } from './shapes';
+import { Frame, Image, Mic, MousePointer, Shapes, Table2, Type, Video } from 'lucide-react';
 import { Eye, EyeOff, Lock, Unlock } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import type { CanvasElement } from './elements';
@@ -43,6 +44,8 @@ function elementMeta(element: CanvasElement): { icon: React.ReactNode; label: st
       return { icon: <Frame size={12} />, label: element.label.trim() || 'Frame' };
     case 'table':
       return { icon: <Table2 size={12} />, label: `Table ${element.rows}×${element.cols}` };
+    case 'shape':
+      return { icon: <Shapes size={12} />, label: element.label.trim() || shapeLabel(element.kind) };
   }
 }
 

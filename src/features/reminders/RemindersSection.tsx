@@ -159,7 +159,7 @@ function RemindersEditor({ cardId, dueAt }: { cardId: string; dueAt: string | nu
           }}
           aria-label="Custom reminder amount"
           placeholder="e.g. 90"
-          className="h-10 w-24 rounded-xl border border-[var(--glass-border)] bg-[var(--field-bg)] px-3 text-sm text-fg outline-none transition-colors focus:border-[color:var(--accent-from)] focus:ring-2 focus:ring-[var(--accent-from)]"
+          className="h-10 w-24 rounded-xl border border-[var(--glass-border)] neu-field bg-[var(--field-bg)] px-3 text-sm text-fg outline-none transition-colors focus:border-[color:var(--accent-from)] focus:ring-2 focus:ring-[var(--accent-from)]"
         />
         <GlassSelect
           label="Custom reminder unit"
@@ -193,7 +193,7 @@ function RemindersEditor({ cardId, dueAt }: { cardId: string; dueAt: string | nu
             return (
               <li
                 key={reminder.id}
-                className="flex items-center justify-between gap-2 rounded-xl border border-[var(--glass-border)] bg-[var(--field-bg)] px-3 py-2"
+                className="flex items-center justify-between gap-2 rounded-xl border border-[var(--glass-border)] neu-field bg-[var(--field-bg)] px-3 py-2"
               >
                 <span className="flex min-w-0 flex-col">
                   <span className="truncate text-sm font-medium text-fg">

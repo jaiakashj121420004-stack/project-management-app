@@ -394,3 +394,19 @@
   -webkit-user-select: text;
   user-select: text;
 }
+
+/* While a canvas is open, the whole app is a drawing surface: a resting palm must
+   not select text or pop the iOS callout anywhere. Real inputs/editors stay usable. */
+html.canvas-open,
+html.canvas-open body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+html.canvas-open input,
+html.canvas-open textarea,
+html.canvas-open [contenteditable='true'],
+html.canvas-open [contenteditable='true'] * {
+  -webkit-user-select: text;
+  user-select: text;
+}

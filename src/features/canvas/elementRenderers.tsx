@@ -1,8 +1,26 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Group, Image as KonvaImage, Path, Rect, Text } from 'react-konva';
+import { Arrow, Group, Image as KonvaImage, Line, Path, Rect, Text } from 'react-konva';
 import type Konva from 'konva';
 import { MIN_ELEMENT_SIZE, type ElementBox } from './constants';
-import type { CanvasElement, ElementPatch, FrameElement, ImageElement, StrokeElement } from './elements';
+import type {
+  CanvasElement,
+  ElementPatch,
+  FrameElement,
+  ImageElement,
+  ShapeElement,
+  StrokeElement,
+} from './elements';
+import { textureTile } from './strokeTexture';
+import {
+  hasEndHead,
+  hasStartHead,
+  isLineKind,
+  isLineShape,
+  labelBox,
+  labelFontSize,
+  linePolyline,
+  shapePathData,
+} from './shapes';
 import { strokePathData } from './freehand';
 import { useSignedUrl } from './useSignedUrl';
 import type { CanvasPalette } from './useCanvasPalette';
@@ -136,6 +154,26 @@ export function ElementNode({
       return;
     }
 
+    // A line/arrow keeps its endpoints in `pts`: bake the resize into them and
+    // re-fit its box (no minimum size — a perfectly horizontal arrow has no height).
+    if (isLineShape(element)) {
+      const [x1, y1, x2, y2] = [0, 1, 2, 3].map((i) => element.pts[i] ?? 0) as [number, number, number, number];
+      const pts = [x1 * scaleX, y1 * scaleY, x2 * scaleX, y2 * scaleY];
+      const minX = Math.min(pts[0]!, pts[2]!);
+      const minY = Math.min(pts[1]!, pts[3]!);
+      const rad = (node.rotation() * Math.PI) / 180;
+      onChange(element.id, {
+        x: node.x() + minX * Math.cos(rad) - minY * Math.sin(rad),
+        y: node.y() + minX * Math.sin(rad) + minY * Math.cos(rad),
+        width: Math.abs(pts[0]! - pts[2]!),
+        height: Math.abs(pts[1]! - pts[3]!),
+        rotation: node.rotation(),
+        pts: [pts[0]! - minX, pts[1]! - minY, pts[2]! - minX, pts[3]! - minY],
+      });
+      onLiveChange?.(null);
+      return;
+    }
+
     onChange(element.id, base);
     onLiveChange?.(null);
   };
@@ -172,9 +210,13 @@ function scaleStrokePoints(points: number[], scaleX: number, scaleY: number): nu
 }
 
 /** The body for each element type. */
-function ElementVisual({ element, palette }: { element: CanvasElement; palette: CanvasPalette }) {
+export function ElementVisual({ element, palette }: { element: CanvasElement; palette: CanvasPalette }) {
   if (element.type === 'stroke') {
     return <StrokeVisual element={element} />;
+  }
+
+  if (element.type === 'shape') {
+    return <ShapeVisual element={element} />;
   }
 
   const { width, height } = element;
@@ -254,10 +296,34 @@ function StrokeVisual({ element }: { element: StrokeElement }) {
         thinning: element.thinning,
         smoothing: element.smoothing,
         simulatePressure: element.simulatePressure,
+        taper: element.taper,
       }),
-    [element.points, element.size, element.thinning, element.smoothing, element.simulatePressure],
+    [
+      element.points,
+      element.size,
+      element.thinning,
+      element.smoothing,
+      element.simulatePressure,
+      element.taper,
+    ],
+  );
+  const grain = useMemo(
+    () => (element.texture ? textureTile(element.texture, element.color) : null),
+    [element.texture, element.color],
   );
   if (!data) return null;
+  if (grain) {
+    return (
+      <Path
+        data={data}
+        fillPatternImage={grain as unknown as HTMLImageElement}
+        fillPatternRepeat="repeat"
+        opacity={element.opacity}
+        perfectDrawEnabled={false}
+        shadowForStrokeEnabled={false}
+      />
+    );
+  }
   return (
     <Path
       data={data}
@@ -425,3 +491,84 @@ function ImageVisual({
     />
   );
 }
+
+const DASHES: Record<ShapeElement['dash'], number[] | undefined> = {
+  solid: undefined,
+  dashed: [12, 8],
+  dotted: [2, 7],
+};
+
+/** A shape / flowchart block / arrow. Closed shapes are one filled Path; lines are
+ *  a (poly)line with optional arrowheads and a fat invisible hit area so thin
+ *  lines are easy to grab. The label is Konva text, centred inside. */
+function ShapeVisual({ element }: { element: ShapeElement }) {
+  const dash = DASHES[element.dash];
+  const strokeWidth = element.strokeWidth;
+
+  if (isLineKind(element.kind)) {
+    const points = linePolyline(element);
+    const common = {
+      points,
+      stroke: element.stroke,
+      strokeWidth,
+      dash,
+      lineCap: 'round' as const,
+      lineJoin: 'round' as const,
+      hitStrokeWidth: Math.max(18, strokeWidth + 12),
+      perfectDrawEnabled: false,
+    };
+    const head = Math.max(10, strokeWidth * 4);
+    if (hasEndHead(element.kind) || hasStartHead(element.kind)) {
+      return (
+        <Arrow
+          {...common}
+          fill={element.stroke}
+          pointerLength={head}
+          pointerWidth={head * 0.85}
+          pointerAtEnding={hasEndHead(element.kind)}
+          pointerAtBeginning={hasStartHead(element.kind)}
+        />
+      );
+    }
+    return <Line {...common} />;
+  }
+
+  const data = shapePathData(element.kind, element.width, element.height);
+  const box = labelBox(element);
+  const fontSize = labelFontSize(element);
+  return (
+    <>
+      <Path
+        data={data}
+        // An outline-only shape still needs a hit target inside its outline.
+        fill={element.fill === 'none' ? 'rgba(0,0,0,0.001)' : element.fill}
+        stroke={element.stroke}
+        strokeWidth={strokeWidth}
+        dash={dash}
+        lineJoin="round"
+        shadowColor={element.kind === 'sticky' ? 'rgba(0,0,0,0.35)' : undefined}
+        shadowBlur={element.kind === 'sticky' ? 14 : 0}
+        shadowOffsetY={element.kind === 'sticky' ? 6 : 0}
+        shadowOpacity={0.5}
+        perfectDrawEnabled={false}
+      />
+      {element.label && (
+        <Text
+          text={element.label}
+          x={box.x}
+          y={box.y}
+          width={box.width}
+          height={box.height}
+          align="center"
+          verticalAlign="middle"
+          fontSize={fontSize}
+          fontFamily="Spectral, Georgia, serif"
+          fill={element.kind === 'sticky' ? '#3b2f0a' : element.stroke}
+          listening={false}
+          perfectDrawEnabled={false}
+        />
+      )}
+    </>
+  );
+}
+

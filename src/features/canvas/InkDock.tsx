@@ -2,17 +2,21 @@ import type { ReactNode } from 'react';
 import {
   Eraser,
   Highlighter,
+  Lasso,
   Maximize2,
   Minimize2,
   MousePointer,
   Pen,
   Redo2,
+  SquareDashed,
   Type,
   Undo2,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { PEN_PRESETS, type PenSettings } from './drawing';
 import type { CanvasTool } from './constants';
+import type { ShapeKind } from './elements';
+import { ShapePicker } from './ShapePicker';
 
 interface InkDockProps {
   tool: CanvasTool;
@@ -25,6 +29,8 @@ interface InkDockProps {
   onRedo: () => void;
   focus: boolean;
   onToggleFocus: () => void;
+  shapeKind: ShapeKind;
+  onPickShape: (kind: ShapeKind) => void;
   className?: string;
 }
 
@@ -45,6 +51,8 @@ export function InkDock({
   onRedo,
   focus,
   onToggleFocus,
+  shapeKind,
+  onPickShape,
   className,
 }: InkDockProps) {
   const drawing = tool === 'draw';
@@ -62,7 +70,7 @@ export function InkDock({
       role="toolbar"
       aria-label="Writing tools"
       className={cn(
-        'glass-menu flex max-w-full items-center gap-1 rounded-3xl border border-[var(--glass-border)] p-1.5 shadow-[0_18px_44px_-16px_rgba(0,0,0,0.75)]',
+        'glass-menu flex max-w-full items-center gap-1 overflow-x-auto rounded-3xl border border-[var(--glass-border)] p-1.5 shadow-[0_18px_44px_-16px_rgba(0,0,0,0.75)]',
         className,
       )}
     >
@@ -78,6 +86,13 @@ export function InkDock({
       <DockButton label="Select" active={tool === 'select'} onClick={() => onTool('select')}>
         <MousePointer size={22} />
       </DockButton>
+      <DockButton label="Lasso" active={tool === 'lasso'} onClick={() => onTool('lasso')}>
+        <Lasso size={22} />
+      </DockButton>
+      <DockButton label="Box" active={tool === 'marquee'} onClick={() => onTool('marquee')}>
+        <SquareDashed size={22} />
+      </DockButton>
+      <ShapePicker variant="dock" kind={shapeKind} active={tool === 'shape'} onPick={onPickShape} />
       <DockButton label="Text" active={tool === 'text'} onClick={() => onTool('text')}>
         <Type size={22} />
       </DockButton>
