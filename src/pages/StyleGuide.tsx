@@ -37,7 +37,7 @@ export function StyleGuide() {
       <Reveal>
         <GlassPanel gradientBorder className="flex flex-wrap items-center justify-between gap-4 p-6 sm:p-8">
           <div>
-            <h1 className="gradient-text font-display text-headline font-bold">Aurora Style Guide</h1>
+            <h1 className="gradient-text font-display text-headline font-bold">Jotspring Style Guide</h1>
             <p className="mt-1.5 text-fg-muted">
               Every primitive, in <span className="font-semibold text-fg">{theme}</span> mode. Toggle
               the theme to verify both →

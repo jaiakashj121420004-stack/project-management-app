@@ -16,7 +16,7 @@ import { useSharedProject } from './useProjectShare';
  * dates — with no edit affordances, no comments, no member list, and no path
  * to billing/settings: this page renders on its own, outside `ProtectedRoute`
  * and `AppShell` (see App.tsx), so there is nothing else on it to navigate to
- * besides the Aurora brand mark (→ the marketing site).
+ * besides the Jotspring brand mark (→ the marketing site).
  */
 export function SharedProjectPage() {
   const { token } = useParams<{ token: string }>();
@@ -26,7 +26,7 @@ export function SharedProjectPage() {
     <div className="relative min-h-dvh" style={data ? accentVars(data.project.accent) : undefined}>
       <AuroraBackground />
       <header className="relative z-10 flex items-center justify-between px-5 py-5 sm:px-8">
-        <Link to="/" aria-label="Aurora home">
+        <Link to="/" aria-label="Jotspring home">
           <Brand />
         </Link>
         <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--glass-border)] bg-[var(--glass-fill)] px-3 py-1 text-xs font-medium text-fg-muted">
@@ -64,7 +64,7 @@ function InvalidLinkNotice({ message }: { message: string }) {
       <h1 className="font-display text-title font-semibold text-fg">Link not available</h1>
       <p className="text-sm text-fg-muted">{message}</p>
       <Link to="/" className="mt-2 text-sm font-semibold text-[var(--accent-from)] hover:underline">
-        Go to Aurora
+        Go to Jotspring
       </Link>
     </GlassPanel>
   );

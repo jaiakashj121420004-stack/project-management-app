@@ -3,7 +3,7 @@ import { useTheme } from '@/hooks/useTheme';
 
 /**
  * Konva draws to a raw canvas and can't read CSS variables, so we resolve the
- * Aurora tokens to concrete color strings once per theme. We read from the stage
+ * Jotspring tokens to concrete color strings once per theme. We read from the stage
  * CONTAINER (not <html>) so the project's accent — set via accentVars() on a
  * wrapper — is in scope. Recomputed whenever the theme flips (light ⇆ dark).
  */

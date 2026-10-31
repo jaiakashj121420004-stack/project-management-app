@@ -3,7 +3,7 @@ self.addEventListener('push', (event) => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; } catch (e) { data = { body: event.data && event.data.text() }; }
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Aurora', {
+    self.registration.showNotification(data.title || 'Jotspring', {
       body: data.body || '',
       icon: '/pwa-192x192.png',
       badge: '/pwa-192x192.png',

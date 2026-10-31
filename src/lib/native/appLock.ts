@@ -96,8 +96,8 @@ export async function enrollBiometrics(): Promise<boolean> {
     const cred = (await navigator.credentials.create({
       publicKey: {
         challenge: crypto.getRandomValues(new Uint8Array(new ArrayBuffer(32))),
-        rp: { name: 'Aurora' },
-        user: { id: crypto.getRandomValues(new Uint8Array(new ArrayBuffer(16))), name: 'aurora-device', displayName: 'Aurora on this device' },
+        rp: { name: 'Jotspring' },
+        user: { id: crypto.getRandomValues(new Uint8Array(new ArrayBuffer(16))), name: 'aurora-device', displayName: 'Jotspring on this device' },
         pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
         authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required' },
         timeout: 60_000,

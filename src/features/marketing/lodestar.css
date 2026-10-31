@@ -1,6 +1,6 @@
 /* =========================================================================
    Lodestar — the marketing site theme, a warm, editorial parchment front
-   door for Aurora (a Nvexis product line). Predominantly light/parchment
+   door for Jotspring (a Nvexis product line). Predominantly light/parchment
    (2026-08-23: dropped the dark "starlit hero" treatment and its twinkling
    starfield — it read as a generic AI-template cliche, not the calm,
    considered editorial look the brand actually wants). Dark is now reserved
@@ -35,7 +35,7 @@
   isolation: isolate;
 }
 
-/* A soft radiant dawn glow behind the Aurora mark. */
+/* A soft radiant dawn glow behind the Jotspring mark. */
 .lode-glow {
   position: relative;
 }

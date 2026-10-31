@@ -27,7 +27,7 @@ const TIPS: Tip[] = [
   {
     icon: <MousePointerClick size={16} />,
     title: 'Hover any icon to see what it does',
-    body: 'Every icon-only button in Aurora shows its name on hover — no guessing.',
+    body: 'Every icon-only button in Jotspring shows its name on hover — no guessing.',
   },
   {
     icon: <Smartphone size={16} />,

@@ -258,7 +258,7 @@ export function parseCsvImport(text: string): ParsedImport {
   const payload: ImportPayload = { projectName: 'Imported board', columns };
   const validated = importPayloadSchema.safeParse(payload);
   if (!validated.success) {
-    throw new ImportParseError('That CSV could not be converted into a valid Aurora project.');
+    throw new ImportParseError('That CSV could not be converted into a valid Jotspring project.');
   }
 
   return { payload: validated.data, notes };

@@ -4,6 +4,7 @@ import { AlertTriangle, CheckCircle2, Flag as MilestoneIcon, Sparkles } from 'lu
 import { GlassPanel } from '@/components/glass/GlassPanel';
 import { Spinner } from '@/components/feedback/Spinner';
 import { Reveal } from '@/components/motion/Reveal';
+import { greeting } from '@/lib/greeting';
 import { accentVars, type AccentName } from '@/lib/accents';
 import { dueStatus } from '@/features/board/due';
 import { useMyRole } from '@/features/members';
@@ -22,16 +23,6 @@ import type { TodoItem } from '@/types/database';
  * answer to "am I on top of things right now?" without having to visit
  * Boards, Calendar, and To-Do separately (the user-friendliness brainstorm).
  */
-/** A time-of-day hello, so the page feels like it noticed you arrived. */
-function greeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 5) return 'Burning the midnight oil';
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
-  if (hour < 21) return 'Good evening';
-  return 'Winding down';
-}
-
 export function TodayPage() {
   const todayKey = toDateKey(startOfToday());
 

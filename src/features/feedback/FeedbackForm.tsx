@@ -72,7 +72,7 @@ export function FeedbackForm({ onCancel, onDone }: FeedbackFormProps) {
           <h2 className="font-display text-title font-semibold text-fg">
             Thanks! We read every note.
           </h2>
-          <p className="mt-1 text-sm text-fg-muted">Your input shapes where Aurora goes next.</p>
+          <p className="mt-1 text-sm text-fg-muted">Your input shapes where Jotspring goes next.</p>
         </div>
         <GradientButton onClick={() => (onDone ? onDone() : reset())} className="mt-1">
           {onDone ? 'Done' : 'Send another'}

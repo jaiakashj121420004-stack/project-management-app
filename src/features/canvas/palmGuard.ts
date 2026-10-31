@@ -14,12 +14,18 @@
  */
 import { useEffect } from 'react';
 
-/** A touch contact this large is a palm / fist, not a fingertip. */
-const PALM_CONTACT_PX = 36;
+/** A touch contact this large is a palm / fist, not a fingertip. iPad Safari
+ *  reports a fingertip as ~30–50px wide, so this must sit well above that —
+ *  at 36 an ordinary tap on Exit / dock buttons was swallowed as "a palm". */
+const PALM_CONTACT_PX = 64;
 /** A touch this soon after pen activity is a palm resting beside the pen. */
-const PEN_RECENT_MS = 1500;
+const PEN_RECENT_MS = 500;
 /** How long after a swallowed press its synthetic click is still swallowed. */
 const CLICK_SWALLOW_MS = 700;
+
+/** Controls that must always respond to a finger (Exit, dock buttons): they opt
+ *  out of palm swallowing with `data-palm-safe`. */
+const PALM_SAFE = '[data-palm-safe]';
 
 const EDITABLE = 'input, textarea, select, [contenteditable="true"], [contenteditable=""]';
 
@@ -54,7 +60,7 @@ export function usePalmGuard(enabled: boolean): void {
       if (e.type !== 'pointerdown') return;
       const target = e.target instanceof Element ? e.target : null;
       // The drawing surface has its own (finer) palm rejection.
-      if (!target || target.closest('.canvas-surface') || isEditable(target)) return;
+      if (!target || target.closest('.canvas-surface') || target.closest(PALM_SAFE) || isEditable(target)) return;
       const penRecent = performance.now() - lastPenAt < PEN_RECENT_MS;
       if (isPalmLikeContact(e, penRecent)) {
         swallowClickUntil = performance.now() + CLICK_SWALLOW_MS;
@@ -66,7 +72,7 @@ export function usePalmGuard(enabled: boolean): void {
     const onClick = (e: MouseEvent) => {
       if (performance.now() > swallowClickUntil) return;
       const target = e.target instanceof Element ? e.target : null;
-      if (target?.closest('.canvas-surface') || isEditable(target)) return;
+      if (target?.closest('.canvas-surface') || target?.closest(PALM_SAFE) || isEditable(target)) return;
       e.preventDefault();
       e.stopPropagation();
     };

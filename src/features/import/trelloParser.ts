@@ -15,11 +15,11 @@ import {
 
 /**
  * Parses a Trello board JSON export (Trello's Menu → Print, export, and
- * share → Export as JSON) into an Aurora `ImportPayload`.
+ * share → Export as JSON) into an Jotspring `ImportPayload`.
  *
  * The export is a large, loosely-typed blob (board settings, member
  * avatars, a full `actions` history, Power-Up/plugin data, custom fields,
- * …) — everything below is deliberately just the slice Aurora has a matching
+ * …) — everything below is deliberately just the slice Jotspring has a matching
  * concept for. The interfaces here are NOT the full Trello API object shape
  * (see developer.atlassian.com/cloud/trello/guides/rest-api/object-definitions),
  * just the fields this parser actually reads.
@@ -67,9 +67,9 @@ interface TrelloBoardExport {
   checklists?: TrelloChecklist[];
 }
 
-/** Trello's label palette → Aurora's eight (`lib/labelColors.ts`). Aurora has
+/** Trello's label palette → Jotspring's eight (`lib/labelColors.ts`). Jotspring has
  *  fewer swatches, so several Trello colors intentionally collapse onto the
- *  same Aurora color — that's a lossy-but-reasonable mapping, not a bug. */
+ *  same Jotspring color — that's a lossy-but-reasonable mapping, not a bug. */
 const TRELLO_COLOR_TO_AURORA: Record<string, LabelColor> = {
   green: 'emerald',
   lime: 'emerald',
@@ -102,7 +102,7 @@ function truncate(value: string, max: number): string {
 
 const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-/** The `YYYY-MM-DD` Aurora groups by, from a Trello `due` ISO instant — or
+/** The `YYYY-MM-DD` Jotspring groups by, from a Trello `due` ISO instant — or
  *  null if `due` is missing/malformed. */
 function dateOnlyFrom(due: string | null | undefined): string | null {
   if (!due) return null;
@@ -110,7 +110,7 @@ function dateOnlyFrom(due: string | null | undefined): string | null {
   return DATE_ONLY_RE.test(candidate) ? candidate : null;
 }
 
-/** The full instant Aurora stores, or null if `due` doesn't parse as a real
+/** The full instant Jotspring stores, or null if `due` doesn't parse as a real
  *  date — never pass an unparseable string through to the database. */
 function instantFrom(due: string | null | undefined): string | null {
   if (!due) return null;
@@ -143,7 +143,7 @@ export function parseTrelloExport(raw: unknown): ParsedImport {
 
   // Labels — keyed by id so cards can look theirs up. A label with no text
   // (many Trello users leave labels color-only) falls back to its color name
-  // so it still becomes a real, visible Aurora label rather than being blank.
+  // so it still becomes a real, visible Jotspring label rather than being blank.
   const labelById = new Map<string, ImportCardLabel>();
   for (const label of board.labels ?? []) {
     const name = label.name?.trim() || capitalize(label.color ?? '') || 'Label';
@@ -154,7 +154,7 @@ export function parseTrelloExport(raw: unknown): ParsedImport {
   }
 
   // Checklists are keyed by idCard in the export, and a card can have more
-  // than one — Aurora has one flat checklist per card (checklist_items),
+  // than one — Jotspring has one flat checklist per card (checklist_items),
   // so every checklist on a card is merged in order.
   const checklistsByCard = new Map<string, TrelloChecklist[]>();
   for (const checklist of board.checklists ?? []) {
@@ -276,7 +276,7 @@ export function parseTrelloExport(raw: unknown): ParsedImport {
   const validated = importPayloadSchema.safeParse(payload);
   if (!validated.success) {
     throw new ImportParseError(
-      'That Trello export could not be converted into a valid Aurora project.',
+      'That Trello export could not be converted into a valid Jotspring project.',
     );
   }
 

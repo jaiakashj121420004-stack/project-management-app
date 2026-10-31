@@ -10,7 +10,7 @@
 // in `src/main.tsx`. If nobody has called `event.preventDefault()` by the time
 // the event fires, Chrome falls back to showing its own native install icon in
 // the address bar instead — which is exactly the symptom this file fixes:
-// Aurora's own "Install Aurora" affordance in the sidebar was never appearing,
+// Jotspring's own "Install Jotspring" affordance in the sidebar was never appearing,
 // even though the browser clearly considered the page installable.
 //
 // Kept as an external file (not inline), same reasoning as theme-init.js: the

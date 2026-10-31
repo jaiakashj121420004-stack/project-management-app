@@ -69,7 +69,7 @@ export function MarketingFooter() {
         </div>
 
         <div className="mt-10 border-t border-[var(--hairline)] pt-6 text-sm text-fg-subtle">
-          © 2026 Aurora
+          © 2026 Jotspring
         </div>
       </div>
     </footer>

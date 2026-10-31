@@ -183,7 +183,7 @@ export function ProVsFreePage() {
           <p className="text-sm font-medium text-fg-muted">Make an informed choice</p>
           <h1 className="gradient-text font-display text-headline font-bold">Pro vs Free</h1>
           <p className="mt-2 max-w-prose text-fg-muted">
-            Everything Aurora offers, side by side — free forever, or unlocked with Pro.
+            Everything Jotspring offers, side by side — free forever, or unlocked with Pro.
           </p>
         </div>
         {!alreadyPro && (

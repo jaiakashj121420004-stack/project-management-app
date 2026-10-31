@@ -33,7 +33,7 @@ export function NativeSettingsSection() {
     <div className="space-y-5">
       <div>
         <h3 className="text-sm font-semibold text-fg">App lock</h3>
-        <p className="mb-2 text-sm text-fg-muted">Ask for a PIN{bio ? ' or Face ID / fingerprint' : ''} when you open Aurora or come back to it. Stored on this device only.</p>
+        <p className="mb-2 text-sm text-fg-muted">Ask for a PIN{bio ? ' or Face ID / fingerprint' : ''} when you open Jotspring or come back to it. Stored on this device only.</p>
         {!lock ? (
           <div className="flex flex-wrap gap-2">
             <input aria-label="New PIN" inputMode="numeric" type="password" maxLength={8} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))} placeholder="4–8 digit PIN" className="neu-field rounded-xl px-3 py-2 text-fg outline-none" />

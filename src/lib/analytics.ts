@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 
 /**
- * Aurora's minimal funnel-analytics client. One call site API — `track()` — used
+ * Jotspring's minimal funnel-analytics client. One call site API — `track()` — used
  * at the handful of moments listed in `reports/ANALYTICS.md`. Deliberately NOT a
  * general analytics SDK: no page-view auto-tracking, no session replay, no PII.
  *

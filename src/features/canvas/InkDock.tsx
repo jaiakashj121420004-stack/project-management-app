@@ -68,6 +68,7 @@ export function InkDock({
   return (
     <div
       role="toolbar"
+      data-palm-safe
       aria-label="Writing tools"
       className={cn(
         'glass-menu flex max-w-full items-center gap-1 overflow-x-auto rounded-3xl border border-[var(--glass-border)] p-1.5 shadow-[0_18px_44px_-16px_rgba(0,0,0,0.75)]',

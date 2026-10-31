@@ -5,6 +5,8 @@ import { GlassPanel } from '@/components/glass/GlassPanel';
 import { EmptyArt } from '@/components/EmptyArt';
 import { GradientButton } from '@/components/buttons/GradientButton';
 import { Skeleton } from '@/components/feedback/Skeleton';
+import { FocusCard } from '@/features/today/FocusCard';
+import { greeting } from '@/lib/greeting';
 import { Reveal } from '@/components/motion/Reveal';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/features/auth/useProfile';
@@ -22,7 +24,7 @@ import { useCreateProject, useDeleteProject, useProjects, useUpdateProject } fro
 import type { ProjectFormInput } from './schemas';
 
 /** The Projects dashboard (plan.md §5, Phase 3): the user's workspaces as vivid
- *  Aurora glass cards, with create / edit / delete. */
+ *  Jotspring glass cards, with create / edit / delete. */
 export function ProjectsPage() {
   const { user } = useAuth();
   const { data: profile } = useProfile();
@@ -145,8 +147,8 @@ export function ProjectsPage() {
       <Reveal>
         <header className="flex flex-wrap items-end justify-between gap-4 pt-2">
           <div>
-            <p className="text-sm font-medium text-fg-muted">Your workspaces</p>
-            <h1 className="gradient-text mt-1 font-display text-headline font-bold">Projects</h1>
+            <p className="text-sm font-medium uppercase tracking-[0.14em] text-fg-muted">{greeting()}{profile?.display_name ? `, ${profile.display_name.split(' ')[0]}` : ''}</p>
+            <h1 className="gradient-text mt-1 font-display text-headline font-bold">Boards</h1>
             <p className="mt-2 max-w-prose text-fg-muted">
               Every idea gets its own colorful space. Create a project, pick an accent, and start
               planning.
@@ -176,6 +178,10 @@ export function ProjectsPage() {
 
       <PendingInvitations />
 
+      <Reveal>
+        <FocusCard />
+      </Reveal>
+
       {isLoading ? (
         <LoadingGrid />
       ) : isError ? (
@@ -183,7 +189,7 @@ export function ProjectsPage() {
           Couldn&apos;t load your projects. Check your connection and try again.
         </GlassPanel>
       ) : hasProjects ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {projects!.map((project, index) => (
             <Reveal key={project.id} delay={index * 0.05}>
               <ProjectCard
@@ -263,7 +269,7 @@ function isProjectLimitError(error: unknown): boolean {
 
 function LoadingGrid() {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
       {Array.from({ length: 6 }).map((_, index) => (
         <Skeleton key={index} className="h-44 rounded-2xl" />
       ))}

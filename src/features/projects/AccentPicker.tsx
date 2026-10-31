@@ -8,7 +8,7 @@ interface AccentPickerProps {
   label?: string;
 }
 
-/** Pick one of the six Aurora accent gradients (plan.md §4.2). A real radiogroup
+/** Pick one of the six Jotspring accent gradients (plan.md §4.2). A real radiogroup
  *  so it's keyboard- and screen-reader-friendly. */
 export function AccentPicker({ value, onChange, label = 'Accent' }: AccentPickerProps) {
   return (

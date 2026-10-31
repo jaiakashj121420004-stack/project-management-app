@@ -34,7 +34,7 @@ export function CeoMessagePage() {
           <h1 className="gradient-text font-display text-headline font-bold leading-none">
             From the Founder
           </h1>
-          <p className="mt-1 text-sm text-fg-muted">A note to everyone building with Aurora.</p>
+          <p className="mt-1 text-sm text-fg-muted">A note to everyone building with Jotspring.</p>
         </div>
       </header>
 

@@ -45,7 +45,7 @@ export interface RemotePeer extends CanvasAwarenessState {
 
 /**
  * A small, high-contrast palette for cursors. Chosen to read clearly over both
- * the light and dark Aurora surfaces and to stay distinct from the project
+ * the light and dark Jotspring surfaces and to stay distinct from the project
  * accent (so a remote cursor never blends into a selection Transformer).
  */
 const CURSOR_COLORS = [

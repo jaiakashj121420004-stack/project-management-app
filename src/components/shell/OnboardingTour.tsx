@@ -24,7 +24,7 @@ interface Slide {
 const SLIDES: Slide[] = [
   {
     icon: Sparkles,
-    title: 'Welcome to Aurora',
+    title: 'Welcome to Jotspring',
     body: 'Boards, to-dos, notes, and a calendar that ties them all together — built to feel as good on your phone as it does on your desktop.',
   },
   {

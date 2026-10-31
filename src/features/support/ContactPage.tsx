@@ -15,7 +15,7 @@ export function ContactPage() {
       <header className="pb-6 pt-2">
         <h1 className="gradient-text font-display text-headline font-bold">Contact us</h1>
         <p className="mt-2 text-fg-muted">
-          Aurora is built and run by one person, so this goes straight to me — not a queue.
+          Jotspring is built and run by one person, so this goes straight to me — not a queue.
         </p>
       </header>
 
@@ -55,7 +55,7 @@ export function ContactPage() {
           <div className="min-w-0">
             <p className="font-display text-lg font-semibold text-fg">In-app feedback</p>
             <p className="mt-1 text-sm text-fg-muted">
-              For a quick bug report or idea while you're already in Aurora, the feedback form
+              For a quick bug report or idea while you're already in Jotspring, the feedback form
               reaches the same place with less typing.
             </p>
             <Link

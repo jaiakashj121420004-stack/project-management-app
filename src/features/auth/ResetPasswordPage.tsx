@@ -68,7 +68,7 @@ export function ResetPasswordPage() {
             void navigate('/', { replace: true });
           }}
         >
-          Go to Aurora
+          Go to Jotspring
         </GradientButton>
       </AuthLayout>
     );
