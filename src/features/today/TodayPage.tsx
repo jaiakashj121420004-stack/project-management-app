@@ -22,6 +22,16 @@ import type { TodoItem } from '@/types/database';
  * answer to "am I on top of things right now?" without having to visit
  * Boards, Calendar, and To-Do separately (the user-friendliness brainstorm).
  */
+/** A time-of-day hello, so the page feels like it noticed you arrived. */
+function greeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 5) return 'Burning the midnight oil';
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  if (hour < 21) return 'Good evening';
+  return 'Winding down';
+}
+
 export function TodayPage() {
   const todayKey = toDateKey(startOfToday());
 
@@ -102,7 +112,9 @@ export function TodayPage() {
     <div className="flex flex-col gap-6">
       <Reveal>
         <header className="pt-2">
-          <p className="text-sm font-medium text-fg-muted">{format(new Date(), 'EEEE, MMMM d')}</p>
+          <p className="text-sm font-medium text-fg-muted">
+            {greeting()} · {format(new Date(), 'EEEE, MMMM d')}
+          </p>
           <h1 className="gradient-text mt-1 font-display text-headline font-bold">Today</h1>
           <p className="mt-2 max-w-prose text-fg-muted">
             Everything overdue or due soon, today&apos;s to-dos, and any milestones landing today —

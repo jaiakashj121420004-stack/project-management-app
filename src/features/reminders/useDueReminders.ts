@@ -13,6 +13,7 @@ import {
   showDueNotification,
   useBrowserRemindersPref,
 } from './notifications';
+import { setBadge } from '@/lib/native/badge';
 import { useTimedReminders } from './useTimedReminders';
 
 const POLL_INTERVAL = 1000 * 60 * 30; // re-check every 30 minutes
@@ -53,6 +54,10 @@ export function useDueReminders(): void {
     refetchOnWindowFocus: true,
     staleTime: POLL_INTERVAL,
   });
+
+  useEffect(() => {
+    setBadge(enabled && data ? data.length : 0);
+  }, [enabled, data]);
 
   useEffect(() => {
     if (!enabled || !data) return;

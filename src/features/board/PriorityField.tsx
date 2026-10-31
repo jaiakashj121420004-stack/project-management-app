@@ -79,7 +79,7 @@ export function PriorityField({ value, onChange }: PriorityFieldProps) {
               onKeyDown={handleCustomKeyDown}
               onBlur={commitCustom}
               aria-label="Custom priority number"
-              className="h-7 w-16 rounded-lg border bg-[var(--field-bg)] px-2 text-sm text-fg focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
+              className="h-7 w-16 rounded-lg border neu-field bg-[var(--field-bg)] px-2 text-sm text-fg focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
             />
           </span>
         ) : (

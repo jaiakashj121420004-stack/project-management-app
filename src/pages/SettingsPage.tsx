@@ -18,6 +18,7 @@ import { GradientButton } from '@/components/buttons/GradientButton';
 import { PersonalizationPresetGrid } from '@/components/theme/PersonalizationPresetGrid';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { Tooltip } from '@/components/Tooltip';
+import { NativeSettingsSection } from '@/features/native/NativeSettingsSection';
 import { ProGate } from '@/features/billing/ProGate';
 import { feedUrlForToken } from '@/features/calendar-feed/api';
 import { useEnableFeed, useFeedToken, useRevokeFeedToken, useRotateFeedToken } from '@/features/calendar-feed/useCalendarFeed';
@@ -237,6 +238,13 @@ export function SettingsPage() {
       </GlassPanel>
 
       <GlassPanel className="p-5 sm:p-6">
+        <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-semibold text-fg">
+          <Sparkles size={18} className="text-[var(--accent-from)]" /> Privacy &amp; device
+        </h2>
+        <NativeSettingsSection />
+      </GlassPanel>
+
+      <GlassPanel className="p-5 sm:p-6">
         <h2 className="mb-1 flex items-center gap-2 font-display text-lg font-semibold text-fg">
           <Rss size={18} className="text-[var(--accent-from)]" /> Calendar sync
         </h2>
@@ -369,7 +377,7 @@ function CalendarFeedSection() {
           value={url}
           onFocus={(e) => e.currentTarget.select()}
           aria-label="Calendar subscribe URL"
-          className="h-10 flex-1 rounded-lg border bg-[var(--field-bg)] px-2.5 text-sm text-fg-muted focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
+          className="h-10 flex-1 rounded-lg border neu-field bg-[var(--field-bg)] px-2.5 text-sm text-fg-muted focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
         />
         <Tooltip label="Copy link">
           <button
@@ -488,7 +496,7 @@ function McpConnectSection() {
               value={revealedToken}
               onFocus={(e) => e.currentTarget.select()}
               aria-label="Aurora MCP access token"
-              className="h-10 flex-1 rounded-lg border bg-[var(--field-bg)] px-2.5 font-mono text-sm text-fg-muted focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
+              className="h-10 flex-1 rounded-lg border neu-field bg-[var(--field-bg)] px-2.5 font-mono text-sm text-fg-muted focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
             />
             <button
               type="button"
@@ -546,7 +554,7 @@ function McpConnectSection() {
           <div className="flex flex-col gap-1.5">
             <span className="text-xs font-semibold text-fg">Claude Code</span>
             <div className="flex items-start gap-2">
-              <pre className="flex-1 overflow-x-auto rounded-lg border bg-[var(--field-bg)] p-2.5 font-mono text-xs text-fg-muted">
+              <pre className="flex-1 overflow-x-auto rounded-lg border neu-field bg-[var(--field-bg)] p-2.5 font-mono text-xs text-fg-muted">
                 {claudeCodeCommand}
               </pre>
               <Tooltip label="Copy command">
@@ -565,7 +573,7 @@ function McpConnectSection() {
               Claude Desktop — <code className="text-[11px]">claude_desktop_config.json</code>
             </span>
             <div className="flex items-start gap-2">
-              <pre className="flex-1 overflow-x-auto rounded-lg border bg-[var(--field-bg)] p-2.5 font-mono text-xs text-fg-muted">
+              <pre className="flex-1 overflow-x-auto rounded-lg border neu-field bg-[var(--field-bg)] p-2.5 font-mono text-xs text-fg-muted">
                 {claudeDesktopConfig}
               </pre>
               <Tooltip label="Copy config">
@@ -623,7 +631,7 @@ function ColorField({
             const v = e.target.value.trim();
             onChange(/^#[0-9a-fA-F]{6}$/.test(v) ? v : v === '' ? null : (value ?? null));
           }}
-          className="h-10 w-28 rounded-lg border bg-[var(--field-bg)] px-2.5 text-sm text-fg focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
+          className="h-10 w-28 rounded-lg border neu-field bg-[var(--field-bg)] px-2.5 text-sm text-fg focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
         />
         {value && (
           <button

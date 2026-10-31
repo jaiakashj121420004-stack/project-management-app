@@ -64,7 +64,7 @@ export function AssigneeField({
           aria-expanded={open}
           aria-label="Assignee"
           className={cn(
-            'flex h-11 w-full items-center justify-between gap-2 rounded-2xl border border-[var(--glass-border)] bg-[var(--field-bg)] px-3.5',
+            'flex h-11 w-full items-center justify-between gap-2 rounded-2xl border border-[var(--glass-border)] neu-field bg-[var(--field-bg)] px-3.5',
             'text-sm text-fg outline-none transition-colors focus:border-[color:var(--accent-from)] focus:ring-2 focus:ring-[var(--accent-from)]',
           )}
         >

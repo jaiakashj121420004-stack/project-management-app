@@ -118,7 +118,7 @@ export function SaveAsTemplateDialog({
             value={icon}
             onSelect={setIcon}
             ariaLabel="Template icon"
-            buttonClassName="h-11 w-11 shrink-0 border border-[var(--glass-border)] bg-[var(--field-bg)]"
+            buttonClassName="h-11 w-11 shrink-0 border border-[var(--glass-border)] neu-field bg-[var(--field-bg)]"
           />
           <div className="min-w-0 flex-1">
             <Field

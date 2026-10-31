@@ -75,7 +75,7 @@ export function RoleSelect({
         aria-expanded={open}
         aria-label="Member role"
         className={cn(
-          'flex items-center justify-between gap-1.5 border border-[var(--glass-border)] bg-[var(--field-bg)] text-sm font-medium text-fg',
+          'flex items-center justify-between gap-1.5 border border-[var(--glass-border)] neu-field bg-[var(--field-bg)] text-sm font-medium text-fg',
           'backdrop-blur-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]',
           'disabled:cursor-not-allowed disabled:opacity-60',
           size === 'md' ? 'h-11 rounded-2xl px-3' : 'h-8 rounded-xl px-2.5',

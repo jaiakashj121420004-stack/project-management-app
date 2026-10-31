@@ -125,7 +125,7 @@ export function EntityPicker({ items, selectedId, onSelect, label, className }: 
         aria-label={label}
         aria-controls={open ? listId : undefined}
         className={cn(
-          'flex h-10 w-full items-center justify-between gap-2 rounded-xl border border-[var(--glass-border)] bg-[var(--field-bg)] px-3 text-sm font-medium text-fg',
+          'flex h-10 w-full items-center justify-between gap-2 rounded-xl border border-[var(--glass-border)] neu-field bg-[var(--field-bg)] px-3 text-sm font-medium text-fg',
           'backdrop-blur-sm outline-none transition-colors focus:border-[color:var(--accent-from)] focus:ring-2 focus:ring-[var(--accent-from)]',
         )}
       >

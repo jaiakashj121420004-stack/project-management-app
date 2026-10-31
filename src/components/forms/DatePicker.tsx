@@ -245,7 +245,7 @@ export function DatePicker({
         aria-expanded={open}
         aria-label={label}
         className={cn(
-          'flex h-11 w-full items-center justify-between gap-2 rounded-2xl border border-[var(--glass-border)] bg-[var(--field-bg)] px-3.5 text-left text-sm text-fg',
+          'flex h-11 w-full items-center justify-between gap-2 rounded-2xl border border-[var(--glass-border)] neu-field bg-[var(--field-bg)] px-3.5 text-left text-sm text-fg',
           'backdrop-blur-sm outline-none transition-colors focus:border-[color:var(--accent-from)] focus:ring-2 focus:ring-[var(--accent-from)]',
           'disabled:cursor-not-allowed disabled:opacity-50',
           className,

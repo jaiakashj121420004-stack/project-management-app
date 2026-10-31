@@ -68,7 +68,7 @@ export function HelpPanel() {
           type="button"
           aria-label="Help & tips"
           onClick={() => setOpen(true)}
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+          className="neu-raised grid h-10 w-10 shrink-0 place-items-center rounded-2xl text-fg-muted hover:text-fg"
         >
           <HelpCircle size={19} />
         </button>

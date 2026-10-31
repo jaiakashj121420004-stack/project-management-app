@@ -167,7 +167,7 @@ function LabelCreator({ onCreate }: { onCreate: (name: string, color: LabelColor
           onChange={(event) => setName(event.target.value)}
           onKeyDown={handleKeyDown}
           aria-label="New label name"
-          className="h-9 min-w-0 flex-1 rounded-xl border bg-[var(--field-bg)] px-3 text-sm text-fg placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
+          className="h-9 min-w-0 flex-1 rounded-xl border neu-field bg-[var(--field-bg)] px-3 text-sm text-fg placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
         />
         <button
           type="button"

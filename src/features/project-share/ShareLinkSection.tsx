@@ -67,7 +67,7 @@ export function ShareLinkSection({ projectId }: { projectId: string }) {
               value={shareUrlForToken(link.token)}
               onFocus={(e) => e.currentTarget.select()}
               aria-label="Public read-only board link"
-              className="h-10 flex-1 rounded-lg border border-[var(--glass-border)] bg-[var(--field-bg)] px-2.5 text-sm text-fg-muted focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
+              className="h-10 flex-1 rounded-lg border border-[var(--glass-border)] neu-field bg-[var(--field-bg)] px-2.5 text-sm text-fg-muted focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
             />
             <Tooltip label="Copy link">
               <button
