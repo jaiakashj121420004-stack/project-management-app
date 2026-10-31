@@ -111,7 +111,7 @@ const BLOCK_ITEMS: readonly Omit<SlashItem, 'key'>[] = [
     subtitle: 'Horizontal rule',
     icon: Minus,
     keywords: ['divider', 'hr', 'rule', 'separator', 'line'],
-    command: (e) => e.chain().focus().setHorizontalRule().run(),
+    command: (e) => e.chain().focus().setStyledRule().run(),
   },
   {
     title: 'Table',

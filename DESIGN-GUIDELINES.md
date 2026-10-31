@@ -285,6 +285,9 @@ social (Surface A) stay flat Almanac — the one bridge is the palette, type and
 accent, which are shared. Keep them distinct: a slide should never wear app glass, and the
 app should never flatten into a poster.
 
+### Neumorphism over glass (added 2026-10-31)
+Raised/pressed surfaces are allowed *on top of* the glass-over-parchment base, same palette, same single oxblood accent: `.neu-raised` (extruded; hover lifts, press insets), `.neu-inset` (pressed / active), `.glass-sheen` (soft top-left light on glass). Tokens `--neu-light` / `--neu-dark` / `--glass-sheen` are defined per theme in `src/styles/index.css`. Use for primary navigation tiles and key controls — not for body text surfaces or dense tables. No new hues.
+
 ---
 
 *If a decision isn't covered here, ask: "What would a serious almanac — edited, set in metal type, made to last — do?" — then do that. Two inks, one paper, the nvexis, lots of space. In the app, that almanac is made tactile: warm glass on parchment, one accent in the room.*

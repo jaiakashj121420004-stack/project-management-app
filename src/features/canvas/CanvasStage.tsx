@@ -1,9 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
-import { Stage, Layer, Transformer } from 'react-konva';
+import { Stage, Layer, Transformer, Circle, Group } from 'react-konva';
 import type Konva from 'konva';
 import type { PageType } from '@/lib/canvasPages';
 import { useElementSize } from '@/hooks/useElementSize';
-import { ElementNode } from './elementRenderers';
+import { ElementNode, ElementVisual } from './elementRenderers';
+import { ShapeLabelEditor } from './ShapeLabelEditor';
+import { elementsInLasso, elementsInRect, type WorldPoint } from './selection';
+import {
+  createClosedShape,
+  createLineShape,
+  defaultShapeStyle,
+  isLineKind,
+  isLineShape,
+  lineEndpoints,
+  lineGeometry,
+  snapToShape,
+  anchorPoint,
+  SIDES,
+} from './shapes';
+import { textureTile } from './strokeTexture';
 import { PageBackground } from './PageBackground';
 import { TextLayer } from './TextLayer';
 import { MediaLayer } from './MediaLayer';
@@ -25,7 +40,7 @@ import {
   type EraserMode,
   type ElementBox,
 } from './constants';
-import type { CanvasElement, ElementPatch } from './elements';
+import type { CanvasElement, ElementPatch, ShapeKind, StrokeTexture } from './elements';
 
 interface CanvasStageProps {
   elements: CanvasElement[];
@@ -54,7 +69,7 @@ interface CanvasStageProps {
   eraserMode: EraserMode;
   /** Precision-eraser nib radius in SCREEN px (converted to world via camera). */
   eraserSize: number;
-  /** A finished precision-erase gesture: the world path + world radius it covered. */
+  /** The newest stretch of a precision-erase scrub: world path + world nib radius. */
   onPrecisionErase: (path: ErasePoint[], radius: number) => void;
   /** The text tool was clicked at a world point — drop a text box there. */
   onPlaceText: (worldX: number, worldY: number) => void;
@@ -85,6 +100,19 @@ interface CanvasStageProps {
   onTextBodyChange: (id: string, body: Record<string, unknown>, text: string) => void;
   /** Report a text box's auto-grown height (world units). */
   onTextResize: (id: string, height: number) => void;
+  /** Shape tool: which shape is being drawn, and the ink colour new ones start with. */
+  shapeKind: ShapeKind;
+  shapeInk: string;
+  /** The shape tool finished a drag from `a` to `b` (world points). */
+  onCreateShape: (a: WorldPoint, b: WorldPoint) => void;
+  /** A lasso / rectangle selection finished with these element ids. */
+  onAreaSelect: (ids: string[]) => void;
+  /** Double-click/tap on a shape requests editing its label. */
+  onEditShape: (id: string) => void;
+  /** The shape whose label is open for editing (null = none). */
+  editingShapeId: string | null;
+  onCommitShapeLabel: (id: string, label: string) => void;
+  onEndShapeEdit: () => void;
   /** Remote participants to draw (cursors + selection halos). */
   remotePeers: RemotePeer[];
   /** Report the local pointer's WORLD position for awareness (null = off-canvas). */
@@ -127,15 +155,37 @@ function fillOutline(ctx: CanvasRenderingContext2D, outline: number[][]) {
   ctx.fill();
 }
 
+/** The fill for live ink: the stroke colour, or its pencil/crayon grain pattern. */
+function grainFill(
+  ctx: CanvasRenderingContext2D,
+  texture: StrokeTexture | undefined,
+  color: string,
+): string | CanvasPattern {
+  const tile = texture ? textureTile(texture, color) : null;
+  return (tile && ctx.createPattern(tile, 'repeat')) || color;
+}
+
 function distance(a: { x: number; y: number }, b: { x: number; y: number }): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
 function midpoint(a: { x: number; y: number }, b: { x: number; y: number }) {
   return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
 }
+/** Lightest pressure we honour. A feather-light Pencil touch reports ~0.02, which
+ *  renders as a hair-thin sliver that reads as a GAP in the line — so floor it. */
+const MIN_PEN_PRESSURE = 0.25;
+
 function pressureOf(evt: PointerEvent, isPen: boolean): number {
   if (!isPen) return 0.5;
-  return evt.pressure > 0 ? evt.pressure : 0.5;
+  return Math.max(MIN_PEN_PRESSURE, evt.pressure > 0 ? evt.pressure : 0.5);
+}
+
+/** The fingers on screen — Apple Pencil contacts also appear in `touches`, but a
+ *  stylus is never a pinch finger. */
+function fingerTouches(evt: TouchEvent): Touch[] {
+  return Array.from(evt.touches).filter(
+    (t) => (t as Touch & { touchType?: string }).touchType !== 'stylus',
+  );
 }
 
 /**
@@ -189,6 +239,14 @@ export function CanvasStage({
   onTextResize,
   remotePeers,
   onPointerWorldMove,
+  shapeKind,
+  shapeInk,
+  onCreateShape,
+  onAreaSelect,
+  onEditShape,
+  editingShapeId,
+  onCommitShapeLabel,
+  onEndShapeEdit,
 }: CanvasStageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
@@ -210,7 +268,12 @@ export function CanvasStage({
 
   // Freehand stroke (world samples) and eraser gesture — refs to avoid
   // React renders on every pointer-move.
-  const drawing = useRef<{ pointerId: number; points: number[]; style: StrokeStyle } | null>(null);
+  const drawing = useRef<{
+    pointerId: number;
+    points: number[];
+    style: StrokeStyle;
+    isPen: boolean;
+  } | null>(null);
   const erasing = useRef(false);
 
   // Palm rejection.
@@ -293,6 +356,14 @@ export function CanvasStage({
       return;
     }
 
+    // A lone line/arrow is edited with end-point handles, not a bounding box.
+    const lone = selectedIds.length === 1 ? elements.find((e) => e.id === selectedIds[0]) : undefined;
+    if (lone && isLineShape(lone)) {
+      transformer.nodes([]);
+      transformer.getLayer()?.batchDraw();
+      return;
+    }
+
     const nodes: Konva.Node[] = [];
     for (const id of selectedIds) {
       const el = elements.find((e) => e.id === id);
@@ -368,7 +439,7 @@ export function CanvasStage({
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.setTransform(dpr * cam.scale, 0, 0, dpr * cam.scale, dpr * cam.x, dpr * cam.y);
-    ctx.fillStyle = d.style.color;
+    ctx.fillStyle = grainFill(ctx, d.style.texture, d.style.color);
     ctx.globalAlpha = d.style.opacity;
     fillOutline(ctx, strokeOutline(d.points, d.style));
   }
@@ -402,7 +473,12 @@ export function CanvasStage({
     const start = toWorld(e.evt.clientX, e.evt.clientY);
     if (!start) return;
     const style = penStrokeStyle(penSettings, !isPen);
-    drawing.current = { pointerId: e.evt.pointerId, points: [start.x, start.y, pressureOf(e.evt, isPen)], style };
+    drawing.current = {
+      pointerId: e.evt.pointerId,
+      points: [start.x, start.y, pressureOf(e.evt, isPen)],
+      style,
+      isPen,
+    };
     const canvas = inkRef.current;
     if (canvas) canvas.style.mixBlendMode = style.blend === 'multiply' ? 'multiply' : 'normal';
     paintPreview();
@@ -463,32 +539,50 @@ export function CanvasStage({
     }
   }
 
-  // Precision eraser: collect the world-space path the nib travels.
-  const erasePath = useRef<ErasePoint[]>([]);
+  // Precision eraser: the world-space path the nib travels. Each move reports
+  // only the newest stretch (joined to the previous point) so the erase is live.
+  const lastErase = useRef<ErasePoint | null>(null);
+  const eraseRing = useRef<HTMLDivElement>(null);
+
+  function worldNibRadius(): number {
+    return eraserSize / 2 / cameraRef.current.scale;
+  }
 
   function recordErase(clientX: number, clientY: number) {
     const p = toWorld(clientX, clientY);
-    if (p) erasePath.current.push(p);
+    if (!p) return;
+    const prev = lastErase.current;
+    lastErase.current = p;
+    onPrecisionErase(prev ? [prev, p] : [p], worldNibRadius());
   }
 
   function extendErase(evt: PointerEvent) {
     if (!erasing.current) return;
     if (evt.cancelable) evt.preventDefault();
-    if (eraserMode === 'precision') recordErase(evt.clientX, evt.clientY);
-    else eraseAtScreen(evt.clientX, evt.clientY);
+    if (eraserMode === 'precision') {
+      const coalesced = typeof evt.getCoalescedEvents === 'function' ? evt.getCoalescedEvents() : [];
+      for (const ev of coalesced.length > 0 ? coalesced : [evt]) recordErase(ev.clientX, ev.clientY);
+      moveEraseRing(evt.clientX, evt.clientY, true);
+    } else {
+      eraseAtScreen(evt.clientX, evt.clientY);
+    }
   }
 
   function endErase() {
     if (!erasing.current) return;
     erasing.current = false;
+    lastErase.current = null;
     endGestureListeners();
-    if (eraserMode === 'precision') {
-      const path = erasePath.current;
-      erasePath.current = [];
-      if (path.length > 0) onPrecisionErase(path, eraserSize / camera.scale);
-    } else {
-      onEraseEnd();
-    }
+    onEraseEnd();
+  }
+
+  /** Position the nib ring under the pointer (mouse / pen hover; hidden for touch). */
+  function moveEraseRing(clientX: number, clientY: number, visible: boolean) {
+    const ring = eraseRing.current;
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!ring || !rect) return;
+    ring.style.opacity = visible ? '1' : '0';
+    ring.style.transform = `translate(${clientX - rect.left - eraserSize / 2}px, ${clientY - rect.top - eraserSize / 2}px)`;
   }
 
   // ── marquee selection ────────────────────────────────────────────────────────
@@ -545,6 +639,162 @@ export function CanvasStage({
     );
   }
 
+  // ── lasso / rectangle select ──────────────────────────────────────────────────
+  // Drag a loop (lasso) or a rectangle (marquee); on release everything inside is
+  // selected and the editor switches to Select so it can be moved, resized or
+  // rotated straight away.
+
+  const [area, setArea] = useState<{ kind: 'lasso' | 'marquee'; points: WorldPoint[] } | null>(null);
+  const areaRef = useRef<{
+    kind: 'lasso' | 'marquee';
+    pointerId: number;
+    points: WorldPoint[];
+  } | null>(null);
+  const areaRaf = useRef<number | null>(null);
+
+  function flushArea() {
+    if (areaRaf.current !== null) return;
+    areaRaf.current = requestAnimationFrame(() => {
+      areaRaf.current = null;
+      const a = areaRef.current;
+      setArea(a ? { kind: a.kind, points: a.points.slice() } : null);
+    });
+  }
+
+  function startAreaSelect(evt: PointerEvent, kind: 'lasso' | 'marquee') {
+    const start = toWorld(evt.clientX, evt.clientY);
+    if (!start) return;
+    areaRef.current = { kind, pointerId: evt.pointerId, points: [start] };
+    flushArea();
+    startGestureListeners(
+      (move) => {
+        const a = areaRef.current;
+        if (!a || move.pointerId !== a.pointerId) return;
+        if (move.cancelable) move.preventDefault();
+        const events = typeof move.getCoalescedEvents === 'function' ? move.getCoalescedEvents() : [];
+        for (const ev of events.length > 0 ? events : [move]) {
+          const p = toWorld(ev.clientX, ev.clientY);
+          if (p) a.points.push(p);
+        }
+        flushArea();
+      },
+      (up) => {
+        const a = areaRef.current;
+        if (!a || up.pointerId !== a.pointerId) return;
+        areaRef.current = null;
+        endGestureListeners();
+        setArea(null);
+        const pts = a.points;
+        if (pts.length < 2) {
+          onAreaSelect([]);
+          return;
+        }
+        if (a.kind === 'marquee') {
+          const first = pts[0]!;
+          const last = pts[pts.length - 1]!;
+          onAreaSelect(
+            elementsInRect(elements, {
+              minX: Math.min(first.x, last.x),
+              minY: Math.min(first.y, last.y),
+              maxX: Math.max(first.x, last.x),
+              maxY: Math.max(first.y, last.y),
+            }),
+          );
+        } else {
+          onAreaSelect(elementsInLasso(elements, pts));
+        }
+      },
+      () => {
+        areaRef.current = null;
+        endGestureListeners();
+        setArea(null);
+      },
+    );
+  }
+
+  // ── shape tool ────────────────────────────────────────────────────────────────
+  // Press, drag to size, release: the shape (or arrow from press to release) is
+  // created by the editor. A plain click drops one at a sensible default size.
+
+  const [shapeDraft, setShapeDraft] = useState<{ a: WorldPoint; b: WorldPoint } | null>(null);
+  const shapeRef = useRef<{ pointerId: number; a: WorldPoint; b: WorldPoint } | null>(null);
+
+  function startShapeDrag(evt: PointerEvent) {
+    const a = toWorld(evt.clientX, evt.clientY);
+    if (!a) return;
+    shapeRef.current = { pointerId: evt.pointerId, a, b: a };
+    setShapeDraft({ a, b: a });
+    startGestureListeners(
+      (move) => {
+        const d = shapeRef.current;
+        if (!d || move.pointerId !== d.pointerId) return;
+        if (move.cancelable) move.preventDefault();
+        const b = toWorld(move.clientX, move.clientY);
+        if (!b) return;
+        d.b = isLineKind(shapeKind) ? (snapToShape(b, elements, 14 / cameraRef.current.scale)?.point ?? b) : b;
+        setShapeDraft({ a: d.a, b: d.b });
+      },
+      (up) => {
+        const d = shapeRef.current;
+        if (!d || up.pointerId !== d.pointerId) return;
+        shapeRef.current = null;
+        endGestureListeners();
+        setShapeDraft(null);
+        onCreateShape(d.a, d.b);
+      },
+      () => {
+        shapeRef.current = null;
+        endGestureListeners();
+        setShapeDraft(null);
+      },
+    );
+  }
+
+  // The translucent preview of the shape being dragged out.
+  const draftElement: CanvasElement | null = shapeDraft
+    ? (isLineKind(shapeKind)
+        ? createLineShape(shapeKind, shapeDraft.a, shapeDraft.b, elements, defaultShapeStyle(shapeKind, shapeInk))
+        : createClosedShape(shapeKind, shapeDraft.a, shapeDraft.b, elements, defaultShapeStyle(shapeKind, shapeInk)))
+    : null;
+
+  // ── arrow end-point handles ───────────────────────────────────────────────────
+  // A lone selected line/arrow is reshaped by dragging its two ends (Transformer
+  // box handles make no sense on a hairline). Ends snap to a shape's connection
+  // points and stay glued to it.
+
+  const [lineDrag, setLineDrag] = useState<{
+    id: string;
+    a: WorldPoint;
+    b: WorldPoint;
+    startBind: string | null;
+    endBind: string | null;
+  } | null>(null);
+
+  function dragLineEnd(el: CanvasElement, end: 'a' | 'b', raw: WorldPoint) {
+    if (!isLineShape(el)) return;
+    const snap = snapToShape(raw, elements, 16 / cameraRef.current.scale, el.id);
+    const point = snap?.point ?? raw;
+    setLineDrag((prev) => {
+      const [a0, b0] = lineEndpoints(el);
+      const base = prev?.id === el.id ? prev : { id: el.id, a: a0, b: b0, startBind: el.startBind, endBind: el.endBind };
+      return end === 'a'
+        ? { ...base, a: point, startBind: snap?.bind ?? null }
+        : { ...base, b: point, endBind: snap?.bind ?? null };
+    });
+  }
+
+  function commitLineDrag() {
+    const d = lineDrag;
+    setLineDrag(null);
+    if (!d) return;
+    onChangeElement(d.id, {
+      ...lineGeometry(d.a, d.b),
+      rotation: 0,
+      startBind: d.startBind,
+      endBind: d.endBind,
+    });
+  }
+
   // ── long-press (touch context menu) ─────────────────────────────────────────
 
   function cancelLongPress() {
@@ -581,7 +831,7 @@ export function CanvasStage({
     // draw, erase or drop text (they still pan/zoom). Palm-sized contacts are
     // always ignored, pen or no pen.
     if (type === 'touch' && (penSeen.current || penActive.current || isPalmContact(e.evt))) {
-      if (tool === 'draw' || tool === 'erase' || tool === 'text') return;
+      if (tool !== 'select') return;
     }
 
     window.getSelection()?.removeAllRanges();
@@ -589,6 +839,17 @@ export function CanvasStage({
     if (tool === 'text') {
       const p = toWorld(e.evt.clientX, e.evt.clientY);
       if (p) onPlaceText(p.x, p.y);
+      return;
+    }
+
+    if (tool === 'lasso' || tool === 'marquee') {
+      if (e.evt.cancelable) e.evt.preventDefault();
+      startAreaSelect(e.evt, tool);
+      return;
+    }
+    if (tool === 'shape') {
+      if (e.evt.cancelable) e.evt.preventDefault();
+      startShapeDrag(e.evt);
       return;
     }
 
@@ -608,10 +869,11 @@ export function CanvasStage({
       startStroke(e);
     } else {
       erasing.current = true;
+      lastErase.current = null;
       startGestureListeners(extendErase, endErase, endErase);
       if (eraserMode === 'precision') {
-        erasePath.current = [];
         recordErase(e.evt.clientX, e.evt.clientY);
+        moveEraseRing(e.evt.clientX, e.evt.clientY, true);
       } else {
         eraseAtScreen(e.evt.clientX, e.evt.clientY);
       }
@@ -659,8 +921,15 @@ export function CanvasStage({
     }
   }
 
+  /** Two-finger pan/zoom is only for bare fingers: while the pen is working, a
+   *  resting palm (+ the Pencil itself) must never cancel the stroke or move the page. */
+  function pinchAllowed(evt: TouchEvent): boolean {
+    if (penActive.current || drawing.current?.isPen) return false;
+    return fingerTouches(evt).length >= 2;
+  }
+
   function handleTouchStart(e: Konva.KonvaEventObject<TouchEvent>) {
-    if (e.evt.touches.length >= 2) {
+    if (pinchAllowed(e.evt)) {
       cancelStroke();
       endErase();
       cancelLongPress();
@@ -683,8 +952,8 @@ export function CanvasStage({
   function handleTouchMove(e: Konva.KonvaEventObject<TouchEvent>) {
     cancelLongPress();
 
-    const touches = e.evt.touches;
-    if (touches.length < 2) return;
+    if (!pinchAllowed(e.evt)) return;
+    const touches = fingerTouches(e.evt);
     e.evt.preventDefault();
     const stage = stageRef.current;
     if (!stage) return;
@@ -719,7 +988,7 @@ export function CanvasStage({
 
   function handleTouchEnd(e: Konva.KonvaEventObject<TouchEvent>) {
     cancelLongPress();
-    if (e.evt.touches.length < 2) {
+    if (fingerTouches(e.evt).length < 2) {
       lastDist.current = 0;
       lastCenter.current = null;
     }
@@ -806,6 +1075,15 @@ export function CanvasStage({
     }
   }
 
+  // The scene as drawn: a line being re-aimed follows its handle live.
+  const shown = lineDrag
+    ? elements.map((el) =>
+        el.id === lineDrag.id && isLineShape(el)
+          ? { ...el, ...lineGeometry(lineDrag.a, lineDrag.b), rotation: 0 }
+          : el,
+      )
+    : elements;
+
   // derived state
   const primaryId = selectedIds[0] ?? null;
   const primaryElement = primaryId ? elements.find((el) => el.id === primaryId) : null;
@@ -828,12 +1106,17 @@ export function CanvasStage({
   ) ? 6 : 0;
 
   const cursor =
-    tool === 'draw' ? 'crosshair'
+    tool === 'draw' || tool === 'lasso' || tool === 'marquee' || tool === 'shape' ? 'crosshair'
     : tool === 'erase' ? 'cell'
     : tool === 'text' ? 'text'
     : 'default';
 
   const isGroupDrag = selectedIds.length > 1;
+  // A selection containing a line/arrow may legitimately be a hairline-thin box.
+  const hasLine = selectedIds.some((id) => {
+    const el = elements.find((e) => e.id === id);
+    return !!el && isLineShape(el);
+  });
 
   function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
     if (!onDropFiles) return;
@@ -893,8 +1176,14 @@ export function CanvasStage({
         // Apple Pencil hover also proves a stylus is present.
         if (e.pointerType === 'pen') markPen();
         reportCursor(e.clientX, e.clientY);
+        if (tool === 'erase' && eraserMode === 'precision') {
+          moveEraseRing(e.clientX, e.clientY, e.pointerType !== 'touch');
+        }
       }}
-      onPointerLeave={() => onPointerWorldMove?.(null)}
+      onPointerLeave={() => {
+        onPointerWorldMove?.(null);
+        moveEraseRing(0, 0, false);
+      }}
     >
       {size.width > 0 && size.height > 0 && (
         <Stage
@@ -928,7 +1217,7 @@ export function CanvasStage({
           </Layer>
           {/* Hit-testing every pointer move is wasted work while inking. */}
           <Layer listening={tool !== 'draw'}>
-            {elements.map((element) => (
+            {shown.map((element) => (
               <ElementNode
                 key={element.id}
                 element={element}
@@ -940,8 +1229,12 @@ export function CanvasStage({
                 onSelect={handleElementSelect}
                 onChange={onChangeElement}
                 onRequestEdit={
-                  element.type === 'text' && canEdit && tool === 'select' && !element.locked
-                    ? onEditText
+                  canEdit && tool === 'select' && !element.locked
+                    ? element.type === 'text'
+                      ? onEditText
+                      : element.type === 'shape' && !isLineKind(element.kind)
+                        ? onEditShape
+                        : undefined
                     : undefined
                 }
                 onLiveChange={
@@ -954,6 +1247,57 @@ export function CanvasStage({
                 }
               />
             ))}
+            {draftElement && (
+              <Group x={draftElement.x} y={draftElement.y} opacity={0.6} listening={false}>
+                <ElementVisual element={draftElement} palette={palette} />
+              </Group>
+            )}
+            {canEdit && tool === 'select' && selectedIds.length === 1 && (() => {
+              const el = elements.find((e) => e.id === selectedIds[0]);
+              if (!el || !isLineShape(el) || el.locked) return null;
+              const [a, b] = lineDrag?.id === el.id ? [lineDrag.a, lineDrag.b] : lineEndpoints(el);
+              const r = 9 / camera.scale;
+              return (
+                <>
+                  {lineDrag?.id === el.id &&
+                    elements.flatMap((t) =>
+                      t.type === 'shape' && !isLineKind(t.kind) && t.id !== el.id
+                        ? SIDES.map((side) => {
+                            const p = anchorPoint(t, side);
+                            return (
+                              <Circle
+                                key={`${t.id}:${side}`}
+                                x={p.x}
+                                y={p.y}
+                                radius={5 / camera.scale}
+                                fill={palette.accent}
+                                opacity={0.55}
+                                listening={false}
+                              />
+                            );
+                          })
+                        : [],
+                    )}
+                  {([['a', a], ['b', b]] as const).map(([end, p]) => (
+                    <Circle
+                      key={end}
+                      x={p.x}
+                      y={p.y}
+                      radius={r}
+                      fill="#ffffff"
+                      stroke={palette.accent}
+                      strokeWidth={2 / camera.scale}
+                      draggable
+                      onDragMove={(e) => dragLineEnd(el, end, { x: e.target.x(), y: e.target.y() })}
+                      onDragEnd={commitLineDrag}
+                      onPointerDown={(e) => {
+                        e.cancelBubble = true;
+                      }}
+                    />
+                  ))}
+                </>
+              );
+            })()}
             {canEdit && tool === 'select' && (
               <Transformer
                 ref={transformerRef}
@@ -967,7 +1311,7 @@ export function CanvasStage({
                 anchorStroke={palette.accent}
                 anchorFill="#ffffff"
                 boundBoxFunc={(oldBox, newBox) =>
-                  newBox.width < MIN_ELEMENT_SIZE || newBox.height < MIN_ELEMENT_SIZE
+                  !hasLine && (newBox.width < MIN_ELEMENT_SIZE || newBox.height < MIN_ELEMENT_SIZE)
                     ? oldBox
                     : newBox
                 }
@@ -984,6 +1328,56 @@ export function CanvasStage({
         height={Math.max(1, Math.round(size.height * dpr))}
         className="pointer-events-none absolute inset-0 h-full w-full"
       />
+
+      {area && (
+        <svg aria-hidden className="pointer-events-none absolute inset-0 h-full w-full">
+          {area.kind === 'marquee' ? (
+            (() => {
+              const first = area.points[0]!;
+              const last = area.points[area.points.length - 1]!;
+              const x1 = first.x * camera.scale + camera.x;
+              const y1 = first.y * camera.scale + camera.y;
+              const x2 = last.x * camera.scale + camera.x;
+              const y2 = last.y * camera.scale + camera.y;
+              return (
+                <rect
+                  x={Math.min(x1, x2)}
+                  y={Math.min(y1, y2)}
+                  width={Math.abs(x2 - x1)}
+                  height={Math.abs(y2 - y1)}
+                  fill="var(--accent-from)"
+                  fillOpacity={0.1}
+                  stroke="var(--accent-from)"
+                  strokeWidth={1.5}
+                  strokeDasharray="6 4"
+                  rx={3}
+                />
+              );
+            })()
+          ) : (
+            <polygon
+              points={area.points
+                .map((p) => `${p.x * camera.scale + camera.x},${p.y * camera.scale + camera.y}`)
+                .join(' ')}
+              fill="var(--accent-from)"
+              fillOpacity={0.1}
+              stroke="var(--accent-from)"
+              strokeWidth={2}
+              strokeDasharray="7 5"
+              strokeLinejoin="round"
+            />
+          )}
+        </svg>
+      )}
+
+      {tool === 'erase' && eraserMode === 'precision' && (
+        <div
+          ref={eraseRing}
+          aria-hidden
+          className="pointer-events-none absolute left-0 top-0 rounded-full border-2 border-[var(--accent-from)] bg-[rgba(255,255,255,0.18)] opacity-0 shadow-[0_0_0_1px_rgba(0,0,0,0.25)]"
+          style={{ width: eraserSize, height: eraserSize }}
+        />
+      )}
 
       {marqueeStyle && (
         <div
@@ -1040,6 +1434,15 @@ export function CanvasStage({
               height: next.height,
             })
           }
+        />
+      )}
+
+      {editingShapeId && (
+        <ShapeLabelEditor
+          element={elements.find((e) => e.id === editingShapeId) ?? null}
+          camera={camera}
+          onCommit={onCommitShapeLabel}
+          onClose={onEndShapeEdit}
         />
       )}
 

@@ -12,7 +12,8 @@
 import { Extension } from '@tiptap/core';
 import { StarterKit } from '@tiptap/starter-kit';
 import { Highlight } from '@tiptap/extension-highlight';
-import { Color, TextStyle } from '@tiptap/extension-text-style';
+import { Color, FontFamily, FontSize, TextStyle } from '@tiptap/extension-text-style';
+import { StyledRule, TextAlign } from './richFormatting';
 import { Link } from '@tiptap/extension-link';
 import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
@@ -203,10 +204,15 @@ export const blockExtensions: AnyExtension[] = [
   StarterKit.configure({
     heading: { levels: [1, 2, 3] },
     link: false,
+    horizontalRule: false,
   }),
   Highlight.configure({ multicolor: true }),
   TextStyle,
   Color,
+  FontFamily,
+  FontSize,
+  TextAlign,
+  StyledRule,
   SafeLink,
   Subscript,
   Superscript,
@@ -241,10 +247,19 @@ export function collabBlockExtensions(opts: {
   user: CaretUser;
 }): AnyExtension[] {
   return [
-    StarterKit.configure({ heading: { levels: [1, 2, 3] }, link: false, undoRedo: false }),
+    StarterKit.configure({
+      heading: { levels: [1, 2, 3] },
+      link: false,
+      undoRedo: false,
+      horizontalRule: false,
+    }),
     Highlight.configure({ multicolor: true }),
     TextStyle,
     Color,
+    FontFamily,
+    FontSize,
+    TextAlign,
+    StyledRule,
     SafeLink,
     Subscript,
     Superscript,

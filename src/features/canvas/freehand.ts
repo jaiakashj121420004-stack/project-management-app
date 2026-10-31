@@ -10,7 +10,7 @@
  */
 import { getStroke } from 'perfect-freehand';
 import { topZ } from './elements';
-import type { CanvasElement, StrokeBlend, StrokeElement } from './elements';
+import type { CanvasElement, StrokeBlend, StrokeElement, StrokeTexture } from './elements';
 
 /** A point the precision eraser passed over (world coordinates). */
 export interface ErasePoint {
@@ -28,6 +28,8 @@ export interface StrokeShape {
   thinning: number;
   smoothing: number;
   simulatePressure: boolean;
+  /** Tapered tip length in world px (0 / undefined = blunt). */
+  taper?: number;
 }
 
 /** The full pen style a stroke is committed with (shape + look). */
@@ -35,6 +37,7 @@ export interface StrokeStyle extends StrokeShape {
   color: string;
   opacity: number;
   blend: StrokeBlend;
+  texture?: StrokeTexture;
 }
 
 /** Group a flattened `[x, y, pressure, …]` array into perfect-freehand input. */
@@ -44,6 +47,52 @@ function toSamples(points: number[]): Array<[number, number, number]> {
     samples.push([points[i]!, points[i + 1]!, points[i + 2] ?? 0.5]);
   }
   return samples;
+}
+
+/** Max world-space gap between rendered samples. Raw pointer samples can be
+ *  many px apart on a fast stroke; at high zoom the straight facets between them
+ *  show as jaggies. Interpolating a smooth curve through them keeps ink crisp. */
+const MAX_SAMPLE_GAP = 1;
+const MAX_SUBDIVISIONS = 24;
+
+type Sample = [number, number, number];
+
+/**
+ * Catmull-Rom subdivide a stroke's samples so no two neighbours are further
+ * apart than MAX_SAMPLE_GAP. Original samples are kept exactly (so the curve
+ * passes through them); pressure is interpolated linearly. Pure.
+ */
+export function densifySamples(samples: readonly Sample[]): Sample[] {
+  const n = samples.length;
+  if (n < 2) return samples.slice();
+  const out: Sample[] = [samples[0]!];
+  for (let i = 0; i < n - 1; i += 1) {
+    const p0 = samples[Math.max(0, i - 1)]!;
+    const p1 = samples[i]!;
+    const p2 = samples[i + 1]!;
+    const p3 = samples[Math.min(n - 1, i + 2)]!;
+    const gap = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
+    const steps = Math.min(MAX_SUBDIVISIONS, Math.ceil(gap / MAX_SAMPLE_GAP));
+    for (let s = 1; s <= steps; s += 1) {
+      const t = s / steps;
+      if (s === steps) {
+        out.push(p2);
+        break;
+      }
+      const t2 = t * t;
+      const t3 = t2 * t;
+      const x =
+        0.5 *
+        (2 * p1[0] + (-p0[0] + p2[0]) * t + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 +
+          (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3);
+      const y =
+        0.5 *
+        (2 * p1[1] + (-p0[1] + p2[1]) * t + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2 +
+          (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t3);
+      out.push([x, y, p1[2] + (p2[2] - p1[2]) * t]);
+    }
+  }
+  return out;
 }
 
 /** Snap a coordinate to 2dp so the path string stays compact. */
@@ -67,13 +116,14 @@ function svgPath(outline: number[][]): string {
 
 /** Run perfect-freehand over a stroke's samples with the given shape params. */
 function outlineFor(samples: Array<[number, number, number]>, shape: StrokeShape): number[][] {
-  return getStroke(samples, {
+  return getStroke(densifySamples(samples), {
     size: shape.size,
     thinning: shape.thinning,
     smoothing: shape.smoothing,
     streamline: STREAMLINE,
     simulatePressure: shape.simulatePressure,
     last: true,
+    ...(shape.taper ? { start: { taper: shape.taper }, end: { taper: shape.taper } } : {}),
   });
 }
 
@@ -148,6 +198,8 @@ export function buildStroke(
     opacity: style.opacity,
     blend: style.blend,
     simulatePressure: style.simulatePressure,
+    ...(style.taper ? { taper: style.taper } : {}),
+    ...(style.texture ? { texture: style.texture } : {}),
   };
 }
 
@@ -163,6 +215,8 @@ function styleOf(stroke: StrokeElement): StrokeStyle {
     opacity: stroke.opacity,
     blend: stroke.blend,
     simulatePressure: stroke.simulatePressure,
+    taper: stroke.taper,
+    texture: stroke.texture,
   };
 }
 
@@ -174,24 +228,46 @@ function localToWorld(stroke: StrokeElement, lx: number, ly: number): [number, n
   return [stroke.x + lx * cos - ly * sin, stroke.y + lx * sin + ly * cos];
 }
 
-/** True if (x,y) is within `radius` of any eraser point (squared-distance test). */
-function nearEraser(x: number, y: number, eraser: readonly ErasePoint[], radius: number): boolean {
-  const r2 = radius * radius;
-  for (const p of eraser) {
-    const dx = x - p.x;
-    const dy = y - p.y;
-    if (dx * dx + dy * dy <= r2) return true;
+/** Distance from (px,py) to the segment a→b (a===b degenerates to a point). */
+function distToSegment(
+  px: number,
+  py: number,
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number,
+): number {
+  const dx = bx - ax;
+  const dy = by - ay;
+  const len2 = dx * dx + dy * dy;
+  const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len2));
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+}
+
+/** True if (x,y) is within `reach` of the eraser's travelled path (a polyline). */
+function nearEraser(x: number, y: number, eraser: readonly ErasePoint[], reach: number): boolean {
+  if (eraser.length === 1) return Math.hypot(x - eraser[0]!.x, y - eraser[0]!.y) <= reach;
+  for (let i = 0; i + 1 < eraser.length; i += 1) {
+    const a = eraser[i]!;
+    const b = eraser[i + 1]!;
+    if (distToSegment(x, y, a.x, a.y, b.x, b.y) <= reach) return true;
   }
   return false;
 }
 
+/** Ink half-width a stroke can reach past its centre line (for exact cut edges). */
+function inkHalfWidth(stroke: StrokeElement): number {
+  return stroke.size * 0.45;
+}
+
 /**
- * Precision-erase a single stroke: remove the sample points the eraser passed
- * over (within `radius`, world units) and split the surviving runs into separate
- * strokes. Returns `null` when the eraser never touched this stroke (so the caller
- * keeps the original untouched), or the list of surviving pieces (possibly empty
- * if the whole stroke was erased). Each piece is rebuilt from world points, so it
- * gets a fresh bounding box but renders identically to the part that remained.
+ * Precision-erase a single stroke. The stroke is first densified into a smooth
+ * 1px-spaced centre line, so the cut lands exactly where the nib's edge meets the
+ * ink — not at the nearest sparse pointer sample (which removed visible chunks).
+ * Samples within the nib radius + the ink's half-width are removed and the
+ * surviving runs become separate strokes (their round caps end right at the nib
+ * edge). Returns `null` when the eraser never touched the stroke (caller keeps
+ * the original untouched) or the surviving pieces (possibly none).
  */
 export function erasePartialStroke(
   stroke: StrokeElement,
@@ -199,39 +275,70 @@ export function erasePartialStroke(
   radius: number,
   existing: readonly CanvasElement[],
 ): StrokeElement[] | null {
-  const style = styleOf(stroke);
-  // A run is a contiguous list of surviving world samples [x, y, pressure, …].
-  const runs: number[][] = [];
-  let current: number[] = [];
-  let erasedAny = false;
+  if (eraser.length === 0) return null;
+  const reach = radius + inkHalfWidth(stroke);
 
+  // Cheap reject: the eraser path's box vs the stroke's box (both in world space).
+  let eMinX = Infinity;
+  let eMinY = Infinity;
+  let eMaxX = -Infinity;
+  let eMaxY = -Infinity;
+  for (const p of eraser) {
+    if (p.x < eMinX) eMinX = p.x;
+    if (p.y < eMinY) eMinY = p.y;
+    if (p.x > eMaxX) eMaxX = p.x;
+    if (p.y > eMaxY) eMaxY = p.y;
+  }
+  const pad = reach + stroke.size;
+  // Strokes rotate about their (x, y) origin, so bound them by that origin + diagonal.
+  const cx = stroke.x;
+  const cy = stroke.y;
+  const half = Math.hypot(stroke.width, stroke.height) + pad;
+  if (eMaxX < cx - half || eMinX > cx + half || eMaxY < cy - half || eMinY > cy + half) {
+    return null;
+  }
+
+  const raw: Sample[] = [];
   for (let i = 0; i + 1 < stroke.points.length; i += 3) {
-    const lx = stroke.points[i]!;
-    const ly = stroke.points[i + 1]!;
-    const pressure = stroke.points[i + 2] ?? 0.5;
-    const [wx, wy] = localToWorld(stroke, lx, ly);
-    if (nearEraser(wx, wy, eraser, radius)) {
+    const [wx, wy] = localToWorld(stroke, stroke.points[i]!, stroke.points[i + 1]!);
+    raw.push([wx, wy, stroke.points[i + 2] ?? 0.5]);
+  }
+  const dense = densifySamples(raw);
+  const rawKeys = new Set(raw.map((r) => `${r[0]}|${r[1]}`));
+
+  const runs: Sample[][] = [];
+  let current: Sample[] = [];
+  let erasedAny = false;
+  for (const sample of dense) {
+    if (nearEraser(sample[0], sample[1], eraser, reach)) {
       erasedAny = true;
       if (current.length > 0) {
         runs.push(current);
         current = [];
       }
     } else {
-      current.push(wx, wy, pressure);
+      current.push(sample);
     }
   }
   if (current.length > 0) runs.push(current);
+  if (!erasedAny) return null; // untouched — keep the original stroke
 
-  if (!erasedAny) return null; // untouched — caller keeps the original stroke
-
+  const style = styleOf(stroke);
   const pieces: StrokeElement[] = [];
   let pool = existing;
   for (const run of runs) {
-    if (run.length < 6) continue; // need ≥2 samples to be a visible stroke
-    const piece = buildStroke(run, style, pool);
+    if (run.length < 2) continue;
+    // Keep the original samples plus the exact cut ends: compact to store, and
+    // the curve through them matches what was on screen.
+    const kept: number[] = [];
+    run.forEach((sample, index) => {
+      const isEnd = index === 0 || index === run.length - 1;
+      if (isEnd || rawKeys.has(`${sample[0]}|${sample[1]}`)) kept.push(sample[0], sample[1], sample[2]);
+    });
+    const piece = buildStroke(kept, style, pool);
     if (piece) {
       pieces.push(piece);
-      pool = [...pool, piece]; // keep z values climbing for subsequent pieces
+      pool = [...pool, piece];
     }
   }
   return pieces;

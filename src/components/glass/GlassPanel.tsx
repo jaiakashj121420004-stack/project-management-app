@@ -31,6 +31,7 @@ export function GlassPanel({
     <div
       className={cn(
         strong ? 'glass-strong' : 'glass',
+        'glass-sheen',
         'rounded-2xl',
         gradientBorder && 'gradient-border',
         className,

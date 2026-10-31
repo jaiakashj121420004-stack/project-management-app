@@ -38,9 +38,11 @@ import { uploadNoteImage } from '@/features/notes/noteMedia';
 import { DEFAULT_TABLE_ROWS, DEFAULT_TABLE_COLS } from '@/lib/table';
 import { safeLinkHref, BULLET_LIST_STYLES, ORDERED_LIST_STYLES } from './extensions';
 import { ToolbarShell } from './ToolbarShell';
+import { TypographyControls } from './TypographyControls';
 import { CanvasPickerModal } from './CanvasPickerModal';
 import { EmbedModal } from './EmbedModal';
 import { useNoteRef } from './noteContext';
+import { ColorPicker } from '@/features/canvas/ColorPicker';
 
 interface EditorToolbarProps {
   editor: Editor;
@@ -213,6 +215,8 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
 
   return (
     <ToolbarShell label="Text formatting" className={className}>
+      <TypographyControls editor={editor} />
+      <Divider />
       <Btn label="Bold" active={editor.isActive('bold')} onRun={() => editor.chain().focus().toggleBold().run()}>
         <Bold size={15} />
       </Btn>
@@ -260,22 +264,11 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
           </Btn>
         }
       >
-        <div className="flex w-40 flex-wrap gap-1.5">
-          {HIGHLIGHT_COLORS.map((color) => (
-            <button
-              key={color}
-              type="button"
-              aria-label={`Highlight ${color}`}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => {
-                editor.chain().focus().toggleHighlight({ color }).run();
-                setOpen(null);
-              }}
-              className="h-6 w-6 rounded-full border border-black/10 transition-transform hover:scale-110 dark:border-white/20"
-              style={{ backgroundColor: color }}
-            />
-          ))}
-        </div>
+        <ColorPicker
+          color={currentHighlight ?? HIGHLIGHT_COLORS[0] ?? '#FEF08A'}
+          presets={HIGHLIGHT_COLORS}
+          onChange={(hex) => editor.chain().focus().setHighlight({ color: hex }).run()}
+        />
         <button
           type="button"
           onMouseDown={(e) => e.preventDefault()}
@@ -308,22 +301,11 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
           </Btn>
         }
       >
-        <div className="grid grid-cols-6 gap-2">
-          {TEXT_COLORS.map((color) => (
-            <button
-              key={color}
-              type="button"
-              aria-label={color}
-              onPointerDown={(e) => e.preventDefault()}
-              onClick={() => {
-                editor.chain().focus().setColor(color).run();
-                close();
-              }}
-              className="h-8 w-8 rounded-full border border-black/10 transition-transform hover:scale-110 dark:border-white/25"
-              style={{ backgroundColor: color }}
-            />
-          ))}
-        </div>
+        <ColorPicker
+          color={currentColor ?? DEFAULT_TEXT_COLOR}
+          presets={TEXT_COLORS}
+          onChange={(hex) => editor.chain().focus().setColor(hex).run()}
+        />
         <button
           type="button"
           onPointerDown={(e) => e.preventDefault()}
@@ -580,7 +562,7 @@ export function EditorToolbar({ editor, className }: EditorToolbarProps) {
       <Btn label="Toggle (collapsible)" active={editor.isActive('details')} onRun={() => editor.chain().focus().setDetails().run()}>
         <ChevronRight size={16} />
       </Btn>
-      <Btn label="Divider" active={false} onRun={() => editor.chain().focus().setHorizontalRule().run()}>
+      <Btn label="Divider" active={false} onRun={() => editor.chain().focus().setStyledRule().run()}>
         <Minus size={16} />
       </Btn>
 
