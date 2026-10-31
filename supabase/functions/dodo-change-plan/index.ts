@@ -1,4 +1,4 @@
-// Aurora — Dodo Payments in-place plan/interval switcher (billing).
+// Jotspring — Dodo Payments in-place plan/interval switcher (billing).
 //
 // Authenticated endpoint. An already-paying user (Pro or Team) calls this to
 // switch billing interval (monthly ↔ annual) or move Pro ↔ Team. Unlike

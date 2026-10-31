@@ -1,11 +1,11 @@
-// Aurora — MCP (Model Context Protocol) server. Lets Claude Desktop/Code read
+// Jotspring — MCP (Model Context Protocol) server. Lets Claude Desktop/Code read
 // and write a user's boards, to-dos, and notes directly, the same shape of
 // integration Obsidian offers via its community MCP server. Design record:
 // SETUP-MCP.md. Deployment: supabase/README.md.
 //
 // AUTH MODEL (the one genuinely new piece of infrastructure in this repo —
 // read this before touching anything below):
-//   1. The caller presents an Aurora MCP personal access token (generated in
+//   1. The caller presents an Jotspring MCP personal access token (generated in
 //      Settings, see `mcp-token`) as `Authorization: Bearer <token>`. This is
 //      NOT a Supabase session JWT, so this function is deployed
 //      `--no-verify-jwt` (Supabase's platform JWT gate would otherwise reject
@@ -132,7 +132,7 @@ interface AuthedProfile {
   tokenHash: string;
 }
 
-/** Looks up the caller's Aurora MCP token (service role — the one and only
+/** Looks up the caller's Jotspring MCP token (service role — the one and only
  *  service-role use in this file). Returns null on any mismatch/absence;
  *  callers must not distinguish "no such token" from "wrong token" in the
  *  response, same convention as calendar-feed's token lookup. */
@@ -260,7 +260,7 @@ mcp.use(async (ctx, next) => {
   if (!extra) {
     // Should be unreachable — Deno.serve below never calls into mcp-lite
     // without a resolved authInfo. Defense in depth only.
-    throw new Error('Unauthorized: missing Aurora access token.');
+    throw new Error('Unauthorized: missing Jotspring access token.');
   }
   ctx.state.rest = extra.rest;
   ctx.state.userId = extra.userId;
@@ -275,7 +275,7 @@ const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected YYYY-MM-DD.');
 const uuid = z.string().uuid();
 
 mcp.tool('list_projects', {
-  description: "List every Aurora project the caller is a member of (id, name, description, accent, target date).",
+  description: "List every Jotspring project the caller is a member of (id, name, description, accent, target date).",
   inputSchema: z.object({}),
   handler: async (_args, ctx) => {
     const rows = await restOf(ctx).select(
@@ -468,7 +468,7 @@ Deno.serve(async (req: Request) => {
     // the mcp.use() comment above for why this can't happen inside mcp-lite
     // itself). Everything past this point runs as the resolved user via RLS.
     const authed = await authenticate(req);
-    if (!authed) return unauthorized('Missing, invalid, or revoked Aurora access token.');
+    if (!authed) return unauthorized('Missing, invalid, or revoked Jotspring access token.');
     if (await rateLimitHit(authed.tokenHash)) {
       return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please slow down and try again shortly.' }), {
         status: 429,

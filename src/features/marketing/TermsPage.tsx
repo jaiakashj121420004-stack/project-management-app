@@ -12,7 +12,7 @@ const SECTIONS: LegalSection[] = [
   {
     heading: 'Who we are and these Terms',
     body: [
-      'Jotspring (the "Service") is a creative workspace application — notes, a canvas, boards, to-do lists, calendars, and collaboration — delivered as an installable web app (PWA). The Service is operated by an individual sole proprietor trading as "Nvexis" ("we", "us", "our"). "Jotspring" is the product; "Nvexis" is the operator.',
+      'Jotspring (the "Service") is a project-management application — Kanban boards, to-do lists, calendars, notes, a canvas, and collaboration — delivered as an installable web app (PWA). The Service is operated by an individual sole proprietor trading as "Nvexis" ("we", "us", "our"). "Jotspring" is the product; "Nvexis" is the operator.',
       'By checking "I agree to the Terms of Service and Privacy Policy" at signup, or by otherwise creating an account or using the Service, you accept these Terms and our Privacy Policy in full. If you do not agree, do not use the Service.',
       `Operator contact: ${OPERATOR_CONTACT}`,
     ],
@@ -100,7 +100,7 @@ export function TermsPage() {
     <LegalPage
       title="Terms of Service"
       lastUpdated="5 September 2026"
-      intro="These Terms govern your access to and use of Jotspring, a creative workspace application operated by Jai Akash, an individual sole proprietor trading as “Nvexis”. Please read them carefully."
+      intro="These Terms govern your access to and use of Jotspring, a project-management application operated by Jai Akash, an individual sole proprietor trading as “Nvexis”. Please read them carefully."
       sections={SECTIONS}
     />
   );

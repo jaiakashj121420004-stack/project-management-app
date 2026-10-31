@@ -1,4 +1,4 @@
-// Aurora — Dodo Payments customer-portal session creator (billing).
+// Jotspring — Dodo Payments customer-portal session creator (billing).
 //
 // Authenticated endpoint. A Pro user calls this to manage their subscription
 // (update card, view invoices, cancel). We ask Dodo for a hosted customer-portal
