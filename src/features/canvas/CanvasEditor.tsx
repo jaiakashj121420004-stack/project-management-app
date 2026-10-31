@@ -1088,7 +1088,8 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
         >
           <button
             type="button"
-            onClick={toggleFocus}
+            onClick={leaveFocus}
+            data-palm-safe
             aria-label="Exit full screen"
             className="pointer-events-auto inline-flex h-11 items-center gap-2 rounded-2xl bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] px-4 text-sm font-bold text-[var(--accent-fg)] shadow-[0_10px_26px_-10px_var(--accent-glow)] ring-1 ring-white/20 transition-transform hover:-translate-y-px active:translate-y-0"
           >

@@ -65,7 +65,7 @@ export async function importFile(
     const found = hasPdfContent(extraction);
     if (!found.text && !found.ink) {
       throw new ImportError(
-        "This PDF has no selectable text or vector handwriting — it's probably a scan or a flattened image, which Aurora can't convert yet.",
+        "This PDF has no selectable text or vector handwriting — it's probably a scan or a flattened image, which Jotspring can't convert yet.",
       );
     }
     if (target === 'note') {

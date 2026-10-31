@@ -28,7 +28,7 @@ import { GlassSelect, type GlassSelectOption } from './GlassSelect';
 /**
  * On-brand date (and optional time) picker — the app's replacement for the
  * native <input type="date">/<input type="time">, whose OS-drawn calendar/clock
- * popups ignore the Aurora design (same reasoning as GlassSelect vs <select>).
+ * popups ignore the Jotspring design (same reasoning as GlassSelect vs <select>).
  *
  * It keeps the SAME value contract as the old native inputs — date as
  * 'YYYY-MM-DD', time as 'HH:mm', via onChange/onTimeChange — so callers are

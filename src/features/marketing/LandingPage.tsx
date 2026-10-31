@@ -30,7 +30,7 @@ import { PLANS, PLAN_ORDER, PRO_MEMBER_LIMIT, TEAM_MEMBER_LIMIT, ENTERPRISE_CONT
 import './lodestar.css';
 import { AVAILABLE_SHOTS } from 'virtual:available-shots';
 
-const MARK = '/brand/aurora-mark.svg';
+const MARK = '/brand/jotspring-mark.svg';
 
 /**
  * Shows a real app screenshot from /public/shots/<name>.png if it exists; until
@@ -92,7 +92,7 @@ function Shot({
 }
 
 /**
- * The public landing page — the front door of Aurora (the product; Nvexis is
+ * The public landing page — the front door of Jotspring (the product; Nvexis is
  * the company). A warm, editorial parchment page showcasing every part of the
  * app, on the brand palette + gilt accent, bookended by a dark nav/footer.
  * Faux app windows stand in for screenshots (see lodestar/Mockups.tsx — the
@@ -146,7 +146,7 @@ function Nav() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
         <Link to="/" className="flex items-center gap-2">
           <img src={MARK} alt="" className="h-7 w-7" />
-          <span className="font-display text-lg font-bold text-[color:var(--lode-parchment)]">Aurora</span>
+          <span className="font-display text-lg font-bold text-[color:var(--lode-parchment)]">Jotspring</span>
         </Link>
         <nav className="hidden items-center gap-7 text-sm text-[rgba(236,228,214,0.75)] md:flex">
           <a href="#features" className="hover:text-[color:var(--lode-parchment)]">Features</a>
@@ -175,16 +175,16 @@ function Hero() {
     <section className="lode-paper relative px-4 pb-24 pt-16 sm:px-6 sm:pt-24">
       <div className="mx-auto max-w-3xl text-center">
         <div className="lode-glow mx-auto mb-7 w-fit">
-          <img src={MARK} alt="Aurora" className="mx-auto h-16 w-16" />
+          <img src={MARK} alt="Jotspring" className="mx-auto h-16 w-16" />
         </div>
-        <p className="lode-eyebrow mb-4 text-[color:var(--lode-oxblood-deep)]">Aurora · by Nvexis</p>
+        <p className="lode-eyebrow mb-4 text-[color:var(--lode-oxblood-deep)]">Jotspring · by Nvexis</p>
         <h1 className="font-display text-4xl font-black leading-[1.05] text-[color:var(--lode-ink)] sm:text-6xl">
-          Boards, docs, canvas and a calendar — <span className="lode-gilt">one workspace, one price.</span>
+          Where ideas <span className="lode-gilt">spring up</span> and get done.
         </h1>
         <p className="mx-auto mt-5 max-w-xl text-lg text-[color:rgba(34,26,20,0.72)]">
-          Aurora puts Kanban boards, a block-based document editor, an infinite collaborative
-          canvas, a calendar and a daily planner in one calm place — instead of three or four
-          tools that don't agree with each other. Free to start. No credit card.
+          Jotspring is a calm creative workspace. Jot a note, sketch on an infinite canvas, plan
+          on boards, and tick off your day — all in one place, on your own or with your team.
+          Free to start. No credit card.
         </p>
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link to="/signup" className="lode-cta text-base">
@@ -283,7 +283,7 @@ function Spotlights() {
         <p className="mx-auto mt-3 max-w-xl text-[color:rgba(34,26,20,0.7)]">
           The most common reason people abandon a project tool isn't a missing feature — it's that
           the tool got too complicated to open, or it's really three tools stitched together that
-          quietly disagree with each other. Aurora is built against both.
+          quietly disagree with each other. Jotspring is built against both.
         </p>
       </div>
       <div className="mx-auto mt-16 flex max-w-5xl flex-col gap-20">
@@ -412,12 +412,12 @@ const PILLARS: Pillar[] = [
   {
     icon: Bot,
     title: 'Connect your AI assistant, bring your work in',
-    intro: 'Reach Aurora from tools you already use — and don’t start from zero.',
+    intro: 'Reach Jotspring from tools you already use — and don’t start from zero.',
     points: [
       'Pro & Team: connect Claude Desktop or Claude Code directly to your account and read or write boards, to-dos and notes through the same permission-enforced API the app itself uses',
       'Auth built for that: a token shown once, only its hash stored, and every call authenticated by a short-lived key you can revoke on its own',
       'A client-facing, no-account-required read-only share link — send a URL, they see the board, nobody signs up',
-      'One-time board import from another tool’s JSON export, or from CSV, into a brand-new Aurora project — one-way, so trying Aurora costs you nothing to reverse',
+      'One-time board import from another tool’s JSON export, or from CSV, into a brand-new Jotspring project — one-way, so trying Jotspring costs you nothing to reverse',
     ],
   },
   {
@@ -637,7 +637,7 @@ function Pricing() {
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-[color:rgba(34,26,20,0.7)]">
           Most tools in this category charge per seat, so the bill grows every time you add a
-          contractor, a freelancer, or a client who just needs to look at something. Aurora
+          contractor, a freelancer, or a client who just needs to look at something. Jotspring
           doesn't. Pro is {formatPrice(PLANS.pro.priceMonthly)}/mo for up to {PRO_MEMBER_LIMIT} people
           on a board. Team is {formatPrice(PLANS.team.priceMonthly)}/mo for up to {TEAM_MEMBER_LIMIT}.
           Not each — total.
@@ -656,7 +656,7 @@ function Pricing() {
             <p className="mt-1 text-xs text-[color:rgba(34,26,20,0.55)]">5 people, $10/seat/mo — illustrative</p>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-wide text-[color:var(--lode-oxblood-deep)]">Aurora Team</p>
+            <p className="text-xs uppercase tracking-wide text-[color:var(--lode-oxblood-deep)]">Jotspring Team</p>
             <p className="mt-1 font-display text-2xl font-bold text-[color:var(--lode-ink)]">${teamYear}<span className="text-sm font-medium text-[color:rgba(34,26,20,0.6)]">/yr</span></p>
             <p className="mt-1 text-xs text-[color:rgba(34,26,20,0.55)]">up to {TEAM_MEMBER_LIMIT} people, flat</p>
           </div>
@@ -844,7 +844,7 @@ function PricingComparisonTable() {
 }
 
 /* ---- Security, stated plainly (MARKETING.md §9, §20) -----------------------
- * "Enterprise-grade" is a banned phrase because it means nothing and Aurora
+ * "Enterprise-grade" is a banned phrase because it means nothing and Jotspring
  * has no independent audit yet. This says what's actually true instead. */
 function SecurityNote() {
   return (
@@ -879,7 +879,7 @@ function SecurityNote() {
 }
 
 /* ---- Maker's note ---------------------------------------------------------
- * Aurora is new, so there's no wall of five-star customer quotes to show — and
+ * Jotspring is new, so there's no wall of five-star customer quotes to show — and
  * inventing them would be exactly the hype this brand rejects (see the anti-guru
  * voice in DESIGN-GUIDELINES §8 and MARKETING.md §20). Instead: one honest note
  * from the person who built it, and a candid line about where the product
@@ -890,15 +890,15 @@ function MakersNote() {
       <div className="mx-auto max-w-3xl text-center">
         <p className="lode-eyebrow text-[color:var(--lode-oxblood-deep)]">A note from the maker</p>
         <blockquote className="mt-5 font-display text-2xl font-semibold leading-snug text-[color:var(--lode-ink)] sm:text-3xl">
-          "I built Aurora because my notes, my boards, and my whiteboard lived in three
+          "I built Jotspring because my notes, my boards, and my whiteboard lived in three
           different apps that didn't agree with each other. I wanted one calm home for all of
           it — honest about what it is, and free to start."
         </blockquote>
         <figcaption className="mt-5 font-mono text-xs uppercase tracking-wider text-[color:rgba(34,26,20,0.7)]">
-          J. Jai Akash · builder of Aurora
+          J. Jai Akash · builder of Jotspring
         </figcaption>
         <p className="mx-auto mt-8 max-w-xl text-sm text-[color:rgba(34,26,20,0.7)]">
-          Aurora is new, so you won't find a wall of testimonials here yet — we'd rather show
+          Jotspring is new, so you won't find a wall of testimonials here yet — we'd rather show
           you the product than quote strangers. Every feature above works today. Try it free and
           judge for yourself.
         </p>
@@ -933,7 +933,7 @@ function Footer() {
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 text-sm text-[rgba(236,228,214,0.6)] sm:flex-row">
         <div className="flex items-center gap-2">
           <img src={MARK} alt="" className="h-6 w-6" />
-          <span className="font-display font-semibold text-[color:var(--lode-parchment)]">Aurora</span>
+          <span className="font-display font-semibold text-[color:var(--lode-parchment)]">Jotspring</span>
           <span className="text-[rgba(236,228,214,0.72)]">· a Nvexis product</span>
         </div>
         <nav className="flex flex-wrap items-center justify-center gap-5">

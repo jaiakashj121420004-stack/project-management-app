@@ -24,7 +24,7 @@ import { useCreateProject, useDeleteProject, useProjects, useUpdateProject } fro
 import type { ProjectFormInput } from './schemas';
 
 /** The Projects dashboard (plan.md §5, Phase 3): the user's workspaces as vivid
- *  Aurora glass cards, with create / edit / delete. */
+ *  Jotspring glass cards, with create / edit / delete. */
 export function ProjectsPage() {
   const { user } = useAuth();
   const { data: profile } = useProfile();

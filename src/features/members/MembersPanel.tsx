@@ -255,7 +255,7 @@ function MemberLimitNotice({ plan, memberCount }: { plan: PlanId; memberCount: n
           reached: `You've reached ${TEAM_MEMBER_LIMIT} members on the Team plan.`,
           action: (
             <a
-              href={`mailto:${ENTERPRISE_CONTACT_EMAIL}?subject=Aurora%20Enterprise`}
+              href={`mailto:${ENTERPRISE_CONTACT_EMAIL}?subject=Jotspring%20Enterprise`}
               className="font-semibold text-[var(--accent-from)] hover:underline"
             >
               Contact us

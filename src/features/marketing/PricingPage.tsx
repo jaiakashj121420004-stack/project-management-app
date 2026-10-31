@@ -59,7 +59,7 @@ export function PricingPage() {
         <Reveal className="mx-auto mt-6 max-w-5xl text-center text-sm text-fg-muted">
           Need more than {TEAM_MEMBER_LIMIT} people on one board?{' '}
           <a
-            href={`mailto:${ENTERPRISE_CONTACT_EMAIL}?subject=Aurora%20Enterprise`}
+            href={`mailto:${ENTERPRISE_CONTACT_EMAIL}?subject=Jotspring%20Enterprise`}
             className="font-semibold text-[var(--accent-from)] hover:underline"
           >
             Contact us

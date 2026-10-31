@@ -38,7 +38,7 @@ export function ShareLinkSection({ projectId }: { projectId: string }) {
           Public read-only link
         </h3>
         <p className="mt-1 text-xs text-fg-subtle">
-          Anyone with this link can view the board — no Aurora account needed. They can&apos;t edit
+          Anyone with this link can view the board — no Jotspring account needed. They can&apos;t edit
           anything, see comments, or see who&apos;s on the team.
         </p>
       </div>

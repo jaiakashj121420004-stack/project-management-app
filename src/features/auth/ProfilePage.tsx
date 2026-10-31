@@ -52,7 +52,7 @@ export function ProfilePage() {
     <Reveal className="mx-auto w-full max-w-xl">
       <header className="pb-6 pt-2">
         <h1 className="gradient-text font-display text-headline font-bold">Profile</h1>
-        <p className="mt-2 text-fg-muted">Manage how you appear across Aurora.</p>
+        <p className="mt-2 text-fg-muted">Manage how you appear across Jotspring.</p>
       </header>
 
       <GlassPanel strong glow className="p-6 sm:p-8">

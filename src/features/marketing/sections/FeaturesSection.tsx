@@ -62,7 +62,7 @@ const FEATURES: Feature[] = [
   {
     icon: Smartphone,
     title: 'Installable PWA',
-    blurb: 'Install Aurora on mobile and desktop — fast, app-like, works offline.',
+    blurb: 'Install Jotspring on mobile and desktop — fast, app-like, works offline.',
     accent: 'aurora',
   },
   {

@@ -60,7 +60,7 @@ export interface FontPairing {
 export const FONT_PAIRINGS: Record<FontPairingId, FontPairing> = {
   almanac: {
     label: 'Almanac (default)',
-    description: 'Fraunces + Spectral — the classic Aurora serif look.',
+    description: 'Fraunces + Spectral — the classic Jotspring serif look.',
     category: 'Serif',
     display: 'Fraunces',
     body: 'Spectral',
@@ -329,7 +329,7 @@ export function applyCustomTheme(settings: CustomThemeSettings): void {
     root.removeProperty('--fg-subtle');
   }
 
-  // Coordinated accent — buttons, nav active states, links, the Aurora mark
+  // Coordinated accent — buttons, nav active states, links, the Jotspring mark
   // (--ox) and the button glow all move together with the chosen colors
   // instead of staying pinned to the brand oxblood.
   if (resolved) {

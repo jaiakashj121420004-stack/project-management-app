@@ -19,7 +19,7 @@ export function MarketingNav() {
   return (
     <header className="sticky top-0 z-30 px-4 pt-3 sm:px-6">
       <nav className="glass mx-auto flex max-w-6xl items-center gap-3 rounded-2xl px-3 py-2.5 sm:px-4">
-        <Link to="/" aria-label="Aurora home" className="rounded-xl">
+        <Link to="/" aria-label="Jotspring home" className="rounded-xl">
           <Brand />
         </Link>
 

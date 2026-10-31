@@ -14,7 +14,7 @@ interface ProjectCardProps {
   onDelete: () => void;
 }
 
-/** One project as a vivid Aurora glass card. The whole surface links to the
+/** One project as a vivid Jotspring glass card. The whole surface links to the
  *  board; owners get edit/delete actions layered above the link. */
 export function ProjectCard({ project, isOwner, onEdit, onDelete }: ProjectCardProps) {
   return (

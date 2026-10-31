@@ -3,7 +3,7 @@
  * preset is a full coordinated set — background, text, and a derived accent
  * pair for buttons/highlights — not just a bg/fg pair, so picking one always
  * looks intentional (the same promise `AccentPicker`'s six project accents
- * already make). Every preset keeps Aurora's "glass over parchment" aesthetic
+ * already make). Every preset keeps Jotspring's "glass over parchment" aesthetic
  * (DESIGN-GUIDELINES.md §0-3/§11) in a different hue: same warm-glass
  * construction, same restraint (one accent family per surface), just a
  * different ink-on-paper pairing than the brand's own oxblood-on-parchment.

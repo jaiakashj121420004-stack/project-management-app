@@ -94,7 +94,7 @@ export interface QuickCardInput {
 /**
  * Create a new card straight from the Calendar (Day view's click-an-empty-slot
  * and the all-day row's "+ Add"). Appended to the target project's first
- * column by position — deliberately no column picker here, matching Aurora's
+ * column by position — deliberately no column picker here, matching Jotspring's
  * "useful the moment you open it" default; the card can be dragged to another
  * column on its board afterward like any other card.
  */

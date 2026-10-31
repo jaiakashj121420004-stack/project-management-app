@@ -79,7 +79,7 @@ export function PWAReloadPrompt() {
             {needRefresh ? (
               <>
                 <Sparkles size={18} className="shrink-0 text-[color:var(--accent-from)]" aria-hidden />
-                <span className="text-sm text-fg">A new version of Aurora is available.</span>
+                <span className="text-sm text-fg">A new version of Jotspring is available.</span>
                 <GradientButton
                   size="sm"
                   leftIcon={<RefreshCw size={14} />}
@@ -91,7 +91,7 @@ export function PWAReloadPrompt() {
             ) : (
               <>
                 <Sparkles size={18} className="shrink-0 text-[color:var(--accent-from)]" aria-hidden />
-                <span className="text-sm text-fg">Aurora is ready to work offline.</span>
+                <span className="text-sm text-fg">Jotspring is ready to work offline.</span>
               </>
             )}
             <button

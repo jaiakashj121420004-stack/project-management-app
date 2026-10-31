@@ -40,7 +40,7 @@ type Step =
     };
 
 /**
- * One-time Trello board JSON / CSV → Aurora project import (see the task
+ * One-time Trello board JSON / CSV → Jotspring project import (see the task
  * brief). This ALWAYS creates a brand-new project from a snapshot of the file
  * at import time — there is no ongoing sync back to Trello and no
  * re-import/diff against an existing project. Running it again just makes
@@ -174,7 +174,7 @@ export function ImportModal({ open, onClose }: ImportModalProps) {
       title={step.kind === 'done' ? 'Import complete' : 'Import from Trello or CSV'}
       description={
         step.kind === 'pick'
-          ? "One-time only: this creates a brand-new project from the file, right now. Aurora won't stay connected to Trello — nothing here syncs or updates later, and importing again just makes another new project."
+          ? "One-time only: this creates a brand-new project from the file, right now. Jotspring won't stay connected to Trello — nothing here syncs or updates later, and importing again just makes another new project."
           : undefined
       }
       className="max-w-xl"
@@ -331,7 +331,7 @@ export function ImportModal({ open, onClose }: ImportModalProps) {
           {step.notes.length > 0 && <NoteList title="Skipped during import" notes={step.notes} />}
 
           <p className="text-xs text-fg-subtle">
-            This was a one-time copy — Aurora isn&apos;t connected to Trello, so nothing here will
+            This was a one-time copy — Jotspring isn&apos;t connected to Trello, so nothing here will
             sync or update later.
           </p>
 

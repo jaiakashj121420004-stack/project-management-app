@@ -178,10 +178,10 @@ export default defineConfig({
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
         id: '/',
-        name: 'Aurora — Project Management',
-        short_name: 'Aurora',
+        name: 'Jotspring — where ideas get done',
+        short_name: 'Jotspring',
         description:
-          'A modern project-management app — Kanban boards, calendar, notes, and real-time collaboration.',
+          'A calm creative workspace — notes, canvas, boards, calendar and to-dos, together.',
         lang: 'en',
         dir: 'ltr',
         start_url: '/',
@@ -206,7 +206,7 @@ export default defineConfig({
           },
         ],
         shortcuts: [
-          { name: 'Projects', short_name: 'Projects', url: '/' },
+          { name: 'Boards', short_name: 'Boards', url: '/boards' },
           { name: 'Calendar', short_name: 'Calendar', url: '/calendar' },
           { name: 'To-Do', short_name: 'To-Do', url: '/todos' },
         ],

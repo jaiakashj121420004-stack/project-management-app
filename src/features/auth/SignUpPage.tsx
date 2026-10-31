@@ -93,7 +93,7 @@ export function SignUpPage() {
   return (
     <AuthLayout
       title="Create your account"
-      subtitle="Start organizing everything in Aurora."
+      subtitle="Start organizing everything in Jotspring."
       footer={
         <>
           Already have an account? <AuthLink to="/login">Log in</AuthLink>
