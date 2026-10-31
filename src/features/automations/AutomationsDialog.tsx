@@ -468,7 +468,7 @@ function Toggle({
         'disabled:cursor-not-allowed disabled:opacity-50',
         checked
           ? 'border-transparent bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))]'
-          : 'border-[var(--glass-border)] bg-[var(--field-bg)]',
+          : 'border-[var(--glass-border)] neu-field bg-[var(--field-bg)]',
       )}
     >
       <span

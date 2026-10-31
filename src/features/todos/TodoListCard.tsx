@@ -517,7 +517,7 @@ function ItemComposer({ onAdd }: { onAdd: (text: string) => void }) {
           onChange={(event) => setValue(event.target.value)}
           onKeyDown={handleKeyDown}
           aria-label="New to-do item"
-          className="h-9 min-w-0 flex-1 rounded-xl border bg-[var(--field-bg)] px-3 text-sm text-fg placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
+          className="h-9 min-w-0 flex-1 rounded-xl border neu-field bg-[var(--field-bg)] px-3 text-sm text-fg placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
         />
         <button
           type="button"
@@ -574,7 +574,7 @@ function ListNameEditor({
           onChange={(event) => setValue(event.target.value)}
           onKeyDown={handleKeyDown}
           aria-label="List name"
-          className="h-8 min-w-0 flex-1 rounded-lg border bg-[var(--field-bg)] px-2.5 text-sm font-semibold text-fg focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
+          className="h-8 min-w-0 flex-1 rounded-lg border neu-field bg-[var(--field-bg)] px-2.5 text-sm font-semibold text-fg focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
         />
         <button
           type="button"

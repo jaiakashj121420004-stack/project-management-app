@@ -46,6 +46,7 @@
   /* Neumorphism: a soft light/dark shadow pair that extrudes a surface from the page. */
   --neu-light: rgba(255, 238, 220, 0.07);
   --neu-dark: rgba(0, 0, 0, 0.55);
+  --neu-outer: 8px 8px 20px -10px rgba(0, 0, 0, 0.6), -6px -6px 16px -10px rgba(255, 238, 220, 0.06);
   --glass-sheen: linear-gradient(155deg, rgba(255, 238, 220, 0.1), rgba(255, 238, 220, 0) 42%);
   --field-bg: rgba(236, 226, 210, 0.05);
 
@@ -112,6 +113,7 @@
   --hairline: rgba(126, 42, 38, 0.2); /* faint oxblood-warm, a touch stronger */
   --neu-light: rgba(255, 252, 245, 0.95);
   --neu-dark: rgba(120, 88, 58, 0.3);
+  --neu-outer: 9px 9px 22px -10px rgba(120, 88, 58, 0.34), -8px -8px 18px -8px rgba(255, 252, 245, 0.95);
   --glass-sheen: linear-gradient(155deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 45%);
   --field-bg: rgba(255, 251, 243, 0.6);
 
@@ -206,7 +208,7 @@
     backdrop-filter: blur(18px) saturate(1.4);
     -webkit-backdrop-filter: blur(18px) saturate(1.4);
     border: 1px solid var(--glass-border);
-    box-shadow: var(--glass-shadow);
+    box-shadow: var(--glass-shadow), var(--neu-outer);
   }
 
   .glass-strong {
@@ -214,7 +216,7 @@
     backdrop-filter: blur(24px) saturate(1.5);
     -webkit-backdrop-filter: blur(24px) saturate(1.5);
     border: 1px solid var(--glass-border);
-    box-shadow: var(--glass-shadow);
+    box-shadow: var(--glass-shadow), var(--neu-outer);
   }
 
   /* Neumorphic surfaces: extruded from (raised) or pressed into (inset) the page.
@@ -319,17 +321,42 @@
   .btn-3d-soft {
     box-shadow:
       inset 0 1.5px 0 var(--glass-highlight),
-      0 12px 24px -10px rgba(0, 0, 0, 0.5),
-      0 6px 12px -6px rgba(0, 0, 0, 0.4);
+      6px 6px 14px -4px var(--neu-dark),
+      -5px -5px 12px -4px var(--neu-light);
   }
   .btn-3d-soft:hover {
     box-shadow:
       inset 0 1.5px 0 var(--glass-highlight),
-      0 22px 38px -12px var(--accent-glow),
-      0 10px 18px -8px rgba(0, 0, 0, 0.45);
+      9px 9px 20px -5px var(--neu-dark),
+      -7px -7px 15px -5px var(--neu-light),
+      0 0 0 1px var(--accent-from);
   }
   .btn-3d-soft:active {
-    box-shadow: inset 0 3px 7px rgba(0, 0, 0, 0.25);
+    box-shadow:
+      inset 4px 4px 10px -3px var(--neu-dark),
+      inset -4px -4px 9px -3px var(--neu-light);
+  }
+
+  /* Pressed-in field: inputs, selects, search — the "well" counterpart to .neu-raised. */
+  .neu-field {
+    box-shadow:
+      inset 3px 3px 8px -3px var(--neu-dark),
+      inset -3px -3px 7px -3px var(--neu-light);
+  }
+
+  /* Playful micro-motion (all disabled under prefers-reduced-motion below). */
+  .animate-check-pop {
+    animation: check-pop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .neu-raised:hover .tile-icon,
+  a:hover > .tile-icon {
+    animation: icon-wiggle 0.55s ease-in-out;
+  }
+  .animate-float {
+    animation: art-float 4.2s ease-in-out infinite;
+  }
+  .animate-float-slow {
+    animation: art-float 5.6s ease-in-out -1.4s infinite;
   }
 
   /* Rotating conic gradient border for key surfaces (plan.md §4.4). */
@@ -649,5 +676,30 @@
      still reads as "working" without any spinning motion. */
   .spinner {
     animation: spinner-pulse 1.4s ease-in-out infinite !important;
+  }
+}
+
+@keyframes check-pop {
+  0% { transform: scale(0.6); }
+  55% { transform: scale(1.28) rotate(-6deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+@keyframes icon-wiggle {
+  0%, 100% { transform: rotate(0) scale(1); }
+  25% { transform: rotate(-14deg) scale(1.12); }
+  55% { transform: rotate(10deg) scale(1.12); }
+  80% { transform: rotate(-4deg) scale(1.04); }
+}
+@keyframes art-float {
+  0%, 100% { transform: translateY(0) rotate(var(--tilt, 0deg)); }
+  50% { transform: translateY(-9px) rotate(calc(var(--tilt, 0deg) * -0.6)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-check-pop,
+  .animate-float,
+  .animate-float-slow,
+  .neu-raised:hover .tile-icon,
+  a:hover > .tile-icon {
+    animation: none;
   }
 }

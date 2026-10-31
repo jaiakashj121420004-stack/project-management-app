@@ -46,7 +46,7 @@ function Inner({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () 
               <>
                 <span
                   className={cn(
-                    'grid h-8 w-8 shrink-0 place-items-center rounded-xl transition-colors',
+                    'tile-icon grid h-8 w-8 shrink-0 place-items-center rounded-xl transition-colors',
                     isActive
                       ? 'bg-[linear-gradient(120deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)]'
                       : 'text-[var(--accent-from)]',

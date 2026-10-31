@@ -212,6 +212,8 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Push + notification-click handlers (public/push-sw.js).
+        importScripts: ['push-sw.js'],
         // Precache the built app shell so it loads with no network.
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff,woff2}'],
         // SPA fallback: any uncached navigation serves the cached shell, so

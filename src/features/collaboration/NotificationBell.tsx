@@ -101,7 +101,7 @@ export function NotificationBell() {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : 'Notifications'}
-        className="relative grid h-10 w-10 place-items-center rounded-2xl text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+        className="neu-raised relative grid h-10 w-10 place-items-center rounded-2xl text-fg-muted hover:text-fg"
       >
         <Bell size={19} />
         {unreadCount > 0 && (

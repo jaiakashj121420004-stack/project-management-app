@@ -32,7 +32,7 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(function 
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy}
         className={cn(
-          'min-h-[88px] w-full resize-y rounded-2xl border bg-[var(--field-bg)] px-4 py-3 text-fg',
+          'min-h-[88px] w-full resize-y rounded-2xl border neu-field bg-[var(--field-bg)] px-4 py-3 text-fg',
           'placeholder:text-fg-subtle',
           'backdrop-blur-sm transition-colors duration-200',
           'focus:outline-none focus-visible:shadow-none',

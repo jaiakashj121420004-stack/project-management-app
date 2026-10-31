@@ -91,7 +91,7 @@ export function ImportDialog({ open, onClose, folderId, isPro, onNeedPro, onImpo
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="flex items-center gap-3 rounded-2xl border border-dashed border-[var(--glass-border)] bg-[var(--field-bg)] px-4 py-4 text-left transition-colors hover:border-[color:var(--accent-from)]"
+          className="flex items-center gap-3 rounded-2xl border border-dashed border-[var(--glass-border)] neu-field bg-[var(--field-bg)] px-4 py-4 text-left transition-colors hover:border-[color:var(--accent-from)]"
         >
           <FileUp size={22} className="shrink-0 text-fg-muted" />
           <span className="min-w-0 flex-1 truncate text-sm text-fg">

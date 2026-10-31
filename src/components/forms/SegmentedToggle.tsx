@@ -33,7 +33,7 @@ export function SegmentedToggle<T extends string>({
       role="tablist"
       aria-label={label}
       className={cn(
-        'inline-flex items-center gap-1 self-start rounded-xl border border-[var(--glass-border)] p-1',
+        'neu-inset inline-flex items-center gap-1 self-start rounded-xl p-1',
         className,
       )}
     >
@@ -49,7 +49,7 @@ export function SegmentedToggle<T extends string>({
             className={cn(
               'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
               active
-                ? 'bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)]'
+                ? 'bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)] shadow-[3px_3px_8px_-2px_var(--neu-dark),-2px_-2px_6px_-3px_var(--neu-light)]'
                 : 'text-fg-muted hover:text-fg',
             )}
           >

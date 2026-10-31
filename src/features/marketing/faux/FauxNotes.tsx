@@ -21,7 +21,7 @@ export function FauxNotes() {
         </div>
       </div>
 
-      <div className="space-y-3 rounded-2xl border border-[var(--hairline)] bg-[var(--field-bg)] p-4">
+      <div className="space-y-3 rounded-2xl border border-[var(--hairline)] neu-field bg-[var(--field-bg)] p-4">
         <h4 className="font-display text-base font-semibold text-fg">## Goals</h4>
         <p className="text-sm leading-relaxed text-fg-muted">
           Ship the public preview by <span className="font-semibold text-fg">June 30</span> with

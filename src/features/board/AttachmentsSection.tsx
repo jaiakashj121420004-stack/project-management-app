@@ -174,7 +174,7 @@ function AttachmentRow({
 
   return (
     <li className="flex items-center gap-3 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-fill)] px-3 py-2">
-      <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg bg-[var(--field-bg)]">
+      <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg neu-field bg-[var(--field-bg)]">
         {isImage && url ? (
           <img src={url} alt="" className="h-full w-full object-cover" />
         ) : isImage && urlError ? (
@@ -199,7 +199,7 @@ function AttachmentRow({
           rel="noreferrer"
           aria-label={`Download ${attachment.file_name}`}
           aria-disabled={!url}
-          className={`grid h-8 w-8 place-items-center rounded-lg text-fg-muted transition-colors hover:bg-[var(--field-bg)] hover:text-fg ${
+          className={`grid h-8 w-8 place-items-center rounded-lg text-fg-muted transition-colors hover:neu-field bg-[var(--field-bg)] hover:text-fg ${
             !url ? 'pointer-events-none opacity-40' : ''
           }`}
         >

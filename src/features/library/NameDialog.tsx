@@ -74,7 +74,7 @@ export function NameDialog({
           onChange={(event) => setValue(event.target.value)}
           placeholder={placeholder}
           aria-label={placeholder}
-          className="w-full rounded-xl border bg-[var(--field-bg)] px-3.5 py-2.5 text-fg placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
+          className="w-full rounded-xl border neu-field bg-[var(--field-bg)] px-3.5 py-2.5 text-fg placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
         />
         <div className="flex justify-end gap-2">
           <GradientButton type="button" variant="ghost" onClick={onClose}>

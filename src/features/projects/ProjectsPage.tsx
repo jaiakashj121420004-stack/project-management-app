@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { FolderPlus, Plus, Upload } from 'lucide-react';
+import { Plus, Upload } from 'lucide-react';
 import { GlassPanel } from '@/components/glass/GlassPanel';
+import { EmptyArt } from '@/components/EmptyArt';
 import { GradientButton } from '@/components/buttons/GradientButton';
 import { Skeleton } from '@/components/feedback/Skeleton';
 import { Reveal } from '@/components/motion/Reveal';
@@ -278,15 +279,10 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
         glow
         className="mx-auto mt-4 flex max-w-xl flex-col items-center gap-4 p-10 text-center"
       >
-        <span
-          className="grid h-14 w-14 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)] shadow-[0_12px_26px_-12px_var(--accent-glow)]"
-          aria-hidden
-        >
-          <FolderPlus size={26} />
-        </span>
-        <h2 className="font-display text-title font-semibold text-fg">No projects yet</h2>
+        <EmptyArt className="h-32 w-44" />
+        <h2 className="font-display text-title font-semibold text-fg">A fresh page, ready when you are</h2>
         <p className="text-fg-muted">
-          Create your first workspace to start building boards, lists, and notes.
+          Start your first project and fill it with boards, lists and notes. It takes ten seconds.
         </p>
         <GradientButton leftIcon={<Plus size={18} />} onClick={() => onCreate()}>
           New project

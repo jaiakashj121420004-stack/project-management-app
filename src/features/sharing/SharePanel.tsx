@@ -64,7 +64,7 @@ export function SharePanel({ open, onClose, kind, targetId, title }: SharePanelP
             onChange={(e) => setEmail(e.target.value)}
             placeholder="collaborator@email.com"
             aria-label="Collaborator email"
-            className="flex-1 rounded-xl border border-[var(--glass-border)] bg-[var(--field-bg)] px-3.5 py-2.5 text-sm text-fg placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
+            className="flex-1 rounded-xl border border-[var(--glass-border)] neu-field bg-[var(--field-bg)] px-3.5 py-2.5 text-sm text-fg placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
           />
           <SegmentedToggle
             label="Role"

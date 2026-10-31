@@ -43,7 +43,7 @@ export function SidebarNav({
                   className="absolute inset-0 -z-10 rounded-2xl bg-[length:220%_auto] bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to),var(--accent-from))] shadow-[0_10px_24px_-12px_var(--accent-glow)] motion-safe:animate-gradient-flow"
                 />
               )}
-              <Icon size={19} strokeWidth={2.1} className="shrink-0" />
+              <Icon size={19} strokeWidth={2.1} className="tile-icon shrink-0" />
               {!collapsed && <span>{label}</span>}
             </>
           )}

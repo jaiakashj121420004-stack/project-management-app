@@ -191,7 +191,7 @@ export function LibraryPage() {
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search your Notebooks…"
               aria-label="Search Notebooks"
-              className="w-full rounded-xl border border-[var(--glass-border)] bg-[var(--field-bg)] py-2.5 pl-9 pr-9 text-sm text-fg placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
+              className="w-full rounded-xl border border-[var(--glass-border)] neu-field bg-[var(--field-bg)] py-2.5 pl-9 pr-9 text-sm text-fg placeholder:text-fg-subtle focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
             />
             {search && (
               <button
