@@ -69,7 +69,7 @@ function Inner({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () 
         <div className="text-xs leading-relaxed text-fg-subtle">
           {!collapsed && (
             <>
-              <p>Aurora · v0.1 <span className="opacity-70">· by Nvexis</span></p>
+              <p>Jotspring · v0.1 <span className="opacity-70">· by Nvexis</span></p>
               <p className="mt-0.5">
                 Made by <span className="font-medium text-fg-muted">J. Jai Akash</span>
               </p>

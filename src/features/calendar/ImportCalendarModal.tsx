@@ -117,7 +117,7 @@ export function ImportCalendarModal({ open, onClose, projects, defaultProjectId 
       title={step.kind === 'done' ? 'Import complete' : 'Import calendar'}
       description={
         step.kind === 'pick'
-          ? 'One-time only: bring events from a .ics file (exported from Google, Outlook, Apple Calendar, etc.) in as cards. Aurora stays disconnected afterward — nothing here stays synced, and importing the same file again creates duplicates.'
+          ? 'One-time only: bring events from a .ics file (exported from Google, Outlook, Apple Calendar, etc.) in as cards. Jotspring stays disconnected afterward — nothing here stays synced, and importing the same file again creates duplicates.'
           : undefined
       }
       className="max-w-xl"
@@ -246,7 +246,7 @@ export function ImportCalendarModal({ open, onClose, projects, defaultProjectId 
           {step.notes.length > 0 && <NoteList title="Heads up" notes={step.notes} />}
 
           <p className="text-xs text-fg-subtle">
-            This was a one-time copy — Aurora isn&apos;t connected to the source calendar, so nothing here
+            This was a one-time copy — Jotspring isn&apos;t connected to the source calendar, so nothing here
             will sync or update later.
           </p>
 

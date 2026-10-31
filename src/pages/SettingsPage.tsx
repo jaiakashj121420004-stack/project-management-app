@@ -118,7 +118,7 @@ export function SettingsPage() {
     <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-center justify-between gap-4 pt-2">
         <div>
-          <p className="text-sm font-medium text-fg-muted">Make Aurora yours</p>
+          <p className="text-sm font-medium text-fg-muted">Make Jotspring yours</p>
           <h1 className="gradient-text mt-1 font-display text-headline font-bold">Settings</h1>
           <p className="mt-2 max-w-prose text-fg-muted">
             Choose a font pairing and, on Pro, your own background and text colors — applied
@@ -145,7 +145,7 @@ export function SettingsPage() {
           <Type size={18} className="text-[var(--accent-from)]" /> Font pairing
         </h2>
         <p className="mb-4 text-sm text-fg-muted">
-          A curated set — every pairing keeps Aurora's editorial serif identity.
+          A curated set — every pairing keeps Jotspring's editorial serif identity.
         </p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {(Object.entries(FONT_PAIRINGS) as [FontPairingId, (typeof FONT_PAIRINGS)[FontPairingId]][]).map(
@@ -194,7 +194,7 @@ export function SettingsPage() {
         </p>
         <ProGate
           title="Custom colors are a Pro feature"
-          reason="Upgrade to Pro to personalize Aurora's colors — everything else stays free."
+          reason="Upgrade to Pro to personalize Jotspring's colors — everything else stays free."
         >
           <PersonalizationPresetGrid value={settings.preset} onChange={setPreset} />
 
@@ -254,7 +254,7 @@ export function SettingsPage() {
         </p>
         <ProGate
           title="Calendar sync is a Pro feature"
-          reason="Upgrade to Pro to subscribe to your Aurora calendar from any calendar app."
+          reason="Upgrade to Pro to subscribe to your Jotspring calendar from any calendar app."
         >
           <CalendarFeedSection />
         </ProGate>
@@ -270,7 +270,7 @@ export function SettingsPage() {
         </p>
         <ProGate
           title="Connecting Claude is a Pro feature"
-          reason="Upgrade to Pro to connect Claude Desktop or Claude Code to your Aurora account."
+          reason="Upgrade to Pro to connect Claude Desktop or Claude Code to your Jotspring account."
         >
           <McpConnectSection />
         </ProGate>
@@ -421,7 +421,7 @@ const MCP_SERVER_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mcp-se
 const TOKEN_PLACEHOLDER = '<paste-your-token-here>';
 
 /**
- * Generate/regenerate/revoke the Aurora MCP access token that lets Claude
+ * Generate/regenerate/revoke the Jotspring MCP access token that lets Claude
  * Desktop/Code read and write the caller's own data (see SETUP-MCP.md). Unlike
  * the calendar feed's token, the PLAINTEXT here is never stored server-side —
  * `revealedToken` (local component state, not the query cache) is the only
@@ -495,7 +495,7 @@ function McpConnectSection() {
               readOnly
               value={revealedToken}
               onFocus={(e) => e.currentTarget.select()}
-              aria-label="Aurora MCP access token"
+              aria-label="Jotspring MCP access token"
               className="h-10 flex-1 rounded-lg border neu-field bg-[var(--field-bg)] px-2.5 font-mono text-sm text-fg-muted focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--accent-from)]"
             />
             <button

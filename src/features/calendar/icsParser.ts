@@ -3,7 +3,7 @@ import type { RecurrenceRule } from '@/lib/recurrence';
 /**
  * A minimal client-side RFC 5545 (iCalendar) reader for the Calendar's
  * "Import" flow (see ImportCalendarModal.tsx). Deliberately narrow — this
- * reads the handful of VEVENT properties Aurora can actually represent
+ * reads the handful of VEVENT properties Jotspring can actually represent
  * (SUMMARY, DTSTART, DESCRIPTION, a simple RRULE) rather than being a general
  * ICS library. Anything it can't confidently map is either imported as a
  * plain one-time event or skipped outright, always with a note explaining
@@ -11,14 +11,14 @@ import type { RecurrenceRule } from '@/lib/recurrence';
  *
  * This is a one-time snapshot read, mirroring `features/import/`'s Trello/CSV
  * parsers: no ongoing sync, no re-import/diff against what's already in
- * Aurora, and no per-occurrence exceptions (an imported recurring event maps
- * to Aurora's own simple repeat types — see lib/recurrence.ts — never a
+ * Jotspring, and no per-occurrence exceptions (an imported recurring event maps
+ * to Jotspring's own simple repeat types — see lib/recurrence.ts — never a
  * faithful copy of the source RRULE).
  */
 
 export interface ParsedIcsEvent {
   /** From VEVENT's UID, when present — not currently used for de-duping
-   *  (Aurora doesn't track import provenance), but kept for a future pass. */
+   *  (Jotspring doesn't track import provenance), but kept for a future pass. */
   uid: string | null;
   title: string;
   description: string | null;
@@ -26,9 +26,9 @@ export interface ParsedIcsEvent {
   dueDate: string;
   /** ISO instant, or null for an all-day event. */
   dueAt: string | null;
-  /** null = a one-time event, or a source RRULE Aurora couldn't map. */
+  /** null = a one-time event, or a source RRULE Jotspring couldn't map. */
   recurrence: RecurrenceRule | null;
-  /** True when `recurrence` is Aurora's best simple approximation of a more
+  /** True when `recurrence` is Jotspring's best simple approximation of a more
    *  specific source RRULE (e.g. BYDAY dropped, or COUNT/UNTIL ignored). */
   recurrenceApproximated: boolean;
 }
@@ -107,10 +107,10 @@ function parseDtstart(params: string, value: string): { dueDate: string; dueAt: 
   return { dueDate, dueAt: iso };
 }
 
-/** Best-effort RRULE → Aurora RecurrenceRule. Only FREQ=DAILY/WEEKLY/MONTHLY
+/** Best-effort RRULE → Jotspring RecurrenceRule. Only FREQ=DAILY/WEEKLY/MONTHLY
  *  at INTERVAL 1 map cleanly; everything else (YEARLY, INTERVAL>1, multiple
  *  BYMONTHDAY, etc.) is reported back as unmapped so the caller can fall back
- *  to a one-time event. COUNT/UNTIL are intentionally ignored — Aurora's
+ *  to a one-time event. COUNT/UNTIL are intentionally ignored — Jotspring's
  *  recurring cards have no stored end date (see cards.recurrence_rule);
  *  noted in the summary, never silently applied as "repeats forever". */
 function parseRrule(value: string, dueDate: string): { rule: RecurrenceRule; approximated: boolean } | null {
@@ -152,7 +152,7 @@ function parseRrule(value: string, dueDate: string): { rule: RecurrenceRule; app
   return null;
 }
 
-/** Parses raw `.ics` text into events Aurora can create as cards. Never
+/** Parses raw `.ics` text into events Jotspring can create as cards. Never
  *  throws on a malformed calendar — a file with no VEVENTs just yields an
  *  empty result with a note, so the modal can show that plainly rather than
  *  a generic error. */
@@ -260,7 +260,7 @@ export function parseIcs(text: string): ParsedIcs {
   }
   if (approximatedCount > 0) {
     notes.push(
-      `${approximatedCount} recurring event${approximatedCount === 1 ? '' : 's'} had a repeat rule Aurora simplified to its closest match (daily, weekly, or monthly) — no end date is carried over, so it repeats going forward until removed.`,
+      `${approximatedCount} recurring event${approximatedCount === 1 ? '' : 's'} had a repeat rule Jotspring simplified to its closest match (daily, weekly, or monthly) — no end date is carried over, so it repeats going forward until removed.`,
     );
   }
   if (truncated) {

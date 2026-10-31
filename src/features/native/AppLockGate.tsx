@@ -62,10 +62,10 @@ export function AppLockGate({ children }: { children: ReactNode }) {
     <>
       <div aria-hidden={locked} inert={locked}>{children}</div>
       {locked && (
-        <div role="dialog" aria-modal="true" aria-label="Aurora is locked" className="fixed inset-0 z-[9999] grid place-items-center bg-[var(--bg)]/70 backdrop-blur-2xl">
+        <div role="dialog" aria-modal="true" aria-label="Jotspring is locked" className="fixed inset-0 z-[9999] grid place-items-center bg-[var(--bg)]/70 backdrop-blur-2xl">
           <form onSubmit={(e) => void submit(e)} className="glass-strong neu-raised flex w-[min(92vw,340px)] flex-col items-center gap-4 rounded-3xl p-7">
             <span className="grid h-14 w-14 place-items-center rounded-2xl bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] text-[var(--accent-fg)]"><Lock size={24} /></span>
-            <h2 className="font-display text-xl font-semibold text-fg">Aurora is locked</h2>
+            <h2 className="font-display text-xl font-semibold text-fg">Jotspring is locked</h2>
             <input
               autoFocus
               type="password"

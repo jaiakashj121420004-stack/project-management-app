@@ -1,7 +1,7 @@
 import { LegalPage, type LegalSection } from './LegalPage';
 
 /*
-  Aurora is operated by Jai Akash, an individual sole proprietor trading as
+  Jotspring is operated by Jai Akash, an individual sole proprietor trading as
   "Nvexis". Full long-form text lives in legal/Aurora-Privacy-Policy.docx —
   keep this in sync with that file if either changes.
 */
@@ -10,7 +10,7 @@ const SECTIONS: LegalSection[] = [
   {
     heading: 'Who is responsible for your data',
     body: [
-      'Aurora is operated by Jai Akash, an individual sole proprietor trading as "Nvexis" ("we", "us", "our"), who is the data controller / data fiduciary for personal information processed through the Service. Contact and DPDP Grievance Officer: nvexis14@gmail.com.',
+      'Jotspring is operated by Jai Akash, an individual sole proprietor trading as "Nvexis" ("we", "us", "our"), who is the data controller / data fiduciary for personal information processed through the Service. Contact and DPDP Grievance Officer: nvexis14@gmail.com.',
     ],
   },
   {
@@ -84,7 +84,7 @@ export function PrivacyPage() {
     <LegalPage
       title="Privacy Policy"
       lastUpdated="5 September 2026"
-      intro="This policy explains what information Aurora collects, how it is used and shared, how long it is kept, and the choices and rights you have."
+      intro="This policy explains what information Jotspring collects, how it is used and shared, how long it is kept, and the choices and rights you have."
       sections={SECTIONS}
     />
   );

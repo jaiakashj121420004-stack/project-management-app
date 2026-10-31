@@ -63,7 +63,7 @@ export interface UseInstallPromptResult {
 }
 
 /**
- * Surfaces whether "Install Aurora" should be offered right now, and how.
+ * Surfaces whether "Install Jotspring" should be offered right now, and how.
  * Never prompts automatically — `pwa-install-capture.js` always preventDefault's
  * `beforeinstallprompt`, and the native prompt only fires from `promptInstall()`,
  * which callers wire to a user click.

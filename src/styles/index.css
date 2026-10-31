@@ -441,7 +441,7 @@
   inherits: true;
 }
 
-/* Aurora background blobs (plan.md §4.3) — drift continuously; JS adds pointer
+/* Jotspring background blobs (plan.md §4.3) — drift continuously; JS adds pointer
    parallax on top. Kept in CSS so the component JSX stays clean. */
 .aurora-field {
   position: fixed;

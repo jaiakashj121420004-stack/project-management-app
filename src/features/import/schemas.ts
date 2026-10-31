@@ -82,7 +82,7 @@ export type ImportPayload = z.infer<typeof importPayloadSchema>;
 
 /** The result of parsing a file into an `ImportPayload` — `notes` is the
  *  "what didn't come along" summary shown before AND after the import runs
- *  (see the task brief: never silently drop something Aurora can't model). */
+ *  (see the task brief: never silently drop something Jotspring can't model). */
 export interface ParsedImport {
   payload: ImportPayload;
   notes: string[];

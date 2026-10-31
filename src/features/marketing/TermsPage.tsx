@@ -1,7 +1,7 @@
 import { LegalPage, type LegalSection } from './LegalPage';
 
 /*
-  Aurora is operated by Jai Akash, an individual sole proprietor trading as
+  Jotspring is operated by Jai Akash, an individual sole proprietor trading as
   "Nvexis". Full long-form text lives in legal/Aurora-Terms-of-Service.docx —
   keep this in sync with that file if either changes.
 */
@@ -12,7 +12,7 @@ const SECTIONS: LegalSection[] = [
   {
     heading: 'Who we are and these Terms',
     body: [
-      'Aurora (the "Service") is a project-management application — Kanban boards, to-do lists, calendars, notes, a canvas, and collaboration — delivered as an installable web app (PWA). The Service is operated by an individual sole proprietor trading as "Nvexis" ("we", "us", "our"). "Aurora" is the product; "Nvexis" is the operator.',
+      'Jotspring (the "Service") is a creative workspace application — notes, a canvas, boards, to-do lists, calendars, and collaboration — delivered as an installable web app (PWA). The Service is operated by an individual sole proprietor trading as "Nvexis" ("we", "us", "our"). "Jotspring" is the product; "Nvexis" is the operator.',
       'By checking "I agree to the Terms of Service and Privacy Policy" at signup, or by otherwise creating an account or using the Service, you accept these Terms and our Privacy Policy in full. If you do not agree, do not use the Service.',
       `Operator contact: ${OPERATOR_CONTACT}`,
     ],
@@ -27,7 +27,7 @@ const SECTIONS: LegalSection[] = [
   {
     heading: 'Plans, billing and our Merchant of Record',
     body: [
-      'Aurora offers a free plan and paid Pro/Team plans. Paid subscriptions are sold and processed through our authorised reseller and Merchant of Record, Dodo Payments — Dodo, not us directly, is the merchant of record: it processes payment, handles applicable taxes, and issues receipts.',
+      'Jotspring offers a free plan and paid Pro/Team plans. Paid subscriptions are sold and processed through our authorised reseller and Merchant of Record, Dodo Payments — Dodo, not us directly, is the merchant of record: it processes payment, handles applicable taxes, and issues receipts.',
       'Subscriptions renew automatically at the then-current price until cancelled. You may cancel at any time; access continues until the end of the paid period. Except where required by law, fees already paid are non-refundable.',
     ],
   },
@@ -100,7 +100,7 @@ export function TermsPage() {
     <LegalPage
       title="Terms of Service"
       lastUpdated="5 September 2026"
-      intro="These Terms govern your access to and use of Aurora, a project-management application operated by Jai Akash, an individual sole proprietor trading as “Nvexis”. Please read them carefully."
+      intro="These Terms govern your access to and use of Jotspring, a creative workspace application operated by Jai Akash, an individual sole proprietor trading as “Nvexis”. Please read them carefully."
       sections={SECTIONS}
     />
   );

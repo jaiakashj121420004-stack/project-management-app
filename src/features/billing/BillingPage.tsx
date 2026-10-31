@@ -185,7 +185,7 @@ export function BillingPage() {
             <p className="font-medium text-fg">Need more than {TEAM_MEMBER_LIMIT} people on one board?</p>
             <p className="text-fg-muted">
               <a
-                href={`mailto:${ENTERPRISE_CONTACT_EMAIL}?subject=Aurora%20Enterprise`}
+                href={`mailto:${ENTERPRISE_CONTACT_EMAIL}?subject=Jotspring%20Enterprise`}
                 className="font-semibold text-[var(--accent-from)] hover:underline"
               >
                 Contact us

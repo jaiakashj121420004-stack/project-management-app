@@ -19,7 +19,7 @@ export type ProjectRole = 'owner' | 'editor' | 'viewer';
 /** Roles that can be invited / assigned to others (never 'owner'). */
 export type InvitationRole = Exclude<ProjectRole, 'owner'>;
 
-/** A project template row's origin — Aurora's curated set ships as static
+/** A project template row's origin — Jotspring's curated set ships as static
  *  frontend data (projectTemplates.ts) and never writes 'system' rows today;
  *  every row in the table is 'user'. See 20260816170000_project_templates.sql. */
 export type TemplateSource = 'system' | 'user';
@@ -82,7 +82,7 @@ export interface Database {
           // Opaque token for the public ICS calendar subscribe feed (Pro); set
           // only by the calendar-feed-token edge function (service role).
           calendar_feed_token: string | null;
-          // Aurora MCP (Claude Desktop/Code) access token — SHA-256 hash only,
+          // Jotspring MCP (Claude Desktop/Code) access token — SHA-256 hash only,
           // the plaintext is never stored. Set only by the mcp-token edge
           // function (service role); see 20260816120000_mcp_tokens.sql.
           mcp_token_hash: string | null;
@@ -139,7 +139,7 @@ export interface Database {
           owner_id: string;
           name: string;
           description: string | null;
-          // Constrained to the six Aurora accent names by a DB check constraint.
+          // Constrained to the six Jotspring accent names by a DB check constraint.
           accent: AccentName;
           // Optional project-level milestone (YYYY-MM-DD), shown on the Calendar.
           target_date: string | null;
@@ -731,7 +731,7 @@ export interface Database {
         Relationships: [];
       };
       note_templates: {
-        // User-authored note templates (Aurora Phase 5) — owner-scoped reusable
+        // User-authored note templates (Jotspring Phase 5) — owner-scoped reusable
         // note structures merged with the built-in slash-menu templates.
         Row: {
           id: string;

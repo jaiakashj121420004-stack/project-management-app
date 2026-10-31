@@ -1,5 +1,5 @@
 /**
- * pdfToContent.ts — turn extracted PDF geometry into Aurora content: a note
+ * pdfToContent.ts — turn extracted PDF geometry into Jotspring content: a note
  * document (headings + paragraphs) or a canvas scene (a frame per page with
  * editable text boxes and handwriting strokes laid out where they were).
  */

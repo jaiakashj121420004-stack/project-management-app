@@ -4,7 +4,7 @@ import type { CSSProperties } from 'react';
  * Per-project accents, retinted to the Nvexis "Almanac" earth palette
  * (oxblood, gilt, clay, pine, terracotta, umber). Each project picks one; it
  * drives headers, buttons, active states, and card glows. Keys are unchanged
- * from the original Aurora set so existing `projects.accent` values keep
+ * from the original Jotspring set so existing `projects.accent` values keep
  * working with no migration — only the colours are re-toned onto the brand.
  */
 export interface Accent {
@@ -48,7 +48,7 @@ export function accentGradient(name: AccentName): string {
 }
 
 /**
- * `accentVars()` plus `--ox` — the token the Aurora mark/wordmark
+ * `accentVars()` plus `--ox` — the token the Jotspring mark/wordmark
  * (`Brand.tsx`) and the global focus ring read. Scoped usages (a single
  * `GradientButton`, a project panel) should keep using `accentVars()` so they
  * don't also retint the brand mark; this is only for the AppShell wrapper that

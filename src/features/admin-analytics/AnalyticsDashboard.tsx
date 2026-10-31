@@ -44,7 +44,7 @@ export function AnalyticsDashboard() {
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--glass-fill)] text-fg-subtle">
             <Lock size={22} />
           </span>
-          <p className="text-fg-muted">This page is for the Aurora admin only.</p>
+          <p className="text-fg-muted">This page is for the Jotspring admin only.</p>
         </GlassPanel>
       </Reveal>
     );

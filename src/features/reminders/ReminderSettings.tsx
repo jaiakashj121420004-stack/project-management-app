@@ -115,7 +115,7 @@ export function ReminderSettings() {
       <SettingRow
         icon={<Mail size={18} />}
         title="Email reminders"
-        description="Email me before tasks assigned to me are due. Works even when Aurora is closed."
+        description="Email me before tasks assigned to me are due. Works even when Jotspring is closed."
       >
         <Toggle
           label="Email reminders"
@@ -135,7 +135,7 @@ export function ReminderSettings() {
                 Blocked — allow notifications for this site in your browser settings.
               </span>
             ) : (
-              'Notify me while Aurora is open in this browser. No setup required.'
+              'Notify me while Jotspring is open in this browser. No setup required.'
             )
           ) : (
             <span className="text-fg-subtle">Not supported in this browser.</span>

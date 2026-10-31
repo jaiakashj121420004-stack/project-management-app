@@ -53,7 +53,7 @@ export function LoginPage() {
       subtitle="Log in to pick up where you left off."
       footer={
         <>
-          New to Aurora? <AuthLink to="/signup">Create an account</AuthLink>
+          New to Jotspring? <AuthLink to="/signup">Create an account</AuthLink>
         </>
       }
     >

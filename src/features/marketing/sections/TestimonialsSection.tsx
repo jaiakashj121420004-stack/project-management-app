@@ -15,7 +15,7 @@ interface Testimonial {
 // Generic illustrative personas — not real people or public figures.
 const TESTIMONIALS: Testimonial[] = [
   {
-    quote: 'Aurora replaced three apps for our team. The calendar plus boards combo finally made our deadlines click.',
+    quote: 'Jotspring replaced three apps for our team. The calendar plus boards combo finally made our deadlines click.',
     name: 'Jordan Avery',
     role: 'Product Lead, a small studio',
     accent: 'aurora',
@@ -38,7 +38,7 @@ const TESTIMONIALS: Testimonial[] = [
 export function TestimonialsSection() {
   return (
     <section className="px-4 pt-24 sm:px-6">
-      <SectionHeading eyebrow="Loved by planners" title="Teams get more done with Aurora" />
+      <SectionHeading eyebrow="Loved by planners" title="Teams get more done with Jotspring" />
 
       <div className="mx-auto mt-12 grid max-w-6xl gap-5 lg:grid-cols-3">
         {TESTIMONIALS.map((item, i) => (

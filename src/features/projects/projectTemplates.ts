@@ -12,7 +12,7 @@ export interface SystemTemplate {
 }
 
 /**
- * Aurora's curated starter templates — the zero-config alternative to a blank
+ * Jotspring's curated starter templates — the zero-config alternative to a blank
  * board (Simplicity Guardrail #3: "starter templates over blank canvases").
  * Kept small and genuinely curated, not a long catalog (guardrail #7): six
  * distinct, common project shapes, each a handful of realistic columns and

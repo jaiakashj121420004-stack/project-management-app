@@ -19,7 +19,7 @@
  *     small placeholder card with a real link, mirroring the bracketed
  *     placeholders `docToMarkdown` already uses for the same nodes.
  *
- * The print is always rendered in Aurora's Day/parchment palette regardless of
+ * The print is always rendered in Jotspring's Day/parchment palette regardless of
  * the app's current theme — plain hardcoded colors, not the app's CSS custom
  * properties, since the iframe is a fresh document with none of that in
  * scope. A dark background would also waste toner/ink on an actual printer,

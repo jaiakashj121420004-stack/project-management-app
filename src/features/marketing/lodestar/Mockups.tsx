@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 /**
- * Faux Aurora app screens for the marketing site — HTML stand-ins styled to match
+ * Faux Jotspring app screens for the marketing site — HTML stand-ins styled to match
  * the real app (parchment sidebar, dark workspace, oxblood accent, Fraunces
  * headings) with demo content only (never real user data). Drop real PNGs into
  * public/shots/ to replace these.
@@ -91,7 +91,7 @@ function AppFrame({ active, children }: { active: string; children: ReactNode })
             <span className="grid h-5 w-5 place-items-center rounded-md" style={{ background: OXD }}>
               <span className="text-[8px] text-white">◆</span>
             </span>
-            <span className="font-display text-sm font-bold" style={{ color: OXD }}>Aurora</span>
+            <span className="font-display text-sm font-bold" style={{ color: OXD }}>Jotspring</span>
           </div>
           <div className="rounded-md py-1.5 text-center text-[10px] font-semibold text-white" style={{ background: OX }}>
             + New project

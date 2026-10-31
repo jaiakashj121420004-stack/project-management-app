@@ -1,5 +1,5 @@
 /**
- * Public marketing site — the front door of Aurora. Routes are wired by the
+ * Public marketing site — the front door of Jotspring. Routes are wired by the
  * app shell; this barrel exposes the page components and the shared layout.
  */
 export { MarketingLayout } from './MarketingLayout';

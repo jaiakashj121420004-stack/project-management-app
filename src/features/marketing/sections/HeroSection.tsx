@@ -19,14 +19,14 @@ export function HeroSection() {
           </span>
 
           <h1 className="mt-5 font-display text-display font-bold">
-            <span className="gradient-text">Project management</span>
+            <span className="gradient-text">Where ideas spring up</span>
             <br />
-            that feels like magic.
+            and get done.
           </h1>
 
           <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-fg-muted lg:mx-0">
-            Kanban boards, a calendar, daily to-dos, notes and reminders — in one luminous,
-            installable app that syncs across every device.
+            Notes, a canvas, boards, a calendar and daily to-dos — in one calm, installable
+            workspace that syncs across every device.
           </p>
 
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row lg:items-start">

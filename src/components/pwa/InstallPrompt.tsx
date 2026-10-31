@@ -12,7 +12,7 @@ interface InstallPromptProps {
 }
 
 /**
- * "Install Aurora" affordance. Aurora has been a fully-configured installable
+ * "Install Jotspring" affordance. Jotspring has been a fully-configured installable
  * PWA since Phase 9, but nothing in the UI ever told a user that a website can
  * be added to their home screen — most people don't know this is possible.
  * Lives in the Sidebar's footer area (quiet, always in view, doesn't compete
@@ -56,9 +56,9 @@ export function InstallPrompt({ collapsed = false }: InstallPromptProps) {
         leftIcon={<Download size={15} />}
         onClick={() => void handleClick()}
         className={cn('w-full', collapsed && 'aspect-square w-11 px-0')}
-        aria-label="Install Aurora"
+        aria-label="Install Jotspring"
       >
-        {!collapsed && 'Install Aurora'}
+        {!collapsed && 'Install Jotspring'}
       </GradientButton>
 
       <Modal
@@ -67,8 +67,8 @@ export function InstallPrompt({ collapsed = false }: InstallPromptProps) {
           setShowIOSModal(false);
           track('install_dismissed', { platform: 'ios_safari' });
         }}
-        title="Install Aurora"
-        description="Add Aurora to your Home Screen for quick, full-screen access — just like an app."
+        title="Install Jotspring"
+        description="Add Jotspring to your Home Screen for quick, full-screen access — just like an app."
       >
         <ol className="space-y-4 text-sm text-fg">
           <li className="flex items-start gap-3">
@@ -104,7 +104,7 @@ export function InstallPrompt({ collapsed = false }: InstallPromptProps) {
               3
             </span>
             <span>
-              Tap <strong>Add</strong> — Aurora now opens full-screen right from your Home Screen.
+              Tap <strong>Add</strong> — Jotspring now opens full-screen right from your Home Screen.
             </span>
           </li>
         </ol>

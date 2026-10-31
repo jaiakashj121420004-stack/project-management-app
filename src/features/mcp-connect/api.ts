@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 
 /**
- * Data layer for connecting Claude Desktop/Code to Aurora via MCP — talks to
+ * Data layer for connecting Claude Desktop/Code to Jotspring via MCP — talks to
  * the `mcp-token` Edge Function, the only writer of `profiles.mcp_token_*` (a
  * DB trigger blocks the client from setting them directly). Unlike the
  * calendar feed token, the MCP token's PLAINTEXT is never stored server-side
