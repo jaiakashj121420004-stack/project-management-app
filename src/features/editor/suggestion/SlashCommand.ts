@@ -26,7 +26,14 @@ export const SlashCommand = Extension.create({
         // Only trigger at a block start or after whitespace, never mid-word.
         allowSpaces: false,
         startOfLine: false,
-        items: ({ query }) => filterSlashItems(query),
+        // A throw here would silently kill the menu, so fall back to the full list.
+        items: ({ query }) => {
+          try {
+            return filterSlashItems(query);
+          } catch {
+            return filterSlashItems('');
+          }
+        },
         command: ({ editor, range, props }) => {
           editor.chain().focus().deleteRange(range).run();
           (props as SlashItem).command(editor);

@@ -321,6 +321,11 @@ function textRunOptionsFor(node: JSONContent, extra?: Record<string, unknown>): 
       case 'textStyle': {
         const color = hexColor(mark.attrs?.color);
         if (color) opts.color = color;
+        // Word measures size in half-points; our marks store CSS "18px"/"14pt".
+        const size = parseFontSizePt(mark.attrs?.fontSize);
+        if (size) opts.size = Math.round(size * 2);
+        const family = firstFontName(mark.attrs?.fontFamily);
+        if (family) opts.font = family;
         break;
       }
       default:
@@ -328,6 +333,22 @@ function textRunOptionsFor(node: JSONContent, extra?: Record<string, unknown>): 
     }
   }
   return opts;
+}
+
+/** "18px" / "14pt" → points, or null. */
+function parseFontSizePt(value: unknown): number | null {
+  if (typeof value !== 'string') return null;
+  const match = /^(\d+(?:\.\d+)?)(px|pt)?$/.exec(value.trim());
+  if (!match) return null;
+  const n = Number(match[1]);
+  return match[2] === 'pt' ? n : n * 0.75;
+}
+
+/** The first family in a CSS font stack, unquoted. */
+function firstFontName(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const first = value.split(',')[0]?.replace(/["']/g, '').trim();
+  return first || null;
 }
 
 /** One inline (text/hardBreak/mathInline) node → a paragraph child, or null to
@@ -478,6 +499,32 @@ const HEADING_LEVEL: Record<number, keyof DocxModule['HeadingLevel']> = {
   3: 'HEADING_3',
 };
 
+/** Word has no per-divider width, so only the line style, thickness and colour carry over. */
+function ruleParagraph(node: JSONContent, ctx: ConvertCtx) {
+  const { BorderStyle, Paragraph } = ctx.docx;
+  const variant = String(node.attrs?.variant ?? 'solid');
+  const style =
+    variant === 'dashed' ? BorderStyle.DASHED
+    : variant === 'dotted' || variant === 'dots' ? BorderStyle.DOTTED
+    : variant === 'double' ? BorderStyle.DOUBLE
+    : BorderStyle.SINGLE;
+  const thickness = Math.min(12, Math.max(1, Number(node.attrs?.thickness) || 2));
+  return new Paragraph({
+    border: { bottom: { style, size: thickness * 4, color: hexColor(node.attrs?.color) ?? '999999', space: 1 } },
+  });
+}
+
+/** textAlign attr → docx AlignmentType (undefined = left). */
+function alignmentOf(node: JSONContent, ctx: ConvertCtx) {
+  const { AlignmentType } = ctx.docx;
+  switch (node.attrs?.textAlign) {
+    case 'center': return AlignmentType.CENTER;
+    case 'right': return AlignmentType.RIGHT;
+    case 'justify': return AlignmentType.JUSTIFIED;
+    default: return undefined;
+  }
+}
+
 /** One block node → zero or more docx blocks. Best-effort, mirroring
  *  serialize.ts's blockToMd: an unrecognised node degrades to its flattened
  *  inline text rather than being dropped silently. */
@@ -486,13 +533,14 @@ function blockToDocx(node: JSONContent, ctx: ConvertCtx): Block[] {
 
   switch (node.type) {
     case 'paragraph':
-      return [new Paragraph({ children: inlineChildren(node.content, ctx) })];
+      return [new Paragraph({ alignment: alignmentOf(node, ctx), children: inlineChildren(node.content, ctx) })];
 
     case 'heading': {
       const level = Math.min(3, Math.max(1, Number(node.attrs?.level) || 1));
       return [
         new Paragraph({
           heading: ctx.docx.HeadingLevel[HEADING_LEVEL[level] ?? 'HEADING_1'],
+          alignment: alignmentOf(node, ctx),
           children: inlineChildren(node.content, ctx),
         }),
       ];
@@ -529,7 +577,7 @@ function blockToDocx(node: JSONContent, ctx: ConvertCtx): Block[] {
     }
 
     case 'horizontalRule':
-      return [new Paragraph({ thematicBreak: true })];
+      return [ruleParagraph(node, ctx)];
 
     case 'bulletList':
     case 'orderedList':

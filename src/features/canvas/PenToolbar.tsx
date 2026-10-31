@@ -1,5 +1,15 @@
 import { useState } from 'react';
-import { Brush, ChevronDown, ChevronUp, Highlighter, Pen, Pipette } from 'lucide-react';
+import {
+  Brush,
+  ChevronDown,
+  ChevronUp,
+  Highlighter,
+  Paintbrush,
+  Pen,
+  PenTool,
+  Pencil,
+  Pipette,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { ColorPicker } from './ColorPicker';
@@ -20,6 +30,9 @@ interface PenToolbarProps {
 
 const PRESET_ICONS: Record<PenPreset, LucideIcon> = {
   pen: Pen,
+  ink: PenTool,
+  pencil: Pencil,
+  crayon: Paintbrush,
   marker: Brush,
   highlighter: Highlighter,
 };

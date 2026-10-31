@@ -1,11 +1,12 @@
-import { useMemo, type MouseEvent } from 'react';
-import { Maximize2, Locate } from 'lucide-react';
+import { useMemo, useState, type MouseEvent } from 'react';
+import { ChevronDown, ChevronUp, Locate, Scan } from 'lucide-react';
 import { clampScale, type Camera } from './constants';
 import type { CanvasElement } from './elements';
 import { sceneBounds, fitCamera, centerCamera, type Bounds } from './bounds';
 
 const W = 176;
 const H = 116;
+const OPEN_KEY = 'aurora.canvas.minimapOpen';
 
 interface CanvasMinimapProps {
   elements: CanvasElement[];
@@ -21,6 +22,25 @@ interface CanvasMinimapProps {
  * out of the heavy stage. Renders in both edit and view modes.
  */
 export function CanvasMinimap({ elements, camera, viewport, onCameraChange }: CanvasMinimapProps) {
+  // Collapsed by default: just Fit / Reset and an expand button. The full map is
+  // one tap away, and the choice is remembered.
+  const [open, setOpen] = useState(() => {
+    try {
+      return localStorage.getItem(OPEN_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+  function toggleOpen() {
+    setOpen((v) => {
+      try {
+        localStorage.setItem(OPEN_KEY, v ? '0' : '1');
+      } catch {
+        /* storage unavailable — the in-memory choice still holds */
+      }
+      return !v;
+    });
+  }
   const view = useMemo<Bounds>(() => {
     const scale = camera.scale || 1;
     return {
@@ -74,56 +94,59 @@ export function CanvasMinimap({ elements, camera, viewport, onCameraChange }: Ca
     onCameraChange({ x: viewport.width / 2, y: viewport.height / 2, scale: 1 });
   }
 
+  const barButton =
+    'flex h-8 items-center justify-center gap-1 rounded-lg px-2 text-xs font-medium text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg';
+
   return (
-    <div className="glass-menu pointer-events-auto flex flex-col gap-1.5 rounded-2xl border border-[var(--glass-border)] p-1.5 shadow-[0_14px_34px_-18px_rgba(0,0,0,0.7)]">
-      <svg
-        width={W}
-        height={H}
-        onClick={jump}
-        role="img"
-        aria-label="Canvas minimap — click to jump"
-        className="cursor-pointer rounded-lg bg-[var(--glass-fill)]"
-      >
-        {elements.map((el) => (
-          <rect
-            key={el.id}
-            x={px(el.x)}
-            y={py(el.y)}
-            width={Math.max(1.5, el.width * m)}
-            height={Math.max(1.5, el.height * m)}
-            rx={1}
-            fill="var(--accent-from)"
-            fillOpacity={0.4}
-          />
-        ))}
-        <rect
-          x={px(view.minX)}
-          y={py(view.minY)}
-          width={Math.max(4, (view.maxX - view.minX) * m)}
-          height={Math.max(4, (view.maxY - view.minY) * m)}
-          fill="none"
-          stroke="var(--accent-from)"
-          strokeWidth={1.5}
-        />
-      </svg>
-      <div className="flex gap-1">
-        <button
-          type="button"
-          onClick={fit}
-          title="Fit to content"
-          aria-label="Fit to content"
-          className="flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+    <div className="glass-menu pointer-events-auto flex flex-col gap-1.5 rounded-2xl border border-[var(--glass-border)] p-1 shadow-[0_14px_34px_-18px_rgba(0,0,0,0.7)]">
+      {open && (
+        <svg
+          width={W}
+          height={H}
+          onClick={jump}
+          role="img"
+          aria-label="Canvas minimap — click to jump"
+          className="cursor-pointer rounded-lg bg-[var(--glass-fill)]"
         >
-          <Maximize2 size={13} /> Fit
+          {elements.map((el) => (
+            <rect
+              key={el.id}
+              x={px(el.x)}
+              y={py(el.y)}
+              width={Math.max(1.5, el.width * m)}
+              height={Math.max(1.5, el.height * m)}
+              rx={1}
+              fill="var(--accent-from)"
+              fillOpacity={0.4}
+            />
+          ))}
+          <rect
+            x={px(view.minX)}
+            y={py(view.minY)}
+            width={Math.max(4, (view.maxX - view.minX) * m)}
+            height={Math.max(4, (view.maxY - view.minY) * m)}
+            fill="none"
+            stroke="var(--accent-from)"
+            strokeWidth={1.5}
+          />
+        </svg>
+      )}
+      <div className="flex items-center gap-0.5">
+        <button type="button" onClick={fit} title="Fit to content" aria-label="Fit to content" className={barButton}>
+          <Scan size={14} /> Fit
+        </button>
+        <button type="button" onClick={reset} title="Reset view" aria-label="Reset view" className={barButton}>
+          <Locate size={14} /> Reset
         </button>
         <button
           type="button"
-          onClick={reset}
-          title="Reset view"
-          aria-label="Reset view"
-          className="flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs text-fg-muted transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+          onClick={toggleOpen}
+          aria-expanded={open}
+          title={open ? 'Hide map' : 'Show map'}
+          aria-label={open ? 'Hide map' : 'Show map'}
+          className={`${barButton} w-8 px-0`}
         >
-          <Locate size={13} /> Reset
+          {open ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
         </button>
       </div>
     </div>

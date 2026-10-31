@@ -9,7 +9,7 @@ import {
   type ChangeEvent,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { AlertCircle, Check, Eye, Maximize2, Pencil, Trash2, X } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Check, Eye, Maximize2, Pencil, Trash2, X } from 'lucide-react';
 import { Spinner } from '@/components/feedback/Spinner';
 import { SegmentedToggle } from '@/components/forms/SegmentedToggle';
 import { CanvasMinimap } from './CanvasMinimap';
@@ -47,6 +47,7 @@ import {
   type CanvasElement,
   type CanvasScene,
   type ElementPatch,
+  type ShapeKind,
 } from './elements';
 import type { ParsedEmbed } from './embeds';
 import { buildStroke, erasePartialStroke, type ErasePoint, type StrokeStyle } from './freehand';
@@ -59,6 +60,17 @@ import { centerCamera } from './bounds';
 import { PenToolbar } from './PenToolbar';
 import { EraserToolbar } from './EraserToolbar';
 import { InkDock } from './InkDock';
+import { usePalmGuard } from './palmGuard';
+import {
+  createClosedShape,
+  createLineShape,
+  defaultShapeStyle,
+  isLineKind,
+  rebindConnectors,
+} from './shapes';
+import { ShapeStyleBar } from './ShapeStyleBar';
+import type { WorldPoint } from './selection';
+import { useFocusHistory } from './useFocusHistory';
 import {
   NUDGE_STEP,
   NUDGE_LARGE_STEP,
@@ -216,7 +228,7 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
   // ── collaborative document (replaces the old local useSceneHistory) ──────────
   const {
     scene,
-    commit,
+    commit: commitRaw,
     undo,
     redo,
     canUndo,
@@ -233,6 +245,13 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
     setLocalSelection,
   } = useYjsCanvas({ note, realtimeEnabled, me });
 
+  // Every commit re-aims arrows glued to shapes, so a flowchart stays connected
+  // however its boxes were moved, resized or pasted.
+  const commit = useCallback(
+    (next: CanvasScene) => commitRaw({ ...next, elements: rebindConnectors(next.elements) }),
+    [commitRaw],
+  );
+
   const caretUser = useMemo(
     () => ({ name: me?.name ?? 'You', color: me?.color ?? '#7C3AED' }),
     [me],
@@ -243,7 +262,8 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
   const editing = canEdit && mode === 'edit';
   const [tool, setTool] = useState<CanvasTool>('select');
   // Full-screen writing mode: everything but the canvas + a compact dock hides.
-  const [focus, setFocus] = useState(false);
+  // Full screen is the default way to open a canvas; Back / Esc / the Exit button leave it.
+  const [focus, setFocus] = useState(true);
   const [showMoreTools, setShowMoreTools] = useState(false);
   const [pen, setPen] = useState<PenSettings>(() => defaultPenSettings(theme));
   const [eraserMode, setEraserMode] = useState<EraserMode>('object');
@@ -251,6 +271,8 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
 
   // Multi-select: array of selected element ids.
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [shapeKind, setShapeKind] = useState<ShapeKind>('rect');
+  const [editingShapeId, setEditingShapeId] = useState<string | null>(null);
   // Element clipboard (copy/paste).
   const [clipboard, setClipboard] = useState<CanvasElement[]>([]);
   // Context menu state.
@@ -270,14 +292,23 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
   const erasingRef = useRef<ReadonlySet<string>>(erasingIds);
   useEffect(() => { erasingRef.current = erasingIds; }, [erasingIds]);
 
+  // Precision eraser works on a live copy of the scene so ink disappears under
+  // the nib as you scrub; the copy is committed as ONE undo step on release.
+  const [eraseWork, setEraseWork] = useState<CanvasElement[] | null>(null);
+  const eraseWorkRef = useRef<CanvasElement[] | null>(null);
+
+  usePalmGuard(editing);
+  const leaveFocus = useCallback(() => {
+    setFocus(false);
+    setShowMoreTools(false);
+  }, []);
+  useFocusHistory(focus, leaveFocus);
+
   const effectiveTool: CanvasTool = editing ? tool : 'select';
-  const visibleElements = useMemo(
-    () =>
-      erasingIds.size === 0
-        ? scene.elements
-        : scene.elements.filter((el) => !erasingIds.has(el.id)),
-    [scene.elements, erasingIds],
-  );
+  const visibleElements = useMemo(() => {
+    const base = eraseWork ?? scene.elements;
+    return erasingIds.size === 0 ? base : base.filter((el) => !erasingIds.has(el.id));
+  }, [scene.elements, erasingIds, eraseWork]);
 
   const [saved, setSaved] = useState<{ scene: CanvasScene; pageType: PageType; title: string }>(
     () => ({ scene, pageType, title: note.title }),
@@ -511,40 +542,49 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
   );
 
   const endErase = useCallback(() => {
+    const work = eraseWorkRef.current;
+    if (work) {
+      eraseWorkRef.current = null;
+      setEraseWork(null);
+      commit({ elements: work });
+      return;
+    }
     const ids = erasingRef.current;
     if (ids.size === 0) return;
     commit({ elements: scene.elements.filter((el) => !ids.has(el.id)) });
     setErasingIds(new Set());
   }, [commit, scene.elements]);
 
-  // Precision eraser: split each stroke the nib passed over into surviving
-  // pieces (keeping their original z), committed as one undo step.
-  const handlePrecisionErase = useCallback(
-    (path: ErasePoint[], radius: number) => {
-      const elements = sceneElementsRef.current;
-      let changed = false;
-      const next: CanvasElement[] = [];
-      for (const el of elements) {
-        if (el.type === 'stroke') {
-          const pieces = erasePartialStroke(el, path, radius, elements);
-          if (pieces !== null) {
-            changed = true;
-            for (const piece of pieces) next.push({ ...piece, z: el.z });
-            continue;
-          }
+  // Precision eraser: called as the nib moves with the newest stretch of its
+  // path. Each stroke it touches is split into surviving pieces (keeping the
+  // original z) in the live copy; nothing is committed until the gesture ends.
+  const handlePrecisionErase = useCallback((path: ErasePoint[], radius: number) => {
+    const elements = eraseWorkRef.current ?? sceneElementsRef.current;
+    let changed = false;
+    const next: CanvasElement[] = [];
+    for (const el of elements) {
+      if (el.type === 'stroke') {
+        const pieces = erasePartialStroke(el, path, radius, elements);
+        if (pieces !== null) {
+          changed = true;
+          for (const piece of pieces) next.push({ ...piece, z: el.z });
+          continue;
         }
-        next.push(el);
       }
-      if (changed) commit({ elements: next });
-    },
-    [commit],
-  );
+      next.push(el);
+    }
+    if (changed) {
+      eraseWorkRef.current = next;
+      setEraseWork(next);
+    }
+  }, []);
 
   // ── tool / selection / text edit ─────────────────────────────────────────────
 
   const changeTool = useCallback((next: CanvasTool) => {
     setTool(next);
     setEditingTextId(null);
+    setEditingShapeId(null);
     if (next !== 'select') setSelectedIds([]);
   }, []);
 
@@ -559,6 +599,51 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
   }, []);
 
   const endTextEdit = useCallback(() => setEditingTextId(null), []);
+
+  // ── shapes, arrows and area selection ────────────────────────────────────────
+
+  const shapeInk = theme === 'dark' ? '#f8fafc' : '#0f172a';
+
+  /** Pick a shape in the picker: arm the shape tool with it. */
+  const pickShape = useCallback((kind: ShapeKind) => {
+    setShapeKind(kind);
+    setTool('shape');
+    setEditingTextId(null);
+    setSelectedIds([]);
+  }, []);
+
+  const createShape = useCallback(
+    (a: WorldPoint, b: WorldPoint) => {
+      const style = defaultShapeStyle(shapeKind, shapeInk);
+      const element = isLineKind(shapeKind)
+        ? createLineShape(shapeKind, a, b, sceneElementsRef.current, style)
+        : createClosedShape(shapeKind, a, b, sceneElementsRef.current, style);
+      commit({ elements: [...sceneElementsRef.current, element] });
+      // Done drawing: hand over to Select so it can be moved / labelled right away.
+      setTool('select');
+      setSelectedIds([element.id]);
+      if (!isLineKind(shapeKind)) setEditingShapeId(element.id);
+    },
+    [commit, shapeKind, shapeInk],
+  );
+
+  const areaSelect = useCallback((ids: string[]) => {
+    setSelectedIds(ids);
+    if (ids.length > 0) setTool('select');
+  }, []);
+
+  const commitShapeLabel = useCallback(
+    (id: string, label: string) => {
+      commit({
+        elements: sceneElementsRef.current.map((el) =>
+          el.id === id && el.type === 'shape' ? { ...el, label: label.trim() } : el,
+        ),
+      });
+    },
+    [commit],
+  );
+
+  const endShapeEdit = useCallback(() => setEditingShapeId(null), []);
 
   // ── element actions ──────────────────────────────────────────────────────────
 
@@ -941,6 +1026,13 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
   }
 
   const hasSelection = validSelectedIds.length > 0;
+  const selectedShapes = useMemo(
+    () =>
+      validSelectedIds
+        .map((id) => scene.elements.find((el) => el.id === id))
+        .filter((el): el is Extract<CanvasElement, { type: 'shape' }> => el?.type === 'shape'),
+    [validSelectedIds, scene.elements],
+  );
   const selectedLocked = primaryElement?.locked ?? false;
 
   const content = (
@@ -987,6 +1079,39 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
           </div>
         )}
       </div>
+      )}
+
+      {focus && (
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center gap-2 px-2 sm:px-3"
+          style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))' }}
+        >
+          <button
+            type="button"
+            onClick={toggleFocus}
+            aria-label="Exit full screen"
+            className="pointer-events-auto inline-flex h-11 items-center gap-2 rounded-2xl bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] px-4 text-sm font-bold text-[var(--accent-fg)] shadow-[0_10px_26px_-10px_var(--accent-glow)] ring-1 ring-white/20 transition-transform hover:-translate-y-px active:translate-y-0"
+          >
+            <ArrowLeft size={18} />
+            <span>Exit full screen</span>
+          </button>
+          <span className="glass-menu pointer-events-auto hidden min-w-0 max-w-[40vw] truncate rounded-2xl border border-[var(--glass-border)] px-3 py-2 text-sm font-semibold text-fg sm:block">
+            {title.trim() || 'Untitled canvas'}
+          </span>
+          <span className="glass-menu pointer-events-auto rounded-2xl border border-[var(--glass-border)] px-2.5 py-1.5">
+            <SaveIndicator status={status} />
+          </span>
+          {editing && (
+            <button
+              type="button"
+              onClick={() => setShowMoreTools((v) => !v)}
+              aria-expanded={showMoreTools}
+              className="glass-menu pointer-events-auto ml-auto h-11 rounded-2xl border border-[var(--glass-border)] px-3.5 text-sm font-semibold text-fg-muted hover:text-fg"
+            >
+              {showMoreTools ? 'Hide more tools' : 'More tools'}
+            </button>
+          )}
+        </div>
       )}
 
       {confirmingDelete && canEdit && !focus && (
@@ -1055,6 +1180,14 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
             onTextResize={handleTextResize}
             remotePeers={remotePeers}
             onPointerWorldMove={editing ? setLocalCursor : undefined}
+            shapeKind={shapeKind}
+            shapeInk={shapeInk}
+            onCreateShape={createShape}
+            onAreaSelect={areaSelect}
+            onEditShape={setEditingShapeId}
+            editingShapeId={editing ? editingShapeId : null}
+            onCommitShapeLabel={commitShapeLabel}
+            onEndShapeEdit={endShapeEdit}
           />
         </div>
 
@@ -1071,18 +1204,8 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
 
         <div
           className="pointer-events-none absolute inset-x-0 top-0 flex flex-col items-center gap-2 p-2 sm:p-3"
-          style={focus ? { paddingTop: 'max(0.5rem, env(safe-area-inset-top))' } : undefined}
+          style={focus ? { paddingTop: 'calc(max(0.5rem, env(safe-area-inset-top)) + 3.5rem)' } : undefined}
         >
-          {focus && editing && (
-            <button
-              type="button"
-              onClick={() => setShowMoreTools((v) => !v)}
-              aria-expanded={showMoreTools}
-              className="glass-menu pointer-events-auto self-end rounded-xl border border-[var(--glass-border)] px-3 py-1.5 text-xs font-semibold text-fg-muted hover:text-fg"
-            >
-              {showMoreTools ? 'Hide more tools' : 'More tools'}
-            </button>
-          )}
           {(!focus || showMoreTools) && (
           <CanvasToolbar
             className="pointer-events-auto"
@@ -1116,6 +1239,8 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
             onSendToBack={sendToBackAction}
             showLayers={showLayers}
             onToggleLayers={() => setShowLayers((v) => !v)}
+            shapeKind={shapeKind}
+            onPickShape={pickShape}
           />
           )}
           {soleFrame && (
@@ -1139,6 +1264,15 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
           {editing && tool === 'draw' && (
             <PenToolbar className="pointer-events-auto" settings={pen} onChange={setPen} />
           )}
+          {editing && tool === 'select' && selectedShapes.length > 0 && (
+            <ShapeStyleBar
+              className="pointer-events-auto"
+              shapes={selectedShapes}
+              onPatch={(patch) => {
+                for (const sh of selectedShapes) changeElement(sh.id, patch);
+              }}
+            />
+          )}
           {editing && tool === 'erase' && (
             <EraserToolbar
               className="pointer-events-auto"
@@ -1161,6 +1295,8 @@ function CanvasEditorReady({ note, projectId, canEdit, onDeleted }: CanvasEditor
               onRedo={redo}
               focus={focus}
               onToggleFocus={toggleFocus}
+              shapeKind={shapeKind}
+              onPickShape={pickShape}
             />
           )}
         </div>

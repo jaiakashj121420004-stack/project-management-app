@@ -3,15 +3,19 @@ import {
   Suspense,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ChangeEvent,
 } from 'react';
-import { AlertCircle, Check, Download, Eye, FileText, FileType, Pencil, Trash2 } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { AlertCircle, ArrowLeft, Check, Download, Eye, FileText, FileType, Maximize2, Pencil, Trash2 } from 'lucide-react';
 import type { JSONContent } from '@tiptap/core';
 import { Spinner } from '@/components/feedback/Spinner';
 import { RouteErrorBoundary } from '@/components/feedback/RouteErrorBoundary';
 import { useAuth } from '@/hooks/useAuth';
+import { useFocusHistory } from '@/features/canvas/useFocusHistory';
+import { cn } from '@/lib/cn';
 import { ShareButton } from '@/features/sharing';
 import { EmojiPicker } from '@/components/forms/EmojiPicker';
 import { SegmentedToggle } from '@/components/forms/SegmentedToggle';
@@ -171,6 +175,25 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
     setViewMode(next);
   }
 
+  // Notes open full screen (distraction-free); Exit or the device Back button
+  // returns to the page chrome.
+  const [focus, setFocus] = useState(true);
+  const leaveFocus = useCallback(() => setFocus(false), []);
+  const [host] = useState(() => {
+    const el = document.createElement('div');
+    el.className = 'flex flex-1 flex-col';
+    return el;
+  });
+  const slotRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const target = focus ? document.body : slotRef.current;
+    target?.appendChild(host);
+    return () => {
+      host.remove();
+    };
+  }, [focus, host]);
+  useFocusHistory(focus, leaveFocus);
+
   function handleDelete() {
     runDelete({ id: note.id });
     onDeleted();
@@ -235,8 +258,27 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
     }
   }
 
-  return (
-    <div className="flex flex-1 flex-col gap-4">
+  const page = (
+    <div
+      className={cn(
+        'flex flex-1 flex-col gap-4',
+        focus && 'fixed inset-0 z-[80] overflow-y-auto bg-base px-4 pb-10 sm:px-[max(1rem,calc((100vw-62rem)/2))]',
+      )}
+      style={focus ? { paddingTop: 'max(0.75rem, env(safe-area-inset-top))' } : undefined}
+    >
+      {focus && (
+        <div className="sticky top-0 z-20 -mx-1 flex items-center gap-2 py-1">
+          <button
+            type="button"
+            onClick={leaveFocus}
+            aria-label="Exit full screen"
+            className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[linear-gradient(110deg,var(--accent-from),var(--accent-to))] px-4 text-sm font-bold text-[var(--accent-fg)] shadow-[0_10px_26px_-10px_var(--accent-glow)] ring-1 ring-white/20 transition-transform hover:-translate-y-px active:translate-y-0"
+          >
+            <ArrowLeft size={18} />
+            <span>Exit full screen</span>
+          </button>
+        </div>
+      )}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -267,6 +309,17 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
+          {!focus && (
+            <button
+              type="button"
+              aria-label="Full screen"
+              title="Full screen"
+              onClick={() => setFocus(true)}
+              className="grid h-9 w-9 place-items-center rounded-xl text-fg-subtle transition-colors hover:bg-[var(--glass-fill)] hover:text-fg"
+            >
+              <Maximize2 size={16} />
+            </button>
+          )}
           <button
             type="button"
             aria-label="Export as Markdown"
@@ -419,6 +472,17 @@ export function NoteEditor({ note, canEdit, onDeleted, runUpdate, runDelete }: N
         </Suspense>
       </RouteErrorBoundary>
     </div>
+  );
+
+  // The page always renders into one detached host element that is MOVED between the
+  // inline slot and <body>. A glass (backdrop-filter) ancestor would trap `fixed`, and
+  // re-parenting the DOM node (instead of remounting) keeps the editor and any unsaved
+  // text intact when toggling full screen.
+  return (
+    <>
+      <div ref={slotRef} className="flex flex-1 flex-col" />
+      {createPortal(page, host)}
+    </>
   );
 }
 

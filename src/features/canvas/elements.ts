@@ -74,7 +74,15 @@ export interface StrokeElement extends CanvasElementBase {
   /** True when width was simulated from velocity (finger/mouse); false when it
    *  came from real stylus pressure (pen). Persisted so re-renders match input. */
   simulatePressure: boolean;
+  /** Length (world px) of the tapered start/end — the ink pen's fountain-pen tips.
+   *  Absent / 0 = blunt ends. */
+  taper?: number;
+  /** Surface grain: 'pencil' (fine graphite) or 'crayon' (waxy, gappy). Absent = solid ink. */
+  texture?: StrokeTexture;
 }
+
+/** A grainy ink finish for the pencil / crayon pens. */
+export type StrokeTexture = 'pencil' | 'crayon';
 
 /** A rich-text box (Tiptap JSON body filled in P3.3). */
 export interface TextBoxElement extends CanvasElementBase {
@@ -133,6 +141,58 @@ export interface TableElement extends CanvasElementBase {
   hasHeaderRow: boolean;
 }
 
+/**
+ * Every shape the shape tool can draw. Closed shapes carry an optional centred
+ * label; the 'line' family are two-ended connectors whose geometry is `pts`.
+ */
+export type ShapeKind =
+  | 'rect'
+  | 'rounded'
+  | 'ellipse'
+  | 'triangle'
+  | 'diamond'
+  | 'hexagon'
+  | 'star'
+  | 'parallelogram'
+  | 'terminator'
+  | 'document'
+  | 'cylinder'
+  | 'callout'
+  | 'sticky'
+  | 'plus'
+  | 'check'
+  | 'cross'
+  | 'heart'
+  | 'line'
+  | 'arrow'
+  | 'double-arrow'
+  | 'elbow-arrow';
+
+export type ShapeDash = 'solid' | 'dashed' | 'dotted';
+
+/**
+ * A vector shape / flowchart block / arrow. Closed shapes fill their transform
+ * box; lines store their two endpoints in `pts` (`[x1, y1, x2, y2]`, local to the
+ * box, which is always their bounding box). An endpoint can be glued to another
+ * shape (`startBind` / `endBind` = "<shapeId>:<side>"), so a flowchart's arrows
+ * follow when its boxes are moved.
+ */
+export interface ShapeElement extends CanvasElementBase {
+  type: 'shape';
+  kind: ShapeKind;
+  /** CSS colour, or 'none' for an outline-only shape. */
+  fill: string;
+  stroke: string;
+  strokeWidth: number;
+  dash: ShapeDash;
+  /** Text centred inside a closed shape (empty = none). */
+  label: string;
+  /** Line family only: endpoints `[x1, y1, x2, y2]` in local space. */
+  pts: number[];
+  startBind: string | null;
+  endBind: string | null;
+}
+
 /** The discriminated union of everything that can live on a canvas. */
 export type CanvasElement =
   | StrokeElement
@@ -140,7 +200,8 @@ export type CanvasElement =
   | ImageElement
   | MediaElement
   | FrameElement
-  | TableElement;
+  | TableElement
+  | ShapeElement;
 
 /** A canvas element's `type` tag. */
 export type CanvasElementType = CanvasElement['type'];
@@ -154,6 +215,7 @@ export type CanvasElementType = CanvasElement['type'];
  */
 export type ElementPatch = Partial<CanvasElementBase> &
   Partial<Pick<StrokeElement, 'points' | 'size'>> &
+  Partial<Pick<ShapeElement, 'fill' | 'stroke' | 'strokeWidth' | 'dash' | 'label' | 'pts' | 'startBind' | 'endBind'>> &
   Partial<Pick<TextBoxElement, 'body' | 'text'>> &
   Partial<Pick<FrameElement, 'label' | 'color'>> &
   Partial<Pick<TableElement, 'rows' | 'cols' | 'cells' | 'colWidths' | 'hasHeaderRow'>>;
@@ -190,6 +252,8 @@ const strokeSchema = z.object({
   opacity: z.number().finite().min(0).max(1),
   blend: z.enum(['normal', 'multiply']),
   simulatePressure: z.boolean(),
+  taper: z.number().finite().nonnegative().optional(),
+  texture: z.enum(['pencil', 'crayon']).optional(),
 });
 
 const textBoxSchema = z.object({
@@ -232,6 +296,26 @@ const tableSchema = z.object({
   hasHeaderRow: z.boolean(),
 });
 
+const SHAPE_KINDS = [
+  'rect', 'rounded', 'ellipse', 'triangle', 'diamond', 'hexagon', 'star', 'parallelogram',
+  'terminator', 'document', 'cylinder', 'callout', 'sticky', 'plus', 'check', 'cross', 'heart',
+  'line', 'arrow', 'double-arrow', 'elbow-arrow',
+] as const;
+
+const shapeSchema = z.object({
+  ...baseSchema,
+  type: z.literal('shape'),
+  kind: z.enum(SHAPE_KINDS),
+  fill: z.string(),
+  stroke: z.string(),
+  strokeWidth: z.number().finite().positive(),
+  dash: z.enum(['solid', 'dashed', 'dotted']),
+  label: z.string(),
+  pts: z.array(z.number().finite()),
+  startBind: z.string().nullable(),
+  endBind: z.string().nullable(),
+});
+
 const elementSchema: z.ZodType<CanvasElement> = z.discriminatedUnion('type', [
   strokeSchema,
   textBoxSchema,
@@ -239,6 +323,7 @@ const elementSchema: z.ZodType<CanvasElement> = z.discriminatedUnion('type', [
   mediaSchema,
   frameSchema,
   tableSchema,
+  shapeSchema,
 ]);
 
 /** An empty scene (what a fresh canvas and the `{}` default both resolve to). */

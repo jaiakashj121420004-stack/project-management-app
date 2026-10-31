@@ -14,10 +14,13 @@ export interface Camera {
  *   - 'select' — pan (drag empty space), zoom, and select/move/resize elements;
  *   - 'draw'   — freehand pressure-sensitive strokes;
  *   - 'erase'  — eraser (removes whatever it touches);
- *   - 'text'   — click anywhere to drop a text box there and start typing.
+ *   - 'text'   — click anywhere to drop a text box there and start typing;
+ *   - 'lasso'  — draw a loop round things to select them (freehand select);
+ *   - 'marquee'— drag a rectangle to select everything inside it;
+ *   - 'shape'  — drag to draw the chosen shape / arrow / flowchart block.
  * Two-finger pan/zoom and wheel-zoom work in every mode.
  */
-export type CanvasTool = 'select' | 'draw' | 'erase' | 'text';
+export type CanvasTool = 'select' | 'draw' | 'erase' | 'text' | 'lasso' | 'marquee' | 'shape';
 
 /** Zoom bounds — far enough to overview a board, close enough to detail. */
 export const MIN_SCALE = 0.2;
@@ -46,10 +49,10 @@ export const NUDGE_LARGE_STEP = 10;
  */
 export type EraserMode = 'object' | 'precision';
 
-/** Precision-eraser nib radius (screen px); converted to world via the camera. */
-export const ERASER_MIN_SIZE = 6;
+/** Precision-eraser nib DIAMETER (screen px); halved + converted to world via the camera. */
+export const ERASER_MIN_SIZE = 4;
 export const ERASER_MAX_SIZE = 48;
-export const ERASER_DEFAULT_SIZE = 16;
+export const ERASER_DEFAULT_SIZE = 12;
 
 /** Long-press duration for context menu on touch (ms). */
 export const LONG_PRESS_MS = 600;

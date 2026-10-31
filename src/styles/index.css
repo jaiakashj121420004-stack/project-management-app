@@ -43,6 +43,10 @@
     0 1px 0 0 var(--glass-highlight) inset, 0 32px 60px -20px rgba(0, 0, 0, 0.66),
     0 12px 28px -10px rgba(0, 0, 0, 0.5);
   --hairline: rgba(221, 174, 160, 0.16); /* oxblood-tinted hairline */
+  /* Neumorphism: a soft light/dark shadow pair that extrudes a surface from the page. */
+  --neu-light: rgba(255, 238, 220, 0.07);
+  --neu-dark: rgba(0, 0, 0, 0.55);
+  --glass-sheen: linear-gradient(155deg, rgba(255, 238, 220, 0.1), rgba(255, 238, 220, 0) 42%);
   --field-bg: rgba(236, 226, 210, 0.05);
 
   /* Background wash — warm oxblood/gilt only, low opacity. No rainbow. */
@@ -106,6 +110,9 @@
     0 1px 0 0 var(--glass-highlight) inset, 0 34px 64px -24px rgba(74, 50, 30, 0.28),
     0 12px 28px -12px rgba(74, 50, 30, 0.18);
   --hairline: rgba(126, 42, 38, 0.2); /* faint oxblood-warm, a touch stronger */
+  --neu-light: rgba(255, 252, 245, 0.95);
+  --neu-dark: rgba(120, 88, 58, 0.3);
+  --glass-sheen: linear-gradient(155deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 45%);
   --field-bg: rgba(255, 251, 243, 0.6);
 
   --blob-1: rgba(122, 42, 38, 0.06);
@@ -208,6 +215,42 @@
     -webkit-backdrop-filter: blur(24px) saturate(1.5);
     border: 1px solid var(--glass-border);
     box-shadow: var(--glass-shadow);
+  }
+
+  /* Neumorphic surfaces: extruded from (raised) or pressed into (inset) the page.
+     Layered over glass they give the "glass over parchment" depth. */
+  .neu-raised {
+    background-image: var(--glass-sheen);
+    background-color: var(--glass-fill);
+    border: 1px solid var(--glass-border);
+    box-shadow:
+      7px 7px 16px -4px var(--neu-dark),
+      -6px -6px 14px -4px var(--neu-light);
+    transition:
+      box-shadow 0.25s ease,
+      transform 0.25s ease,
+      border-color 0.2s ease;
+  }
+  .neu-raised:hover {
+    transform: translateY(-1px);
+    border-color: var(--accent-from);
+  }
+  .neu-raised:active {
+    transform: translateY(0);
+    box-shadow:
+      inset 4px 4px 10px -3px var(--neu-dark),
+      inset -4px -4px 9px -3px var(--neu-light);
+  }
+  .neu-inset {
+    background-color: var(--glass-fill);
+    border: 1px solid var(--glass-border);
+    box-shadow:
+      inset 5px 5px 12px -4px var(--neu-dark),
+      inset -5px -5px 11px -4px var(--neu-light);
+  }
+  /* Soft glass sheen for any .glass surface that opts in. */
+  .glass-sheen {
+    background-image: var(--glass-sheen);
   }
 
   /* Opaque surface for dropdown menus/popovers so content underneath never
