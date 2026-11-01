@@ -24,3 +24,13 @@ Aurora api.txt
 # throwaway staging area for files the device bridge cannot delete outright
 # (mv-not-rm quirk) -- never commit its contents
 _to_delete/
+
+# local scratch / one-off assets -- never commit
+Claude outputs/
+Website pictures/
+Marketing pictures/
+microsoft store/
+/1
+/_wtest
+/zi*
+ship-*.bat
