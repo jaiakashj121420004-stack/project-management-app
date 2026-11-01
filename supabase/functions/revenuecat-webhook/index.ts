@@ -88,7 +88,9 @@ Deno.serve(async (req) => {
   const userId = event.app_user_id ?? '';
   if (!UUID_RE.test(userId)) return json(200, { ok: true, ignored: 'non-user app_user_id' });
 
-  const plan = PRODUCT_PLAN[event.product_id ?? ''];
+  // Google Play reports `subscriptionId:basePlanId`; Apple reports the bare product id.
+  const productId = (event.product_id ?? '').split(':')[0];
+  const plan = PRODUCT_PLAN[productId];
   if (!plan) {
     console.error('revenuecat-webhook: unknown product', event.product_id);
     return json(200, { ok: true, ignored: 'unknown product' });
@@ -109,7 +111,7 @@ Deno.serve(async (req) => {
       source,
       plan,
       status,
-      product_id: event.product_id,
+      product_id: productId,
       external_id: event.original_transaction_id ?? event.transaction_id ?? null,
       expires_at: expiresAt?.toISOString() ?? null,
       updated_at: new Date().toISOString(),
