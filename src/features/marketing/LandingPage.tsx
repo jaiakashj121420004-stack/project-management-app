@@ -59,8 +59,8 @@ function Shot({
   // so in production every visit currently 404s and falls back to `children`
   // — but before that error resolves, this <img> has no intrinsic size and
   // renders at ~0 height, then the page reflows once the mockup swaps in.
-  // `aspect-[1672/897]` reserves that height up front — matching the actual
-  // screenshots' native ratio (they're all cropped to 1672×897, see
+  // `aspect-[1568/713]` reserves that height up front — matching the actual
+  // screenshots' native ratio (they're all cropped to 1568×713, see
   // public/shots/README.txt) — so the swap doesn't move anything below it.
   // Real, measured regression this fixes: Phase 7 Lighthouse audit
   // (2026-08-23) traced 0.234 of a 0.331 total CLS score to exactly this
@@ -71,7 +71,7 @@ function Shot({
   // cropping it to fill a mismatched box hides real UI. Since the reserved
   // box now matches the screenshots' own ratio exactly, contain and cover
   // render identically for the current assets; contain just stays safe if a
-  // future replacement screenshot doesn't match 1672:897 exactly.
+  // future replacement screenshot doesn't match 1568:713 exactly.
   //
   // Tried eager-loading + fetchPriority="high" on the two above-the-fold
   // (Hero) instances on 2026-08-23 to speed up the onError→mockup swap —
@@ -86,7 +86,7 @@ function Shot({
       alt=""
       loading="lazy"
       onError={() => setFailed(true)}
-      className="lode-window aspect-[1672/897] w-full object-contain object-top"
+      className="lode-window aspect-[1568/713] w-full object-contain object-top"
     />
   );
 }
