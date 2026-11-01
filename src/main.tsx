@@ -27,12 +27,16 @@ import {
   persister,
   queryClient,
 } from '@/lib/queryClient';
+import { startNativeBootstrap } from '@/lib/native/bootstrap';
 import '@/styles/index.css';
 
 // Recover automatically if a code-split chunk 404s after a deploy (stale
 // service worker + a tab left open across a release) instead of leaving the
 // user stuck on a dead "Try again" button — see chunkReloadRecovery.ts.
 setupChunkReloadRecovery();
+
+// iOS/Android shells only (no-op elsewhere): store billing identity, push, status bar.
+startNativeBootstrap((path) => window.location.assign(path));
 
 // Apply the saved theme before first paint to avoid a flash of the wrong theme.
 applyTheme(getInitialTheme());

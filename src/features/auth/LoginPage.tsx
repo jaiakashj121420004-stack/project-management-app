@@ -4,6 +4,7 @@ import { Field } from '@/components/forms/Field';
 import { GradientButton } from '@/components/buttons/GradientButton';
 import { AuthLayout, AuthLink, OrDivider } from './AuthLayout';
 import { GoogleButton } from './GoogleButton';
+import { isNativeApp } from '@/lib/native/platform';
 import { FormNotice } from './FormNotice';
 import { signInWithEmail, signInWithGoogle } from './api';
 import { fieldErrorsOf, loginSchema } from './schemas';
@@ -59,8 +60,14 @@ export function LoginPage() {
     >
       {formError && <FormNotice tone="error">{formError}</FormNotice>}
 
-      <GoogleButton onClick={() => void onGoogle()} isLoading={googleLoading} />
-      <OrDivider />
+      {/* Google blocks OAuth in embedded webviews and Apple then requires Sign in
+          with Apple, so the store apps use email + password only. */}
+      {!isNativeApp() && (
+        <>
+          <GoogleButton onClick={() => void onGoogle()} isLoading={googleLoading} />
+          <OrDivider />
+        </>
+      )}
 
       <form onSubmit={(event) => void onSubmit(event)} noValidate className="flex flex-col gap-4">
         <Field

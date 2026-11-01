@@ -5,6 +5,7 @@ import { GradientButton } from '@/components/buttons/GradientButton';
 import { markGoogleSignupIntent, track } from '@/lib/analytics';
 import { AuthLayout, AuthLink, OrDivider } from './AuthLayout';
 import { GoogleButton } from './GoogleButton';
+import { isNativeApp } from '@/lib/native/platform';
 import { FormNotice } from './FormNotice';
 import { signUpWithEmail, signInWithGoogle } from './api';
 import { fieldErrorsOf, signUpSchema } from './schemas';
@@ -102,8 +103,14 @@ export function SignUpPage() {
     >
       {formError && <FormNotice tone="error">{formError}</FormNotice>}
 
-      <GoogleButton onClick={() => void onGoogle()} isLoading={googleLoading} />
-      <OrDivider />
+      {/* Google blocks OAuth in embedded webviews and Apple then requires Sign in
+          with Apple, so the store apps use email + password only. */}
+      {!isNativeApp() && (
+        <>
+          <GoogleButton onClick={() => void onGoogle()} isLoading={googleLoading} />
+          <OrDivider />
+        </>
+      )}
 
       <label className="flex items-start gap-2.5 text-sm text-fg-muted">
         <input
