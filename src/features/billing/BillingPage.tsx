@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Check, CreditCard, Sparkles, X } from 'lucide-react';
 import { GlassPanel } from '@/components/glass/GlassPanel';
@@ -20,6 +20,7 @@ import {
   type PlanId,
   type PricedPlanId,
 } from '@/lib/plans';
+import { isNativeApp } from '@/lib/native/platform';
 import { PlanBadge } from './PlanBadge';
 import { IntervalToggle } from './IntervalToggle';
 import { useBilling } from './useBilling';
@@ -27,7 +28,9 @@ import { useBilling } from './useBilling';
 /** Account → Billing: shows the current plan and the upgrade / manage actions. */
 export function BillingPage() {
   const { data: profile, isLoading } = useProfile();
-  const { startCheckout, openPortal, changePlan, pending, error, changed } = useBilling();
+  const { startCheckout, openPortal, changePlan, restore, restoreNotice, pending, error, changed } =
+    useBilling();
+  const native = isNativeApp();
   const [params, setParams] = useSearchParams();
   const queryClient = useQueryClient();
 
@@ -144,15 +147,29 @@ export function BillingPage() {
                   Upgrade to Pro
                 </GradientButton>
               )}
+              {native && (
+                <GradientButton
+                  variant="secondary"
+                  isLoading={pending === 'restore'}
+                  onClick={restore}
+                >
+                  Restore purchases
+                </GradientButton>
+              )}
             </div>
+            {restoreNotice && <p className="mt-3 text-sm text-success">{restoreNotice}</p>}
             {isPaid && plan !== 'enterprise' && (
               <p className="mt-2 text-xs text-fg-subtle">
-                Update your card, download invoices, or cancel in the Dodo Payments portal.
+                {native
+                  ? 'Manage or cancel your subscription in your App Store or Google Play account settings.'
+                  : 'Update your card, download invoices, or cancel in the Dodo Payments portal.'}
               </p>
             )}
           </>
         )}
       </GlassPanel>
+
+      {native && !isLoading && <SubscriptionTerms />}
 
       {!isLoading && plan === 'free' && (
         <PlanUpsell
@@ -196,6 +213,29 @@ export function BillingPage() {
         </>
       )}
     </Reveal>
+  );
+}
+
+/** Auto-renewal disclosure the App Store / Google Play expect next to any
+ *  in-app subscription offer. Only shown inside the store apps. */
+function SubscriptionTerms() {
+  return (
+    <p className="mb-5 mt-4 text-xs leading-relaxed text-fg-subtle">
+      Jotspring Pro and Team are auto-renewing subscriptions (monthly or yearly, as shown at
+      purchase). Payment is charged to your Apple ID or Google Play account at confirmation of
+      purchase. Your subscription renews automatically unless it is cancelled at least 24 hours
+      before the end of the current period, and your account is charged for renewal within 24 hours
+      before the period ends. You can manage or cancel it any time in your App Store or Google Play
+      account settings. See our{' '}
+      <Link to="/terms" className="underline">
+        Terms of Service
+      </Link>{' '}
+      and{' '}
+      <Link to="/privacy" className="underline">
+        Privacy Policy
+      </Link>
+      .
+    </p>
   );
 }
 
