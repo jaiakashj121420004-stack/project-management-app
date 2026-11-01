@@ -5,6 +5,7 @@ import { mustUseStoreBilling } from '@/lib/native/platform';
 import {
   PurchaseCancelled,
   purchaseStorePlan,
+  restoreStorePurchases,
   storeSubscriptionsUrl,
 } from '@/lib/native/storeBilling';
 import type { BillingInterval, PricedPlanId } from '@/lib/plans';
@@ -15,7 +16,7 @@ import { createCheckoutUrl, createPortalUrl, requestPlanChange } from './api';
  * the verified RevenueCat webhook fires; we just refetch the profile after. */
 const STORE_PURCHASE_FAILED = 'Could not complete the purchase. Please try again.';
 
-type Pending = 'checkout' | 'portal' | 'change' | null;
+type Pending = 'checkout' | 'portal' | 'change' | 'restore' | null;
 type CheckoutPlan = Exclude<PricedPlanId, 'free'>;
 
 /**
@@ -31,7 +32,27 @@ export function useBilling() {
   const [pending, setPending] = useState<Pending>(null);
   const [error, setError] = useState<string | null>(null);
   const [changed, setChanged] = useState(false);
+  const [restoreNotice, setRestoreNotice] = useState<string | null>(null);
   const queryClient = useQueryClient();
+
+  /** Store apps only: re-attach purchases made on another device or before a
+   * reinstall (Apple requires a visible way to do this). */
+  async function restore(): Promise<void> {
+    setPending('restore');
+    setError(null);
+    setRestoreNotice(null);
+    try {
+      await restoreStorePurchases();
+      setRestoreNotice('Purchases restored. If your plan still shows Free, it will update in a few seconds.');
+      for (const delayMs of [1500, 4000, 8000]) {
+        setTimeout(() => void queryClient.invalidateQueries({ queryKey: ['profile'] }), delayMs);
+      }
+    } catch {
+      setError('Could not restore purchases. Please try again.');
+    } finally {
+      setPending(null);
+    }
+  }
 
   async function storePurchase(interval: BillingInterval, plan: CheckoutPlan): Promise<void> {
     setPending('checkout');
@@ -116,6 +137,8 @@ export function useBilling() {
     openPortal: () => void go('portal', 'month', 'pro'),
     /** Switch an existing subscription's interval or tier in place. */
     changePlan: (interval: BillingInterval, plan: CheckoutPlan) => void changePlan(interval, plan),
+    restore: () => void restore(),
+    restoreNotice,
     pending,
     error,
     changed,
