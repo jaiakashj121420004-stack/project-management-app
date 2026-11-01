@@ -1,4 +1,4 @@
-# Aurora — Mobile + Desktop UI/UX audit (2026-07-16)
+# Jotspring — Mobile + Desktop UI/UX audit (2026-07-16)
 
 Audited from the code (the deployed app renders desktop-width in my browser tool, so I could not
 drive a true <768px viewport live). Desktop layout verified clean via the live app. Each item below

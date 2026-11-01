@@ -1,6 +1,6 @@
 # Phase 7 — Verification & Go-Live
 
-*The proof-it-works pass for the Aurora remediation (Phases 1–6). Built 2026-07-15. This is a **checklist you execute on Windows + a real phone** — Claude wrote the harness and the scripts, but the runtime evidence (Lighthouse numbers, device screenshots, smoke ticks) has to be captured on your machine. Fill the result columns in as you go.*
+*The proof-it-works pass for the Jotspring remediation (Phases 1–6). Built 2026-07-15. This is a **checklist you execute on Windows + a real phone** — Claude wrote the harness and the scripts, but the runtime evidence (Lighthouse numbers, device screenshots, smoke ticks) has to be captured on your machine. Fill the result columns in as you go.*
 
 **Environment reminder:** the in-session Linux mount serves truncated reads, so nothing here was built or committed from the session. Run the Windows commands in §6, then work top-to-bottom.
 
@@ -84,7 +84,7 @@ Do this on a **real phone** (not just DevTools emulation), in **both Day and Nig
 | 1 | **Board DnD** | Drag a card between columns with touch; columns are `85vw` and scroll horizontally; no accidental scroll-vs-drag conflict; drop persists after reload | ☐ | ☐ |
 | 2 | **Modals / focus** | Open a card modal + a dialog; it's a bottom sheet; Esc/backdrop close; focus is trapped and returns to the trigger; on-screen keyboard doesn't cover the field | ☐ | ☐ |
 | 3 | **Canvas** | Pen draws with finger/stylus; two-finger pan/zoom; palm rejection; the **collapsible pen-colour panel** toggles + remembers its state; minimap click-jumps; text boxes editable | ☐ | ☐ |
-| 4 | **Install** | "Add to Home Screen" installs the Aurora "A" icon + splash; launches standalone (no browser chrome); status bar/safe-area correct | ☐ | ☐ |
+| 4 | **Install** | "Add to Home Screen" installs the Jotspring "A" icon + splash; launches standalone (no browser chrome); status bar/safe-area correct | ☐ | ☐ |
 | 5 | **Offline** | With the app installed, enable Airplane mode → the app shell still loads; previously-viewed data shows from cache; a write while offline surfaces the failure toast (doesn't silently vanish); reconnect recovers | ☐ | ☐ |
 | 6 | **Layout hygiene** | No horizontal overflow on any screen; project tab row scrolls (no clipped "Activity"); everything clears the bottom nav (`main` pb); top-bar search shrinks to "Search…" | ☐ | ☐ |
 | 7 | **Targets & legibility** | All tap targets ≥ 40px; body text legible; both themes correct; AA holds on labels/pills | ☐ | ☐ |
@@ -139,7 +139,7 @@ Original audit: **Design 7.5 · Engineering 7.5 · Security 8.5.** Each phase cl
 ### Design (was 7.5 → **9.5**)
 | Audit path item | Closed by | Evidence |
 |---|---|---|
-| P0 One product name (Aurora), new logo, retire Lodestar | Phase 1 | Aurora "A" monogram + full icon set; `gradient-text` wordmark removed; `/lodestar`→`/preview`; grep-clean of user-facing "Lodestar" |
+| P0 One product name (Jotspring), new logo, retire Lodestar | Phase 1 | Jotspring "A" monogram + full icon set; `gradient-text` wordmark removed; `/lodestar`→`/preview`; grep-clean of user-facing "Lodestar" |
 | P0 Label/priority/badge contrast → per-theme token; `success`/`info` theme-reactive | Phase 3 | `lib/contrast.ts` + `contrast.test.ts` proves every token ≥ 4.5:1 both modes |
 | P0 Focus trap + restore + `aria-labelledby` on Modal/palette/drawer | Phase 3 | `hooks/useFocusTrap.ts` + `useFocusTrap.test.tsx`; wired in Modal/CommandPalette/Sidebar drawer |
 | P1 Wire Topbar search → palette; `MotionConfig`; skip link | Phase 4 / Phase 3 | `paletteStore.ts`; `<MotionConfig reducedMotion="user">`; skip-to-content in AppShell |
@@ -160,7 +160,7 @@ Original audit: **Design 7.5 · Engineering 7.5 · Security 8.5.** Each phase cl
 | #1 Email-enumeration oracle | Phase 6 | `revoke execute` on `user_id_for_email`; share RPCs inline the lookup + return generic no-op |
 | #2 Webhook product not validated | Phase 6 | fail-closed `PRO_PRODUCT_IDS` set before any Pro grant |
 | #2/#3 `business_id` + `metadata.user_id` unvalidated | Phase 6 | `business_id` required + matched; `user_id` UUID-validated before the PostgREST filter |
-| #4 Plaintext secret file | Phase 6 | `Aurora payment api.txt` deleted (was gitignored/untracked) |
+| #4 Plaintext secret file | Phase 6 | `Jotspring payment api.txt` deleted (was gitignored/untracked) |
 | #5 Non-constant-time cron compare; CORS `*`; no rate limiting | Phase 6 | `timingSafeEqual`; CORS scoped to `APP_URL`; per-user sliding-window throttle |
 | #6 No server-side XSS sanitizer | Phase 6 | `sanitizeBlockHtml` (isomorphic-dompurify) over `generateHTML` output |
 | Assurance: automated RLS regression tests | Phase 6 | pgTAP `rls_regression.test.sql` (`plan(15)`) + `rls-tests.yml` |
@@ -215,4 +215,4 @@ The engineering is done; these are the remaining launch blockers that Claude **c
 4. **External penetration test.** The audit's key assurance ask: commission **one external pen-test** before charging real money. RLS is dual-enforced and now regression-tested, but an outside probe is what turns "we think it's right" into "it was verified."
 5. **Production env hygiene.** ✅ **DONE (2026-07-15)** — verified end-to-end against prod project `rpwklsrdfqyisogbcdgg` (see `memory.md` top entry): all 30 migrations applied (CLI history repaired via `migration repair`), `canvas-media` + `note-media` private buckets exist, all required Edge Function secrets set, pg_cron `aurora-due-reminders` running + succeeding, and anon-key-only confirmed in `src/`, `.env`, and Cloudflare Pages env. *Small remaining sub-item:* set a real `REMINDER_FROM_EMAIL` once a Resend sending domain is verified (currently on the `onboarding@resend.dev` fallback).
 
-Once §1–§5 are green and gates 1–4 are cleared (gate 5 done), Aurora is go-live ready.
+Once §1–§5 are green and gates 1–4 are cleared (gate 5 done), Jotspring is go-live ready.

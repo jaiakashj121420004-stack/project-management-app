@@ -1,13 +1,13 @@
-# Aurora — Remediation & Build Plan (from `AUDIT-nvexis.md`)
+# Jotspring — Remediation & Build Plan (from `AUDIT-nvexis.md`)
 
-*A sequenced, phase-by-phase plan to take Aurora from ~8/10 to 9.5+ across design, engineering, and security. Every fix in the audit is assigned to a phase below. Read `AUDIT-nvexis.md` first for the reasoning behind each item.*
+*A sequenced, phase-by-phase plan to take Jotspring from ~8/10 to 9.5+ across design, engineering, and security. Every fix in the audit is assigned to a phase below. Read `AUDIT-nvexis.md` first for the reasoning behind each item.*
 
 ## Locked decisions (2026-07-14)
-- **Brand model.** **Nvexis = the company. Aurora = the product** (this app). Aurora is the hero everywhere in-app; Nvexis appears only as quiet attribution (footer, legal, "by Nvexis").
-- **Logo.** New **Aurora** product logo = a **refined Fraunces-based "A" monogram**. Replaces the Nvexis prism currently used as the app mark + favicons/PWA icons.
+- **Brand model.** **Nvexis = the company. Jotspring = the product** (this app). Jotspring is the hero everywhere in-app; Nvexis appears only as quiet attribution (footer, legal, "by Nvexis").
+- **Logo.** New **Jotspring** product logo = a **refined Fraunces-based "A" monogram**. Replaces the Nvexis prism currently used as the app mark + favicons/PWA icons.
 - **Scope.** Full audit — design/brand → engineering → security, in that order.
 
-> **Audit correction folded in:** because Aurora *is* the product, most "Aurora" strings the audit flagged as "brand drift" are **correct and stay** (`index.html` title, PWA name, `package.json` name). The real brand work is narrow: (a) new Aurora "A" logo replacing the Nvexis prism icon set, (b) fix the banned gradient wordmark, (c) retire the leftover **"Lodestar"** name, (d) add subtle Nvexis attribution.
+> **Audit correction folded in:** because Jotspring *is* the product, most "Jotspring" strings the audit flagged as "brand drift" are **correct and stay** (`index.html` title, PWA name, `package.json` name). The real brand work is narrow: (a) new Jotspring "A" logo replacing the Nvexis prism icon set, (b) fix the banned gradient wordmark, (c) retire the leftover **"Lodestar"** name, (d) add subtle Nvexis attribution.
 
 ## Working conventions (apply to every phase — from `CLAUDE.md`)
 - TypeScript strict, no `any`, Zod on all input, small focused files, mobile + desktop verified.
@@ -18,7 +18,7 @@
 
 | # | Phase | Theme | Size | Depends on |
 |---|---|---|---|---|
-| 1 | **Aurora brand & logo** | Design | M | — |
+| 1 | **Jotspring brand & logo** | Design | M | — |
 | 2 | **Resilience safety net** | Eng (P0) | M | — |
 | 3 | **Accessibility & design-system** | Design (P0) | L | 2 |
 | 4 | **Design polish & marketing** | Design (P1–P2) | M | 1, 3 |
@@ -30,26 +30,26 @@ Phases 1 and 2 are independent and can run in parallel. 3 depends on 2 (tests + 
 
 ---
 
-## Phase 1 — Aurora brand & logo  ✅ BUILT 2026-07-14 (build + commit on Windows)
+## Phase 1 — Jotspring brand & logo  ✅ BUILT 2026-07-14 (build + commit on Windows)
 > **Delivered:** chosen concept **A — Almanac** (serif A in an oxblood tile). Outlined-vector assets `public/brand/aurora-{mark,mark-night,fullbleed,glyph}.svg`; regenerated `favicon-64`/`pwa-192`/`pwa-512`/`apple-touch-icon`/`maskable-512` + `favicon.svg` via CairoSVG; deleted old `nvexis-*.png`. `Brand.tsx` → inline `AuroraMark` + solid `text-ox` wordmark (dropped `gradient-text`); `LandingPage.tsx` mark swapped; "Lodestar" retired (`/lodestar`→`/preview`); "· by Nvexis" in the sidebar footer; `index.html` + `generate-icons.mjs` docs updated. ⚠️ Not built/committed in-session (mount truncation) — do `npm run build` + commit on Windows.
 
-**Goal:** a distinct, beautiful Aurora identity; retire the Nvexis prism as the *product* mark and the "Lodestar" name; establish product-led hierarchy with quiet Nvexis attribution.
+**Goal:** a distinct, beautiful Jotspring identity; retire the Nvexis prism as the *product* mark and the "Lodestar" name; establish product-led hierarchy with quiet Nvexis attribution.
 
 **Decision point (early in phase):** I produce **3 SVG "A" monogram concepts** (Fraunces-derived, oxblood-on-parchment, tested at 16 px favicon → 512 px PWA) → you pick one → I finalize. Everything below flows from the chosen mark.
 
 **Tasks**
-- Design the Aurora **A** monogram as scalable SVG: full-color (Day + Night variants), single-color, and a favicon-simplified glyph. Source of truth in `public/brand/aurora-*.svg`.
-- Rework `scripts/generate-icons.mjs` to render the Aurora "A" (not the aurora-gradient "A" or the prism) → regenerate `favicon-64.png`, `pwa-192x192.png`, `pwa-512x512.png`, `maskable-512x512.png`, `apple-touch-icon.png`, and `public/favicon.svg`.
-- `src/components/shell/Brand.tsx`: swap `nvexis-mark-transparent-800.png` → new Aurora mark; **remove the banned `gradient-text`** on the wordmark → solid oxblood (`text-ox`), per one-accent rule.
-- `index.html`: update the `mask-icon`/icon comments (color already `#7A2A26` ✓); confirm title/description stay "Aurora".
+- Design the Jotspring **A** monogram as scalable SVG: full-color (Day + Night variants), single-color, and a favicon-simplified glyph. Source of truth in `public/brand/aurora-*.svg`.
+- Rework `scripts/generate-icons.mjs` to render the Jotspring "A" (not the aurora-gradient "A" or the prism) → regenerate `favicon-64.png`, `pwa-192x192.png`, `pwa-512x512.png`, `maskable-512x512.png`, `apple-touch-icon.png`, and `public/favicon.svg`.
+- `src/components/shell/Brand.tsx`: swap `nvexis-mark-transparent-800.png` → new Jotspring mark; **remove the banned `gradient-text`** on the wordmark → solid oxblood (`text-ox`), per one-accent rule.
+- `index.html`: update the `mask-icon`/icon comments (color already `#7A2A26` ✓); confirm title/description stay "Jotspring".
 - **Retire "Lodestar":** rename the `/lodestar` route (App.tsx) to a neutral `/preview` (or fold into `/`); purge user-facing "Lodestar" strings in `src/features/marketing/**` (keep the internal folder name if convenient, but no user-visible "Lodestar").
-- **Nvexis attribution:** `Sidebar.tsx` footer "Aurora · v0.1" → "Aurora · v0.1 · by Nvexis"; add "© Nvexis" to marketing + legal footers only.
+- **Nvexis attribution:** `Sidebar.tsx` footer "Jotspring · v0.1" → "Jotspring · v0.1 · by Nvexis"; add "© Nvexis" to marketing + legal footers only.
 - Delete the now-unused `public/brand/nvexis-*.png` once nothing references them.
 
 **New deps:** none.
-**Acceptance:** installed PWA + browser tab + sidebar all show the Aurora "A"; no "Lodestar" visible anywhere; no gradient on the wordmark; icons crisp at 16–512 px; light + dark both correct.
+**Acceptance:** installed PWA + browser tab + sidebar all show the Jotspring "A"; no "Lodestar" visible anywhere; no gradient on the wordmark; icons crisp at 16–512 px; light + dark both correct.
 **Verify:** build, install PWA on a phone, screenshot the home-screen icon + splash; grep confirms zero user-facing "Lodestar".
-**Commit:** `feat(brand): new Aurora A-monogram logo, retire Lodestar, add Nvexis attribution`
+**Commit:** `feat(brand): new Jotspring A-monogram logo, retire Lodestar, add Nvexis attribution`
 
 ---
 
@@ -133,13 +133,13 @@ Phases 1 and 2 are independent and can run in parallel. 3 depends on 2 (tests + 
 ## Phase 6 — Security hardening  ✅ BUILT (2026-07-14) — ⚠️ npm install + build/test + commit on Windows + apply 1 migration
 **Goal:** close the low/defense-in-depth findings and add *assurance* (the security posture is already strong — see audit §3).
 
-> **Built:** enumeration oracle closed (new migration `20260714230000_sharing_hardening.sql`: `revoke execute` on `user_id_for_email` from `authenticated`/`public`; `share_canvas`/`share_note` dropped + recreated `returns void` with the email lookup inlined and a generic no-op on unknown/self email; `SharePanel` shows a neutral "if they're an Aurora user" note; `database.ts` share RPC `Returns: undefined`). Webhook hardened (product allow-list `PRO_PRODUCT_IDS` fail-closed, `business_id` required + optionally matched to `DODO_BUSINESS_ID`, `metadata.user_id` UUID-gated before the PostgREST filter). Edge fns hardened (constant-time `x-cron-secret` compare in `send-due-reminders`; CORS scoped `*`→`APP_URL` + `Vary: Origin` in `dodo-create-checkout`/`dodo-portal`; best-effort per-user in-memory rate limiting on both). Plaintext `Aurora payment api.txt` deleted (was gitignored + untracked). XSS defense-in-depth (`isomorphic-dompurify` pass over `renderBlockHtml` output in `serialize.ts`). Assurance: pgTAP RLS regression suite `supabase/tests/rls_regression.test.sql` (15 assertions: non-member read/write denial across projects/cards/columns/labels/folders/todo_lists, viewer-can't-write, user-can't-self-set-plan, owner positive controls) + `supabase/tests/README.md` + a separate `.github/workflows/rls-tests.yml` (local Supabase stack, off the main gate). New dep: `isomorphic-dompurify`. Tests: sanitize suite added to `serialize.test.ts`. Verified via a review subagent (host reads only); pending Windows build/test + commit + applying the migration. **Next: Phase 7 — Verification & go-live.**
+> **Built:** enumeration oracle closed (new migration `20260714230000_sharing_hardening.sql`: `revoke execute` on `user_id_for_email` from `authenticated`/`public`; `share_canvas`/`share_note` dropped + recreated `returns void` with the email lookup inlined and a generic no-op on unknown/self email; `SharePanel` shows a neutral "if they're an Jotspring user" note; `database.ts` share RPC `Returns: undefined`). Webhook hardened (product allow-list `PRO_PRODUCT_IDS` fail-closed, `business_id` required + optionally matched to `DODO_BUSINESS_ID`, `metadata.user_id` UUID-gated before the PostgREST filter). Edge fns hardened (constant-time `x-cron-secret` compare in `send-due-reminders`; CORS scoped `*`→`APP_URL` + `Vary: Origin` in `dodo-create-checkout`/`dodo-portal`; best-effort per-user in-memory rate limiting on both). Plaintext `Jotspring payment api.txt` deleted (was gitignored + untracked). XSS defense-in-depth (`isomorphic-dompurify` pass over `renderBlockHtml` output in `serialize.ts`). Assurance: pgTAP RLS regression suite `supabase/tests/rls_regression.test.sql` (15 assertions: non-member read/write denial across projects/cards/columns/labels/folders/todo_lists, viewer-can't-write, user-can't-self-set-plan, owner positive controls) + `supabase/tests/README.md` + a separate `.github/workflows/rls-tests.yml` (local Supabase stack, off the main gate). New dep: `isomorphic-dompurify`. Tests: sanitize suite added to `serialize.test.ts`. Verified via a review subagent (host reads only); pending Windows build/test + commit + applying the migration. **Next: Phase 7 — Verification & go-live.**
 
 **Tasks**
 - **Enumeration oracle (Low).** `supabase/migrations/…_sharing.sql`: `revoke execute` on `user_id_for_email(text)` from `authenticated` and inline the lookup inside the `share_canvas`/`share_note` RPCs; return a generic result whether or not the email matched (don't leak account existence). New migration.
 - **Webhook validation (Low).** `supabase/functions/dodo-webhook/index.ts`: validate `data.product_id ∈ {DODO_PRODUCT_PRO_MONTHLY, DODO_PRODUCT_PRO_ANNUAL}` before granting Pro; assert `event.business_id`; validate `metadata.user_id` is a UUID before building the PostgREST filter.
 - **Edge-function hardening (Info).** Constant-time compare for `x-cron-secret` in `send-due-reminders`; scope CORS from `*` to `APP_URL` in `dodo-create-checkout`/`dodo-portal`; add basic per-user rate limiting on checkout/portal.
-- **Secret hygiene (Info).** Delete `Aurora payment api.txt` from the working tree (it's gitignored, but a live secret shouldn't sit in the repo folder); confirm the secret is only in the Supabase dashboard.
+- **Secret hygiene (Info).** Delete `Jotspring payment api.txt` from the working tree (it's gitignored, but a live secret shouldn't sit in the repo folder); confirm the secret is only in the Supabase dashboard.
 - **XSS defense-in-depth (Info).** Add an isomorphic **DOMPurify** pass over `renderBlockHtml`'s output in `features/editor/serialize.ts` (belt-and-suspenders behind the already-hardened `SafeLink`).
 - **Assurance.** Add automated **RLS regression tests** (a Supabase test that asserts a non-member is denied read/write on each table, a viewer can't write, a user can't self-set `plan`); schedule one **external penetration test** before go-live.
 
@@ -159,7 +159,7 @@ Phases 1 and 2 are independent and can run in parallel. 3 depends on 2 (tests + 
 - Full **axe** + **Lighthouse** pass (target: a11y ≥ 95, PWA installable, perf budget) on desktop + mobile.
 - **Mobile device pass** on a real phone: board DnD, modals/focus, canvas, install + offline (per `NVEXIS-UPGRADE-PLAN.md` §10).
 - Full regression: run the Vitest suite + a manual smoke of every feature (auth, projects, board, calendar, todos, library, notes, canvas, collaboration, billing test-mode, reminders).
-- **Docs:** update `memory.md` (state + done-log), `plan.md` (if architecture/design-system changed), `CLAUDE.md` design rules (Aurora logo, retire Lodestar), and rewrite `DESIGN-GUIDELINES.md` to match reality.
+- **Docs:** update `memory.md` (state + done-log), `plan.md` (if architecture/design-system changed), `CLAUDE.md` design rules (Jotspring logo, retire Lodestar), and rewrite `DESIGN-GUIDELINES.md` to match reality.
 - Re-score against `AUDIT-nvexis.md` to confirm design / eng / security all clear 9.5.
 
 **Acceptance:** Lighthouse + axe targets met on two form factors; suite green; docs current; re-score ≥ 9.5.

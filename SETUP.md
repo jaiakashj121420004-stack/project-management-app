@@ -65,9 +65,9 @@ Cloudflare then auto-deploys on every push to `main`. Your app gets a free `*.pa
 
 Open **`prompts.html`** → **Phase 0** (use Opus 4.8) → paste into Claude Code in this folder. Tick it off when done, and move down the list.
 
-## Later: connecting Claude to Aurora itself
+## Later: connecting Claude to Jotspring itself
 
 Once the app is live, users can connect Claude Desktop/Code directly to their
-own Aurora account (an MCP server) — that's a separate, optional, one-time
+own Jotspring account (an MCP server) — that's a separate, optional, one-time
 server setup covered in [SETUP-MCP.md](./SETUP-MCP.md), not part of the
 initial build above.

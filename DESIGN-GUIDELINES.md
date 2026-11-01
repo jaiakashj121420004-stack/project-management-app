@@ -1,7 +1,7 @@
 # Nvexis — Design Guidelines (Brand Bible)
 
 *The single source of truth for how Nvexis looks. Every project, post, slide, app, and page follows this. Version 5.1 · 15 July 2026.*
-*v5.1 (Phase 7): verified §11 against the shipped implementation — the CSS vars (`--glass-fill`/`--glass-border`/`--glass-shadow`/`--field-bg`/`--accent-glow`/`--accent-from`) and file paths named below all exist in `src/styles/index.css`, `src/lib/{accents,contrast,motion}.ts`, and `src/components/Avatar.tsx`. Logo = the **Aurora "A"-monogram** (oxblood tile, `public/brand/aurora-*.svg`); the retired "Lodestar" codename must not reappear in user-facing copy.*
+*v5.1 (Phase 7): verified §11 against the shipped implementation — the CSS vars (`--glass-fill`/`--glass-border`/`--glass-shadow`/`--field-bg`/`--accent-glow`/`--accent-from`) and file paths named below all exist in `src/styles/index.css`, `src/lib/{accents,contrast,motion}.ts`, and `src/components/Avatar.tsx`. Logo = the **Jotspring "A"-monogram** (oxblood tile, `public/brand/aurora-*.svg`); the retired "Lodestar" codename must not reappear in user-facing copy.*
 *System name: **The Almanac** (Editorial Authority) — a serious publication with a century of back-issues, not a startup template.*
 
 > **Why this exists:** ~88% of a brand judgment happens in the first 90 milliseconds, driven mostly by colour, and ~46% of people judge credibility on visual design alone. Consistency across every surface is what turns a logo into a brand. Use the exact tokens below — they are law.
@@ -12,13 +12,13 @@
 
 The brand lives on **two surfaces**, and both are canonical. Earlier versions of this
 file described only the first and then *banned* the very system the second is built
-on — so the doc contradicted the shipped **Aurora** app. v5.0 fixes that: it documents
+on — so the doc contradicted the shipped **Jotspring** app. v5.0 fixes that: it documents
 **both**, and says exactly where each applies.
 
 | Surface | What it is | Finish |
 |---|---|---|
 | **A — Editorial (print / social / marketing)** | Posts, slides, newsletters, one-pagers, the marketing hero. | **Flat Almanac.** Two inks on aged paper. No glass, no glow, no mesh. Character from type + rules + whitespace. |
-| **B — Product UI (the Aurora app)** | The signed-in application — boards, Library, canvas, calendar. | **Glass-over-parchment.** The Almanac palette + type, rendered on **warmed frosted-glass** surfaces with a subtle **paper-grain**, single-family **gradient accent tiles**, and calm **Framer motion / tactile depth**. |
+| **B — Product UI (the Jotspring app)** | The signed-in application — boards, Library, canvas, calendar. | **Glass-over-parchment.** The Almanac palette + type, rendered on **warmed frosted-glass** surfaces with a subtle **paper-grain**, single-family **gradient accent tiles**, and calm **Framer motion / tactile depth**. |
 
 **Same ink, same paper, same type, same restraint — different finish.** The app is a
 *living, tactile* almanac (glass panels floating on parchment); print is a *bound,
@@ -34,7 +34,7 @@ flat* one. When a rule below says "no gradients / no glow / flat paper," it gove
 ## 1. Design philosophy
 
 **What we are NOT (the looks we reject):**
-- ❌ The **generic AI / fintech** look — navy/blue-black, *cold* neon gradients, *blue-white* glassmorphism, Inter, and the four-point "✨" sparkle. Everyone ships it; it reads machine-made. *(It's also where our old mark and spring-green accidentally lived — the sparkle is the most AI-coded glyph in use, and #46CC5B sat in the Robinhood/Spotify family.)* **Note:** the Aurora app's **warm oxblood-on-parchment** glass is the opposite of this cold frost — see §11; the thing we reject is the *cold blue* version and *rainbow* gradients, not glass or warm depth as such.
+- ❌ The **generic AI / fintech** look — navy/blue-black, *cold* neon gradients, *blue-white* glassmorphism, Inter, and the four-point "✨" sparkle. Everyone ships it; it reads machine-made. *(It's also where our old mark and spring-green accidentally lived — the sparkle is the most AI-coded glyph in use, and #46CC5B sat in the Robinhood/Spotify family.)* **Note:** the Jotspring app's **warm oxblood-on-parchment** glass is the opposite of this cold frost — see §11; the thing we reject is the *cold blue* version and *rainbow* gradients, not glass or warm depth as such.
 - ❌ The **get-rich-quick guru** look — gold-on-black, hype, fake luxury, shouting. The exact opposite of who we are.
 
 **What we ARE: The Almanac.** A serious, century-old publication. Two inks on aged paper — **oxblood** and **ink** on **parchment**. The authority of a bound financial almanac and a printer's craft: earned knowledge, the long voyage, depth over noise. Character comes from a distinctive serif and disciplined editorial layout, not from effects.
@@ -155,7 +155,7 @@ Distinctive, free (Google Fonts), and deliberately **not Inter**. The serif is t
 - **Wordmark:** "Nvexis" in **Fraunces 900**, tight tracking. The prism leads the word or stands alone.
 - **Facet as fleuron:** a single cropped facet-triangle, small, as a section divider and recurring motif (mastheads, dividers, social).
 - **Logo files (ready):** `Nvexis Rebrand/Editorial Authority/logo/` — day, night, mono ink, reverse/parchment, app-icon tiles, favicon, wordmark lockup.
-- **Product sub-brand — the Aurora "A" (added 14 Jul 2026):** the **Aurora** app (a Nvexis product) carries its **own product logo**: a Fraunces-style **high-contrast serif "A"** knocked out of an **oxblood tile** (letter in warm bone `#F3ECDD`; tile uses the theme oxblood so it stays vivid on Day parchment + Night ink). It is the *product* mark — the Nvexis prism remains the *company* mark and is not used inside the app. Outlined-vector source: `public/brand/aurora-{mark,mark-night,fullbleed,glyph}.svg` (font-independent); rendered in-app by `AuroraMark` in `components/shell/Brand.tsx`; rasterised to `favicon`/PWA/apple-touch/maskable via `scripts/generate-icons.mjs`. Min size 16px; wordmark "Aurora" in **Fraunces**, single oxblood accent (no gradient).
+- **Product sub-brand — the Jotspring "J" (updated 1 Nov 2026; was an "A" under the old name):** the **Jotspring** app (a Nvexis product) carries its **own product logo**: a Fraunces-style **Fraunces Black "J"** knocked out of an **oxblood tile** (letter in warm bone `#F7EBDD`; tile uses the theme oxblood so it stays vivid on Day parchment + Night ink). It is the *product* mark — the Nvexis prism remains the *company* mark and is not used inside the app. Outlined-vector source: `public/brand/jotspring-{mark,mark-night,fullbleed,glyph}.svg` (font-independent); rendered in-app by `JotspringMark` in `components/shell/Brand.tsx`; rasterised to `favicon`/PWA/apple-touch/maskable via `scripts/generate-icons.mjs`. Min size 16px; wordmark "Jotspring" in **Fraunces**, single oxblood accent (no gradient).
 - **Imagery:** duotone (ink × oxblood) or high-contrast mono. No generic stock realism.
 - **Banned everywhere (both surfaces):** spring-green / neon, gold-or-foil-as-primary, navy/blue, violet, *cold blue-white* glass, *rainbow / multi-hue* gradients, Inter, the four-point AI sparkle, drop-shadow soup (uncontrolled shadows).
 - **Editorial-only bans (Surface A):** *any* glassmorphism, gradient, or glow. The **app** (§11) may use **warm oxblood-family** glass, single-family accent gradients, and a controlled accent glow — see §11 for the exact, permitted forms.
@@ -190,7 +190,7 @@ Distinctive, free (Google Fonts), and deliberately **not Inter**. The serif is t
 
 ## 9. Consistency rules (every project follows)
 
-This file lives in every Nvexis-brand folder. Whatever you build — CO-CE outputs, Cairn, Aurora, Fintrack, the websites, the newsletter, slides, Discord branding — pulls from these exact tokens:
+This file lives in every Nvexis-brand folder. Whatever you build — CO-CE outputs, Cairn, Jotspring, Fintrack, the websites, the newsletter, slides, Discord branding — pulls from these exact tokens:
 
 1. **Only** the palette in §3 (exact hex), both Day + Night.
 2. **Only** Fraunces (display) + Spectral (body) + IBM Plex Mono (figures). Never Inter.
@@ -227,9 +227,9 @@ Living reference — **two kit pages**: `Nvexis-Editorial-Identity.html` (Day / 
 
 ---
 
-## 11. The Aurora app — "glass-over-parchment" (Surface B, the source of truth for the product)
+## 11. The Jotspring app — "glass-over-parchment" (Surface B, the source of truth for the product)
 
-This section describes the system the **Aurora** app is *actually* built on. It is
+This section describes the system the **Jotspring** app is *actually* built on. It is
 canonical — where an earlier blanket ban and this section disagree, **this section
 governs the app.** The goal is unchanged: the Almanac's authority and restraint, made
 tactile. Think *warm frosted panels floating on aged paper*, not cold fintech frost.

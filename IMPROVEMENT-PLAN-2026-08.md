@@ -1,10 +1,10 @@
-# Aurora — Improvement Plan (Aug 2026)
+# Jotspring — Improvement Plan (Aug 2026)
 
 *A session-by-session build plan. Not a replacement for `plan.md` (the architecture spec) — this is the punch list from your 15 Aug 2026 planning session, sequenced and turned into copy-paste prompts.*
 
 ## How to use this file
 
-Each task below is meant to be **its own fresh Claude Code session**, opened in the Aurora project root (`C:\Users\jaiak\Desktop\CLAUDE WORKSPACE\Project Management app`). CLAUDE.md auto-loads there, so the session already knows the golden workflow (read `memory.md` → do the work → update `memory.md` → commit). Each prompt below is self-contained: paste it in as the first message of a new session and it has everything it needs — the current file names, the current bug/gap, the exact fix, and what "done" looks like.
+Each task below is meant to be **its own fresh Claude Code session**, opened in the Jotspring project root (`C:\Users\jaiak\Desktop\CLAUDE WORKSPACE\Project Management app`). CLAUDE.md auto-loads there, so the session already knows the golden workflow (read `memory.md` → do the work → update `memory.md` → commit). Each prompt below is self-contained: paste it in as the first message of a new session and it has everything it needs — the current file names, the current bug/gap, the exact fix, and what "done" looks like.
 
 **Order matters less than it looks.** Tasks are sequenced easy→hard and grouped so early tasks make later tasks cheaper. Nothing here is tightly coupled unless a task's own "Depends on" line says so.
 
@@ -744,7 +744,7 @@ lives — confirm the exact migration file) before touching any policy.
    canvases — do not weaken any existing project-membership check to do this.
 
 Constraints: TS strict, no any. RLS is the real gate, UI is UX only — do not
-rely on the client to hide something the DB would still allow. Match Aurora
+rely on the client to hide something the DB would still allow. Match Jotspring
 styling.
 
 When finished: update memory.md (the audit findings first, then what was
@@ -803,7 +803,7 @@ inventing new calendar surface:
    appear on the same day/week — a compact color-key legend in the toolbar
    (if one doesn't already exist) would help.
 3. ICS feed reach: the existing Pro-gated ICS subscribe feed is read-only
-   external sync (Google/Apple/Outlook can see Aurora's dates, one-way) — if
+   external sync (Google/Apple/Outlook can see Jotspring's dates, one-way) — if
    "sync & integrations" was pointing at something more than that (e.g.
    two-way sync, a specific calendar provider's native app integration), that
    is a materially bigger feature (external OAuth, webhook write-backs) and
@@ -843,7 +843,7 @@ Every row below was confirmed with `git log` + `git merge-base --is-ancestor <ha
 | 9 | To-do & checklist drag-and-drop overhaul | `9663d32` |
 | 10 | Table block for Notes and Canvas | `01137c9` |
 | 11 | Feature-bloat guardrail + audit pass | `92d7508` |
-| 12 | MCP connector — Aurora as an MCP server for Claude | `f5fc03a` |
+| 12 | MCP connector — Jotspring as an MCP server for Claude | `f5fc03a` |
 | 13 | Solo-maintainer "bus factor" runbook | `bdeb552` |
 | 14 | Pentest: commission it (readiness pass) | `16d759f` |
 | 16 | Time tracking (start/stop, per card) | `20f4315` |

@@ -127,7 +127,7 @@ export function Sidebar({
               aria-modal="true"
               aria-label="Menu"
               tabIndex={-1}
-              className="glass-strong absolute inset-y-0 left-0 w-72 rounded-r-2xl pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pt-[env(safe-area-inset-top)] outline-none"
+              className="glass-frost glass-strong absolute inset-y-0 left-0 w-72 rounded-r-2xl pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pt-[env(safe-area-inset-top)] outline-none"
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}

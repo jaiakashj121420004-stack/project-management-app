@@ -1,10 +1,10 @@
-# MARKETING.md — Aurora, by Nvexis
+# MARKETING.md — Jotspring, by Nvexis
 
-> **This file is the single source of truth for Aurora's marketing.**
+> **This file is the single source of truth for Jotspring's marketing.**
 > It is written to be self-contained. If you paste this file into a brand-new AI session with zero other context, that session should be able to write on-brand posts, answer questions about the product, know what has already been published, and know exactly what comes next.
 >
-> **Owner:** J. Jai Akash (Akash) · **Company:** Nvexis · **Product:** Aurora
-> **Live app:** https://aurora.nvexis.com
+> **Owner:** J. Jai Akash (Akash) · **Company:** Nvexis · **Product:** Jotspring
+> **Live app:** https://jotspring.nvexis.com
 > **Created:** 29 August 2026 · **Last updated:** 29 August 2026
 > **Plan Day 1:** Monday, 31 August 2026
 
@@ -18,11 +18,11 @@
 
 **Part B — The company**
 3. [Nvexis — the company](#3-nvexis--the-company)
-4. [The Nvexis product family (Aurora · Cairn · Fintrack · CO-CE)](#4-the-nvexis-product-family)
+4. [The Nvexis product family (Jotspring · Cairn · Fintrack · CO-CE)](#4-the-nvexis-product-family)
 5. [Dual-track positioning — the locked decision](#5-dual-track-positioning--the-locked-decision)
 
 **Part C — The product, in full**
-6. [What Aurora is, and the goal behind it](#6-what-aurora-is-and-the-goal-behind-it)
+6. [What Jotspring is, and the goal behind it](#6-what-aurora-is-and-the-goal-behind-it)
 7. [Build timeline — the full nine weeks](#7-build-timeline--the-full-nine-weeks)
 8. [Complete feature inventory](#8-complete-feature-inventory)
 9. [Technology and security posture](#9-technology-and-security-posture)
@@ -71,10 +71,10 @@
 
 ### If you are an AI session reading this cold
 
-1. **Read Part A and Part E before writing a single word of copy.** Part E (voice, banned phrases, the no-competitor-names rule) is the part most likely to be violated by a model reaching for default marketing language. Aurora's copy fails badly if it sounds like standard LinkedIn.
+1. **Read Part A and Part E before writing a single word of copy.** Part E (voice, banned phrases, the no-competitor-names rule) is the part most likely to be violated by a model reaching for default marketing language. Jotspring's copy fails badly if it sounds like standard LinkedIn.
 2. **Read §33 POSTING LOG** to see what has already gone out. Never propose a post that duplicates something already published, and always reference the log before suggesting "what's next."
 3. **Read §34 AI UPDATE PROTOCOL** — when Akash says "I posted this," you must update §33 and the relevant week in §25. That is not optional; it is the mechanism that keeps this file useful across sessions.
-4. **Never invent numbers.** Every figure in this file is sourced. If you need a number that isn't here, say you don't have it. Aurora's whole positioning rests on being honest; inventing a metric for a post would poison the thing being sold.
+4. **Never invent numbers.** Every figure in this file is sourced. If you need a number that isn't here, say you don't have it. Jotspring's whole positioning rests on being honest; inventing a metric for a post would poison the thing being sold.
 5. **When in doubt about tone, write less and plainer.** The failure mode is over-writing, not under-writing.
 
 ### If you are Akash
@@ -91,9 +91,9 @@ This file replaces nothing in the repo — it sits alongside `CLAUDE.md` (engine
 
 ## 2. The 60-second brief
 
-**Aurora** is an installable web app that puts boards, a personal planner, a calendar, documents and an infinite whiteboard in one place, for a flat price that doesn't scale with the number of people on the board.
+**Jotspring** is an installable web app that puts boards, a personal planner, a calendar, documents and an infinite whiteboard in one place, for a flat price that doesn't scale with the number of people on the board.
 
-- **Live at:** https://aurora.nvexis.com
+- **Live at:** https://jotspring.nvexis.com
 - **Built:** 18 June 2026 → present. 194 commits, 56 database migrations, 13 serverless functions.
 - **Built by:** one person (Akash), working with AI coding agents, under a written engineering discipline.
 - **Status:** feature-complete, payments live and tested with a real transaction, zero customers, zero marketing spend, zero brand awareness.
@@ -110,7 +110,7 @@ This file replaces nothing in the repo — it sits alongside `CLAUDE.md` (engine
 
 ## 3. Nvexis — the company
 
-**Nvexis** is the company. **Aurora** is a product of Nvexis. The brand hierarchy is locked (decided 14 July 2026): Aurora is the hero everywhere in the app and in Aurora's own marketing; "Nvexis" appears as quiet attribution — a footer, a legal line, "by Nvexis."
+**Nvexis** is the company. **Jotspring** is a product of Nvexis. The brand hierarchy is locked (decided 14 July 2026): Jotspring is the hero everywhere in the app and in Jotspring's own marketing; "Nvexis" appears as quiet attribution — a footer, a legal line, "by Nvexis."
 
 ### The name
 
@@ -127,12 +127,12 @@ Nvexis is a coined word fusing **nexus** (the point where paths connect) and **v
 | Payments | Dodo Payments (Merchant of Record — handles sales tax/VAT) |
 | Company tagline (finance track) | Clarity in money, markets, and the mind. |
 | Manifesto line | Learn in the open. Build in the quiet. |
-| Aurora domain | aurora.nvexis.com |
+| Jotspring domain | jotspring.nvexis.com |
 | Email sending domain | mail.nvexis.com (DKIM/SPF/DMARC verified) |
 
 ### Brand visual identity — "The Almanac"
 
-Aurora and Nvexis share one visual language, called **The Almanac** (Editorial Authority v4, approved). Any graphic, screenshot frame, carousel or slide made for Aurora must sit inside this system.
+Jotspring and Nvexis share one visual language, called **The Almanac** (Editorial Authority v4, approved). Any graphic, screenshot frame, carousel or slide made for Jotspring must sit inside this system.
 
 | Token | Value |
 |---|---|
@@ -152,31 +152,31 @@ Aurora and Nvexis share one visual language, called **The Almanac** (Editorial A
 - One chroma in the room: oxblood is the only accent colour.
 - The aesthetic is "glass over parchment" — warm frosted glass surfaces over a paper-grain texture, not white frost on white.
 - Light mode is the hero. Dark mode is first-class but secondary.
-- Aurora's logo is the **Aurora "A"-monogram** — a high-contrast serif A in an oxblood tile. Files in `public/brand/aurora-*.svg`.
+- Jotspring's logo is the **Jotspring "A"-monogram** — a high-contrast serif A in an oxblood tile. Files in `public/brand/aurora-*.svg`.
 - Social graphics stay **flat, bold, high-contrast** — the full glassmorphism system is for the app and web, not for a 1080×1080 image that will be viewed at thumbnail size.
 
 ### The design principle behind all of it
 
-The brand is deliberately *not* AI-slop and *not* get-rich-quick. It should read like a serious publication. That aesthetic decision is itself a marketing asset — Aurora looks unlike every other indie SaaS launch, and that visual distinctiveness is one of the four message angles (§22).
+The brand is deliberately *not* AI-slop and *not* get-rich-quick. It should read like a serious publication. That aesthetic decision is itself a marketing asset — Jotspring looks unlike every other indie SaaS launch, and that visual distinctiveness is one of the four message angles (§22).
 
 ---
 
 ## 4. The Nvexis product family
 
-Aurora is one of several products under Nvexis. This matters for marketing because it is a genuine, honest answer to "who are you and why should I trust you" — Aurora is not a one-off weekend project, it sits inside a deliberate product ladder.
+Jotspring is one of several products under Nvexis. This matters for marketing because it is a genuine, honest answer to "who are you and why should I trust you" — Jotspring is not a one-off weekend project, it sits inside a deliberate product ladder.
 
-| Product | What it is | Status | Relationship to Aurora |
+| Product | What it is | Status | Relationship to Jotspring |
 |---|---|---|---|
-| **Aurora** | Project management — boards, planner, calendar, docs, whiteboard, collaboration | **Live, feature-complete, payments live** | The subject of this file |
+| **Jotspring** | Project management — boards, planner, calendar, docs, whiteboard, collaboration | **Live, feature-complete, payments live** | The subject of this file |
 | **Cairn** | Trading cockpit | Work in progress | Flagship product for the finance audience; monetization priority within Nvexis |
 | **Fintrack** | Personal finance tracker | Work in progress | Low-tier product / free entry point for the finance audience |
 | **CO-CE** | Multi-platform content engine (idea generation + content production) | Work in progress | The content factory. **Relevant to this plan:** when finished, it takes over production of the posts in §27. Until then, the loop runs manually. |
 
-**Important honesty note for any AI writing copy:** Cairn and Fintrack are *works in progress*, not shipped products. Never write copy that implies Nvexis has a portfolio of live products. The truthful version is: "Nvexis is building a small family of tools; Aurora is the first one that's ready."
+**Important honesty note for any AI writing copy:** Cairn and Fintrack are *works in progress*, not shipped products. Never write copy that implies Nvexis has a portfolio of live products. The truthful version is: "Nvexis is building a small family of tools; Jotspring is the first one that's ready."
 
 ### The CO-CE dependency
 
-CO-CE is designed to automate content production for exactly this kind of plan. It is **not** a prerequisite to starting. Run the loop manually now; move it into CO-CE when CO-CE is ready. Do not let "I should finish CO-CE first" become the reason Aurora's marketing doesn't start — that is the single most likely failure mode given the founder's build-oriented instincts.
+CO-CE is designed to automate content production for exactly this kind of plan. It is **not** a prerequisite to starting. Run the loop manually now; move it into CO-CE when CO-CE is ready. Do not let "I should finish CO-CE first" become the reason Jotspring's marketing doesn't start — that is the single most likely failure mode given the founder's build-oriented instincts.
 
 ---
 
@@ -186,12 +186,12 @@ CO-CE is designed to automate content production for exactly this kind of plan. 
 
 Nvexis carries **two positioning statements**, used in different contexts, never mixed in the same piece of content.
 
-### Track 1 — Software (used for Aurora)
+### Track 1 — Software (used for Jotspring)
 
 > **Nvexis builds calm, honest software.**
 > Tools that do what they say, don't scale their price with your headcount, and don't need a tutorial before you can use them.
 
-Use this track for: everything Aurora. LinkedIn posts about Aurora, the Nvexis company page when Aurora is the subject, Product Hunt, the app's own site, any post about building software.
+Use this track for: everything Jotspring. LinkedIn posts about Jotspring, the Nvexis company page when Jotspring is the subject, Product Hunt, the app's own site, any post about building software.
 
 ### Track 2 — Finance media (used for Cairn, Fintrack, the newsletter)
 
@@ -202,9 +202,9 @@ Use this track for: The Nvexis Almanac newsletter, Cairn, Fintrack, any finance-
 
 ### The rules for keeping them apart
 
-1. **Never blend the two in a single post.** A post about Aurora does not mention the newsletter. A finance post does not pitch Aurora.
+1. **Never blend the two in a single post.** A post about Jotspring does not mention the newsletter. A finance post does not pitch Jotspring.
 2. **The Nvexis LinkedIn company page can carry both**, but not in the same week. Think of it as a publication with two sections, not one muddled voice.
-3. **The connective tissue is the founder, not the topic.** What links Aurora and Cairn is *how* they're built — one person, in the open, with AI, carefully. That's the honest through-line, and it's allowed to be said out loud.
+3. **The connective tissue is the founder, not the topic.** What links Jotspring and Cairn is *how* they're built — one person, in the open, with AI, carefully. That's the honest through-line, and it's allowed to be said out loud.
 4. **When a reader asks "wait, is Nvexis a finance thing or a software thing?"** — the honest answer is: "Nvexis is what I build under. Right now that's a project-management app that's ready, and a couple of finance tools that aren't." Say that. Don't paper over it.
 
 ---
@@ -212,25 +212,25 @@ Use this track for: The Nvexis Almanac newsletter, Cairn, Fintrack, any finance-
 
 # PART C — THE PRODUCT, IN FULL
 
-## 6. What Aurora is, and the goal behind it
+## 6. What Jotspring is, and the goal behind it
 
 ### The one-line definition
 
-Aurora is an installable, cross-platform web app that combines project boards, a personal daily planner, a unified calendar, a document editor, and a real-time collaborative whiteboard in a single workspace — priced per board rather than per person.
+Jotspring is an installable, cross-platform web app that combines project boards, a personal daily planner, a unified calendar, a document editor, and a real-time collaborative whiteboard in a single workspace — priced per board rather than per person.
 
 ### The goal
 
-Aurora exists to answer two specific frustrations that show up over and over in this category:
+Jotspring exists to answer two specific frustrations that show up over and over in this category:
 
-1. **Fragmentation fatigue.** People run their work across three or four tools — a board tool, a docs tool, a whiteboard tool, a calendar — and none of them agree with each other. Aurora's answer is one workspace where the calendar reads from the same cards and to-dos the boards do, and the whiteboard lives beside the docs.
+1. **Fragmentation fatigue.** People run their work across three or four tools — a board tool, a docs tool, a whiteboard tool, a calendar — and none of them agree with each other. Jotspring's answer is one workspace where the calendar reads from the same cards and to-dos the boards do, and the whiteboard lives beside the docs.
 
-2. **Overwhelm.** The most-cited reason people abandon tools in this category is not missing features — it's that the tool became too complicated to use. Aurora's answer is a written, enforced anti-bloat discipline (the Simplicity Guardrail, §8) that has actually overruled the founder's own feature ideas on the record.
+2. **Overwhelm.** The most-cited reason people abandon tools in this category is not missing features — it's that the tool became too complicated to use. Jotspring's answer is a written, enforced anti-bloat discipline (the Simplicity Guardrail, §8) that has actually overruled the founder's own feature ideas on the record.
 
 ### The commercial goal
 
-Aurora is built to be a real, sellable product with sustainable unit economics at small scale — not a portfolio piece. Because fixed infrastructure cost is near zero (§12), Aurora is profitable at a customer count that would be a rounding error for a funded company. It does not need to win the category. It needs a durable, underserved slice of it.
+Jotspring is built to be a real, sellable product with sustainable unit economics at small scale — not a portfolio piece. Because fixed infrastructure cost is near zero (§12), Jotspring is profitable at a customer count that would be a rounding error for a funded company. It does not need to win the category. It needs a durable, underserved slice of it.
 
-### What Aurora is deliberately NOT
+### What Jotspring is deliberately NOT
 
 - Not an enterprise portfolio-management tool. No SSO, no governance layer, no custom-fields-at-scale. That buyer is not the target and never will be.
 - Not an "everything app." Features are actively refused. Goals are a progress bar, not an OKR framework. Automations are three fixed behaviours, not a general rule builder.
@@ -299,7 +299,7 @@ Every feature below is shipped and live unless explicitly marked. Grouped as the
 - Swipe gestures on mobile
 - Drag-and-drop reordering with fractional positioning; completed items auto-sink
 - Starter templates, so a brand-new user has something useful the moment they open it
-- *Aurora's own internal simplicity audit singles this page out as the best example of "zero-config default" in the product.*
+- *Jotspring's own internal simplicity audit singles this page out as the best example of "zero-config default" in the product.*
 
 **Calendar** — four views over one truth, not four systems pretending to agree.
 - **Month**, **Week**, **Day** (added 22 Aug), and **Timeline/Gantt** (added 20 Aug)
@@ -308,7 +308,7 @@ Every feature below is shipped and live unless explicitly marked. Grouped as the
 - Drag a card to a different day to reschedule it; drag or resize a timeline bar to change its span
 - Quick-create directly from a day cell
 - An agenda list view on small phones instead of a cramped grid
-- **ICS subscribe feed (Pro)** — one-way, so a calendar app can see Aurora's dates
+- **ICS subscribe feed (Pro)** — one-way, so a calendar app can see Jotspring's dates
 
 ### Group 2 — Where the thinking happens
 
@@ -363,8 +363,8 @@ Every feature below is shipped and live unless explicitly marked. Grouped as the
 ### Group 4 — Getting in, finding things, getting out
 
 **Import**
-- One-time board import from a competitor's JSON export or from CSV, into a new Aurora project
-- One-way, no ongoing sync — the point is lowering the cost of *trying* Aurora, not building a two-way integration
+- One-time board import from a competitor's JSON export or from CSV, into a new Jotspring project
+- One-way, no ongoing sync — the point is lowering the cost of *trying* Jotspring, not building a two-way integration
 
 **Search and command palette**
 - Full-text search across card content and note content (17 Aug — before that, only names were indexed)
@@ -372,7 +372,7 @@ Every feature below is shipped and live unless explicitly marked. Grouped as the
 - One familiar affordance extended, rather than a second search interface bolted on
 
 **MCP server — "Connect Claude"**
-- A Pro or Team user can connect Claude Desktop or Claude Code directly to their own Aurora account and read or write boards, to-dos and notes through the same permission-enforced API the app itself uses
+- A Pro or Team user can connect Claude Desktop or Claude Code directly to their own Jotspring account and read or write boards, to-dos and notes through the same permission-enforced API the app itself uses
 - Auth design: a personal access token, generated once and shown once; only its SHA-256 hash is stored; a database trigger blocks any writer to that column other than the service role; each tool call is authenticated by a short-lived (5-minute) token minted from a dedicated, independently revocable signing key — not the app's normal session key
 - **This is genuinely unusual for a project-management tool at this stage**, and it's the single most distinctive feature for a technical audience. It's also flagged in the pentest brief as the highest-priority area to test.
 
@@ -409,7 +409,7 @@ Every feature below is shipped and live unless explicitly marked. Grouped as the
 
 Every proposed feature is checked against a written document (`reports/SIMPLICITY-GUARDRAIL.md`) before it gets built. This is not aspirational: it has overruled its own advisory flags with a written reason on record (automations, goals and the Gantt view were each initially flagged as bloat risk, then explicitly greenlit with a stated mitigation), and it produced a real audit that found genuine overload in the *shipped* product, not just in new proposals.
 
-This matters for marketing because it's a paper trail almost nobody in this category can show, and it's the credible half of the "calm" positioning. Anyone can *claim* their tool is simple. Aurora can show the document where it said no to itself.
+This matters for marketing because it's a paper trail almost nobody in this category can show, and it's the credible half of the "calm" positioning. Anyone can *claim* their tool is simple. Jotspring can show the document where it said no to itself.
 
 ---
 
@@ -422,7 +422,7 @@ React · TypeScript (strict mode, no `any`) · Vite · Tailwind CSS · Framer Mo
 ### What is genuinely strong
 
 - **Row Level Security is comprehensive, not decorative.** Every table is RLS-gated. Privileged operations run through `SECURITY DEFINER` functions with `search_path` pinned to empty — the correct defence against search-path hijacking. Billing fields and the calendar-feed token are each protected by dedicated database triggers that reject any writer except the service role.
-- **Paid-feature boundaries are enforced twice.** Every gate (recurrence rules, member limits, project limits, canvas media caps) has both a client-side check and a database-level trigger or RLS rule. A client-only gate is trivially bypassable from browser devtools; Aurora doesn't have that hole anywhere it matters.
+- **Paid-feature boundaries are enforced twice.** Every gate (recurrence rules, member limits, project limits, canvas media caps) has both a client-side check and a database-level trigger or RLS rule. A client-only gate is trivially bypassable from browser devtools; Jotspring doesn't have that hole anywhere it matters.
 - **A real automated test posture.** Unit tests (Vitest), an accessibility suite (axe-core), and — unusual for a project this size — a pgTAP regression suite specifically proving multi-tenant isolation, gated in its own CI workflow.
 - **Payment integrity follows the correct pattern.** The webhook is signature-verified and replay-protected via timestamp tolerance, and is the only writer of subscription state. The classic "client tells the server it paid" hole is closed.
 - **A seven-phase security remediation** was completed 13–16 July 2026, with a separate verification phase.
@@ -436,7 +436,7 @@ React · TypeScript (strict mode, no `any`) · Vite · Tailwind CSS · Framer Mo
 
 ### What to say publicly about security
 
-Do **not** claim Aurora is "secure" or "audited." It has not been independently audited. The truthful, still-strong version is: *"Every table has row-level security, paid limits are enforced in the database as well as the UI, and there's an automated test suite that specifically proves one account can't read another's data. An independent penetration test is scoped and is the next thing I'm paying for."*
+Do **not** claim Jotspring is "secure" or "audited." It has not been independently audited. The truthful, still-strong version is: *"Every table has row-level security, paid limits are enforced in the database as well as the UI, and there's an automated test suite that specifically proves one account can't read another's data. An independent penetration test is scoped and is the next thing I'm paying for."*
 
 That sentence is more credible than any security badge, precisely because it names what hasn't happened yet.
 
@@ -460,7 +460,7 @@ That sentence is more credible than any security badge, precisely because it nam
 
 ### The pricing model — the single most quotable commercial fact
 
-**Aurora charges per board, not per person.** Pro is $5.99/month total for up to 10 people on a board. Team is $22/month total for up to 40 people.
+**Jotspring charges per board, not per person.** Pro is $5.99/month total for up to 10 people on a board. Team is $22/month total for up to 40 people.
 
 Every comparable tool in this category charges per seat. That means for any team past two or three people, the arithmetic diverges sharply and permanently. This is the most quantifiable, most provable, and most under-used message available (§22, angle 1).
 
@@ -533,7 +533,7 @@ Vendor pricing fetched directly from each vendor's own page (22–23 Aug 2026). 
 | 1,000 users | ~150 GB | ~212 GB | ~1,360 | ~$26 |
 | 10,000 users | ~1.5 TB | ~2.1 TB | ~13,600 | ~$243 |
 
-**The structurally important fact:** canvas media — the single largest driver of storage and egress cost — is Pro/Team-gated in code. A free account cannot generate that cost. Aurora's heaviest infrastructure cost is coupled to its heaviest-*paying* accounts, which is a materially better risk shape than a product whose heaviest resource users are its non-paying ones.
+**The structurally important fact:** canvas media — the single largest driver of storage and egress cost — is Pro/Team-gated in code. A free account cannot generate that cost. Jotspring's heaviest infrastructure cost is coupled to its heaviest-*paying* accounts, which is a materially better risk shape than a product whose heaviest resource users are its non-paying ones.
 
 At 10,000 registered users, even a conservative 3–4% conversion implies $1,500–2,000+/month in revenue against ~$243/month in infrastructure. This is not a business with a scaling-cost cliff.
 
@@ -541,7 +541,7 @@ At 10,000 registered users, even a conservative 3–4% conversion implies $1,500
 
 ## 13. Revenue scenarios
 
-Illustrative planning ranges built from published freemium-conversion benchmarks and Aurora's actual pricing. **Not forecasts.** There is zero live revenue data.
+Illustrative planning ranges built from published freemium-conversion benchmarks and Jotspring's actual pricing. **Not forecasts.** There is zero live revenue data.
 
 ### Global (USD), year one
 
@@ -555,7 +555,7 @@ Published benchmark context: standard freemium converts 3–5% at the 50th perce
 
 ### Honest expectations
 
-- Most independent software products never cross $1k in monthly recurring revenue. Historically that's a distribution failure, not a cost or product failure — which is exactly Aurora's diagnosed risk.
+- Most independent software products never cross $1k in monthly recurring revenue. Historically that's a distribution failure, not a cost or product failure — which is exactly Jotspring's diagnosed risk.
 - A realistic 12-month target for a committed solo operator running this plan consistently is the Base case, roughly **$8–10k ARR**, with real upside if one channel outperforms.
 - Because fixed cost per user is so thin, **retention is close to pure margin.** Reliability, onboarding quality, and not letting the product become overwhelming matter more to long-run profit than raw acquisition volume.
 
@@ -579,15 +579,15 @@ Three independent research firms' own published figures, fetched directly (22 Au
 ### Why the market is growing
 
 - Remote and hybrid work is permanent infrastructure now, not a pandemic artifact. Distributed teams need a shared source of truth that a spreadsheet can't provide at scale.
-- **Tool consolidation.** The fastest-growing sub-segment is all-in-one workspaces rather than single-purpose board tools. That is precisely Aurora's shape.
+- **Tool consolidation.** The fastest-growing sub-segment is all-in-one workspaces rather than single-purpose board tools. That is precisely Jotspring's shape.
 - **Small-team and freelancer adoption is accelerating faster than enterprise.** Smaller buyers are more price-sensitive and switch more readily — which favours a low-priced, fast-to-adopt product.
 - AI-adjacent workflow tools are pulling more planning spend into comparison shopping generally.
 
-### Where Aurora actually fits
+### Where Jotspring actually fits
 
-Not the enterprise buyer. Aurora's addressable market is the bottom two-thirds of that $9–12B: individuals, freelancers and small teams of two to ten, currently paying $5–15 per seat per month across some combination of a board tool, a docs tool and a whiteboard — or paying nothing and limping along on spreadsheets.
+Not the enterprise buyer. Jotspring's addressable market is the bottom two-thirds of that $9–12B: individuals, freelancers and small teams of two to ten, currently paying $5–15 per seat per month across some combination of a board tool, a docs tool and a whiteboard — or paying nothing and limping along on spreadsheets.
 
-**Sizing the realistic slice:** capturing 0.001% of a ~$9–12B market implies roughly $90k–$120k of category spend redirected toward Aurora — several multiples of even the optimistic revenue scenario. **The market is not the constraint. Distribution execution is.**
+**Sizing the realistic slice:** capturing 0.001% of a ~$9–12B market implies roughly $90k–$120k of category spend redirected toward Jotspring — several multiples of even the optimistic revenue scenario. **The market is not the constraint. Distribution execution is.**
 
 ---
 
@@ -602,9 +602,9 @@ Not the enterprise buyer. Aurora's addressable market is the bottom two-thirds o
 
 ### What actually converts a free user to paid
 
-1. **Trigger-moment upgrades beat time-based nags.** Someone who hits the 3-board or 2-collaborator limit *while trying to do something* converts far better than someone shown a generic upgrade banner on day three. Aurora's limits already double as natural triggers. **The actionable improvement: make the in-the-moment prompt name the specific blocked thing** — "Invite a third person to this board" rather than "Upgrade to Pro."
+1. **Trigger-moment upgrades beat time-based nags.** Someone who hits the 3-board or 2-collaborator limit *while trying to do something* converts far better than someone shown a generic upgrade banner on day three. Jotspring's limits already double as natural triggers. **The actionable improvement: make the in-the-moment prompt name the specific blocked thing** — "Invite a third person to this board" rather than "Upgrade to Pro."
 2. **Social proof closes the trust gap.** A brand-new product with zero reviews asks the buyer to carry all the risk. Even three specific, genuine testimonials outperform any amount of marketing copy, because they resolve the "will this work / will this still exist next year" anxiety that dominates a stranger's first thirty seconds. **Ask the first 20–30 real users explicitly. Put it in the plan (§25, week 4).**
-3. **The "one thing that makes it obviously worth it" effect.** People rarely upgrade because they compared every feature. They upgrade because *one* gated feature became indispensable. Aurora now has several distinct candidates — time tracking, custom reminders, the canvas, exports, the calendar feed, the AI connector. **Marketing and onboarding should each surface a different single hero feature rather than selling the whole list at once.**
+3. **The "one thing that makes it obviously worth it" effect.** People rarely upgrade because they compared every feature. They upgrade because *one* gated feature became indispensable. Jotspring now has several distinct candidates — time tracking, custom reminders, the canvas, exports, the calendar feed, the AI connector. **Marketing and onboarding should each surface a different single hero feature rather than selling the whole list at once.**
 4. **Price sensitivity is not one curve.** A freelancer in one country, a student in another, and a six-person studio have entirely different reference prices. Regional pricing is the correct response and is already shipped. A student framing is worth testing later — extremely price-sensitive, but with unusually strong word-of-mouth within a campus.
 
 ### Why people switch tools in this category at all
@@ -614,7 +614,7 @@ Project and task management has unusually high tool churn. People are chronicall
 - **Overwhelm** — the tool they have became too complicated. This is the single most-cited reason people leave the biggest tools in the category.
 - **Fragmentation fatigue** — juggling three or four tools that don't talk to each other.
 
-Aurora's promise answers both directly. **The strategic instruction that follows: lead with that promise explicitly, don't bury it under a feature list.**
+Jotspring's promise answers both directly. **The strategic instruction that follows: lead with that promise explicitly, don't bury it under a feature list.**
 
 ---
 
@@ -654,11 +654,11 @@ He wants one tool for coursework, a couple of small freelance projects, and a pe
 
 *Someone who lives in a terminal and an AI assistant all day.*
 
-Not a traditional project-management buyer. The hook is not the boards — it's that Aurora is reachable from inside the AI assistant they already use, through real token-based auth rather than a scraped integration.
+Not a traditional project-management buyer. The hook is not the boards — it's that Jotspring is reachable from inside the AI assistant they already use, through real token-based auth rather than a scraped integration.
 
 - **What lands:** "connect your AI assistant to your own account and manage boards from inside it."
 - **Where they are:** Hacker News, technical communities, X.
-- **Why this persona matters:** it's a completely different audience from the other three, reached by different content, and it's the one place Aurora has something no comparable tool offers.
+- **Why this persona matters:** it's a completely different audience from the other three, reached by different content, and it's the one place Jotspring has something no comparable tool offers.
 
 ---
 
@@ -670,31 +670,31 @@ Not a traditional project-management buyer. The hook is not the boards — it's 
 
 | Tool | Entry paid tier | Model |
 |---|---|---|
-| Aurora Pro | **$5.99** | **Flat, per board, up to 10 people** |
+| Jotspring Pro | **$5.99** | **Flat, per board, up to 10 people** |
 | Competitor A (Kanban-first) | $5–10 | Per seat |
 | Competitor B ("everything app") | $7 | Per seat |
 | Competitor C (visual work OS) | $9 | Per seat, 3-seat minimum |
 | Competitor D (docs-first) | $10 | Per seat |
 | Competitor E (task/project-first) | $13.49 | Per seat |
 
-### Where Aurora's opening actually is
+### Where Jotspring's opening actually is
 
-- **Every one of them charges per seat.** Aurora doesn't. For any team of three or more, the arithmetic diverges immediately and keeps diverging.
-- **The most feature-dense competitor's biggest documented weakness is that it's overwhelming** — the number-one stated churn reason in user research for that product. That failure mode is exactly what Aurora's Simplicity Guardrail is designed against.
-- **A real-time collaborative whiteboard is a bolt-on or absent** in most of them. Aurora ships it as a native primitive.
+- **Every one of them charges per seat.** Jotspring doesn't. For any team of three or more, the arithmetic diverges immediately and keeps diverging.
+- **The most feature-dense competitor's biggest documented weakness is that it's overwhelming** — the number-one stated churn reason in user research for that product. That failure mode is exactly what Jotspring's Simplicity Guardrail is designed against.
+- **A real-time collaborative whiteboard is a bolt-on or absent** in most of them. Jotspring ships it as a native primitive.
 - **A unified calendar reading from one data source** is rare; where it exists it's usually a secondary view.
-- **None of them offers a first-party AI-assistant connector** of the kind Aurora ships.
+- **None of them offers a first-party AI-assistant connector** of the kind Jotspring ships.
 
 ### The risk in the positioning
 
-"Does everything" is also the pitch of the most feature-dense competitor, and its biggest weakness is overwhelm. Aurora's differentiation is not *breadth* — it's **breadth without the setup tax**. Every future feature must be weighed against "does this add a surface a new user has to learn on day one?" If Aurora ever becomes complicated, the positioning collapses and the price becomes the only argument left.
+"Does everything" is also the pitch of the most feature-dense competitor, and its biggest weakness is overwhelm. Jotspring's differentiation is not *breadth* — it's **breadth without the setup tax**. Every future feature must be weighed against "does this add a surface a new user has to learn on day one?" If Jotspring ever becomes complicated, the positioning collapses and the price becomes the only argument left.
 
 ### What an incumbent could do to blunt this
 
 - Ship a "simplified mode." Technically easy; **credibly hard** — it would read as an admission that the overwhelm complaints are true, from a company whose entire roadmap has been adding features.
 - Move to flat pricing. Structurally awkward — it's a revenue-cannibalization decision for a company whose whole model is per-seat, which is likely why none of them has done it despite the gap being public and knowable for months.
 
-Neither is impossible. Both are genuinely harder for them than for Aurora to do first.
+Neither is impossible. Both are genuinely harder for them than for Jotspring to do first.
 
 ---
 
@@ -721,7 +721,7 @@ Neither is impossible. Both are genuinely harder for them than for Aurora to do 
 
 ### Opportunities
 - Fast-growing category (11–18% CAGR) with a large, underserved, price-sensitive segment
-- Overwhelm and fragmentation are the documented top churn drivers — Aurora answers both, and it's a strong content angle as well as a product one
+- Overwhelm and fragmentation are the documented top churn drivers — Jotspring answers both, and it's a strong content angle as well as a product one
 - Regional/PPP markets are large, price-driven, and already priced for
 - Build-in-public and indie-software communities reward exactly this kind of transparent, design-forward build
 - The flat-pricing story is a highly shareable, quotable hook that has never been used publicly
@@ -732,7 +732,7 @@ Neither is impossible. Both are genuinely harder for them than for Aurora to do 
 - Payment processor fee or policy changes hit margin directly, given thin unit economics
 - **A single security incident at this stage could be brand-ending before the brand exists** — which is why the pentest gate in §31 is not negotiable
 - Solo-founder key-person risk: burnout, illness or life events halt everything
-- Founder attention is split across four products; Aurora's marketing needs sustained weekly effort for months
+- Founder attention is split across four products; Jotspring's marketing needs sustained weekly effort for months
 
 ### Risk register — the ones with a mitigation
 
@@ -743,7 +743,7 @@ Neither is impossible. Both are genuinely harder for them than for Aurora to do 
 | Product Hunt launch lands flat | Medium | Medium | Treat it as a credibility and backlink event, not a growth channel. The plan does not depend on it. |
 | Reddit account gets banned for self-promotion | Medium | Medium | The account doesn't exist yet — it must age with genuine participation for 3–4 weeks before any link. §23 has the rule. |
 | Nobody converts because there's no social proof | High | High | Explicitly ask the first 20–30 users for testimonials (§25, week 4). |
-| Founder attention pulled to Cairn/Fintrack/CO-CE | High | High | Named here so it's a conscious choice rather than a drift. Aurora is the only finished product; it deserves the marketing hours until it has revenue. |
+| Founder attention pulled to Cairn/Fintrack/CO-CE | High | High | Named here so it's a conscious choice rather than a drift. Jotspring is the only finished product; it deserves the marketing hours until it has revenue. |
 
 ---
 ---
@@ -752,7 +752,7 @@ Neither is impossible. Both are genuinely harder for them than for Aurora to do 
 
 ## 19. Voice and tone — the rules
 
-> **This is the most important section in the file.** An AI writing Aurora's copy will default to standard software-marketing language, and standard software-marketing language is exactly wrong here. Read this twice.
+> **This is the most important section in the file.** An AI writing Jotspring's copy will default to standard software-marketing language, and standard software-marketing language is exactly wrong here. Read this twice.
 
 ### The voice in one sentence
 
@@ -763,11 +763,11 @@ Neither is impossible. Both are genuinely harder for them than for Aurora to do 
 **1. Never announce. Just say the thing.**
 The post does not open with a feeling about the news. It opens with the news, or with the problem the news solves.
 
-> ❌ "Excited to share that Aurora now supports time tracking!"
-> ✅ "Aurora tracks time per card now. You start a timer on the card you're working on, and it totals across everyone on that card."
+> ❌ "Excited to share that Jotspring now supports time tracking!"
+> ✅ "Jotspring tracks time per card now. You start a timer on the card you're working on, and it totals across everyone on that card."
 
 **2. Be open that AI built a lot of this. Do not hide it, do not brag about it.**
-Akash built Aurora working with AI coding agents. That is a *fact to state plainly*, not a boast and not a secret. The interesting content is in the *method* — the rules, the discipline, what went wrong — not in "look how fast AI is."
+Akash built Jotspring working with AI coding agents. That is a *fact to state plainly*, not a boast and not a secret. The interesting content is in the *method* — the rules, the discipline, what went wrong — not in "look how fast AI is."
 
 > ❌ "I built a full SaaS in 9 weeks solo with AI 🤯"
 > ✅ "I built this working with AI coding agents, under a fairly strict set of rules — read the state doc before touching anything, update it after every change, commit immediately. The rules mattered more than the speed."
@@ -787,7 +787,7 @@ Nearly every post should have a real question at the end — one Akash actually 
 Real numbers, real dates, real decisions. "56 database migrations" beats "a lot of work." "Mobile performance went from 63 to 70 and that still isn't good enough" beats "we improved performance."
 
 **6. Admit what isn't done.**
-Aurora has no independent security audit, no customers, no reviews. Saying so is not a weakness in the copy — it's the thing that makes the rest believable. Every post that admits something true earns the right to claim something else.
+Jotspring has no independent security audit, no customers, no reviews. Saying so is not a weakness in the copy — it's the thing that makes the rest believable. Every post that admits something true earns the right to claim something else.
 
 **7. If a word can be cut, cut it.**
 No padding. No throat-clearing. No "in today's fast-paced world."
@@ -833,7 +833,7 @@ The two are not different personalities. The brand voice is the founder voice wi
 | "🚀 🔥 💯 ✨" | See rule on emoji. |
 | Any competitor brand name | See §21. |
 | "Built solo, no team, no funding" (as a boast) | Rule 3. |
-| "AI-powered" (about Aurora) | Aurora is not an AI product. It has an AI *connector*. Don't blur that. |
+| "AI-powered" (about Jotspring) | Jotspring is not an AI product. It has an AI *connector*. Don't blur that. |
 | "Enterprise-grade security" | Untrue — there's no independent audit. Rule 6. |
 | "Trusted by X users" | There are no users yet. Never invent this. |
 
@@ -891,7 +891,7 @@ Four angles. Run them in parallel across different posts, and watch which one ac
 ### Angle 1 — Price that doesn't scale with people
 > "$5.99 a month covers up to ten people on a board. Not $5.99 each. Ten."
 
-- **The most quantifiable, most provable claim Aurora has.** Also the most under-used.
+- **The most quantifiable, most provable claim Jotspring has.** Also the most under-used.
 - **Best on:** LinkedIn (Persona 2 — the team lead who has to justify the bill), comparison-shopping audiences, Reddit once that channel is live.
 - **Proof to attach:** simple arithmetic. A five-person team, a year, per-seat versus flat.
 
@@ -905,12 +905,12 @@ Four angles. Run them in parallel across different posts, and watch which one ac
 ### Angle 3 — Design and craft
 > Just the screenshots.
 
-- Aurora looks nothing like the rest of the category. Warm parchment, oxblood, serif type, frosted glass. That distinctiveness earns organic shares without an argument attached.
+- Jotspring looks nothing like the rest of the category. Warm parchment, oxblood, serif type, frosted glass. That distinctiveness earns organic shares without an argument attached.
 - **Best on:** LinkedIn and X, where a visually unusual screenshot stops the scroll on its own.
 - **Proof to attach:** nothing. Let the image work.
 
 ### Angle 4 — Run your boards from your AI assistant
-> "Connect your AI assistant to your Aurora account and manage boards from inside it."
+> "Connect your AI assistant to your Jotspring account and manage boards from inside it."
 
 - A distinct, technical audience that the other three angles don't reach at all. No comparable tool offers this.
 - **Best on:** Hacker News, technical communities, X, indie-software circles.
@@ -925,7 +925,7 @@ Four angles. Run them in parallel across different posts, and watch which one ac
 
 ### The situation, stated plainly
 
-**Aurora has exactly one live channel: LinkedIn.** No X account, no Reddit account, no Product Hunt account, no newsletter audience for this product. The personal LinkedIn profile has real connections; the Nvexis company page has zero followers.
+**Jotspring has exactly one live channel: LinkedIn.** No X account, no Reddit account, no Product Hunt account, no newsletter audience for this product. The personal LinkedIn profile has real connections; the Nvexis company page has zero followers.
 
 This materially changes the shape of the plan versus a generic launch playbook. Weeks 1–3 are LinkedIn-led out of necessity, and part of week 1's work is simply *creating the other accounts* so they can start aging.
 
@@ -936,18 +936,18 @@ This materially changes the shape of the plan versus a generic launch playbook. 
 | **LinkedIn — personal profile** | ✅ Live, has connections | **Strong** | **The primary channel for weeks 1–4.** Personal posts get distributed to your network and their networks far more aggressively than company-page posts. Founder-first-person content also reads more credibly for an unknown brand. |
 | **LinkedIn — Nvexis page** | ✅ Live, 0 followers | Medium (for now) | Not a distribution channel yet — a **destination**. Every personal post links to or tags it so click-throughs become followers. Post there ~1×/week. Reassess weight at 100+ followers. |
 | **X / Twitter** | ❌ Doesn't exist | Strong (once live) | Create week 1. Indie-software-native audience. The build story and the AI-connector angle both land here. Expect slow start — a new account has no distribution. |
-| **Reddit** | ❌ Doesn't exist | Strong (once aged) | Create week 1, then **participate genuinely for 3–4 weeks with zero promotion**. New accounts posting links get removed and can get banned. First Aurora mention no earlier than week 5. |
+| **Reddit** | ❌ Doesn't exist | Strong (once aged) | Create week 1, then **participate genuinely for 3–4 weeks with zero promotion**. New accounts posting links get removed and can get banned. First Jotspring mention no earlier than week 5. |
 | **Product Hunt** | ❌ Doesn't exist | Strong | Create week 1. Launch week 3. Treat as a **credibility and backlink event**, not a growth channel — the permanent backlink and the community exposure outlast the 48-hour spike. |
 | **Hacker News** | ❌ Doesn't exist | Worth one shot | Create week 1. A single "Show HN" post, week 3 or 4, foregrounding the AI connector — a genuinely technical hook, not an AI-washed feature. One attempt; if it doesn't land, no real cost. |
 | **SEO / content** | ❌ Not started | Strong, slow | Start week 2. Compounds. Constrained by §21 — see §28 for the compliant approach. |
-| **Instagram / Facebook** | ❌ Doesn't exist | **Not recommended** | No evidence either is a strong organic channel for this kind of software. Both skew consumer/lifestyle. The freelancer and small-team buyer doesn't discover a work tool there. **Do not invest founder hours here in the first 90 days.** (Note: this differs from the Nvexis *finance* track, where Instagram is planned — that's track 2, not Aurora.) |
+| **Instagram / Facebook** | ❌ Doesn't exist | **Not recommended** | No evidence either is a strong organic channel for this kind of software. Both skew consumer/lifestyle. The freelancer and small-team buyer doesn't discover a work tool there. **Do not invest founder hours here in the first 90 days.** (Note: this differs from the Nvexis *finance* track, where Instagram is planned — that's track 2, not Jotspring.) |
 | **Referral inside the product** | Build it week 1 | **Cheapest channel that exists** | See §30. |
 
 ### The LinkedIn personal-vs-page split — the rule
 
 **Post primarily from the personal profile for the first 60–90 days.** Reasons, in order of weight:
 
-1. The company page has zero followers, so it has zero distribution. The personal profile's connections are the only real seed audience Aurora has.
+1. The company page has zero followers, so it has zero distribution. The personal profile's connections are the only real seed audience Jotspring has.
 2. LinkedIn's distribution favours personal profiles over brand pages, substantially.
 3. A first-person founder account is more credible for an unknown product than a company account talking about itself.
 
@@ -966,12 +966,12 @@ Keep this table current. An AI reading this file needs to know what exists befor
 | LinkedIn (personal) | J. Jai Akash | ✅ **Live** | Has connections. Primary channel. |
 | LinkedIn (company) | Nvexis | ✅ **Live** | 0 followers as of 29 Aug 2026. |
 | X / Twitter | `@nvexisalmanac` (planned) | ❌ **To create — week 1** | Verify handle is free; fallback `@thenvexisalmanac`. |
-| Reddit | TBD | ❌ **To create — week 1** | Must age 3–4 weeks before any Aurora mention. |
+| Reddit | TBD | ❌ **To create — week 1** | Must age 3–4 weeks before any Jotspring mention. |
 | Product Hunt | TBD | ❌ **To create — week 1** | Needed before launch week 3. |
 | Hacker News | TBD | ❌ **To create — week 1** | |
 | GitHub (org) | `nvexisalmanac` (planned) | ❌ To create | Lower priority. Public repos would live here. |
-| Instagram | `@nvexisalmanac` (planned) | ❌ Not for Aurora | Reserve the handle; don't work it for Aurora. |
-| beehiiv newsletter | The Nvexis Almanac | Planned | Track 2 (finance), not Aurora. |
+| Instagram | `@nvexisalmanac` (planned) | ❌ Not for Jotspring | Reserve the handle; don't work it for Jotspring. |
+| beehiiv newsletter | The Nvexis Almanac | Planned | Track 2 (finance), not Jotspring. |
 
 **Handle consistency note:** register the same handle everywhere in one sitting even before posting. Consistency is free credibility, and it stops someone else taking the name.
 
@@ -999,7 +999,7 @@ Standing constraints for the whole plan:
 - [ ] **Send yourself a due-date reminder end to end.** Confirm it lands, and isn't in spam. Ten minutes.
 - [ ] Confirm funnel analytics fire correctly on the live production build — signup → first board → upgrade prompt → checkout. **This is the one task that makes every later week's measurement real instead of aspirational.**
 - [ ] Confirm the exact rupee price a customer sees at India checkout; record it in §35.
-- [ ] Check the Nvexis LinkedIn page is properly filled out: logo, banner, About using the **Track 1 software positioning** (§5), website link to aurora.nvexis.com.
+- [ ] Check the Nvexis LinkedIn page is properly filled out: logo, banner, About using the **Track 1 software positioning** (§5), website link to jotspring.nvexis.com.
 
 **Content (3 posts)**
 - [ ] **Mon/Tue — LinkedIn personal:** Post #1, the build retrospective (§27). This is the strongest single piece of content available. Screenshot attached.
@@ -1052,7 +1052,7 @@ Standing constraints for the whole plan:
 #### Weeks 5–6 · Mon 28 Sep – Sun 11 Oct — Test all four angles
 
 - [ ] Run all four message angles (§22) concurrently across different posts. **Watch which one actually drives `signup_started`.** Don't guess.
-- [ ] **Reddit goes live** — the account is now 4+ weeks old with real participation history. First mention should be a genuine reply where Aurora is a useful answer to someone's actual question, not a post about Aurora.
+- [ ] **Reddit goes live** — the account is now 4+ weeks old with real participation history. First mention should be a genuine reply where Jotspring is a useful answer to someone's actual question, not a post about Jotspring.
 - [ ] Put testimonials on the landing page and pricing page as soon as you have three.
 - [ ] Weekly SEO page continues.
 - [ ] Cadence: ~2 LinkedIn personal, ~1 LinkedIn page, ~3 X per week.
@@ -1115,7 +1115,7 @@ Copy, adapt, ship. Every draft below follows §19–§21. **Check §33 before us
 ### POST #1 — LinkedIn personal — the build retrospective
 **Week 1 · Angle: build-in-public · Attach: 2–3 real screenshots**
 
-> I spent the last nine weeks building a project management app. It's live now, at aurora.nvexis.com.
+> I spent the last nine weeks building a project management app. It's live now, at jotspring.nvexis.com.
 >
 > The honest version of how: I worked with AI coding agents for most of it, under a set of rules I wrote for myself before starting. Read the state document before touching anything. Update it after every change. Commit immediately. Never end a session with uncommitted work.
 >
@@ -1132,7 +1132,7 @@ Copy, adapt, ship. Every draft below follows §19–§21. **Check §33 before us
 ### POST #2 — LinkedIn personal — flat pricing
 **Week 1 · Angle 1 · Attach: a simple pricing arithmetic graphic in the Almanac palette**
 
-> A pricing decision I made early and still think is the right one: Aurora charges per board, not per person.
+> A pricing decision I made early and still think is the right one: Jotspring charges per board, not per person.
 >
 > $5.99 a month covers up to ten people on a board. Not $5.99 each. Ten.
 >
@@ -1145,11 +1145,11 @@ Copy, adapt, ship. Every draft below follows §19–§21. **Check §33 before us
 ---
 
 ### POST #3 — LinkedIn Nvexis page — the introduction
-**Week 1 · Brand voice (Track 1) · Attach: the Aurora monogram or a hero screenshot**
+**Week 1 · Brand voice (Track 1) · Attach: the Jotspring monogram or a hero screenshot**
 
 > Nvexis builds software that does what it says.
 >
-> The first product is Aurora — a workspace for project boards, a daily planner, a calendar, documents and a shared whiteboard, in one place. It's live at aurora.nvexis.com.
+> The first product is Jotspring — a workspace for project boards, a daily planner, a calendar, documents and a shared whiteboard, in one place. It's live at jotspring.nvexis.com.
 >
 > Two decisions shape it more than any feature does.
 >
@@ -1179,7 +1179,7 @@ Copy, adapt, ship. Every draft below follows §19–§21. **Check §33 before us
 ### POST #5 — X thread — the build retrospective
 **Week 2 · First X post · 6 tweets**
 
-> **1/** Spent nine weeks building a project management app. It's live: aurora.nvexis.com
+> **1/** Spent nine weeks building a project management app. It's live: jotspring.nvexis.com
 >
 > Boards, a daily planner, a unified calendar, docs, and a whiteboard that syncs live between people. 194 commits, 56 migrations.
 >
@@ -1214,7 +1214,7 @@ Copy, adapt, ship. Every draft below follows §19–§21. **Check §33 before us
 
 > I keep a document whose only job is to tell me no.
 >
-> Every feature I want to add to Aurora gets checked against it before I build it. It asks one question that matters: does this add a surface a new user has to learn on day one?
+> Every feature I want to add to Jotspring gets checked against it before I build it. It asks one question that matters: does this add a surface a new user has to learn on day one?
 >
 > It has actually stopped things. Goals were going to be a full objectives-and-key-results system. They're now a progress bar with a target date, because the honest answer was that nobody asked for the enterprise version. Automations were going to be a general if-this-then-that builder. They're three fixed behaviours, because open-ended rule builders are the most direct route to the exact complexity I'm trying to avoid.
 >
@@ -1233,7 +1233,7 @@ Copy, adapt, ship. Every draft below follows §19–§21. **Check §33 before us
 >
 > A client asks "where are we on this?" and you either write the answer out by hand, or you give them a login to a tool they'll never open again — and on most per-seat pricing, that login costs you money every month.
 >
-> Aurora has a read-only share link. You send a URL, they see the board, they don't sign up for anything. Nothing is editable and nothing else in your account is visible.
+> Jotspring has a read-only share link. You send a URL, they see the board, they don't sign up for anything. Nothing is editable and nothing else in your account is visible.
 >
 > It took a couple of days to build and it's the feature I've been happiest with, because it removes a small recurring humiliation rather than adding a capability.
 >
@@ -1244,7 +1244,7 @@ Copy, adapt, ship. Every draft below follows §19–§21. **Check §33 before us
 ### POST #8 — LinkedIn personal — the AI connector
 **Weeks 3–6 · Angle 4 · Attach: screenshot of an AI session managing a board**
 
-> Something in Aurora I haven't seen elsewhere: you can connect an AI assistant directly to your own account and manage your boards from inside it.
+> Something in Jotspring I haven't seen elsewhere: you can connect an AI assistant directly to your own account and manage your boards from inside it.
 >
 > Not a chatbot bolted onto the product. An actual connection — your assistant reads and writes your boards, to-dos and notes through the same permission-enforced API the app itself uses.
 >
@@ -1276,7 +1276,7 @@ Copy, adapt, ship. Every draft below follows §19–§21. **Check §33 before us
 
 > Most tools in this category end up with a calendar that is quietly its own separate system. You put a date on a task in one place, and the calendar shows you something slightly different.
 >
-> Aurora's calendar reads from the same records as everything else. Month, week, day and a timeline view — four views, one source. Move a card to a different day and it moves everywhere, because there is no "everywhere else" to move it in.
+> Jotspring's calendar reads from the same records as everything else. Month, week, day and a timeline view — four views, one source. Move a card to a different day and it moves everywhere, because there is no "everywhere else" to move it in.
 >
 > It sounds like an implementation detail. In practice it's the difference between a calendar you trust and one you check twice.
 
@@ -1287,7 +1287,7 @@ Copy, adapt, ship. Every draft below follows §19–§21. **Check §33 before us
 
 > I want to be careful about how I talk about security, because "enterprise-grade" is a phrase that means nothing and I'd rather say what's actually true.
 >
-> What's true: every table in Aurora has row-level security. Every paid limit is enforced by the database as well as the interface, because a limit that only exists in the UI is one devtools window away from not existing. Payment state can only be written by a signature-verified webhook — the browser is never trusted to say what someone paid for. There's a test suite in CI whose entire job is proving one account can't read another account's data.
+> What's true: every table in Jotspring has row-level security. Every paid limit is enforced by the database as well as the interface, because a limit that only exists in the UI is one devtools window away from not existing. Payment state can only be written by a signature-verified webhook — the browser is never trusted to say what someone paid for. There's a test suite in CI whose entire job is proving one account can't read another account's data.
 >
 > What's not true yet: nobody independent has tried to break it. That test is scoped and budgeted and it's the next thing I'm spending money on, ahead of any advertising.
 >
@@ -1298,7 +1298,7 @@ Copy, adapt, ship. Every draft below follows §19–§21. **Check §33 before us
 ### POST #12 — LinkedIn personal — the launch retrospective
 **Week 4 · Post-launch, with REAL numbers · Attach: analytics screenshot**
 
-> Launched Aurora on Product Hunt on [day]. Here are the actual numbers, including the unflattering ones.
+> Launched Jotspring on Product Hunt on [day]. Here are the actual numbers, including the unflattering ones.
 >
 > [X] people visited. [X] signed up. [X] of those created a board, which is the only number I really care about — a signup that never makes anything is just a row in a table.
 >
@@ -1319,7 +1319,7 @@ Copy, adapt, ship. Every draft below follows §19–§21. **Check §33 before us
 
 > Five people on a project tool at $10/seat/month is $600/year.
 >
-> Aurora is $22/month flat for up to 40 people on a board. $264/year, and it doesn't change when you add the sixth person.
+> Jotspring is $22/month flat for up to 40 people on a board. $264/year, and it doesn't change when you add the sixth person.
 >
 > Per-seat pricing makes you think about who "deserves" a login. That always seemed like the wrong thing to be thinking about.
 
@@ -1328,7 +1328,7 @@ Copy, adapt, ship. Every draft below follows §19–§21. **Check §33 before us
 ### POST #14 — LinkedIn personal — the whiteboard
 **Weeks 5–8 · Angle 3 · Attach: canvas screenshot or a short screen recording**
 
-> The part of Aurora I most enjoyed building, and the part I was most sure I'd get wrong: an infinite whiteboard that stays in sync live between two people on different devices.
+> The part of Jotspring I most enjoyed building, and the part I was most sure I'd get wrong: an infinite whiteboard that stays in sync live between two people on different devices.
 >
 > Pressure-sensitive drawing, text boxes that use the same editor as the documents, images, tables, layers, live cursors. Two people drawing at once and it merges rather than one overwriting the other.
 >
@@ -1341,11 +1341,11 @@ Copy, adapt, ship. Every draft below follows §19–§21. **Check §33 before us
 ### POST #15 — LinkedIn Nvexis page — the brand note
 **Any week · Brand voice · Attach: a design detail screenshot**
 
-> A note on why Aurora looks the way it does.
+> A note on why Jotspring looks the way it does.
 >
 > Nearly everything in this category looks the same — cool greys, a blue accent, a sans-serif that's hard to tell apart from the next one. It's a safe look, and it's the reason most of these products are indistinguishable in a screenshot.
 >
-> Aurora uses warm parchment, a single deep oxblood accent, and serif type. It has a paper grain. It looks more like a printed almanac than a dashboard.
+> Jotspring uses warm parchment, a single deep oxblood accent, and serif type. It has a paper grain. It looks more like a printed almanac than a dashboard.
 >
 > That was a deliberate risk. A tool you open every day should feel like somewhere you don't mind being, and "inoffensive" is not the same as "pleasant." Some people will dislike it, which is the trade for anyone remembering it at all.
 
@@ -1354,7 +1354,7 @@ Copy, adapt, ship. Every draft below follows §19–§21. **Check §33 before us
 ### POST #16 — LinkedIn personal — three months on
 **Week 12–13 · Reflection · No image**
 
-> Three months ago Aurora had no users, no marketing, and no way of knowing whether either was going to change. Here's where it actually is.
+> Three months ago Jotspring had no users, no marketing, and no way of knowing whether either was going to change. Here's where it actually is.
 >
 > [Real numbers: signups, activation, paying customers.]
 >
@@ -1372,7 +1372,7 @@ Copy, adapt, ship. Every draft below follows §19–§21. **Check §33 before us
 > Fair question. Two things, mostly. The price doesn't scale with the number of people — it's per board, so adding someone costs nothing. And the boards, planner, calendar, docs and whiteboard are one system rather than separate ones stitched together, so the calendar is reading the same records the boards are. Whether that's worth switching for depends a lot on what's annoying you about your current setup — what is it?
 
 **"Is this AI-generated slop?"**
-> Fair thing to ask right now. I built it working with AI coding agents, which I've been open about — but under rules I wrote first, with every table's access enforced in the database, a test suite in CI proving accounts can't read each other's data, and a completed security remediation programme. It's at aurora.nvexis.com if you want to poke at it. If you find something that looks like slop, I'd like to know specifically where.
+> Fair thing to ask right now. I built it working with AI coding agents, which I've been open about — but under rules I wrote first, with every table's access enforced in the database, a test suite in CI proving accounts can't read each other's data, and a completed security remediation programme. It's at jotspring.nvexis.com if you want to poke at it. If you find something that looks like slop, I'd like to know specifically where.
 
 **"Why should I trust a one-person product to still exist next year?"**
 > That's the right question and I don't have a fully satisfying answer. What I can say: fixed running costs are close to nothing, so it doesn't need scale to survive. Your data exports — notes to Markdown, Word or PDF, boards to standard formats — so you're not locked in. And I'd rather tell you that plainly than pretend the risk isn't there.
@@ -1444,7 +1444,7 @@ Product Hunt is a **credibility and backlink event**, not a growth channel. The 
 
 ## 30. Referral mechanic
 
-**Build this in week 1.** It is the cheapest acquisition channel that exists and Aurora already has all the infrastructure.
+**Build this in week 1.** It is the cheapest acquisition channel that exists and Jotspring already has all the infrastructure.
 
 ### The mechanic
 
@@ -1452,7 +1452,7 @@ Product Hunt is a **credibility and backlink event**, not a growth channel. The 
 
 ### Why it's nearly free
 
-Invitations already exist in the product. This is copy and UI, not new architecture. The real marginal cost is **one month of forgone Pro revenue — roughly $5.99 gross, ~$5.23 net — paid to each of two people.** Compare that to a published blended referral acquisition cost of ~$310 across broader software, and a median self-serve acquisition cost of ~$702. At Aurora's ~$76/year customer value, this is the only channel whose arithmetic obviously works.
+Invitations already exist in the product. This is copy and UI, not new architecture. The real marginal cost is **one month of forgone Pro revenue — roughly $5.99 gross, ~$5.23 net — paid to each of two people.** Compare that to a published blended referral acquisition cost of ~$310 across broader software, and a median self-serve acquisition cost of ~$702. At Jotspring's ~$76/year customer value, this is the only channel whose arithmetic obviously works.
 
 ### Implementation notes
 
@@ -1479,7 +1479,7 @@ Paid acquisition before there's proof of what converts is spending blind. And sp
 
 - **Why Reddit first:** by then there'll be weeks of organic Reddit participation showing which communities respond and what tone works. The groundwork is already laid.
 - **2026 benchmarks:** CPC $0.50–$3.50 (most campaigns $0.75–$2.00), CPM $3–$12. Optimization guides recommend $1,500–3,000/month for statistically meaningful 30-day data.
-- **Aurora's first budget: $150–300/month.** Deliberately far below that. This is a signal-of-life test, not a scaled campaign. **Expect noisy data** — that's the accepted trade for testing before there's real revenue to risk.
+- **Jotspring's first budget: $150–300/month.** Deliberately far below that. This is a signal-of-life test, not a scaled campaign. **Expect noisy data** — that's the accepted trade for testing before there's real revenue to risk.
 - **Why not spend at the ~$702 category median acquisition cost:** at ~$76/year customer value, that spend would take roughly a decade to recover. The budget is scrappy because the unit economics demand it, not because ambition is low.
 
 ### Measurement, end to end
@@ -1600,7 +1600,7 @@ PENTEST:                 Not commissioned
 
 ## 34. AI UPDATE PROTOCOL
 
-> **This section is addressed to any AI assistant working on Aurora's marketing. Follow it exactly.**
+> **This section is addressed to any AI assistant working on Jotspring's marketing. Follow it exactly.**
 
 ### Trigger: Akash says he posted something
 
@@ -1666,9 +1666,9 @@ Examples: *"it got 400 impressions and 2 comments"* · *"3 signups from that"*
 | 3 | **X handle availability** — is `@nvexisalmanac` free? | Fallback is `@thenvexisalmanac`. Register everywhere in one sitting. | ⏳ Week 1 |
 | 4 | **Which pentest vendor?** | $4–8k budgeted, gray-box, scoped. Gates all paid spend. Long lead time — start now. | ⏳ Week 1 |
 | 5 | **Legal review of Terms and Privacy Policy** | Drafts exist; no qualified review on record. Not a launch blocker, but do it in month one. | 🔴 Open |
-| 6 | **Should Aurora ever use competitor names for SEO?** | §21 forbids it. It costs the highest-intent search terms in the category. This is a real trade-off, made deliberately — revisit if organic SEO underperforms by month three. | ✅ Decided: no. Revisit month 3. |
+| 6 | **Should Jotspring ever use competitor names for SEO?** | §21 forbids it. It costs the highest-intent search terms in the category. This is a real trade-off, made deliberately — revisit if organic SEO underperforms by month three. | ✅ Decided: no. Revisit month 3. |
 | 7 | **Is a student/campus framing worth testing?** | Extremely price-sensitive but high peer-to-peer virality. Regional pricing is already shipped for it. | ⏸ Park until month 3 |
-| 8 | **Does the Nvexis LinkedIn page use Track 1 or Track 2 positioning right now?** | If it currently reads as a finance brand, Aurora content on it will confuse readers. §5 has both statements. | ⏳ Check week 1 |
+| 8 | **Does the Nvexis LinkedIn page use Track 1 or Track 2 positioning right now?** | If it currently reads as a finance brand, Jotspring content on it will confuse readers. §5 has both statements. | ⏳ Check week 1 |
 | 9 | **App-store presence** | Currently web-only, deliberately. Revisit as a link-out-only Android wrapper once there are paying users — cheap, low risk, doesn't touch billing. Do not integrate store billing (it stacks a ~15% cut on top of the existing processor fee). | ⏸ Park until paying users exist |
 
 ---
@@ -1679,7 +1679,7 @@ Examples: *"it got 400 impressions and 2 comments"* · *"3 signups from that"*
 
 | What | Where |
 |---|---|
-| Aurora app | https://aurora.nvexis.com |
+| Jotspring app | https://jotspring.nvexis.com |
 | Email sending domain | mail.nvexis.com (reminders@) |
 | Admin analytics dashboard | `/analytics` on the live app (admin only) |
 | Hosting | Cloudflare Pages |
@@ -1706,7 +1706,7 @@ Examples: *"it got 400 impressions and 2 comments"* · *"3 signups from that"*
 | `reports/FEATURE-GAP-ANALYSIS.md` | Competitor feature comparison |
 | `legal/` | Terms of Service and Privacy Policy drafts |
 
-### Nvexis company documents (outside the Aurora repo)
+### Nvexis company documents (outside the Jotspring repo)
 
 Located in `CLAUDE WORKSPACE/Company HQ/`:
 
@@ -1718,12 +1718,12 @@ Located in `CLAUDE WORKSPACE/Company HQ/`:
 | `3-Distribution-Engine.md` | The content machine (Track 2 / finance) |
 | `5-Business-Structure.md` | Product ladder, money, payments, the revenue milestone ladder |
 | `Nvexis-Bios-and-Handles-Pack.md` | **Copy-paste bios and handles for every platform** |
-| `DESIGN-GUIDELINES.md` | The brand bible (same as in the Aurora repo) |
+| `DESIGN-GUIDELINES.md` | The brand bible (same as in the Jotspring repo) |
 | `Brand Assets/` | Nvexis logo files, day and night, plus the transparent mark |
 
-### Brand assets for Aurora
+### Brand assets for Jotspring
 
-- `public/brand/aurora-mark.svg` — the primary Aurora monogram
+- `public/brand/aurora-mark.svg` — the primary Jotspring monogram
 - `public/brand/aurora-mark-night.svg` — dark-mode variant
 - `public/brand/aurora-glyph.svg` — the bare glyph
 - `public/brand/aurora-fullbleed.svg` — full-bleed variant
@@ -1754,4 +1754,4 @@ Take these once, in light mode, on a clean demo account with realistic (not lore
 
 ---
 
-*Aurora — by Nvexis. This file is internal.*
+*Jotspring — by Nvexis. This file is internal.*
