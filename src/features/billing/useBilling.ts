@@ -1,8 +1,14 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { track } from '@/lib/analytics';
+import { mustUseStoreBilling } from '@/lib/native/platform';
 import type { BillingInterval, PricedPlanId } from '@/lib/plans';
 import { createCheckoutUrl, createPortalUrl, requestPlanChange } from './api';
+
+/** Shown if a Dodo action is ever triggered inside the iOS/Android apps, where
+ * Apple/Google billing must be used instead (store rules). Defensive only —
+ * the store-billing UI replaces these buttons there. */
+const STORE_BILLING_MESSAGE = 'Upgrades are not available in this app right now.';
 
 type Pending = 'checkout' | 'portal' | 'change' | null;
 type CheckoutPlan = Exclude<PricedPlanId, 'free'>;
@@ -27,6 +33,10 @@ export function useBilling() {
     interval: BillingInterval,
     plan: CheckoutPlan,
   ): Promise<void> {
+    if (mustUseStoreBilling()) {
+      setError(STORE_BILLING_MESSAGE);
+      return;
+    }
     setPending(kind);
     setError(null);
     if (kind === 'checkout') {
@@ -50,6 +60,10 @@ export function useBilling() {
   }
 
   async function changePlan(interval: BillingInterval, plan: CheckoutPlan): Promise<void> {
+    if (mustUseStoreBilling()) {
+      setError(STORE_BILLING_MESSAGE);
+      return;
+    }
     setPending('change');
     setError(null);
     setChanged(false);
