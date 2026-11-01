@@ -11,6 +11,7 @@ import { ReminderSettings } from '@/features/reminders';
 import { useProfile, useUpdateProfile } from './useProfile';
 import { resolveAvatarUrl, resolveDisplayName } from './identity';
 import { FormNotice } from './FormNotice';
+import { DeleteAccountSection } from './DeleteAccountSection';
 import { fieldErrorsOf, profileSchema } from './schemas';
 
 /** Minimal profile editor: change the display name. Avatar upload comes later. */
@@ -117,6 +118,8 @@ export function ProfilePage() {
           <ReminderSettings />
         </GlassPanel>
       </section>
+
+      <DeleteAccountSection />
     </Reveal>
   );
 }
