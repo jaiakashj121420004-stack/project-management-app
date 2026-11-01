@@ -23,11 +23,11 @@ commit.
 | Supabase `service_role` key | Supabase dashboard only | Injected automatically into Edge Functions at runtime (`SUPABASE_SERVICE_ROLE_KEY`) — never set it manually as a frontend var. |
 | Supabase Edge Function secrets | Supabase dashboard → Edge Functions → Secrets (or `npx supabase secrets set`) | See §1a for the full list of which secrets exist. |
 | GitHub repo | <https://github.com/jaiakashj121420004-stack/project-management-app> | Account handle `jaiakashj121420004-stack`. Two-factor authentication **enabled** 2026-08-23 (confirmed via Settings → Password and authentication, "Two-factor authentication: Enabled"; preferred method set to passkey). Recovery codes were downloaded — keep them outside this repo. |
-| Cloudflare Pages | Project **`project-management-app-dev`** → `https://project-management-app-dev.pages.dev` | Custom domain `aurora.nvexis.com` is live on top of this (see §1b). Build command `npm run build`, output dir `dist`, env vars = the same two `VITE_` values. Auto-deploys on push to `main`. |
+| Cloudflare Pages | Project **`project-management-app-dev`** → `https://project-management-app-dev.pages.dev` | Custom domain `jotspring.nvexis.com` is live on top of this (see §1b). Build command `npm run build`, output dir `dist`, env vars = the same two `VITE_` values. Auto-deploys on push to `main`. |
 | Cloudflare account / DNS | Cloudflare dashboard | Also holds DNS for `nvexis.com` (nameservers cut over from Namecheap — see §1b). |
 | Domain registrar | Namecheap, registrant of `nvexis.com` | Nameservers now point at Cloudflare; renewal/ownership still lives at Namecheap. |
 | Dodo Payments (billing, Merchant of Record) | Dodo dashboard | Test mode is live and verified end-to-end (webhook → Pro upgrade). **Live mode is not yet active** — KYC (Individual account) was submitted and was under review as of 2026-07-19; check status before assuming live billing works. |
-| Resend (transactional email) | Resend dashboard | Used for due-date/reminder emails via the `send-due-reminders` function. Sending domain `mail.nvexis.com` verified 2026-08-23 (DKIM/SPF/DMARC in Cloudflare DNS); `REMINDER_FROM_EMAIL` is set to `Aurora <reminders@mail.nvexis.com>` in Supabase Edge Function secrets. |
+| Resend (transactional email) | Resend dashboard | Used for due-date/reminder emails via the `send-due-reminders` function. Sending domain `mail.nvexis.com` verified 2026-08-23 (DKIM/SPF/DMARC in Cloudflare DNS); `REMINDER_FROM_EMAIL` is set to `Jotspring <reminders@mail.nvexis.com>` in Supabase Edge Function secrets. |
 | Google Cloud / Google OAuth | Google Cloud Console, project **`aurora-499806`** | Auth Platform → Branding holds the "Sign in with Google" app name/logo/authorized domain (`nvexis.com`) config. OAuth Client ID starts `594602749460-q15m...` — must match the Client ID configured in Supabase's Google auth provider. |
 | `.env` (local dev secrets) | Project root, gitignored | Copy from `.env.example`. Holds only the two `VITE_` values — nothing else belongs here (see the header comment in `.env.example` for the full list of what's deliberately excluded). |
 
@@ -37,14 +37,14 @@ Grouped by feature (full setup instructions for each are in
 `supabase/README.md`):
 
 - **Email reminders:** `RESEND_API_KEY`, `REMINDER_FROM_EMAIL` (set to
-  `Aurora <reminders@mail.nvexis.com>`, 2026-08-23), `CRON_SECRET`.
+  `Jotspring <reminders@mail.nvexis.com>`, 2026-08-23), `CRON_SECRET`.
 - **Dodo Payments billing:** `DODO_PAYMENTS_API_KEY`, `DODO_WEBHOOK_SECRET`,
   `DODO_PRODUCT_PRO_MONTHLY`, `DODO_PRODUCT_PRO_ANNUAL`,
   `DODO_PRODUCT_TEAM_MONTHLY`, `DODO_PRODUCT_TEAM_ANNUAL`, `APP_URL`
-  (currently `https://aurora.nvexis.com`), `DODO_PAYMENTS_ENVIRONMENT`
+  (currently `https://jotspring.nvexis.com`), `DODO_PAYMENTS_ENVIRONMENT`
   (unset = test mode; set to `live` to go live), `DODO_BUSINESS_ID` (optional
   fail-closed check on the webhook — confirm whether it's been set).
-- **Aurora MCP server (Connect Claude):** `MCP_JWT_SIGNING_SECRET`,
+- **Jotspring MCP server (Connect Claude):** `MCP_JWT_SIGNING_SECRET`,
   `MCP_JWT_SIGNING_KEY_ID` — signed with a **dedicated** JWT signing key
   (Supabase Dashboard → Auth → JWT Signing Keys), deliberately separate from
   the project's default session-signing key so it can be revoked without
@@ -54,7 +54,7 @@ Grouped by feature (full setup instructions for each are in
 
 ### 1b. ✅ RESOLVED (2026-08-16) — secret-hygiene incident, closed
 
-`Aurora DODO PAYMENTS ks.txt` (tracked in git since `c926f22`) held a real
+`Jotspring DODO PAYMENTS ks.txt` (tracked in git since `c926f22`) held a real
 live Dodo API key, the Dodo webhook signing secret, and the dedicated
 **MCP JWT signing secret** in plaintext. Confirmed exposed (git history on
 GitHub, and briefly in a chat transcript while diagnosing it). **Full
@@ -74,7 +74,7 @@ remediation completed same day:**
    `DODO_PAYMENTS_API_KEY`, `DODO_WEBHOOK_SECRET`,
    `MCP_JWT_SIGNING_SECRET`, and `MCP_JWT_SIGNING_KEY_ID`.
 3. **File removed from the repo** and git-ignored going forward
-   (`Aurora*ks*.txt` pattern + exact filename added to `.gitignore`),
+   (`Jotspring*ks*.txt` pattern + exact filename added to `.gitignore`),
    committed as `bdeb552` and pushed to `main`.
 4. `DODO_BUSINESS_ID` and the `pdt_...` product ids from the same file are
    identifiers, not credentials — left unchanged, no rotation needed.
@@ -84,7 +84,7 @@ git history prior to `bdeb552`. They're inert (rotated), so this is hygiene
 rather than urgent — a `git filter-repo`/BFG history scrub + force-push
 would fully remove them if desired.
 
-A second, similar file (`Aurora payment api.txt`) was found and safely
+A second, similar file (`Jotspring payment api.txt`) was found and safely
 deleted earlier because it was gitignored and untracked — no rotation was
 needed for that one.
 
@@ -124,7 +124,7 @@ needed for that one.
    GitHub repo and auto-deploying; if it needs to be recreated: Create →
    Pages → Connect to Git → this repo. Build command `npm run build`, output
    `dist`, env vars = the two `VITE_` values. Re-add the custom domain
-   `aurora.nvexis.com` if it's a fresh Pages project (DNS at Cloudflare
+   `jotspring.nvexis.com` if it's a fresh Pages project (DNS at Cloudflare
    already points there via the Namecheap nameserver cutover, so this should
    just be "add custom domain" in the Pages project, not a DNS re-setup).
 6. **Re-set Edge Function secrets** (see §1a for the full list) — these live
@@ -154,7 +154,7 @@ needed for that one.
 9. **Auth provider config** (Supabase dashboard → Auth): re-enable Email +
    Google providers, re-add the Google OAuth Client ID/Secret (from Google
    Cloud project `aurora-499806`), and re-add redirect URLs
-   (`localhost:5173`, the `*.pages.dev` URL, `aurora.nvexis.com`).
+   (`localhost:5173`, the `*.pages.dev` URL, `jotspring.nvexis.com`).
 10. **Push:** `git push` — Cloudflare auto-deploys on push to `main`.
 
 ---
@@ -210,7 +210,7 @@ tracker is wired up — this is the full list):
 
 - **Frontend runtime errors:** nowhere centralized. The only signal is what a
   user reports, or what you catch by opening the live site's browser
-  DevTools console yourself (`aurora.nvexis.com`).
+  DevTools console yourself (`jotspring.nvexis.com`).
 - **Cloudflare Pages build/deploy failures:** Cloudflare dashboard → Workers
   & Pages → `project-management-app-dev` → Deployments tab — build logs per
   deploy.
@@ -255,7 +255,7 @@ tracker is wired up — this is the full list):
 - **Architecture, data model, design system, full security model:** [plan.md](./plan.md)
 - **Day-to-day workflow rules (commit discipline, coding standards):** [CLAUDE.md](./CLAUDE.md)
 - **First-time environment setup (new contributor, from zero):** [SETUP.md](./SETUP.md)
-- **Connecting a user's Claude to their own Aurora account (MCP server):** [SETUP-MCP.md](./SETUP-MCP.md)
+- **Connecting a user's Claude to their own Jotspring account (MCP server):** [SETUP-MCP.md](./SETUP-MCP.md)
 - **Edge Function / migration / secrets setup detail for every feature:** [supabase/README.md](./supabase/README.md)
 
 This file's only job is what those don't cover: who has access to what, and

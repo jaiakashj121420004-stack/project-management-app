@@ -1,4 +1,4 @@
-# Aurora — Security Remediation Plan (H1–L6, I1–I3)
+# Jotspring — Security Remediation Plan (H1–L6, I1–I3)
 
 Companion to **[SECURITY-REVIEW-2026-07-15.md](./SECURITY-REVIEW-2026-07-15.md)** (full findings + rationale). This file breaks every finding into **5 phases**, one per session, each with a copy-paste prompt and a recommended model.
 

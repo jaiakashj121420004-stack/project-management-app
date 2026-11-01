@@ -1,6 +1,6 @@
 # prompts.md — Pro Features Build Playbook
 
-> Ordered, copy-paste prompts for building the **Pro-only** feature set on top of Aurora:
+> Ordered, copy-paste prompts for building the **Pro-only** feature set on top of Jotspring:
 > a collaborative **Notes Canvas** (mini OneNote/whiteboard), **custom timed reminders**, and
 > **Pro collaboration** (comments, @mentions, review/approval, activity log, reactions).
 >
@@ -271,7 +271,7 @@ FRONTEND (features/canvas, lazy-loaded):
    flush-on-unmount). One ['canvas', noteId] TanStack cache.
 
 Constraints: TS strict, no any. Lazy-load the module so Konva never ships to non-canvas users. Honor
-prefers-reduced-motion. Match Aurora glass/gradient styling. Touch + stylus + mouse all pan/zoom/select.
+prefers-reduced-motion. Match Jotspring glass/gradient styling. Touch + stylus + mouse all pan/zoom/select.
 
 When finished: update memory.md (canvas table, module, element model) and commit. Note the migration as a
 one-time Supabase step.
@@ -324,7 +324,7 @@ CANVAS (CanvasEditor.tsx) — fill the space + view toggle:
    delete, page-type switcher); keep the zoom controls + zoom/page indicator. Default = Edit.
 
 CONSTRAINTS: TS strict, no any; small focused components. Keep autosave (debounce + flush-on-unmount), the save
-indicator, inline title editing, delete-confirm, and ALL RLS/Pro gating exactly as-is. Match Aurora glass/gradient
+indicator, inline title editing, delete-confirm, and ALL RLS/Pro gating exactly as-is. Match Jotspring glass/gradient
 + spring motion; honor prefers-reduced-motion. Canvas module stays lazy-loaded. Touch + stylus + mouse all work.
 
 When finished: `npm run typecheck && npm run lint && npm run build` must be clean; update memory.md (note the
@@ -395,7 +395,7 @@ FRONTEND:
    like ProjectPage does).
 9. The per-project Canvas tab (CanvasPanel) is unchanged except its writes now flow through can_edit_canvas RLS.
 
-CONSTRAINTS: TS strict, no any. Double Pro-gate (UI + RLS). Match Aurora styling; canvas editor stays lazy-loaded.
+CONSTRAINTS: TS strict, no any. Double Pro-gate (UI + RLS). Match Jotspring styling; canvas editor stays lazy-loaded.
 Note the migration as a one-time Supabase step. Update plan.md (canvas data model + sharing model) and memory.md,
 then commit.
 ```
@@ -432,7 +432,7 @@ FRONTEND:
    where possible. Show member avatars on the canvas header.
 5. Shared editors can edit; shared viewers get the read-only (View) canvas; non-members can't load it (RLS).
 
-CONSTRAINTS: TS strict, no any. Owner-only management (UI + RLS). Match Aurora styling. Update memory.md + commit.
+CONSTRAINTS: TS strict, no any. Owner-only management (UI + RLS). Match Jotspring styling. Update memory.md + commit.
 ```
 
 **Verification**
@@ -486,7 +486,7 @@ Add rich-text elements to the canvas.
 4. Store the TextBox body as Tiptap JSON in the element. Keep it movable/resizable/rotatable/lockable/z-ordered.
    (In P3.7 this body becomes a Yjs fragment for collaborative editing — structure it so that swap is clean.)
 
-Constraints: TS strict. XSS-safe links. The overlay must stay aligned during pan/zoom/rotate. Match Aurora type.
+Constraints: TS strict. XSS-safe links. The overlay must stay aligned during pan/zoom/rotate. Match Jotspring type.
 
 When finished: update memory.md and commit.
 ```

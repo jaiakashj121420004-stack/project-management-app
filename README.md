@@ -1,4 +1,4 @@
-# Aurora
+# Jotspring
 
 A modern, installable PWA for project management — Kanban boards, to-do lists, due dates, a calendar, notes, and real-time collaboration. Built to look stunning and to become a sellable product.
 
@@ -52,7 +52,7 @@ Cloudflare Pages is free, allows commercial use, and serves the static build dir
 
 ## Installable PWA & offline
 
-The build emits a full web manifest, Aurora app icons (incl. a maskable icon), and a service worker, so the deployed app is **installable** on mobile and desktop and runs full-screen with the Aurora icon.
+The build emits a full web manifest, Jotspring app icons (incl. a maskable icon), and a service worker, so the deployed app is **installable** on mobile and desktop and runs full-screen with the Jotspring icon.
 
 - **Install:** open the live site → use the browser's *Install app* / *Add to Home Screen* prompt.
 - **Offline:** the app shell is precached, and the TanStack Query cache is persisted to `localStorage`, so opening the app offline shows a **read-only cached view** with a clear "You're offline" indicator. Writes aren't queued — they resume when you reconnect. (The persisted cache is wiped on sign-out so nothing leaks on shared devices.)
@@ -63,5 +63,5 @@ The build emits a full web manifest, Aurora app icons (incl. a maskable icon), a
 
 Two complementary options, both opt-in from **Profile → Reminders**:
 
-1. **Browser notifications** — zero setup; fire while Aurora is open in the browser/installed app.
+1. **Browser notifications** — zero setup; fire while Jotspring is open in the browser/installed app.
 2. **Email reminders** — reliable and work even when the app is closed, via a Supabase Edge Function on a daily cron that emails each assignee their due-soon cards. This needs a one-time server setup (a Resend API key + secrets + a `pg_cron` schedule) documented in [supabase/README.md](./supabase/README.md#due-date-email-reminders-phase-9--optional-opt-in). **No reminder secrets ever go in `.env` or the frontend** — they live only in the Supabase dashboard.

@@ -1,6 +1,6 @@
 # prompt.md — Build Playbook (copy-paste prompts for Claude Code)
 
-> Ordered prompts for building the **Aurora** project-management app. Work top to bottom. For each phase: meet the **Prerequisites**, switch Claude Code to the **Model**, paste the **Prompt**, then run the **Verification** before moving on.
+> Ordered prompts for building the **Jotspring** project-management app. Work top to bottom. For each phase: meet the **Prerequisites**, switch Claude Code to the **Model**, paste the **Prompt**, then run the **Verification** before moving on.
 >
 > Prefer the interactive checklist? Open **`prompts.html`** in your browser — same content with checkboxes, copy buttons, and progress tracking.
 >
@@ -21,13 +21,13 @@
 ```text
 Read CLAUDE.md, plan.md, and memory.md fully before doing anything.
 
-Scaffold the foundation of the Aurora project-management app in this repo.
+Scaffold the foundation of the Jotspring project-management app in this repo.
 
 1. Initialize a Vite + React + TypeScript project IN PLACE (do not nest it in a subfolder; keep the existing .md files at the repo root). Enable TypeScript strict mode.
 2. Install and configure: Tailwind CSS, Framer Motion, dnd-kit, @tanstack/react-query, react-router-dom, @supabase/supabase-js, zod, date-fns, and vite-plugin-pwa. Wire Tailwind and PostCSS correctly.
 3. Create a typed Supabase client in src/lib/supabase.ts that reads VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY from import.meta.env. Add a .env.example documenting these vars. Create a real .env locally but DO NOT commit it.
 4. Add a .gitignore covering node_modules, dist, .env, .env.local, and OS/editor cruft. Confirm no secrets are tracked.
-5. Set up a clean folder structure: src/components, src/features, src/lib, src/hooks, src/pages, src/types, src/styles. Add a placeholder App that renders a simple "Aurora — coming soon" screen so the build works.
+5. Set up a clean folder structure: src/components, src/features, src/lib, src/hooks, src/pages, src/types, src/styles. Add a placeholder App that renders a simple "Jotspring — coming soon" screen so the build works.
 6. Add npm scripts for dev, build, preview, typecheck, and lint. Set up ESLint + Prettier with sensible TypeScript rules.
 7. Initialize git, make a clean initial commit of the scaffold, then connect and push to the existing GitHub repo:
    git branch -M main
@@ -59,11 +59,11 @@ When finished: update memory.md (mark Phase 0 done, set next step to Phase 1, up
 
 **Prompt**
 ```text
-Read CLAUDE.md, plan.md (especially section 4, the Aurora Design System — note 4.4 on depth, 3D & motion), and memory.md first.
+Read CLAUDE.md, plan.md (especially section 4, the Jotspring Design System — note 4.4 on depth, 3D & motion), and memory.md first.
 
-Build the Aurora design system and the app shell. This is the visual foundation — it must look stunning, colorful, premium, animated, and three-dimensional, never a plain flat or dark-blue app.
+Build the Jotspring design system and the app shell. This is the visual foundation — it must look stunning, colorful, premium, animated, and three-dimensional, never a plain flat or dark-blue app.
 
-1. Theme: set up Tailwind theme tokens + CSS variables for the full Aurora palette from plan.md (the six project accent gradients, dark/light base colors, glass surface values, semantic colors). Implement BOTH a luminous light mode AND a rich dark mode as first-class, with a ThemeToggle that persists the choice and cross-fades smoothly between them. Default to dark. Design and test every component in both themes.
+1. Theme: set up Tailwind theme tokens + CSS variables for the full Jotspring palette from plan.md (the six project accent gradients, dark/light base colors, glass surface values, semantic colors). Implement BOTH a luminous light mode AND a rich dark mode as first-class, with a ThemeToggle that persists the choice and cross-fades smoothly between them. Default to dark. Design and test every component in both themes.
 2. Fonts: load Space Grotesk (or Sora) for display/headings and Inter for body, via a performant method. Set up a generous type scale.
 3. Animated AuroraBackground: 3–4 large, softly blurred gradient "blobs" that continuously drift AND parallax subtly toward the pointer. Rich but not distracting. Honor prefers-reduced-motion.
 4. Animated, flowing gradients: headings, primary buttons, and active states animate their gradient position (a slow "liquid" shimmer on a ~200% gradient, or a rotating conic gradient). Add a reusable animated gradient-border utility for key surfaces.
@@ -106,12 +106,12 @@ Read CLAUDE.md, plan.md (sections 5–6), and memory.md first.
 Implement authentication using Supabase Auth.
 
 1. SQL migration: create a `profiles` table (id references auth.users, display_name, avatar_url, created_at). Add a trigger that inserts a profile row automatically when a new auth user is created. Enable Row Level Security: a user may select/update only their own profile. Save migrations under supabase/migrations.
-2. Beautiful Aurora-styled auth screens (using Phase 1 components): Sign Up, Log In, and Forgot Password — plus a "Continue with Google" button. Validate all inputs with Zod and show friendly inline errors.
+2. Beautiful Jotspring-styled auth screens (using Phase 1 components): Sign Up, Log In, and Forgot Password — plus a "Continue with Google" button. Validate all inputs with Zod and show friendly inline errors.
 3. Auth state: a useAuth hook / context exposing the current session and user, with loading states. Handle session persistence and refresh.
 4. Routing: a ProtectedRoute wrapper. Unauthenticated users are redirected to login; authenticated users landing on auth pages go to the app. Add a Sign Out action in the nav with the user's avatar/name.
 5. A minimal profile screen to edit display name (avatar upload can wait).
 
-Constraints: never expose the service_role key. Rely on RLS, not client checks, for data protection. Treat all input as untrusted. Keep the screens on-brand (Aurora).
+Constraints: never expose the service_role key. Rely on RLS, not client checks, for data protection. Treat all input as untrusted. Keep the screens on-brand (Jotspring).
 
 When finished: update memory.md (Phase 2 done, decisions if any, next step Phase 3) and commit, including the SQL migration.
 ```
@@ -144,7 +144,7 @@ Implement Projects (workspaces) with correct multi-tenant security.
    - projects: a user can SELECT a project if is_project_member(id); INSERT if owner_id = auth.uid(); UPDATE/DELETE only if they're the owner.
    - project_members: a user can SELECT rows for projects they belong to; only owners can INSERT/DELETE members.
    Test that these policies do not recurse or error.
-4. Frontend: a Projects dashboard listing the user's projects as vivid Aurora glass cards, each showing its accent gradient. "New Project" modal with name, description, and an accent-gradient picker (the six options from plan.md). Edit and delete (owner only).
+4. Frontend: a Projects dashboard listing the user's projects as vivid Jotspring glass cards, each showing its accent gradient. "New Project" modal with name, description, and an accent-gradient picker (the six options from plan.md). Edit and delete (owner only).
 5. Use TanStack Query for fetching/caching with optimistic create/update/delete. Validate with Zod.
 6. Clicking a project opens a project route (board comes in Phase 4 — a placeholder is fine).
 
@@ -246,7 +246,7 @@ Add a Calendar view of dated work.
 3. Allow drag-to-reschedule: dragging a card chip to another day updates its due_date (optimistic). Use Framer Motion for smooth movement.
 4. Empty days and overflow ("+3 more") handled gracefully. Fully responsive: month grid on desktop, a sensible agenda/list layout on small phones.
 
-Constraints: on-brand Aurora styling, reduced-motion safe, typed.
+Constraints: on-brand Jotspring styling, reduced-motion safe, typed.
 
 When finished: update memory.md (Phase 6 done, next step Phase 7) and commit.
 ```
@@ -333,7 +333,7 @@ Read CLAUDE.md, plan.md, and memory.md first.
 
 Make it an installable PWA and add due-date reminders.
 
-1. Configure vite-plugin-pwa: web manifest (Aurora icons, theme colors, name), installability on mobile + desktop, and a service worker that caches the app shell for offline loading. Verify the install prompt works.
+1. Configure vite-plugin-pwa: web manifest (Jotspring icons, theme colors, name), installability on mobile + desktop, and a service worker that caches the app shell for offline loading. Verify the install prompt works.
 2. Provide app icons and a maskable icon; set theme-color for light/dark.
 3. Reminders for due dates: implement a reliable approach and document the trade-off — either (a) browser Notifications + a scheduled check, or (b) email reminders via a Supabase Edge Function on a cron schedule (pg_cron / scheduled function) that finds cards due soon and notifies assignees. Prefer the email/edge-function path for reliability; let me opt in.
 4. Graceful offline UX: read-only cached view when offline, with a clear "offline" indicator and queued writes if feasible.
@@ -344,7 +344,7 @@ When finished: update memory.md (Phase 9 done, next step Phase 10) and commit.
 ```
 
 **Verification**
-- Install the app to your phone home screen and desktop; it launches full-screen with the Aurora icon.
+- Install the app to your phone home screen and desktop; it launches full-screen with the Jotspring icon.
 - Load it offline — the shell appears with an offline indicator.
 - Trigger a reminder for a card due soon and confirm you receive it.
 - Lighthouse PWA check passes the installability criteria.
@@ -364,7 +364,7 @@ Read CLAUDE.md, plan.md (sections 6 and 8), and memory.md first.
 
 Prepare the app to launch and (optionally) sell.
 
-1. Marketing landing page (public, no auth) that is a true showcase of the Aurora aesthetic — hero with animated gradients, feature highlights, screenshots, and clear calls to action to sign up. Must be responsive and fast.
+1. Marketing landing page (public, no auth) that is a true showcase of the Jotspring aesthetic — hero with animated gradients, feature highlights, screenshots, and clear calls to action to sign up. Must be responsive and fast.
 2. Billing with Stripe (test mode): define a free plan and a paid plan (e.g., limits on number of projects or members on free). Implement Stripe Checkout for upgrades and a customer portal for managing the subscription. Handle the webhook in a Supabase Edge Function and VERIFY the webhook signature; update the user's plan in the database from verified events only. Never trust client-side plan claims.
 3. Enforce plan limits via RLS / server checks, not just UI.
 4. Legal: add Terms of Service and Privacy Policy pages, plus basic rate-limiting considerations. Document production env vars and the go-live checklist (move Stripe to live keys, set production redirect URLs, etc.).

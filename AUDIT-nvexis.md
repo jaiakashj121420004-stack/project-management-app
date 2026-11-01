@@ -24,7 +24,7 @@
 - **State completeness** — the same loading (content-shaped skeletons) / error / empty trio appears across every feature. Mobile craft is real: `dvh`, `env(safe-area-inset-*)`, drawer + bottom nav, touch-tuned drag.
 
 ### What's holding it back
-- **A three-name identity crisis (P0).** "Aurora" appears in **38 files** including user-visible chrome — the browser `<title>`, PWA install name (`vite.config.ts` manifest), the sidebar wordmark (`Brand.tsx`), and the style guide — while the product is **Nvexis** and the marketing calls itself **Lodestar**. The installed app literally shows the wrong brand.
+- **A three-name identity crisis (P0).** "Jotspring" appears in **38 files** including user-visible chrome — the browser `<title>`, PWA install name (`vite.config.ts` manifest), the sidebar wordmark (`Brand.tsx`), and the style guide — while the product is **Nvexis** and the marketing calls itself **Lodestar**. The installed app literally shows the wrong brand.
 - **Light-mode contrast failures (P0, accessibility).** Label pills render full-saturation hex as *text* on a ~16% tint (`labelColors.ts` + `LabelPill.tsx`): cyan ≈ 1.9:1, emerald ≈ 1.8:1, amber ≈ 1.5:1 against the 4.5:1 AA requirement. Priority pills (`priority.ts`) and the fixed-hex `success`/`info` badge colors (`tailwind.config.ts`) fail similarly on their backgrounds.
 - **No focus trap / focus restoration in overlays (P0).** `Modal.tsx`, `CommandPalette.tsx`, and the mobile drawer let Tab escape to the background and never restore focus to the trigger on close — the biggest keyboard/AT defect for a modal-heavy app.
 - **A dead primary affordance (P1).** The Topbar "Search projects, cards, notes…" control is a `<button>` with **no `onClick`** (`Topbar.tsx`) — the most prominent control does nothing on click; only ⌘K opens the palette.
@@ -32,7 +32,7 @@
 - **Framer mount animations ignore reduced-motion (P1).** No `<MotionConfig reducedMotion="user">`, so `Reveal`/`Modal`/`GlassSelect` still animate for users who asked not to (the CSS guard can't stop JS-driven transforms).
 
 ### Path to 9.5+
-1. **P0** — Purge "Aurora"/"Lodestar" → one product name everywhere, starting with `index.html`, the PWA manifest, and `Brand.tsx`.
+1. **P0** — Purge "Jotspring"/"Lodestar" → one product name everywhere, starting with `index.html`, the PWA manifest, and `Brand.tsx`.
 2. **P0** — Fix label/priority/badge contrast: use a darkened per-theme text token instead of the swatch hex; make `success`/`info` theme-reactive.
 3. **P0** — Add a focus-trap + restore-focus utility to `Modal`, `CommandPalette`, and the drawer; wire `aria-labelledby` to the visible heading.
 4. **P1** — Wire the Topbar search to open the command palette; wrap the app in `MotionConfig`; add a skip-to-content link.
@@ -97,7 +97,7 @@
 | 1 | **Low** | **Account/email enumeration oracle.** `user_id_for_email(text)` is granted to every authenticated user and returns the UUID for any email; `share_canvas`/`share_note` also reveal existence via a distinct "No Nvexis user" error. An authed attacker can confirm which emails have accounts. | Revoke direct `execute` and inline the lookup inside the share RPCs; return a generic result whether or not the email matched. |
 | 2 | **Low** | **Webhook doesn't validate product or business.** `subscription.active` grants Pro for *any* product id, and `business_id` isn't checked. Harmless today (one product), but any future cheaper product would also grant Pro. | Validate `data.product_id ∈ {monthly, annual}` and assert `event.business_id`. |
 | 3 | **Low** | **Unvalidated id in PostgREST filter.** The webhook interpolates `metadata.user_id` into `id=eq.${userId}`. Server-set and signature-gated (not currently exploitable), but unvalidated. | Assert UUID shape before building the filter. |
-| 4 | **Info** | **Plaintext secret file in the working tree.** `Aurora payment api.txt` holds a webhook secret. It's gitignored and never committed, but a live secret sitting in the repo folder risks leakage via backup/sync/screen-share. | Delete it; keep secrets only in the Supabase dashboard. |
+| 4 | **Info** | **Plaintext secret file in the working tree.** `Jotspring payment api.txt` holds a webhook secret. It's gitignored and never committed, but a live secret sitting in the repo folder risks leakage via backup/sync/screen-share. | Delete it; keep secrets only in the Supabase dashboard. |
 | 5 | **Info** | `CRON_SECRET` compared with `!==` (non-constant-time); edge-function CORS is `*`; no app-level rate limiting on checkout/portal. | Constant-time compare; scope CORS to `APP_URL`; add basic throttling. |
 | 6 | **Info** | XSS defense rests entirely on the hardened Tiptap schema + React escaping (no server-side sanitizer). Robust today; fragile to a future extension misconfig. | Add a `DOMPurify` pass over `generateHTML` output as defense-in-depth. |
 

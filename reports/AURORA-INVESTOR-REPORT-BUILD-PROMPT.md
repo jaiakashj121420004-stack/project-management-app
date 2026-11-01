@@ -1,4 +1,4 @@
-# Build prompt: Aurora Investor Strategy Report (HTML)
+# Build prompt: Jotspring Investor Strategy Report (HTML)
 
 > **How to use this file:** paste everything below into a **new** Claude Code / Claude Cowork session that has this repo (`project-management-app`) connected. It is self-contained — the session does not need this conversation's history, only this repo. Effort should be Sonnet Medium-High thinking or a smarter model if available; this is a research-and-synthesis task, not a mechanical one.
 
@@ -14,12 +14,12 @@ Since 13 August 2026, a large amount has shipped (goals, automations, time track
 
 ## 1. What you're building, and for whom
 
-A single, self-contained HTML document: **a strategy/investor report for Aurora (by Nvexis)** — a project-management PWA. The reader is a **financially and technically literate investor** who will notice hype, rounding tricks, or unsupported claims immediately and will discount the whole document if they catch even one. Optimize for credibility, not for looking impressive.
+A single, self-contained HTML document: **a strategy/investor report for Jotspring (by Nvexis)** — a project-management PWA. The reader is a **financially and technically literate investor** who will notice hype, rounding tricks, or unsupported claims immediately and will discount the whole document if they catch even one. Optimize for credibility, not for looking impressive.
 
 **Non-negotiable ground rules — read twice before writing a single number:**
 
 1. **No invented numbers.** Every figure in the document must be one of: (a) read directly from this repo's code/config/docs (cite the file), (b) a live 2026 web-search result you actually ran this session (cite the source), or (c) an explicitly-labeled planning estimate/assumption, framed as a range with its methodology shown, never as a bare confident number. If you don't know something, say "not yet measured" or "unknown until live" rather than filling the gap with a plausible-sounding figure.
-2. **Do not restate the 13 August report's market/pricing/CAC figures as current without re-checking them.** Run fresh web searches for: PM-software market size/CAGR, competitor pricing (Trello/Asana/ClickUp/Monday/Notion/Todoist — and now also check whether any of them shipped a "calm mode" or bundled a feature that blunts Aurora's positioning), freemium conversion benchmarks, CAC benchmarks, current Supabase/Cloudflare Pages/Resend/Dodo Payments pricing tiers. If a figure hasn't materially changed, say so and keep it; if it has, use the new figure and note the change.
+2. **Do not restate the 13 August report's market/pricing/CAC figures as current without re-checking them.** Run fresh web searches for: PM-software market size/CAGR, competitor pricing (Trello/Asana/ClickUp/Monday/Notion/Todoist — and now also check whether any of them shipped a "calm mode" or bundled a feature that blunts Jotspring's positioning), freemium conversion benchmarks, CAC benchmarks, current Supabase/Cloudflare Pages/Resend/Dodo Payments pricing tiers. If a figure hasn't materially changed, say so and keep it; if it has, use the new figure and note the change.
 3. **Per explicit instruction from the founder: do NOT list the pending penetration test or the not-yet-run marketing motion as a Weakness or a Threat in the SWOT.** Both are planned, budgeted, scheduled pre-launch actions, not gaps in the product — they belong in the Pre-Launch Checklist (§11 below), framed as scheduled/in-progress, not as risk factors. This is a deliberate framing choice the founder made explicitly; don't second-guess it in the copy.
 4. **Every feature claim must be traceable to real shipped code**, not the roadmap. Read `memory.md`'s Feature log and `src/features/*` directly — do not describe a feature as done if `memory.md`'s Open Items section marks it uncommitted, unwired, or unverified (e.g., as of 22 Aug 2026, Task 31's drag-and-drop block reordering is built but **not yet wired into `NoteBlockEditor.tsx`** — describe it accurately: built, not yet live — and several 22 Aug features are uncommitted pending a Windows build pass). Get the *current* state by reading `memory.md` fresh in this session, not by trusting this prompt's summary below, which will itself go stale.
 5. **Keep the tone the founder asked for: authentic, not a pitch.** No superlatives without a fact backing them up ("fast" → give the actual build time or bundle size; "secure" → name the specific control). Where something is a real, unresolved weakness, say so plainly (e.g., solo-maintainer bus factor is real even with a runbook written — a runbook mitigates the risk, it doesn't remove it).
@@ -49,7 +49,7 @@ A single, self-contained HTML document: **a strategy/investor report for Aurora 
 
 ### 2.3 Cost-model research specifically (needed for §9 — do not skip)
 Build an actual, source-cited cost table for **100, 1,000, and 10,000 registered users**, each broken into **mild / normal / heavy** usage tiers. To do this credibly:
-- Define what "mild/normal/heavy" means concretely for Aurora (e.g., mild = signed up, opens the app a few times a month, 1 small board; normal = daily active, several boards, regular canvas/notes use; heavy = a Team-plan account with many collaborators, heavy canvas media uploads, automations running, MCP usage). State the definition in the report — don't leave it implicit.
+- Define what "mild/normal/heavy" means concretely for Jotspring (e.g., mild = signed up, opens the app a few times a month, 1 small board; normal = daily active, several boards, regular canvas/notes use; heavy = a Team-plan account with many collaborators, heavy canvas media uploads, automations running, MCP usage). State the definition in the report — don't leave it implicit.
 - Estimate realistic per-user resource consumption (DB rows, Storage MB, Realtime connections, Edge Function invocations, email sends) for each tier, grounded in what the product actually does (read `src/lib/proFeatures.ts`, the Storage/media-cap logic, and the automations/reminders Edge Functions to inform this, rather than guessing blind).
 - Map total resource consumption at each of the three user-count milestones against the real current Supabase/Cloudflare/Resend/Dodo pricing tiers from §2.2, and show which tier of each vendor is needed at each milestone and why.
 - Show your work as a table, not just a final number — an investor will want to see the assumption chain, not just trust a total.
@@ -60,14 +60,14 @@ Build an actual, source-cited cost table for **100, 1,000, and 10,000 registered
 
 Use this as the table of contents (and the sidebar nav — see §12). Section numbers are for your own drafting reference; use descriptive `id`s for anchors, matching the pattern in the 13 Aug report.
 
-1. **Cover** — title, one-line description of what the report contains, prepared date, confidentiality notice, "Aurora is a product of Nvexis" attribution line (per the locked brand hierarchy in `CLAUDE.md`).
-2. **Executive Summary** — one page: what Aurora is, where it stands (pre-revenue, feature-complete for launch, what's actually still open), the three questions this report answers (is the product good, who's the competition and is there a real edge, what will it realistically earn and how will it be marketed).
+1. **Cover** — title, one-line description of what the report contains, prepared date, confidentiality notice, "Jotspring is a product of Nvexis" attribution line (per the locked brand hierarchy in `CLAUDE.md`).
+2. **Executive Summary** — one page: what Jotspring is, where it stands (pre-revenue, feature-complete for launch, what's actually still open), the three questions this report answers (is the product good, who's the competition and is there a real edge, what will it realistically earn and how will it be marketed).
 3. **Present State & Roadmap** — an honest, current snapshot (not the 13 Aug one) of what's built vs. what's still open per `memory.md`'s Open Items, plus the near-term roadmap in priority order.
 4. **Product Overview: Every Feature, In Detail** — see §5 below. This must be exhaustive, not a highlight reel — the founder explicitly asked for even the smallest features explained.
 5. **Target User Personas** — see §6 below.
-6. **Market Research** — market size, CAGR, why the category is growing, where Aurora fits (update the 13 Aug figures per §2.2).
+6. **Market Research** — market size, CAGR, why the category is growing, where Jotspring fits (update the 13 Aug figures per §2.2).
 7. **Buyer Psychology** — why people pick and pay for a tool like this (can largely carry forward the 13 Aug §4 content if it still checks out, updated for anything new — e.g., the product now has a real referral-adjacent mechanic, real templates lowering the blank-page problem, etc.)
-8. **Competitive Analysis** — updated pricing-comparison table and competitor-by-competitor breakdown; update Aurora's positioning wedge to reflect the larger feature set now (time tracking, share links, templates, automations, goals, Gantt) without losing the "still calm, not ClickUp" framing — that's the whole point of the Simplicity Guardrail process, which is itself worth mentioning as a differentiator (a documented, followed anti-bloat discipline is rare and credible to a sophisticated investor).
+8. **Competitive Analysis** — updated pricing-comparison table and competitor-by-competitor breakdown; update Jotspring's positioning wedge to reflect the larger feature set now (time tracking, share links, templates, automations, goals, Gantt) without losing the "still calm, not ClickUp" framing — that's the whole point of the Simplicity Guardrail process, which is itself worth mentioning as a differentiator (a documented, followed anti-bloat discipline is rare and credible to a sophisticated investor).
 9. **SWOT Analysis** — grounded in the actual current codebase and posture. Per rule 3 in §1, do not put the pentest or the marketing launch in Weaknesses/Threats. Do update Strengths (analytics now shipped, bus-factor runbook now written, broader feature set, formalized simplicity-review process) and Weaknesses (what's genuinely still true — e.g. still solo/small-team bus factor even with a runbook, several 22 Aug features still uncommitted/unverified, no admin UI for analytics, some sync-related device-bridge friction documented in project memory that isn't a product risk but is worth knowing internally, is not investor-facing).
 10. **Technology & Security Assessment** — full stack (verified from `package.json`/`supabase/`), the security model (RLS everywhere, SECURITY DEFINER pinning, the 7-phase remediation, the pgTAP regression suite and its current assertion count, the MCP auth design, the analytics endpoint's validation model), and the pentest-readiness brief's content — presented as "here is our security posture and here is the scoped, budgeted, pre-launch pentest plan," not as an open risk.
 11. **Pre-Launch Checklist** — see §11 below.
@@ -82,7 +82,7 @@ Use this as the table of contents (and the sidebar nav — see §12). Section nu
 ## 4. Design & format requirements
 
 - **Single self-contained HTML file.** Inline all CSS/JS. Google Fonts `<link>` is fine (matches the existing report and the app itself).
-- **Follow the Aurora/Nvexis "Almanac" brand system exactly** — source of truth is `DESIGN-GUIDELINES.md` and the live tokens in `src/styles/index.css`/`tailwind.config.ts`. Do not invent new colors. Known tokens (verify against `src/styles/index.css` before use, since these may have shifted):
+- **Follow the Jotspring/Nvexis "Almanac" brand system exactly** — source of truth is `DESIGN-GUIDELINES.md` and the live tokens in `src/styles/index.css`/`tailwind.config.ts`. Do not invent new colors. Known tokens (verify against `src/styles/index.css` before use, since these may have shifted):
   - Oxblood accent: `#7A2A26` (Day) / `#C24A40` (Night)
   - Parchment (Day bg): `#ECE4D6`; Ink (Night bg): `#181210` (the 13 Aug report used `#221A14` for ink — check the live token and use whichever is actually current in `src/styles/index.css`)
   - Fonts: **Fraunces** (display/headings), **Spectral** (body), **IBM Plex Mono** (figures/eyebrows/labels). Never Inter, never Space Grotesk.
@@ -110,7 +110,7 @@ The founder explicitly wants **every feature, including the smallest ones, expla
 - **Import** — one-time Trello/CSV import.
 - **Search** — full-text search across card and note content via the command palette.
 - **Command palette** — quick navigation across projects/notes/canvases/folders.
-- **MCP server ("Connect Claude")** — lets a Pro+ user connect Claude Desktop/Code directly to their Aurora account via a personal access token, read/write boards/to-dos/notes through the same RLS-enforced API surface as the app itself. Explain this plainly — it's a genuinely unusual feature for a PM tool at this stage and worth real explanation, not a throwaway line.
+- **MCP server ("Connect Claude")** — lets a Pro+ user connect Claude Desktop/Code directly to their Jotspring account via a personal access token, read/write boards/to-dos/notes through the same RLS-enforced API surface as the app itself. Explain this plainly — it's a genuinely unusual feature for a PM tool at this stage and worth real explanation, not a throwaway line.
 - **Personalization** — Day/Night theme, font pairing, custom color presets (curated grid + an advanced raw picker), synced to the account (not just device-local).
 - **PWA / installability** — installable on mobile and desktop from any browser, offline caching, install-prompt handling per platform.
 - **Notifications & reminders** — due-date reminders (email via Resend + browser notifications), Pro custom timed reminders with configurable lead time/channel.
@@ -123,12 +123,12 @@ For every item, state briefly *why it matters to the target user*, not just that
 
 ## 6. Target user personas — build these from the actual feature/pricing shape, not generically
 
-Write 2–3 concrete personas grounded in what the product actually optimizes for (flat per-board pricing, India/PPP pricing, the freelancer-facing features added in the August improvement pass — time tracking, client share links, file attachments, templates). Suggested starting points to develop with real specificity (name, context, what tool(s) they're switching from, what in Aurora specifically solves their problem, what would make them upgrade to Pro):
+Write 2–3 concrete personas grounded in what the product actually optimizes for (flat per-board pricing, India/PPP pricing, the freelancer-facing features added in the August improvement pass — time tracking, client share links, file attachments, templates). Suggested starting points to develop with real specificity (name, context, what tool(s) they're switching from, what in Jotspring specifically solves their problem, what would make them upgrade to Pro):
 - A solo freelancer or consultant currently juggling a board tool + a docs tool + a separate time-tracking app, who needs to show a client progress without giving them a login.
-- A small creative/dev team (3–8 people) currently paying per-seat for Asana/ClickUp/Monday who would save real money on Aurora's flat per-board pricing and is tired of feature overload.
+- A small creative/dev team (3–8 people) currently paying per-seat for Asana/ClickUp/Monday who would save real money on Jotspring's flat per-board pricing and is tired of feature overload.
 - A price-sensitive student or early-career/freelance user in a PPP market (India specifically, since pricing is already built for it) who wants an all-in-one tool but can't justify $10+/seat/month tools.
 
-Ground each persona's "why Aurora" in a real, specific feature (not "it's great for teams") — e.g., persona 1 should reference the actual read-only share link feature; persona 3 should reference the actual ₹-denominated Dodo pricing.
+Ground each persona's "why Jotspring" in a real, specific feature (not "it's great for teams") — e.g., persona 1 should reference the actual read-only share link feature; persona 3 should reference the actual ₹-denominated Dodo pricing.
 
 ---
 

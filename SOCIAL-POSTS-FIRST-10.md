@@ -1,4 +1,4 @@
-# Aurora — First 10 LinkedIn Posts + First 10 X Posts
+# Jotspring — First 10 LinkedIn Posts + First 10 X Posts
 
 > Companion to `MARKETING.md` (source of truth for voice, banned phrases, §21 no-competitor-names rule, and the posting log in §33). Pulled from §27's post bank plus new X-native drafts. Log every post you actually publish in `MARKETING.md` §33 — that's the memory that keeps future sessions from repeating you.
 >
@@ -11,7 +11,7 @@
 ### 1. Personal — The build retrospective
 **When:** Mon/Tue, Week 1 · **Angle:** build-in-public · **utm_campaign:** `w1-build-retro`
 
-> I spent the last nine weeks building a project management app. It's live now, at aurora.nvexis.com.
+> I spent the last nine weeks building a project management app. It's live now, at jotspring.nvexis.com.
 >
 > The honest version of how: I worked with AI coding agents for most of it, under a set of rules I wrote for myself before starting. Read the state document before touching anything. Update it after every change. Commit immediately. Never end a session with uncommitted work.
 >
@@ -30,7 +30,7 @@
 ### 2. Personal — Flat pricing
 **When:** Thu, Week 1 · **Angle 1** · **utm_campaign:** `w1-flat-pricing`
 
-> A pricing decision I made early and still think is the right one: Aurora charges per board, not per person.
+> A pricing decision I made early and still think is the right one: Jotspring charges per board, not per person.
 >
 > $5.99 a month covers up to ten people on a board. Not $5.99 each. Ten.
 >
@@ -49,7 +49,7 @@
 
 > Nvexis builds software that does what it says.
 >
-> The first product is Aurora — a workspace for project boards, a daily planner, a calendar, documents and a shared whiteboard, in one place. It's live at aurora.nvexis.com.
+> The first product is Jotspring — a workspace for project boards, a daily planner, a calendar, documents and a shared whiteboard, in one place. It's live at jotspring.nvexis.com.
 >
 > Two decisions shape it more than any feature does.
 >
@@ -59,7 +59,7 @@
 >
 > It's new. There aren't many of us yet. If you try it and something is wrong, we'd rather hear it early.
 
-**Image:** the Aurora "A" monogram, or a hero screenshot of the app in light mode.
+**Image:** the Jotspring "A" monogram, or a hero screenshot of the app in light mode.
 
 ---
 
@@ -85,7 +85,7 @@
 
 > I keep a document whose only job is to tell me no.
 >
-> Every feature I want to add to Aurora gets checked against it before I build it. It asks one question that matters: does this add a surface a new user has to learn on day one?
+> Every feature I want to add to Jotspring gets checked against it before I build it. It asks one question that matters: does this add a surface a new user has to learn on day one?
 >
 > It has actually stopped things. Goals were going to be a full objectives-and-key-results system. They're now a progress bar with a target date, because the honest answer was that nobody asked for the enterprise version. Automations were going to be a general if-this-then-that builder. They're three fixed behaviours, because open-ended rule builders are the most direct route to the exact complexity I'm trying to avoid.
 >
@@ -104,7 +104,7 @@
 
 > Most tools in this category end up with a calendar that is quietly its own separate system. You put a date on a task in one place, and the calendar shows you something slightly different.
 >
-> Aurora's calendar reads from the same records as everything else. Month, week, day and a timeline view — four views, one source. Move a card to a different day and it moves everywhere, because there is no "everywhere else" to move it in.
+> Jotspring's calendar reads from the same records as everything else. Month, week, day and a timeline view — four views, one source. Move a card to a different day and it moves everywhere, because there is no "everywhere else" to move it in.
 >
 > It sounds like an implementation detail. In practice it's the difference between a calendar you trust and one you check twice.
 
@@ -119,7 +119,7 @@
 >
 > A client asks "where are we on this?" and you either write the answer out by hand, or you give them a login to a tool they'll never open again — and on most per-seat pricing, that login costs you money every month.
 >
-> Aurora has a read-only share link. You send a URL, they see the board, they don't sign up for anything. Nothing is editable and nothing else in your account is visible.
+> Jotspring has a read-only share link. You send a URL, they see the board, they don't sign up for anything. Nothing is editable and nothing else in your account is visible.
 >
 > It took a couple of days to build and it's the feature I've been happiest with, because it removes a small recurring humiliation rather than adding a capability.
 >
@@ -132,7 +132,7 @@
 ### 8. Personal — The AI connector
 **When:** Thu, Week 3 · **Angle 4** · **utm_campaign:** `w3-ai-connector`
 
-> Something in Aurora I haven't seen elsewhere: you can connect an AI assistant directly to your own account and manage your boards from inside it.
+> Something in Jotspring I haven't seen elsewhere: you can connect an AI assistant directly to your own account and manage your boards from inside it.
 >
 > Not a chatbot bolted onto the product. An actual connection — your assistant reads and writes your boards, to-dos and notes through the same permission-enforced API the app itself uses.
 >
@@ -151,7 +151,7 @@
 
 > I want to be careful about how I talk about security, because "enterprise-grade" is a phrase that means nothing and I'd rather say what's actually true.
 >
-> What's true: every table in Aurora has row-level security. Every paid limit is enforced by the database as well as the interface, because a limit that only exists in the UI is one devtools window away from not existing. Payment state can only be written by a signature-verified webhook — the browser is never trusted to say what someone paid for. There's a test suite in CI whose entire job is proving one account can't read another account's data.
+> What's true: every table in Jotspring has row-level security. Every paid limit is enforced by the database as well as the interface, because a limit that only exists in the UI is one devtools window away from not existing. Payment state can only be written by a signature-verified webhook — the browser is never trusted to say what someone paid for. There's a test suite in CI whose entire job is proving one account can't read another account's data.
 >
 > What's not true yet: nobody independent has tried to break it. That test is scoped and budgeted and it's the next thing I'm spending money on, ahead of any advertising.
 >
@@ -164,7 +164,7 @@
 ### 10. Personal — The whiteboard
 **When:** Thu, Week 4 · **Angle 3 (design/craft)** · **utm_campaign:** `w4-whiteboard`
 
-> The part of Aurora I most enjoyed building, and the part I was most sure I'd get wrong: an infinite whiteboard that stays in sync live between two people on different devices.
+> The part of Jotspring I most enjoyed building, and the part I was most sure I'd get wrong: an infinite whiteboard that stays in sync live between two people on different devices.
 >
 > Pressure-sensitive drawing, text boxes that use the same editor as the documents, images, tables, layers, live cursors. Two people drawing at once and it merges rather than one overwriting the other.
 >
@@ -183,7 +183,7 @@ Account doesn't exist yet — create it in Week 1 (handle `@nvexisalmanac`, fall
 ### 1. Build retrospective (thread)
 **When:** Wed, Week 2 (first X post) · **utm_campaign:** `w2-build-thread`
 
-> **1/** Spent nine weeks building a project management app. It's live: aurora.nvexis.com
+> **1/** Spent nine weeks building a project management app. It's live: jotspring.nvexis.com
 >
 > Boards, a daily planner, a unified calendar, docs, and a whiteboard that syncs live between people. 194 commits, 56 migrations.
 >
@@ -220,7 +220,7 @@ Account doesn't exist yet — create it in Week 1 (handle `@nvexisalmanac`, fall
 
 > Five people on a project tool at $10/seat/month is $600/year.
 >
-> Aurora is $22/month flat for up to 40 people on a board. $264/year, and it doesn't change when you add the sixth person.
+> Jotspring is $22/month flat for up to 40 people on a board. $264/year, and it doesn't change when you add the sixth person.
 >
 > Per-seat pricing makes you think about who "deserves" a login. That always seemed like the wrong thing to be thinking about.
 
@@ -261,7 +261,7 @@ Account doesn't exist yet — create it in Week 1 (handle `@nvexisalmanac`, fall
 ### 5. The AI connector (standalone)
 **When:** Week 3 · **Angle 4** · **utm_campaign:** `x-ai-connector`
 
-> You can connect an AI assistant to your Aurora account and manage boards from inside it — not a chatbot bolted on, the same permission-enforced API the app itself uses.
+> You can connect an AI assistant to your Jotspring account and manage boards from inside it — not a chatbot bolted on, the same permission-enforced API the app itself uses.
 >
 > Token hashed at rest. Every call auth'd by a 5-minute token from a separately revocable signing key.
 >
@@ -305,7 +305,7 @@ Account doesn't exist yet — create it in Week 1 (handle `@nvexisalmanac`, fall
 ### 9. What I got wrong (thread)
 **When:** Week 4–5 · **Angle:** candid · **utm_campaign:** `x-what-i-got-wrong`
 
-> **1/** Three things I got wrong building Aurora, now that there's distance to see them.
+> **1/** Three things I got wrong building Jotspring, now that there's distance to see them.
 >
 > **2/** The free tier was too generous. Ten boards, three collaborators — that's a whole small team running free forever. Cut it to three and two. Felt bad, was obviously correct.
 >
@@ -322,7 +322,7 @@ Account doesn't exist yet — create it in Week 1 (handle `@nvexisalmanac`, fall
 
 > The most-cited reason people abandon a project tool isn't a missing feature. It's that the tool got too complicated to open.
 >
-> Everything I've added to Aurora since week one has had to answer one question first: does this cost a new user anything to learn on day one? Most of what I wanted to build didn't survive that question.
+> Everything I've added to Jotspring since week one has had to answer one question first: does this cost a new user anything to learn on day one? Most of what I wanted to build didn't survive that question.
 
 **Image:** none.
 

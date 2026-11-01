@@ -1,16 +1,16 @@
-# SETUP-MCP.md — Connect Claude to your Aurora account
+# SETUP-MCP.md — Connect Claude to your Jotspring account
 
-> How a user connects Claude Desktop or Claude Code to their own Aurora account
+> How a user connects Claude Desktop or Claude Code to their own Jotspring account
 > (read/write boards, to-dos, notes) — the same shape of integration Obsidian
 > offers via its community MCP server. For the deploy/ops checklist see
-> [supabase/README.md](./supabase/README.md) → "Aurora MCP server". For
+> [supabase/README.md](./supabase/README.md) → "Jotspring MCP server". For
 > everyday rules see [CLAUDE.md](./CLAUDE.md); for the full spec see
 > [plan.md](./plan.md).
 
 ## For you (connecting Claude)
 
-1. In Aurora, go to **Settings → Connect Claude** (Pro and above). Click
-   **Generate access token**. Copy it immediately — Aurora shows it exactly
+1. In Jotspring, go to **Settings → Connect Claude** (Pro and above). Click
+   **Generate access token**. Copy it immediately — Jotspring shows it exactly
    once and never stores the plaintext, so if you lose it you'll need to
    regenerate (which invalidates the old one).
 2. Pick your client:
@@ -30,7 +30,7 @@
 `list_notes`, `read_note`, `append_to_note`. Deliberately not included in v1
 (SIMPLICITY-GUARDRAIL discipline — see the decision log in `memory.md`): canvas
 tools, member/sharing tools, delete tools, bulk operations. Everything a tool
-does is still governed by your normal Aurora permissions — Claude can't see or
+does is still governed by your normal Jotspring permissions — Claude can't see or
 touch anything you couldn't yourself.
 
 ## Why this was built this way (technical record)
@@ -63,7 +63,7 @@ via Claude Code's native `--header` support or, for Claude Desktop, the
 [`mcp-remote`](https://github.com/geelen/mcp-remote) local bridge (also reads a
 custom `Authorization` header). This is also why `mcp-server` is deployed
 `--no-verify-jwt` — Supabase's platform JWT gate expects a Supabase session
-JWT, not Aurora's own PAT, in the `Authorization` header.
+JWT, not Jotspring's own PAT, in the `Authorization` header.
 
 **Authorization inside `mcp-server` — real RLS, not a service-role shortcut.**
 This is the one place this integration could quietly have taken a shortcut,
@@ -93,6 +93,6 @@ invalidates the previous token everywhere it's configured.
 
 ## Deploy checklist
 
-See [supabase/README.md](./supabase/README.md) → "Aurora MCP server" for the
+See [supabase/README.md](./supabase/README.md) → "Jotspring MCP server" for the
 migration, the one manual Dashboard step (the dedicated signing key), the two
 `supabase functions deploy` commands, and the secrets to set.

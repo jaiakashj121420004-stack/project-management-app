@@ -1,4 +1,4 @@
-# plan.md — Aurora Project Management App (Specification)
+# plan.md — Jotspring Project Management App (Specification)
 
 > **The spec: what we're building and how.** Stable reference. For *current state* see [memory.md](./memory.md); for the *build steps* see [prompt.md](./prompt.md); for *working rules* see [CLAUDE.md](./CLAUDE.md).
 
@@ -64,7 +64,7 @@ So Docker would add real complexity (Dockerfiles, image builds, registries) for 
 |---|---|
 | **React + TypeScript** | UI, with strict typing to kill bugs early. |
 | **Vite** | Fast dev server + static production build. |
-| **Tailwind CSS** | Utility styling for the Aurora design system. |
+| **Tailwind CSS** | Utility styling for the Jotspring design system. |
 | **Framer Motion** | Spring physics, drag motion, transitions — core to the "jaw-dropping" feel. |
 | **dnd-kit** | Accessible, modern drag-and-drop for Kanban. (Do **not** use the deprecated `react-beautiful-dnd`.) |
 | **TanStack Query** | Server-state fetching, caching, optimistic updates. |
@@ -81,7 +81,7 @@ Postgres database, Auth (email/password + Google OAuth), Row Level Security for 
 
 ## 4. Design System 🎨
 
-> **⚠️ SUPERSEDED by the Nvexis rebrand (2026-07-13).** The colorful "Aurora" system described in this section is historical. The app now uses the **Nvexis "Almanac"** look — hybrid *glass-over-parchment*, oxblood on parchment/ink, Fraunces/Spectral/IBM Plex Mono. **Source of truth = `DESIGN-GUIDELINES.md`**; live tokens = `src/styles/index.css` + `tailwind.config.ts`; rationale + status = `NVEXIS-UPGRADE-PLAN.md`. Keep the glass, motion, and depth described below, but with Nvexis colours/type — do not use the violet/cyan gradients, rainbow accents, Inter, or Space Grotesk below.
+> **⚠️ SUPERSEDED by the Nvexis rebrand (2026-07-13).** The colorful "Jotspring" system described in this section is historical. The app now uses the **Nvexis "Almanac"** look — hybrid *glass-over-parchment*, oxblood on parchment/ink, Fraunces/Spectral/IBM Plex Mono. **Source of truth = `DESIGN-GUIDELINES.md`**; live tokens = `src/styles/index.css` + `tailwind.config.ts`; rationale + status = `NVEXIS-UPGRADE-PLAN.md`. Keep the glass, motion, and depth described below, but with Nvexis colours/type — do not use the violet/cyan gradients, rainbow accents, Inter, or Space Grotesk below.
 
 The original signature look (historical). The goal was a *premium, luminous, colorful* feel — frosted glass floating over living gradient light. Implement these as Tailwind theme tokens + CSS variables so the whole app is consistent.
 
@@ -95,7 +95,7 @@ The original signature look (historical). The goal was a *premium, luminous, col
 
 | Name | From → To |
 |---|---|
-| Aurora | `#7C3AED` → `#06B6D4` (violet → cyan) |
+| Jotspring | `#7C3AED` → `#06B6D4` (violet → cyan) |
 | Sunset | `#FF6B6B` → `#FFD93D` (coral → gold) |
 | Bloom | `#EC4899` → `#8B5CF6` (pink → purple) |
 | Lagoon | `#06B6D4` → `#10B981` (cyan → emerald) |
@@ -208,7 +208,7 @@ The rule: **the frontend is untrusted; the database enforces the rules.**
 Phases are sequenced so Phase 1 is a thin vertical slice through the whole stack (de-risks everything), and the app is genuinely usable by Phase 5. **The detailed, copy-paste build prompts live in [prompt.md](./prompt.md).**
 
 0. **Setup & infra** — repo, Vite, Tailwind, Supabase project, Cloudflare deploy, git + doc workflow.
-1. **Design system & app shell** — Aurora theme, glass components, motion primitives, layout. **Ends with the first live Cloudflare deploy — verify the `*.pages.dev` URL on desktop + phone.**
+1. **Design system & app shell** — Jotspring theme, glass components, motion primitives, layout. **Ends with the first live Cloudflare deploy — verify the `*.pages.dev` URL on desktop + phone.**
 2. **Auth** — email/password + Google, protected routes, profile.
 3. **Projects** — CRUD, workspaces, accent picker, RLS.
 4. **Kanban board** — columns + cards + dnd-kit drag-and-drop + motion.

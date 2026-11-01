@@ -10,12 +10,12 @@
 
 ## 0. The goal (what the user asked for)
 
-Two big things on top of the existing, working Aurora PM app:
+Two big things on top of the existing, working Jotspring PM app:
 
-1. **Rebrand the entire app to the Nvexis brand** ("The Almanac"), keeping glassmorphism + adding paper-grain noise, in a warm two-ink palette (oxblood on parchment/ink), full light **and** dark modes. *Not* the old colorful Aurora look.
+1. **Rebrand the entire app to the Nvexis brand** ("The Almanac"), keeping glassmorphism + adding paper-grain noise, in a warm two-ink palette (oxblood on parchment/ink), full light **and** dark modes. *Not* the old colorful Jotspring look.
 2. **Add an independent Notes + Canvas experience** organised like a file explorer (folders/subfolders/files), with a Notion-style block editor, custom colours everywhere, canvas navigation aids, and Pro collaboration on both notes and canvases — plus a **first-class mobile UX**.
 
-The app name stays **Aurora** (it is a Nvexis *product line*); only the **look** becomes Nvexis. Full brand spec: **`DESIGN-GUIDELINES.md`** (in this repo) + `../Company HQ/Brand Assets/`.
+The app name stays **Jotspring** (it is a Nvexis *product line*); only the **look** becomes Nvexis. Full brand spec: **`DESIGN-GUIDELINES.md`** (in this repo) + `../Company HQ/Brand Assets/`.
 
 ## 1. Locked decisions (2026-07-13)
 

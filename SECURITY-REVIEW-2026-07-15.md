@@ -1,4 +1,4 @@
-# Aurora — Internal Security Code Review
+# Jotspring — Internal Security Code Review
 
 **Date:** 2026-07-15
 **Reviewer:** Internal (pre-external-pen-test pass)
@@ -150,7 +150,7 @@ Tune `connect-src`/`frame-src` to exactly what's used, then verify at runtime.
 Use this to brief a firm and compare quotes. **Run the test only after H1/H2 are fixed** so you're not paying an expensive tester to find a bug you already know about.
 
 ## 1. Objective & assurance goal
-An independent, third-party security assessment of the Aurora multi-tenant SaaS to validate that: (a) tenant isolation (RLS) cannot be bypassed, (b) authentication/authorization cannot be escalated, (c) the payment/entitlement flow cannot be forged, and (d) no client-side or configuration issues expose data. Primary assurance question: **"Can any user read or write another tenant's data, or obtain Pro without paying?"**
+An independent, third-party security assessment of the Jotspring multi-tenant SaaS to validate that: (a) tenant isolation (RLS) cannot be bypassed, (b) authentication/authorization cannot be escalated, (c) the payment/entitlement flow cannot be forged, and (d) no client-side or configuration issues expose data. Primary assurance question: **"Can any user read or write another tenant's data, or obtain Pro without paying?"**
 
 ## 2. In-scope assets
 - The production (or, preferred, an identical **pre-prod/staging**) web app — Cloudflare Pages URL.
