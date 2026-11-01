@@ -1,0 +1,89 @@
+# Codemagic CI/CD — builds the Jotspring iOS (TestFlight) and Android (Play) apps
+# in the cloud, so no Mac is needed. Setup steps: store/STORE-SETUP.md.
+#
+# One-time in the Codemagic UI (Teams > Integrations / Environment variables):
+#   group `jotspring_store` (secure vars): VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY,
+#     VITE_RC_IOS_KEY, VITE_RC_ANDROID_KEY, VITE_PUBLIC_APP_URL,
+#     GOOGLE_SERVICES_JSON_B64, GOOGLE_SERVICE_INFO_PLIST_B64
+#   App Store Connect API key integration named `jotspring-asc`
+#   Android keystore (Code signing identities > Android) named `jotspring-upload`
+
+workflows:
+  ios-testflight:
+    name: iOS → TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: jotspring-asc
+    environment:
+      groups:
+        - jotspring_store
+      node: 22
+      xcode: latest
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.nvexis.jotspring
+      vars:
+        XCODE_PROJECT: ios/App/App.xcodeproj
+        XCODE_SCHEME: App
+    scripts:
+      - name: Install web dependencies
+        script: npm ci
+      - name: Build web app and sync into the iOS project
+        script: |
+          echo "$GOOGLE_SERVICE_INFO_PLIST_B64" | base64 --decode > ios/App/App/GoogleService-Info.plist
+          npm run build
+          npx cap sync ios
+      - name: Set build number
+        script: |
+          LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" || echo 0)
+          echo "BUILD_NUM=$((LATEST + 1))" >> $CM_ENV
+      - name: Apply signing profiles
+        script: xcode-project use-profiles
+      - name: Build signed .ipa
+        script: |
+          xcode-project build-ipa \
+            --project "$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME" \
+            --archive-flags="-destination 'generic/platform=iOS' CURRENT_PROJECT_VERSION=$BUILD_NUM"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+
+  android-play:
+    name: Android → Google Play (internal testing)
+    instance_type: linux_x2
+    max_build_duration: 45
+    environment:
+      groups:
+        - jotspring_store
+      node: 22
+      java: 21
+      android_signing:
+        - jotspring-upload
+    scripts:
+      - name: Install web dependencies
+        script: npm ci
+      - name: Build web app and sync into the Android project
+        script: |
+          echo "$GOOGLE_SERVICES_JSON_B64" | base64 --decode > android/app/google-services.json
+          npm run build
+          npx cap sync android
+      - name: Build signed release bundle (.aab)
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew bundleRelease
+    artifacts:
+      - android/app/build/outputs/bundle/release/*.aab
+    # Turn publishing on once the Play Console app exists and a service-account
+    # key is saved as GCLOUD_SERVICE_ACCOUNT_CREDENTIALS in Codemagic.
+    # publishing:
+    #   google_play:
+    #     credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+    #     track: internal
+    #     submit_as_draft: true
