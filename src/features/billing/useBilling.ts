@@ -2,13 +2,18 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { track } from '@/lib/analytics';
 import { mustUseStoreBilling } from '@/lib/native/platform';
+import {
+  PurchaseCancelled,
+  purchaseStorePlan,
+  storeSubscriptionsUrl,
+} from '@/lib/native/storeBilling';
 import type { BillingInterval, PricedPlanId } from '@/lib/plans';
 import { createCheckoutUrl, createPortalUrl, requestPlanChange } from './api';
 
-/** Shown if a Dodo action is ever triggered inside the iOS/Android apps, where
- * Apple/Google billing must be used instead (store rules). Defensive only —
- * the store-billing UI replaces these buttons there. */
-const STORE_BILLING_MESSAGE = 'Upgrades are not available in this app right now.';
+/** Inside the iOS/Android apps every purchase goes through Apple/Google billing
+ * (store rules) via RevenueCat — never Dodo. The plan itself only changes when
+ * the verified RevenueCat webhook fires; we just refetch the profile after. */
+const STORE_PURCHASE_FAILED = 'Could not complete the purchase. Please try again.';
 
 type Pending = 'checkout' | 'portal' | 'change' | null;
 type CheckoutPlan = Exclude<PricedPlanId, 'free'>;
@@ -28,13 +33,33 @@ export function useBilling() {
   const [changed, setChanged] = useState(false);
   const queryClient = useQueryClient();
 
+  async function storePurchase(interval: BillingInterval, plan: CheckoutPlan): Promise<void> {
+    setPending('checkout');
+    setError(null);
+    try {
+      await purchaseStorePlan(plan, interval);
+      setChanged(true);
+      for (const delayMs of [1500, 4000, 8000]) {
+        setTimeout(() => void queryClient.invalidateQueries({ queryKey: ['profile'] }), delayMs);
+      }
+    } catch (err) {
+      if (!(err instanceof PurchaseCancelled)) setError(STORE_PURCHASE_FAILED);
+    } finally {
+      setPending(null);
+    }
+  }
+
   async function go(
     kind: 'checkout' | 'portal',
     interval: BillingInterval,
     plan: CheckoutPlan,
   ): Promise<void> {
     if (mustUseStoreBilling()) {
-      setError(STORE_BILLING_MESSAGE);
+      if (kind === 'portal') {
+        window.open(storeSubscriptionsUrl(), '_blank', 'noopener');
+        return;
+      }
+      await storePurchase(interval, plan);
       return;
     }
     setPending(kind);
@@ -61,7 +86,7 @@ export function useBilling() {
 
   async function changePlan(interval: BillingInterval, plan: CheckoutPlan): Promise<void> {
     if (mustUseStoreBilling()) {
-      setError(STORE_BILLING_MESSAGE);
+      await storePurchase(interval, plan);
       return;
     }
     setPending('change');

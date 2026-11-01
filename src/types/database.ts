@@ -1208,6 +1208,73 @@ export interface Database {
         };
         Relationships: [];
       };
+      // Apple/Google subscription state, written only by the RevenueCat webhook
+      // (service role); clients may read their own rows. See
+      // 20261101120000_store_entitlements_and_push_tokens.sql.
+      entitlements: {
+        Row: {
+          id: string;
+          user_id: string;
+          source: 'app_store' | 'play_store' | 'dodo' | 'manual';
+          plan: 'pro' | 'team';
+          status: 'active' | 'expired' | 'billing_issue';
+          product_id: string | null;
+          external_id: string | null;
+          expires_at: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          source: 'app_store' | 'play_store' | 'dodo' | 'manual';
+          plan: 'pro' | 'team';
+          status: 'active' | 'expired' | 'billing_issue';
+          product_id?: string | null;
+          external_id?: string | null;
+          expires_at?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          source?: 'app_store' | 'play_store' | 'dodo' | 'manual';
+          plan?: 'pro' | 'team';
+          status?: 'active' | 'expired' | 'billing_issue';
+          product_id?: string | null;
+          external_id?: string | null;
+          expires_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      // FCM device tokens for the iOS/Android apps (own-row RLS).
+      push_tokens: {
+        Row: {
+          id: string;
+          user_id: string;
+          platform: 'ios' | 'android';
+          token: string;
+          created_at: string;
+          last_seen_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          platform: 'ios' | 'android';
+          token: string;
+          created_at?: string;
+          last_seen_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          platform?: 'ios' | 'android';
+          token?: string;
+          created_at?: string;
+          last_seen_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

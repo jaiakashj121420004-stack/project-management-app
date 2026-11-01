@@ -1,10 +1,16 @@
 import { AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { isNativeApp } from '@/lib/native/platform';
 import type { LoginInput, SignUpInput } from './schemas';
 
 /** Where OAuth and password-reset links return to. Must be allow-listed in
  *  Supabase → Auth → URL Configuration → Redirect URLs. */
-const origin = () => window.location.origin;
+const origin = () =>
+  // Inside the store apps window.location.origin is capacitor://localhost, which
+  // an email link can't open — send people to the real site instead.
+  isNativeApp()
+    ? ((import.meta.env.VITE_PUBLIC_APP_URL as string | undefined) ?? 'https://jotspring.nvexis.com')
+    : window.location.origin;
 
 export interface AuthResult {
   error: string | null;
